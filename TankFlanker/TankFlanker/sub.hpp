@@ -462,6 +462,9 @@ public:
 		//頭部座標系
 		VECTOR_ref pos_HMD;
 		MATRIX_ref mat_HMD;
+
+		VECTOR_ref rec_HMD;
+
 		float add_ypos = 0.f;//垂直加速度
 		float body_xrad = 0.f;//胴体角度
 		float body_yrad = 0.f;//胴体角度
@@ -491,20 +494,23 @@ public:
 		frames LEFTarm2_f;
 		frames LEFTarm1_f;
 		//
+		VECTOR_ref pos_WAIST;
+		MATRIX_ref mat_WAIST;
+		//
 		bool canget_magitem = false;
 		std::string canget_mag;
 		bool start_c = true;
 		//
-		void Ready_chara(Gun*gundata, size_t state_s, MV1& hand_) {
-			this->gun_slot.set(gundata);
-			this->gun_stat.resize(state_s);
+		void Ready_chara(std::vector<Gun>& gun_data, const size_t& itr, MV1& hand_) {
+			this->gun_slot.set(&gun_data[itr]);
+			this->gun_stat.resize(gun_data.size());
 			for (auto& s : this->gun_stat) {
-				s.in = 0;
+				s.in = 10;
 				s.select = 0;
 			}
 			//手
 			hand_.DuplicateonAnime(&this->body);
-			for (int i = 0; i < int(this->body.frame_num());i++) {
+			for (int i = 0; i < int(this->body.frame_num()); i++) {
 				std::string p = this->body.frame_name(i);
 				if (p == std::string("グルーブ")) {
 					bodyg_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
