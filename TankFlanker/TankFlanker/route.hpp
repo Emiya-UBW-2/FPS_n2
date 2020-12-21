@@ -21,15 +21,15 @@ class main_c : Mainclass {
 	std::vector<Items> item_data;	//拾えるアイテム
 	//設定
 	bool oldv = false;
+
+	bool oldv_1 = false;
+	bool oldv_2 = false;
+	bool oldv_3 = false;
+
 	bool start_c = true;
 	bool start_c2 = true;
 	bool ending = true;
 	//
-	VECTOR_ref pos_track1;
-	MATRIX_ref mat_track1;
-	VECTOR_ref pos_track2;
-	MATRIX_ref mat_track2;
-
 public:
 	main_c() {
 		//設定読み込み
@@ -135,13 +135,31 @@ public:
 						{
 							//座標取得
 							if (Drawparts->tracker_num.size() > 0) {
+								auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[0]];
 								Drawparts->GetDevicePositionVR(Drawparts->tracker_num[0], &mine.pos_WAIST, &mine.mat_WAIST);
+								if (mine.start_c || (ptr_.turn && ptr_.now) != oldv_1) {
+									mine.pos_WAIST_rep = VGet(mine.pos_WAIST.x(), 0.f, mine.pos_WAIST.z());
+								}
+								oldv_1 = ptr_.turn && ptr_.now;
+								mine.pos_WAIST = mine.pos_WAIST - mine.pos_WAIST_rep;
 							}
 							if (Drawparts->tracker_num.size() > 1) {
-								Drawparts->GetDevicePositionVR(Drawparts->tracker_num[1], &pos_track1, &mat_track1);
+								auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[1]];
+								Drawparts->GetDevicePositionVR(Drawparts->tracker_num[1], &mine.pos_LEFTREG, &mine.mat_LEFTREG);
+								if (mine.start_c || (ptr_.turn && ptr_.now) != oldv_2) {
+									mine.pos_LEFTREG_rep = VGet(mine.pos_LEFTREG.x(), 0.f, mine.pos_LEFTREG.z());
+								}
+								oldv_2 = ptr_.turn && ptr_.now;
+								mine.pos_LEFTREG = mine.pos_LEFTREG - mine.pos_LEFTREG_rep;
 							}
 							if (Drawparts->tracker_num.size() > 2) {
-								Drawparts->GetDevicePositionVR(Drawparts->tracker_num[2], &pos_track2, &mat_track2);
+								auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[1]];
+								Drawparts->GetDevicePositionVR(Drawparts->tracker_num[2], &mine.pos_RIGHTREG, &mine.mat_RIGHTREG);
+								if (mine.start_c || (ptr_.turn && ptr_.now) != oldv_3) {
+									mine.pos_RIGHTREG_rep = VGet(mine.pos_RIGHTREG.x(), 0.f, mine.pos_RIGHTREG.z());
+								}
+								oldv_3 = ptr_.turn && ptr_.now;
+								mine.pos_RIGHTREG = mine.pos_RIGHTREG - mine.pos_RIGHTREG_rep;
 							}
 						}
 						//プレイヤー操作

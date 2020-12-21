@@ -494,8 +494,20 @@ public:
 		frames LEFTarm2_f;
 		frames LEFTarm1_f;
 		//
+		VECTOR_ref pos_WAIST_rep;
+		MATRIX_ref mat_WAIST_rep;
 		VECTOR_ref pos_WAIST;
 		MATRIX_ref mat_WAIST;
+		//
+		VECTOR_ref pos_LEFTREG_rep;
+		MATRIX_ref mat_LEFTREG_rep;
+		VECTOR_ref pos_LEFTREG;
+		MATRIX_ref mat_LEFTREG;
+		//
+		VECTOR_ref pos_RIGHTREG_rep;
+		MATRIX_ref mat_RIGHTREG_rep;
+		VECTOR_ref pos_RIGHTREG;
+		MATRIX_ref mat_RIGHTREG;
 		//
 		bool canget_magitem = false;
 		std::string canget_mag;
