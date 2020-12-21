@@ -149,7 +149,7 @@ public:
 					xp = disp_x / 2 - disp_y / 10;
 					yp = disp_y / 2 + disp_y / 8;
 				if (chara.ptr_now->select.size()>=1) {
-					switch (chara.ptr_now->select[std::clamp<size_t>(chara.gun_stat[chara.gun_slot.ptr->id].select, 0, chara.ptr_now->select.size() - 1)]) {
+					switch (chara.ptr_now->select[std::clamp<size_t>(chara.gun_stat[chara.gun_ptr->id].select, 0, chara.ptr_now->select.size() - 1)]) {
 					case 1:
 						font->DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
 						break;
@@ -259,7 +259,7 @@ public:
 				xp = disp_x / 2 - disp_y / 10;
 				yp = disp_y / 2 + disp_y / 8;
 				if (chara.ptr_now->select.size() >= 1) {
-					switch (chara.ptr_now->select[std::clamp<size_t>(chara.gun_stat[chara.gun_slot.ptr->id].select, 0, chara.ptr_now->select.size() - 1)]) {
+					switch (chara.ptr_now->select[std::clamp<size_t>(chara.gun_stat[chara.gun_ptr->id].select, 0, chara.ptr_now->select.size() - 1)]) {
 					case 1:
 						font->DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
 						break;

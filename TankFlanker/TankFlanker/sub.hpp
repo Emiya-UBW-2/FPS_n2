@@ -402,16 +402,14 @@ public:
 		class gun_have {
 		public:
 			Gun* ptr = nullptr;
-			MV1 obj;
+			//MV1 obj;
 			void set(Gun* ptr_) {
-				this->ptr = ptr_;
-				if (this->ptr != nullptr) {
-					this->obj = this->ptr->mod.obj.Duplicate();
+				if (ptr_ != nullptr) {
+					this->ptr = ptr_;
 				}
 			}
 			void delete_gun() {
 				this->ptr = nullptr;
-				this->obj.Dispose();
 			}
 		};
 	public:
@@ -430,7 +428,7 @@ public:
 		/*武器ポインタ*/
 		Gun* ptr_now = nullptr;				//現在使用中の武装
 		size_t ammo_cnt = 0;				//装弾数カウント
-		gun_have gun_slot;	//銃スロット
+		Gun* gun_ptr;						//銃スロット
 		/*モデル、音声*/
 		Audios audio;
 		MV1 obj, mag, body;
@@ -443,12 +441,8 @@ public:
 		bool reloadf = false;
 		bool down_mag = false;
 		//プレイヤー座標系
-		VECTOR_ref pos;
-		MATRIX_ref mat;
-
-		VECTOR_ref add_pos, add_pos_buf;							//移動
-		switchs ads;
-		switchs squat;
+		VECTOR_ref pos, add_pos, add_pos_buf;							//移動
+		switchs ads, squat;
 		bool wkey = false;
 		bool skey = false;
 		bool akey = false;
@@ -514,7 +508,7 @@ public:
 		bool start_c = true;
 		//
 		void Ready_chara(std::vector<Gun>& gun_data, const size_t& itr, MV1& hand_) {
-			this->gun_slot.set(&gun_data[itr]);
+			this->gun_ptr = &gun_data[itr];
 			this->gun_stat.resize(gun_data.size());
 			for (auto& s : this->gun_stat) {
 				s.in = 0;
@@ -621,13 +615,12 @@ public:
 				}
 			}
 		}
-		void Set_chara_Position(const VECTOR_ref& pos_, const MATRIX_ref& mat_, const MATRIX_ref& mat_H) {
+		void Set_chara_Position(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) {
 			this->pos = pos_;
-			this->mat = mat_;
 			this->mat_HMD = mat_H;
 		}
 		void Set_chara() {
-			this->ptr_now = this->gun_slot.ptr;
+			this->ptr_now = this->gun_ptr;
 			this->ptr_now->mod.obj.DuplicateonAnime(&this->obj);
 			this->mag = this->ptr_now->mag.mag.Duplicate();
 			this->LEFT_hand = false;
@@ -692,7 +685,7 @@ public:
 		void Init_chara() {
 			this->body.Dispose();
 			Delete_chara();
-			gun_slot.delete_gun();
+			gun_ptr = nullptr;
 		}
 	};
 	//アイテム
@@ -764,7 +757,7 @@ public:
 					easing_set(&this->add, VGet(0, 0, 0), 0.8f);
 				}
 				//
-				VECTOR_ref startpos = chara.pos + chara.pos_LEFTHAND - chara.rec_HMD;
+				VECTOR_ref startpos = chara.pos_LEFTHAND;
 				VECTOR_ref endpos = startpos - chara.mat_LEFTHAND.zvec()*2.6f;
 				auto p = mapparts->map_col_line(startpos, endpos, 0);
 				if (p.HitFlag == 1) {
