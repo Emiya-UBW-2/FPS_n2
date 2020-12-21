@@ -505,7 +505,7 @@ public:
 			this->gun_slot.set(&gun_data[itr]);
 			this->gun_stat.resize(gun_data.size());
 			for (auto& s : this->gun_stat) {
-				s.in = 10;
+				s.in = 0;
 				s.select = 0;
 			}
 			//Žè
