@@ -734,7 +734,7 @@ public:
 				float fps = GetFPS();
 				this->obj.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
 				this->pos += this->add;
-				this->add.yadd(-9.8f / powf(fps, 2.f));
+				this->add.yadd(-0.98f / powf(fps, 2.f));
 				for (auto& p : item) {
 					if (p.ptr != nullptr && &p != &*this) {
 						if ((p.pos - this->pos).size() <= 0.1f) {
@@ -752,8 +752,8 @@ public:
 					easing_set(&this->add, VGet(0, 0, 0), 0.8f);
 				}
 				//
-				VECTOR_ref startpos = chara.pos + chara.pos_LEFTHAND;
-				VECTOR_ref endpos = chara.pos + chara.pos_LEFTHAND - chara.mat_LEFTHAND.zvec()*2.6f;
+				VECTOR_ref startpos = chara.pos + chara.pos_LEFTHAND - chara.rec_HMD;
+				VECTOR_ref endpos = startpos - chara.mat_LEFTHAND.zvec()*2.6f;
 				auto p = mapparts->map_col_line(startpos, endpos, 0);
 				if (p.HitFlag == 1) {
 					endpos = p.HitPosition;
