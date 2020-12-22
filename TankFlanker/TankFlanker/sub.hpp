@@ -396,7 +396,6 @@ public:
 		sendstat senddata;
 		/*エフェクト*/
 		std::array<EffectS, effects> effcs;
-		std::array<ef_guns, 60> effcs_gun;
 		size_t use_effcsgun = 0;
 		std::array<EffectS, 12> effcs_gndhit;
 		size_t use_effcsgndhit = 0;
@@ -653,9 +652,6 @@ public:
 			this->audio.mag_down.Dispose();
 			this->audio.mag_set.Dispose();
 			this->audio.case_down.Dispose();
-			for (auto& t : this->effcs_gun) {
-				t.effect.handle.Dispose();
-			}
 			for (auto& t : this->effcs) {
 				t.handle.Dispose();
 			}

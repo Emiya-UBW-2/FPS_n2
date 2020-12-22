@@ -64,24 +64,21 @@ public:
 		}
 		UIparts->load_window("銃データ");						//ロード画面2
 		do {
-			cam_easy.fov = deg2rad(Drawparts->use_vr ? 90 : 45);	//
-			cam_easy.near_ = 0.1f;
-			cam_easy.far_ = 100.f;
 			//キャラ設定
 			int sel_g = 0;
 			chara.resize(3);
 			auto& mine = chara[0];
 			//自機セット
 			mine.Ready_chara(this->gun_data, sel_g, this->body_obj);
-			mine.Set_chara_Position(VGet(0.0f, 9.0f, 0.f), MATRIX_ref::RotY(DX_PI_F));
+			mine.Set_chara_Position(VGet(0.0f, 4.0f, 0.f), MATRIX_ref::RotY(DX_PI_F));
 			mine.Set_chara();
 			//その他
 			chara[1].Ready_chara(this->gun_data, sel_g, this->body_obj);
-			chara[1].Set_chara_Position(VGet(0.0f, 9.0f, 2.f), MATRIX_ref::RotY(DX_PI_F*2));
+			chara[1].Set_chara_Position(VGet(0.0f, 4.0f, 2.f), MATRIX_ref::RotY(DX_PI_F*2));
 			chara[1].Set_chara();
 
 			chara[2].Ready_chara(this->gun_data, sel_g, this->body_obj);
-			chara[2].Set_chara_Position(VGet(0.0f, 9.0f, 4.f), MATRIX_ref::RotY(DX_PI_F*2));
+			chara[2].Set_chara_Position(VGet(0.0f, 4.0f, 4.f), MATRIX_ref::RotY(DX_PI_F*2));
 			chara[2].Set_chara();
 
 			//マップ読み込み
@@ -1139,11 +1136,6 @@ public:
 											c.bullet[c.use_bullet].set(&c.ptr_now->ammo[0], c.obj.frame(c.ptr_now->frame[2].first), c.mat_RIGHTHAND.zvec()*-1.f);
 											//エフェクト
 											c.effcs[ef_fire].set(c.obj.frame(c.ptr_now->frame[2].first), c.mat_RIGHTHAND.zvec()*-1.f, 0.0025f / 0.1f);
-											c.effcs_gun[c.use_effcsgun].effect.set(c.obj.frame(c.ptr_now->frame[2].first), c.mat_RIGHTHAND.zvec()*-1.f, 0.11f / 0.1f);
-											c.effcs_gun[c.use_effcsgun].effect.put(Drawparts->get_effHandle(ef_smoke));
-											c.effcs_gun[c.use_effcsgun].ptr = &c.bullet[c.use_bullet];
-											c.effcs_gun[c.use_effcsgun].cnt = 0.f;
-											++c.use_effcsgun %= c.effcs_gun.size();
 											//サウンド
 											c.audio.shot.play_3D(c.pos_RIGHTHAND, 1.f);
 											c.audio.slide.play_3D(c.pos_RIGHTHAND, 1.f);
@@ -1234,16 +1226,6 @@ public:
 										if (a.cnt >= 3.f || a.spec->speed < 0.f || a.spec->pene <= 0.f) {
 											a.flug = false;
 										}
-										//終了
-										if (!a.flug) {
-											for (auto& b : c.effcs_gun) {
-												if (b.ptr == &a) {
-													b.cnt = 2.5f;
-													b.effect.handle.SetPos(b.ptr->pos);
-													break;
-												}
-											}
-										}
 										//
 									}
 								}
@@ -1256,20 +1238,6 @@ public:
 								}
 								for (auto& t : c.effcs_gndhit) {
 									t.put(Drawparts->get_effHandle(ef_gndsmoke));
-								}
-								for (auto& a : c.effcs_gun) {
-									if (a.ptr != nullptr) {
-										if (a.ptr->flug) {
-											a.effect.handle.SetPos(a.ptr->pos);
-										}
-										if (a.cnt >= 0.f) {
-											a.cnt += 1.f / GetFPS();
-											if (a.cnt >= 3.f) {
-												a.effect.handle.Stop();
-												a.cnt = -1.f;
-											}
-										}
-									}
 								}
 							}
 							//アイテム関連
@@ -1303,6 +1271,9 @@ public:
 								cam_easy.camvec = cam_easy.campos + mine.mat_HMD.zvec()*-1.f;
 								cam_easy.camup = mine.mat_HMD.yvec();
 							}
+							cam_easy.fov = deg2rad(Drawparts->use_vr ? 90 : 45);	//
+							cam_easy.near_ = 0.1f;
+							cam_easy.far_ = 1000.f;
 						}
 						Set3DSoundListenerPosAndFrontPosAndUpVec(cam_easy.campos.get(), cam_easy.camvec.get(), cam_easy.camup.get());
 						UpdateEffekseer3D();
@@ -1369,7 +1340,7 @@ public:
 							cam_easy2.camup = ct.mat_HMD.yvec();
 							cam_easy2.fov = deg2rad(45);	//
 							cam_easy2.near_ = 0.1f;
-							cam_easy2.far_ = 100.f;
+							cam_easy2.far_ = 1000.f;
 
 							{
 								//sky
@@ -1460,9 +1431,6 @@ public:
 					for (auto& c : chara) {
 						for (auto& t : c.effcs) {
 							t.put_end();
-						}
-						for (auto& t : c.effcs_gun) {
-							t.effect.put_end();
 						}
 					}
 					//
