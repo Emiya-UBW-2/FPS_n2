@@ -421,6 +421,7 @@ public:
 		bool reloadf = false;
 		bool down_mag = false;
 		//プレイヤー座標系
+		VECTOR_ref spawn_pos;							//移動
 		VECTOR_ref pos, add_pos, add_pos_buf;							//移動
 		switchs ads, squat;
 		bool wkey = false;
@@ -587,7 +588,8 @@ public:
 			}
 		}
 		void Set_chara_Position(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) {
-			this->pos = pos_;
+			this->spawn_pos = pos_;
+			this->pos = this->spawn_pos;
 			this->mat_HMD = mat_H;
 		}
 		void Set_chara() {

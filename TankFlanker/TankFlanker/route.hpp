@@ -545,7 +545,7 @@ public:
 										c.add_ypos -= 9.8f / std::powf(GetFPS(), 2.f);
 										//復帰
 										if (pos_t.y() <= -5.f) {
-											pos_t = VGet(0.f, 9.f, 0.f);
+											pos_t = c.spawn_pos;
 											c.add_ypos = 0.f;
 											c.body.SetMatrix(MATRIX_ref::Mtrans(pos_t));
 											c.body.PhysicsResetState();
@@ -1335,17 +1335,16 @@ public:
 						{
 							{
 								//sky
-								mapparts->sky_draw(cam_easy.campos, cam_easy.camvec, cam_easy.camup, cam_easy.fov);
-								Hostpassparts->SkyScreen.SetDraw_Screen();
+								Hostpass2parts->SkyScreen.SetDraw_Screen(cam_easy.campos - cam_easy.camvec, VGet(0, 0, 0), cam_easy.camup, cam_easy.fov, 1000.0f, 5000.0f);
 								{
-									mapparts->SkyScreen.DrawGraph(0, 0, false);
+									mapparts->sky_draw();
 								}
 								//被写体深度描画
-								Hostpassparts->dof(draw_by_shadow, cam_easy);
+								Hostpass2parts->dof(draw_by_shadow, cam_easy);
 								//最終描画
-								Hostpassparts->MAIN_Screen.SetDraw_Screen();
+								Hostpass2parts->MAIN_Screen.SetDraw_Screen();
 								{
-									Hostpassparts->bloom(255);//ブルーム
+									Hostpass2parts->bloom(255);//ブルーム
 								}
 							}
 							//VRに移す
@@ -1353,7 +1352,7 @@ public:
 								SetCameraNearFar(0.01f, 2.f);
 								SetUseZBuffer3D(FALSE);												//zbufuse
 								SetWriteZBuffer3D(FALSE);											//zbufwrite
-								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->MAIN_Screen.get(), TRUE);
+								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpass2parts->MAIN_Screen.get(), TRUE);
 								SetUseZBuffer3D(TRUE);												//zbufuse
 								SetWriteZBuffer3D(TRUE);											//zbufwrite
 								//UI
@@ -1374,10 +1373,9 @@ public:
 
 							{
 								//sky
-								mapparts->sky_draw(cam_easy2.campos, cam_easy2.camvec, cam_easy2.camup, cam_easy2.fov);
-								Hostpass2parts->SkyScreen.SetDraw_Screen();
+								Hostpass2parts->SkyScreen.SetDraw_Screen(cam_easy2.campos - cam_easy2.camvec, VGet(0, 0, 0), cam_easy2.camup, cam_easy2.fov, 1000.0f, 5000.0f);
 								{
-									mapparts->SkyScreen.DrawGraph(0, 0, false);
+									mapparts->sky_draw();
 								}
 								//被写体深度描画
 								Hostpass2parts->dof(draw_by_shadow, cam_easy2);
@@ -1413,10 +1411,9 @@ public:
 								cam_tmp.near_ = 0.2f;
 								cam_tmp.far_ = 100.f;
 
-								mapparts->sky_draw(cam_tmp.campos, cam_tmp.camvec, cam_tmp.camup, cam_tmp.fov);
-								Hostpassparts->SkyScreen.SetDraw_Screen();
+								Hostpassparts->SkyScreen.SetDraw_Screen(cam_tmp.campos - cam_tmp.camvec, VGet(0, 0, 0), cam_tmp.camup, cam_tmp.fov, 1000.0f, 5000.0f);
 								{
-									mapparts->SkyScreen.DrawGraph(0, 0, false);
+									mapparts->sky_draw();
 								}
 								//被写体深度描画
 								{
