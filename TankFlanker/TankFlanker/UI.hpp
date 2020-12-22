@@ -203,13 +203,6 @@ public:
 					font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2, disp_y), GetColor(255, 255, 255), "%04d / %04d", chara.ammo_cnt, chara.gun_stat[chara.ptr_now->id].in - chara.ammo_cnt);
 				}
 			}
-			//ヒットサウンド(ほかの床に置け)
-			for (auto& a : chara.bullet) {
-				if (a.hit) {
-					hit.play(DX_PLAYTYPE_BACK, TRUE);
-					a.hit = false;
-				}
-			}
 			//マガジン関連(仮)
 			{
 				xp = 300;
@@ -312,6 +305,7 @@ public:
 				}
 			}
 			//VR用のチュートリアル
+			/*
 			{
 				//右手
 				{
@@ -394,13 +388,7 @@ public:
 					}
 				}
 			}
-			//ヒットサウンド(ほかの床に置け)
-			for (auto& a : chara.bullet) {
-				if (a.hit) {
-					hit.play(DX_PLAYTYPE_BACK, TRUE);
-					a.hit = false;
-				}
-			}
+			*/
 			//マガジン関連(仮)
 		}
 	}

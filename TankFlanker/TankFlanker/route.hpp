@@ -1281,6 +1281,14 @@ public:
 						else {
 							UIparts->set_draw_nomal(mine);
 						}
+
+						for (auto& a : mine.bullet) {
+							if (a.hit) {
+								UIparts->hit.play(DX_PLAYTYPE_BACK, TRUE);
+								a.hit = false;
+							}
+						}
+
 						{
 							{
 								//sky

@@ -6,7 +6,6 @@ trigger_sound=1
 mag_down_sound=1
 mag_set_sound=1
 case_sound=1
-ammo_max=7
 ammo_1=45ACP
 ammo_end=end
 mag=GUN

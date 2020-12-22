@@ -137,13 +137,11 @@ public:
 		private:
 		public:
 			GraphHandle UIScreen;
-			GraphHandle lenzScreen;
 			MV1 obj;
 			std::string name;
 			void set(std::string named) {
 				name = named;
 				MV1::Load("data/gun/" + named + "/model.mv1", &obj, true);
-				lenzScreen = GraphHandle::Load("data/gun/" + named + "/lenz.png");
 				UIScreen = GraphHandle::Load("data/gun/" + named + "/pic.bmp");
 			}
 		};
@@ -231,8 +229,6 @@ public:
 					}
 					//サウンド
 					this->audio.set(mdata);
-					//装弾数
-					this->ammo_max = getparams::_long(mdata);
 					//弾データ
 					while (true) {
 						auto p = getparams::_str(mdata);
@@ -259,6 +255,8 @@ public:
 						a.set();
 					}
 					this->mag.set();
+
+					this->ammo_max = this->mag.cap;
 				}
 			}
 		}
@@ -398,19 +396,6 @@ public:
 			int in = 0;				//所持弾数
 			std::vector<int> mag_in;	//マガジン内
 			uint8_t select = 0;			//セレクター
-		};
-		class gun_have {
-		public:
-			Gun* ptr = nullptr;
-			//MV1 obj;
-			void set(Gun* ptr_) {
-				if (ptr_ != nullptr) {
-					this->ptr = ptr_;
-				}
-			}
-			void delete_gun() {
-				this->ptr = nullptr;
-			}
 		};
 	public:
 		sendstat senddata;
@@ -624,6 +609,11 @@ public:
 			this->ptr_now->mod.obj.DuplicateonAnime(&this->obj);
 			this->mag = this->ptr_now->mag.mag.Duplicate();
 			this->LEFT_hand = false;
+			
+			//マガジン+1
+			this->gun_stat[this->ptr_now->id].in += this->ptr_now->mag.cap;
+			this->gun_stat[this->ptr_now->id].mag_in.insert(this->gun_stat[this->ptr_now->id].mag_in.end(), this->ptr_now->mag.cap);
+			//
 			if (this->gun_stat[this->ptr_now->id].mag_in.size() >= 1) {
 				this->ammo_cnt = this->gun_stat[this->ptr_now->id].mag_in.front();//改良
 			}
