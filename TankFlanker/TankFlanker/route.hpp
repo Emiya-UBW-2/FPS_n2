@@ -21,13 +21,11 @@ class main_c : Mainclass {
 	std::vector<Items> item_data;	//èEÇ¶ÇÈÉAÉCÉeÉÄ
 	//ê›íË
 	bool oldv = false;
-
 	bool oldv_1 = false;
 	bool oldv_2 = false;
 	bool oldv_3 = false;
 
 	bool start_c = true;
-	bool start_c2 = true;
 	bool ending = true;
 	//
 public:
@@ -592,18 +590,16 @@ public:
 								}
 								//ë´
 								{
+									//ç∂
 									if (Drawparts->tracker_num.size() > 1) {
 										auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[1]];
 										Drawparts->GetDevicePositionVR(Drawparts->tracker_num[1], &mine.pos_LEFTREG, &mine.mat_LEFTREG);
-
 										c.mat_LEFTREG = MATRIX_ref::Axis1(c.mat_LEFTREG.xvec()*-1.f, c.mat_LEFTREG.yvec(), c.mat_LEFTREG.zvec()*-1.f);
-
 										if (mine.start_c || (ptr_.turn && ptr_.now) != oldv_2) {
 											mine.mat_LEFTREG_rep = mine.mat_LEFTREG;
 										}
 										oldv_2 = ptr_.turn && ptr_.now;
 										mine.mat_LEFTREG = MATRIX_ref::RotZ(deg2rad(90))*MATRIX_ref::RotX(deg2rad(-30))*MATRIX_ref::RotY(deg2rad(30))*mine.mat_LEFTREG_rep.Inverse()*mine.mat_LEFTREG;
-
 										mine.pos_LEFTREG = mine.pos_LEFTREG + (mine.pos - mine.rec_HMD);
 										{
 											//äÓèÄ
@@ -625,9 +621,41 @@ public:
 											c.body.SetFrameLocalMatrix(c.LEFTreg_f.first, MATRIX_ref::RotZ(deg2rad(-60))* MATRIX_ref::RotX(deg2rad(80))* c.mat_LEFTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.LEFTreg_f.second));
 										}
 									}
+									//âE
 									if (Drawparts->tracker_num.size() > 2) {
+										auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[2]];
 										Drawparts->GetDevicePositionVR(Drawparts->tracker_num[2], &mine.pos_RIGHTREG, &mine.mat_RIGHTREG);
+										c.mat_RIGHTREG = MATRIX_ref::Axis1(c.mat_RIGHTREG.xvec()*-1.f, c.mat_RIGHTREG.yvec(), c.mat_RIGHTREG.zvec()*-1.f);
+										if (mine.start_c || (ptr_.turn && ptr_.now) != oldv_3) {
+											mine.mat_RIGHTREG_rep = mine.mat_RIGHTREG;
+										}
+										oldv_3 = ptr_.turn && ptr_.now;
+										mine.mat_RIGHTREG = MATRIX_ref::RotZ(deg2rad(90))*MATRIX_ref::RotX(deg2rad(-30))*MATRIX_ref::RotY(deg2rad(30))*mine.mat_RIGHTREG_rep.Inverse()*mine.mat_RIGHTREG;
 										mine.pos_RIGHTREG = mine.pos_RIGHTREG + (mine.pos - mine.rec_HMD);
+										{
+											//äÓèÄ
+											VECTOR_ref tgt_pt = c.pos_RIGHTREG;
+											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//äÓèÄ
+											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0Ç∆Ç∑ÇÈ
+											float cos_t = getcos_tri((c.body.frame(c.RIGHTreg_f.first) - c.body.frame(c.RIGHTfoot2_f.first)).size(), (c.body.frame(c.RIGHTfoot2_f.first) - c.body.frame(c.RIGHTfoot1_f.first)).size(), (c.body.frame(c.RIGHTfoot1_f.first) - tgt_pt).size());
+											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+											//è„òr
+											c.body.SetFrameLocalMatrix(c.RIGHTfoot1_f.first, MATRIX_ref::Mtrans(c.RIGHTfoot1_f.second));
+											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHTfoot2_f.first) - c.body.frame(c.RIGHTfoot1_f.first), m_inv.Inverse()), vec_t);
+											c.body.SetFrameLocalMatrix(c.RIGHTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.RIGHTfoot1_f.second));
+											//â∫òr
+											c.body.SetFrameLocalMatrix(c.RIGHTfoot2_f.first, MATRIX_ref::Mtrans(c.RIGHTfoot2_f.second));
+											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.RIGHTreg_f.first) - c.body.frame(c.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+											c.body.SetFrameLocalMatrix(c.RIGHTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.RIGHTfoot2_f.second));
+											//éË
+											c.body.SetFrameLocalMatrix(c.RIGHTreg_f.first,
+												MATRIX_ref::RotZ(deg2rad(-60))* MATRIX_ref::RotX(deg2rad(80))*
+												c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTreg_f.second));
+
+											c.body.SetFrameLocalMatrix(c.RIGHTreg_f.first, 
+												MATRIX_ref::RotY(deg2rad(-10))* MATRIX_ref::RotZ(deg2rad(50))* MATRIX_ref::RotX(deg2rad(90))*
+												c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.RIGHTreg_f.second));
+										}
 									}
 
 								}
