@@ -1,4 +1,5 @@
 mode=semi
+mode=full
 mode=end
 shot_sound=1
 slide_sound=1

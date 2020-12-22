@@ -168,15 +168,13 @@ public:
 			this->mod.obj.SetMatrix(MGetIdent());
 			{
 				//フレーム
-				this->frame.resize(9);
+				this->frame.resize(6);
 				this->frame[0].first = INT_MAX;
 				this->frame[1].first = INT_MAX;
+				this->frame[2].first = INT_MAX;
 				this->frame[3].first = INT_MAX;
 				this->frame[4].first = INT_MAX;
 				this->frame[5].first = INT_MAX;
-				this->frame[6].first = INT_MAX;
-				this->frame[7].first = INT_MAX;
-				this->frame[8].first = INT_MAX;
 				for (int i = 0; i < this->mod.obj.frame_num(); i++) {
 					std::string s = this->mod.obj.frame_name(i);
 					if (s.find("mag_fall") != std::string::npos) {
@@ -186,20 +184,17 @@ public:
 						this->frame[1].second = this->mod.obj.frame(i + 1);
 					}
 					else if (s.find("mazzule") != std::string::npos) {
-						this->frame[3].first = i;//マズル
-					}
-					else if (s.find("trigger") != std::string::npos) {
-						this->frame[5].first = i + 1;//トリガー
+						this->frame[2].first = i;//マズル
 					}
 					else if (s.find("LEFT") != std::string::npos) {
-						this->frame[6].first = i;//左手
+						this->frame[3].first = i;//左手
 					}
 					else if (s.find("site") != std::string::npos) {
-						this->frame[7].first = i;//アイアンサイト
-						this->frame[7].second = this->mod.obj.frame(i);
+						this->frame[4].first = i;//アイアンサイト
+						this->frame[4].second = this->mod.obj.frame(i);
 					}
 					else if (s.find("RIGHT") != std::string::npos) {
-						this->frame[8].first = i;//左手
+						this->frame[5].first = i;//左手
 					}
 				}
 				//テキスト

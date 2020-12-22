@@ -629,7 +629,7 @@ public:
 										c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
 										{
 											//基準
-											VECTOR_ref tgt_pt = c.obj.frame(c.ptr_now->frame[8].first);
+											VECTOR_ref tgt_pt = c.obj.frame(c.ptr_now->frame[5].first);
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//基準
 											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0とする
 											float cos_t = getcos_tri((c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first)).size(), (c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(), (c.body.frame(c.RIGHTarm1_f.first) - tgt_pt).size());
@@ -672,10 +672,10 @@ public:
 										c.mat_LEFTHAND = c.mat_LEFTHAND*MATRIX_ref::RotAxis(c.mat_LEFTHAND.xvec(), deg2rad(-60));
 
 										{
-											float dist_ = (c.pos_LEFTHAND - c.obj.frame(c.ptr_now->frame[6].first)).size();
+											float dist_ = (c.pos_LEFTHAND - c.obj.frame(c.ptr_now->frame[3].first)).size();
 											if (dist_ <= 0.1f && (!c.reloadf || !c.down_mag)) {
 												c.LEFT_hand = true;
-												c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first) - (c.pos - c.rec_HMD)+ (c.pos - c.rec_HMD);
+												c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[3].first) - (c.pos - c.rec_HMD)+ (c.pos - c.rec_HMD);
 											}
 											else {
 												c.LEFT_hand = false;
@@ -806,8 +806,8 @@ public:
 								//視点
 								{
 									VECTOR_ref pv = VGet(0, 0, 0);
-									if (c.ptr_now->frame[7].first != INT_MAX) {
-										pv = c.ptr_now->frame[7].second;
+									if (c.ptr_now->frame[4].first != INT_MAX) {
+										pv = c.ptr_now->frame[4].second;
 									}
 									if (c.ads.first) {
 										easing_set(&c.gunpos, VGet(-0.f, 0.f - pv.y() + sin(DX_PI_F*2.f*(c.body.get_anime(1).time / c.body.get_anime(1).alltime))*0.001f*c.body.get_anime(1).per, -0.315f), 0.75f);
@@ -869,7 +869,7 @@ public:
 												c.pos_RIGHTHAND = c.pos_HMD - c.rec_HMD + MATRIX_ref::Vtrans(c.gunpos, c.mat_RIGHTHAND)+ (c.pos - c.rec_HMD);
 												c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
 												//基準
-												VECTOR_ref tgt_pt = c.obj.frame(c.ptr_now->frame[8].first);
+												VECTOR_ref tgt_pt = c.obj.frame(c.ptr_now->frame[5].first);
 												VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());
 												VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0とする
 												float cos_t = getcos_tri((c.body.frame(c.RIGHThand_f.first) - c.body.frame(c.RIGHTarm2_f.first)).size(), (c.body.frame(c.RIGHTarm2_f.first) - c.body.frame(c.RIGHTarm1_f.first)).size(), (c.body.frame(c.RIGHTarm1_f.first) - tgt_pt).size());
@@ -891,11 +891,11 @@ public:
 													c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[0].first) + c.mat_RIGHTHAND.yvec()*-0.05f;
 												}
 												else {
-													c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first);
+													c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[3].first);
 												}
 												if (!c.reloadf || !c.down_mag) {
 													c.LEFT_hand = true;
-													c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[6].first);
+													c.pos_LEFTHAND = c.obj.frame(c.ptr_now->frame[3].first);
 												}
 												else {
 													c.LEFT_hand = false;
@@ -948,7 +948,7 @@ public:
 									c.mat_RIGHTHAND = MATRIX_ref::RotY(deg2rad(45))* MATRIX_ref::RotX(deg2rad(-90))* c.body.GetFrameLocalWorldMatrix(c.RIGHThand2_f.first);
 									c.pos_RIGHTHAND = c.body.frame(c.RIGHThand_f.first);
 									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
-									c.pos_RIGHTHAND -= c.obj.frame(c.ptr_now->frame[8].first) - c.pos_RIGHTHAND;
+									c.pos_RIGHTHAND -= c.obj.frame(c.ptr_now->frame[5].first) - c.pos_RIGHTHAND;
 									c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
 									//
 									c.mat_LEFTHAND = MATRIX_ref::RotY(deg2rad(-90 + 45))* MATRIX_ref::RotX(deg2rad(-90))*  (c.body.GetFrameLocalWorldMatrix(c.LEFThand2_f.first)*MATRIX_ref::Mtrans(c.body.frame(c.LEFThand2_f.first)).Inverse());
@@ -960,7 +960,7 @@ public:
 										c.mat_RIGHTHAND = MATRIX_ref::RotY(deg2rad(45))* MATRIX_ref::RotX(deg2rad(-90))* c.body.GetFrameLocalWorldMatrix(c.RIGHThand2_f.first);
 										c.pos_RIGHTHAND = c.body.frame(c.RIGHThand_f.first);
 										c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
-										c.pos_RIGHTHAND -= c.obj.frame(c.ptr_now->frame[8].first) - c.pos_RIGHTHAND;
+										c.pos_RIGHTHAND -= c.obj.frame(c.ptr_now->frame[5].first) - c.pos_RIGHTHAND;
 										c.obj.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
 										//
 										c.mat_LEFTHAND = MATRIX_ref::RotY(deg2rad(-90 + 45))* MATRIX_ref::RotX(deg2rad(-90))*  (c.body.GetFrameLocalWorldMatrix(c.LEFThand2_f.first)*MATRIX_ref::Mtrans(c.body.frame(c.LEFThand2_f.first)).Inverse());
@@ -1093,10 +1093,10 @@ public:
 												MATRIX_ref::RotY(deg2rad(float(int(c.ptr_now->recoil_xdn*100.f) + GetRand(int((c.ptr_now->recoil_xup - c.ptr_now->recoil_xdn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f))))*
 												MATRIX_ref::RotX(deg2rad(float(int(c.ptr_now->recoil_ydn*100.f) + GetRand(int((c.ptr_now->recoil_yup - c.ptr_now->recoil_ydn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f)))));
 											//弾
-											c.bullet[c.use_bullet].set(&c.ptr_now->ammo[0], c.obj.frame(c.ptr_now->frame[3].first), c.mat_RIGHTHAND.zvec()*-1.f);
+											c.bullet[c.use_bullet].set(&c.ptr_now->ammo[0], c.obj.frame(c.ptr_now->frame[2].first), c.mat_RIGHTHAND.zvec()*-1.f);
 											//エフェクト
-											c.effcs[ef_fire].set(c.obj.frame(c.ptr_now->frame[3].first), c.mat_RIGHTHAND.zvec()*-1.f, 0.0025f / 0.1f);
-											c.effcs_gun[c.use_effcsgun].effect.set(c.obj.frame(c.ptr_now->frame[3].first), c.mat_RIGHTHAND.zvec()*-1.f, 0.11f / 0.1f);
+											c.effcs[ef_fire].set(c.obj.frame(c.ptr_now->frame[2].first), c.mat_RIGHTHAND.zvec()*-1.f, 0.0025f / 0.1f);
+											c.effcs_gun[c.use_effcsgun].effect.set(c.obj.frame(c.ptr_now->frame[2].first), c.mat_RIGHTHAND.zvec()*-1.f, 0.11f / 0.1f);
 											c.effcs_gun[c.use_effcsgun].effect.put(Drawparts->get_effHandle(ef_smoke));
 											c.effcs_gun[c.use_effcsgun].ptr = &c.bullet[c.use_bullet];
 											c.effcs_gun[c.use_effcsgun].cnt = 0.f;
