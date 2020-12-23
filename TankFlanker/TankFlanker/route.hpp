@@ -499,19 +499,20 @@ public:
 							}
 						}
 						if (Drawparts->use_vr) {
-							easing_set(&this->campos_TPS, VGet(-0.35f, 0.15f, 1.f), 0.95f);
+							easing_set(&this->campos_TPS, VGet(-0.35f, 0.125f, 3.f), 0.95f);
 						}
 						//
 						for (auto& c : chara) {
 							//•Ç‚»‚Ì‘¼‚Ì”»’è
 							{
-								VECTOR_ref pos_t = c.pos;
+								VECTOR_ref pos_t2 = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
+								VECTOR_ref pos_t = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
 								pos_t += c.add_pos;
 								//•Ç
 								{
-									mapparts->map_col_wall(c.pos, &pos_t);
-									if ((c.add_pos - (pos_t - c.pos)).size() != 0.f) {
-										c.add_pos = pos_t - c.pos;
+									mapparts->map_col_wall(pos_t2, &pos_t);
+									if ((c.add_pos - (pos_t - pos_t2)).size() != 0.f) {
+										c.add_pos = pos_t - pos_t2;
 										if (c.add_ypos == 0.f) {
 											c.add_pos_buf = c.add_pos;
 										}
@@ -552,7 +553,7 @@ public:
 									}
 								}
 								//”½‰f
-								c.pos = pos_t;
+								c.pos = pos_t - (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) + c.rec_HMD;
 							}
 							//pos
 							if (Drawparts->use_vr && (&c == &mine)) {
@@ -598,13 +599,15 @@ public:
 											mine.mat_LEFTREG_rep = mine.mat_LEFTREG;
 										}
 										oldv_2 = ptr_.turn && ptr_.now;
-										mine.mat_LEFTREG = MATRIX_ref::RotZ(deg2rad(90))*MATRIX_ref::RotX(deg2rad(-30))*MATRIX_ref::RotY(deg2rad(30))*mine.mat_LEFTREG_rep.Inverse()*mine.mat_LEFTREG;
+										mine.mat_LEFTREG = 
+											MATRIX_ref::RotY(deg2rad(90+60-10))*
+											mine.mat_LEFTREG_rep.Inverse()*mine.mat_LEFTREG;
 										mine.pos_LEFTREG = mine.pos_LEFTREG + (mine.pos - mine.rec_HMD);
 										{
 											//Šî€
 											VECTOR_ref tgt_pt = c.pos_LEFTREG;
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.LEFTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
+											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, 1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
 											float cos_t = getcos_tri((c.body.frame(c.frame_.LEFTreg_f.first) - c.body.frame(c.frame_.LEFTfoot2_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot2_f.first) - c.body.frame(c.frame_.LEFTfoot1_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot1_f.first) - tgt_pt).size());
 											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 											//ã˜r
@@ -617,7 +620,7 @@ public:
 											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_.LEFTreg_f.first) - c.body.frame(c.frame_.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
 											c.body.SetFrameLocalMatrix(c.frame_.LEFTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_.LEFTfoot2_f.second));
 											//Žè
-											c.body.SetFrameLocalMatrix(c.frame_.LEFTreg_f.first, MATRIX_ref::RotZ(deg2rad(-60))* MATRIX_ref::RotX(deg2rad(80))* c.mat_LEFTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_.LEFTreg_f.second));
+											c.body.SetFrameLocalMatrix(c.frame_.LEFTreg_f.first, c.mat_LEFTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_.LEFTreg_f.second));
 										}
 									}
 									//‰E
@@ -629,13 +632,15 @@ public:
 											mine.mat_RIGHTREG_rep = mine.mat_RIGHTREG;
 										}
 										oldv_3 = ptr_.turn && ptr_.now;
-										mine.mat_RIGHTREG = MATRIX_ref::RotZ(deg2rad(90))*MATRIX_ref::RotX(deg2rad(-30))*MATRIX_ref::RotY(deg2rad(30))*mine.mat_RIGHTREG_rep.Inverse()*mine.mat_RIGHTREG;
+										mine.mat_RIGHTREG = 
+											MATRIX_ref::RotY(deg2rad(180-22-10))*
+											mine.mat_RIGHTREG_rep.Inverse()*mine.mat_RIGHTREG;
 										mine.pos_RIGHTREG = mine.pos_RIGHTREG + (mine.pos - mine.rec_HMD);
 										{
 											//Šî€
 											VECTOR_ref tgt_pt = c.pos_RIGHTREG;
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
+											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, 1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
 											float cos_t = getcos_tri((c.body.frame(c.frame_.RIGHTreg_f.first) - c.body.frame(c.frame_.RIGHTfoot2_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot2_f.first) - c.body.frame(c.frame_.RIGHTfoot1_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot1_f.first) - tgt_pt).size());
 											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 											//ã˜r
@@ -647,13 +652,7 @@ public:
 											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_.RIGHTreg_f.first) - c.body.frame(c.frame_.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
 											c.body.SetFrameLocalMatrix(c.frame_.RIGHTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_.RIGHTfoot2_f.second));
 											//Žè
-											c.body.SetFrameLocalMatrix(c.frame_.RIGHTreg_f.first,
-												MATRIX_ref::RotZ(deg2rad(-60))* MATRIX_ref::RotX(deg2rad(80))*
-												c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_.RIGHTreg_f.second));
-
-											c.body.SetFrameLocalMatrix(c.frame_.RIGHTreg_f.first,
-												MATRIX_ref::RotY(deg2rad(-10))* MATRIX_ref::RotZ(deg2rad(50))* MATRIX_ref::RotX(deg2rad(90))*
-												c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_.RIGHTreg_f.second));
+											c.body.SetFrameLocalMatrix(c.frame_.RIGHTreg_f.first, c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_.RIGHTreg_f.second));
 										}
 									}
 
@@ -1300,16 +1299,16 @@ public:
 						{
 							{
 								//sky
-								Hostpass2parts->SkyScreen.SetDraw_Screen(cam_easy.campos - cam_easy.camvec, VGet(0, 0, 0), cam_easy.camup, cam_easy.fov, 1000.0f, 5000.0f);
+								Hostpassparts->SkyScreen.SetDraw_Screen(cam_easy.campos - cam_easy.camvec, VGet(0, 0, 0), cam_easy.camup, cam_easy.fov, 1000.0f, 5000.0f);
 								{
 									mapparts->sky_draw();
 								}
 								//”íŽÊ‘Ì[“x•`‰æ
-								Hostpass2parts->dof(draw_by_shadow, cam_easy);
+								Hostpassparts->dof(draw_by_shadow, cam_easy);
 								//ÅI•`‰æ
-								Hostpass2parts->MAIN_Screen.SetDraw_Screen();
+								Hostpassparts->MAIN_Screen.SetDraw_Screen();
 								{
-									Hostpass2parts->bloom(255);//ƒuƒ‹[ƒ€
+									Hostpassparts->bloom(255);//ƒuƒ‹[ƒ€
 								}
 							}
 							//VR‚ÉˆÚ‚·
@@ -1317,7 +1316,7 @@ public:
 								SetCameraNearFar(0.01f, 2.f);
 								SetUseZBuffer3D(FALSE);												//zbufuse
 								SetWriteZBuffer3D(FALSE);											//zbufwrite
-								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpass2parts->MAIN_Screen.get(), TRUE);
+								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->MAIN_Screen.get(), TRUE);
 								SetUseZBuffer3D(TRUE);												//zbufuse
 								SetWriteZBuffer3D(TRUE);											//zbufwrite
 								//UI
@@ -1365,6 +1364,13 @@ public:
 							this->TPS.get_in(CheckHitKey(KEY_INPUT_LCONTROL) != 0);
 							VECTOR_ref cam = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(this->campos_TPS, mine.mat_HMD);
 							VECTOR_ref vec = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.125f, 0.f), mine.mat_HMD);
+							if (Drawparts->use_vr) {
+								MATRIX_ref mat = (mine.obj.GetMatrix()*MATRIX_ref::Mtrans(mine.pos_RIGHTHAND).Inverse());
+								//mat = MATRIX_ref::Axis1(mat.xvec()*-1.f, mat.yvec(), mat.zvec()*-1.f);
+
+								cam = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(this->campos_TPS, mat);
+								vec = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.125f, 0.f), mat);
+							}
 							//TPSŽ‹“_
 							if (this->TPS.first) {
 								//sky
@@ -1376,23 +1382,23 @@ public:
 								cam_tmp.near_ = 0.2f;
 								cam_tmp.far_ = 100.f;
 
-								Hostpassparts->SkyScreen.SetDraw_Screen(cam_tmp.campos - cam_tmp.camvec, VGet(0, 0, 0), cam_tmp.camup, cam_tmp.fov, 1000.0f, 5000.0f);
+								Hostpass2parts->SkyScreen.SetDraw_Screen(cam_tmp.campos - cam_tmp.camvec, VGet(0, 0, 0), cam_tmp.camup, cam_tmp.fov, 1000.0f, 5000.0f);
 								{
 									mapparts->sky_draw();
 								}
 								//”íŽÊ‘Ì[“x•`‰æ
 								{
-									Hostpassparts->dof(draw_by_shadow, cam_tmp);
+									Hostpass2parts->dof(draw_by_shadow, cam_tmp);
 								}
 								//ÅI•`‰æ
-								Hostpassparts->MAIN_Screen.SetDraw_Screen();
+								Hostpass2parts->MAIN_Screen.SetDraw_Screen();
 								{
-									Hostpassparts->bloom(255);//ƒuƒ‹[ƒ€
+									Hostpass2parts->bloom(255);//ƒuƒ‹[ƒ€
 								}
 
 								GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, cam_tmp.campos, cam_tmp.camvec, cam_tmp.camup, cam_tmp.fov, cam_tmp.near_, cam_tmp.far_);
 								{
-									Hostpassparts->MAIN_Screen.DrawGraph(0, 0, true);
+									Hostpass2parts->MAIN_Screen.DrawGraph(0, 0, true);
 								}
 							}
 							else {//FPSŽ‹“_
