@@ -1330,7 +1330,7 @@ public:
 							//Screen2‚ÉˆÚ‚·
 							outScreen2.SetDraw_Screen();
 							{
-								Hostpass2parts->MAIN_Screen.DrawGraph(0, 0, true);
+								Hostpass2parts->get_main().DrawGraph(0, 0, true);
 								//UI
 								this->UI_Screen2.DrawGraph(0, 0, true);
 								//UI2
@@ -1358,7 +1358,7 @@ public:
 								Hostpass2parts->MAIN_draw();
 								GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), false);
 								{
-									Hostpass2parts->MAIN_Screen.DrawGraph(0, 0, true);
+									Hostpass2parts->get_main().DrawGraph(0, 0, true);
 								}
 							}
 							else {//FPSŽ‹“_
