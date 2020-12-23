@@ -1157,13 +1157,12 @@ public:
 												MATRIX_ref::RotX(deg2rad(float((int32_t)(c.ptr_now->recoil_ydn*100.f) + GetRand((int32_t)((c.ptr_now->recoil_yup - c.ptr_now->recoil_ydn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f)))));
 											//弾
 											c.bullet[c.use_bullet].set(&c.ptr_now->ammo[0], c.obj_gun.frame(c.ptr_now->frame[2].first), c.mat_RIGHTHAND.zvec()*-1.f);
+											++c.use_bullet %= c.bullet.size();//次のIDへ
 											//エフェクト
 											c.effcs[ef_fire].set(c.obj_gun.frame(c.ptr_now->frame[2].first), c.mat_RIGHTHAND.zvec()*-1.f, 0.0025f / 0.1f);
 											//サウンド
 											c.audio.shot.play_3D(c.pos_RIGHTHAND, 1.f);
 											c.audio.slide.play_3D(c.pos_RIGHTHAND, 1.f);
-											//次のIDへ
-											++c.use_bullet %= c.bullet.size();
 										}
 										//マガジン取得
 										if (c.reloadf && c.gun_stat[c.ptr_now->id].mag_in.size() >= 1) {
@@ -1201,41 +1200,7 @@ public:
 								c.obj_mag.SetMatrix(c.mat_mag* MATRIX_ref::Mtrans(c.pos_mag));
 								c.obj_gun.work_anime();
 								for (auto& a : c.bullet) {
-									if (a.flug) {
-										a.repos = a.pos;
-										a.pos += a.vec * (a.spec->speed / GetFPS());
-										//判定
-										{
-											auto p = mapparts->map_col_line(a.repos, a.pos, 0);
-											if (p.HitFlag == TRUE) {
-												a.pos = p.HitPosition;
-											}
-											//*
-											for (auto& tgt : chara) {
-												auto q = tgt.col.CollCheck_Line(a.repos, a.pos, -1);
-												if (q.HitFlag == TRUE) {
-													a.pos = q.HitPosition;
-													//hit
-													c.effcs[ef_reco].set(a.pos, q.Normal, 0.1f / 0.1f);
-													//
-													a.hit = true;
-													a.flug = false;
-													break;
-												}
-											}
-											if (p.HitFlag == TRUE && a.flug) {
-												a.flug = false;
-												c.effcs_gndhit[c.use_effcsgndhit].set(a.pos, p.Normal, 0.025f / 0.1f);
-												++c.use_effcsgndhit %= c.effcs_gndhit.size();
-											}
-											//*/
-										}
-										//消す(3秒たった、スピードが0以下、貫通が0以下)
-										if (a.cnt >= 3.f || a.spec->speed < 0.f || a.spec->pene <= 0.f) {
-											a.flug = false;
-										}
-										//
-									}
+									a.update(&c, &chara, mapparts);
 								}
 								//
 								for (auto& t : c.effcs) {
@@ -1287,25 +1252,26 @@ public:
 						}
 						Set3DSoundListenerPosAndFrontPosAndUpVec(cam_easy.campos.get(), cam_easy.camvec.get(), cam_easy.camup.get());
 						UpdateEffekseer3D();
-						//影用意
-						Drawparts->Ready_Shadow(cam_easy.campos,
-							[&] {
-							for (auto& mine : this->chara) { mine.Draw_chara(); }
-							for (auto& g : this->item_data) { g.Draw_item(); }
-						},
-							VGet(5.f, 2.5f, 5.f), 
-							VGet(5.f, 2.5f, 5.f)
-							);
 						//VR空間に適用
 						Drawparts->Move_Player();
-						//
+						//hit時に何かする部分
 						for (auto& a : mine.bullet) {
 							if (a.hit) {
 								a.hit = false;
 							}
 						}
-						//描画
+						//1P描画
 						{
+							//影用意
+							Drawparts->Ready_Shadow(cam_easy.campos,
+								[&] {
+								for (auto& mine : this->chara) { mine.Draw_chara(); }
+								for (auto& g : this->item_data) { g.Draw_item(); }
+							},
+								VGet(5.f, 2.5f, 5.f),
+								VGet(5.f, 2.5f, 5.f)
+								);
+							//書き込み
 							{
 								this->UI_Screen.SetDraw_Screen();
 								{
@@ -1321,14 +1287,12 @@ public:
 								SetCameraNearFar(0.01f, 2.f);
 								SetUseZBuffer3D(FALSE);												//zbufuse
 								SetWriteZBuffer3D(FALSE);											//zbufwrite
-								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->MAIN_Screen.get(), TRUE);
-								SetUseZBuffer3D(TRUE);												//zbufuse
-								SetWriteZBuffer3D(TRUE);											//zbufwrite
-								//UI
-								SetCameraNearFar(0.01f, 2.f);
-								SetUseZBuffer3D(FALSE);												//zbufuse
-								SetWriteZBuffer3D(FALSE);											//zbufwrite
-								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, this->UI_Screen.get(), TRUE);
+								{
+									//main
+									DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->MAIN_Screen.get(), TRUE);
+									//UI
+									DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, this->UI_Screen.get(), TRUE);
+								}
 								SetUseZBuffer3D(TRUE);												//zbufuse
 								SetWriteZBuffer3D(TRUE);											//zbufwrite
 								//UI2
@@ -1343,6 +1307,16 @@ public:
 							cam_easy2.camvec = cam_easy2.campos + ct.mat_HMD.zvec()*-1.f;
 							cam_easy2.camup = ct.mat_HMD.yvec();
 
+							//影用意
+							Drawparts->Ready_Shadow(cam_easy2.campos,
+								[&] {
+								for (auto& mine : this->chara) { mine.Draw_chara(); }
+								for (auto& g : this->item_data) { g.Draw_item(); }
+							},
+								VGet(5.f, 2.5f, 5.f),
+								VGet(5.f, 2.5f, 5.f)
+								);
+							//書き込み
 							{
 								this->UI_Screen2.SetDraw_Screen();
 								{
@@ -1353,7 +1327,6 @@ public:
 								//最終描画
 								Hostpass2parts->MAIN_draw();
 							}
-
 							//Screen2に移す
 							outScreen2.SetDraw_Screen();
 							{

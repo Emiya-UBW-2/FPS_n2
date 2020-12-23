@@ -41,7 +41,6 @@ public:
 			Effekseer_Sync3DSetting();
 			GraphFilter(FarScreen.get(), DX_GRAPH_FILTER_GAUSS, 16, 200);
 			FarScreen.DrawGraph(0, 0, false);
-			UpdateEffekseer3D();
 			doing();
 			DrawEffekseer3D();
 			//

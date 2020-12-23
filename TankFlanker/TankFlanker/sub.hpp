@@ -72,8 +72,8 @@ private:
 		std::string name;
 		int cap = 1;
 		std::vector<Ammos> ammo;
-
 		MV1 obj;
+
 		void set(void) {
 			if (this->name.find("none") == std::string::npos) {
 				int mdata = FileRead_open(("data/mag/" + this->name + "/data.txt").c_str(), FALSE);
@@ -95,6 +95,7 @@ private:
 		}
 	};
 	//実際に発射される弾
+	class Chara;
 	class ammos {
 	private:
 	public:
@@ -104,21 +105,60 @@ private:
 		unsigned int color = 0;
 		Ammos* spec = nullptr;
 		float yadd = 0.f;
-		VECTOR_ref pos, repos, vec;
-
+		VECTOR_ref pos, repos;
+		VECTOR_ref vec;
 		void ready() {
 			this->flug = false;
-			this->color = GetColor(255, 255, 172);
 		}
 		void set(Ammos* spec_t, const VECTOR_ref& pos_t, const VECTOR_ref& vec_t) {
-			this->spec = spec_t;
-			this->pos = pos_t;
-			this->vec = vec_t;
 			this->hit = false;
 			this->flug = true;
 			this->cnt = 0.f;
+			this->color = GetColor(255, 255, 172);
+			this->spec = spec_t;
 			this->yadd = 0.f;
+
+			this->pos = pos_t;
 			this->repos = this->pos;
+			this->vec = vec_t;
+		}
+		template<class Y, class D>
+		void update(Chara* c,std::vector<Chara>* chara, std::unique_ptr<Y, D>& mapparts) {
+			if (this->flug) {
+				this->repos = this->pos;
+				this->pos += this->vec * (this->spec->speed / GetFPS());
+				//判定
+				{
+					auto p = mapparts->map_col_line(this->repos, this->pos, 0);
+					if (p.HitFlag == TRUE) {
+						this->pos = p.HitPosition;
+					}
+					//*
+					for (auto& tgt : *chara) {
+						auto q = tgt.col.CollCheck_Line(this->repos, this->pos, -1);
+						if (q.HitFlag == TRUE) {
+							this->pos = q.HitPosition;
+							//hit
+							c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
+							//
+							this->hit = true;
+							this->flug = false;
+							break;
+						}
+					}
+					if (p.HitFlag == TRUE && this->flug) {
+						this->flug = false;
+						c->effcs_gndhit[c->use_effcsgndhit].set(this->pos, p.Normal, 0.025f / 0.1f);
+						++c->use_effcsgndhit %= c->effcs_gndhit.size();
+					}
+					//*/
+				}
+				//消す(3秒たった、スピードが0以下、貫通が0以下)
+				if (this->cnt >= 3.f || this->spec->speed < 0.f || this->spec->pene <= 0.f) {
+					this->flug = false;
+				}
+				//
+			}
 		}
 		void draw() {
 			if (this->flug) {
