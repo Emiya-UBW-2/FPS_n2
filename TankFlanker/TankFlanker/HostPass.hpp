@@ -87,6 +87,7 @@ private:
 	GraphHandle GaussScreen_;	//描画スクリーン
 	GraphHandle BufScreen;		//描画スクリーン
 	GraphHandle BufScreen_;		//描画スクリーン
+	GraphHandle SkyScreen;		//空描画
 
 	int EXTEND = 4;
 	bool dof_flag = true;
@@ -95,8 +96,6 @@ private:
 	int disp_y = desky;
 public:
 	GraphHandle MAIN_Screen;	//描画スクリーン
-	GraphHandle SkyScreen;		//空描画
-	GraphHandle UI_Screen;		//描画スクリーン
 
 	HostPassEffect(const bool& dof_, const bool& bloom_, const int& xd, const int& yd) {
 		disp_x = xd;
@@ -107,8 +106,6 @@ public:
 		FarScreen_ = GraphHandle::Make(disp_x, disp_y, true);						//描画スクリーン
 		NearFarScreen_ = GraphHandle::Make(disp_x, disp_y, true);					//描画スクリーン
 		NearScreen_ = GraphHandle::Make(disp_x, disp_y, true);						//描画スクリーン
-		//UI用
-		UI_Screen = GraphHandle::Make(disp_x, disp_y, true);						//描画スクリーン
 		//ブルーム用
 		bloom_flag = bloom_;
 		GaussScreen_ = GraphHandle::Make(disp_x / EXTEND, disp_y / EXTEND, true);	//描画スクリーン
@@ -137,51 +134,69 @@ private:
 		}
 	}
 	//被写体深度描画
-	template <typename T2>
-	void near_dof(T2 doing, DXDraw::cam_info& cams, bool update_effekseer = true) {
+	template <typename T1, typename T2>
+	void near_dof(T1 sky_doing, T2 doing, DXDraw::cam_info& cams, bool update_effekseer = true) {
 		if (dof_flag) {
+			//空
+			SkyScreen.SetDraw_Screen(cams.campos - cams.camvec, VGet(0, 0, 0), cams.camup, cams.fov, 1000.0f, 5000.0f);
+			{
+				sky_doing();
+			}
 			//遠距離
 			FarScreen_.SetDraw_Screen(cams.campos, cams.camvec, cams.camup, cams.fov, cams.far_, 1000000.f);
-			SkyScreen.DrawGraph(0, 0, FALSE);
-			doing();
+			{
+				SkyScreen.DrawGraph(0, 0, FALSE);
+				doing();
+			}
 			//中間
 			NearFarScreen_.SetDraw_Screen(cams.campos, cams.camvec, cams.camup, cams.fov, cams.near_, cams.far_);
+			{
+				Effekseer_Sync3DSetting();
+				GraphFilter(FarScreen_.get(), DX_GRAPH_FILTER_GAUSS, 16, 200);
+				FarScreen_.DrawGraph(0, 0, false);
+				if (update_effekseer) {
+					UpdateEffekseer3D();
+				}
+				doing();
+				DrawEffekseer3D();
+			}
+			//至近
+			NearScreen_.SetDraw_Screen(cams.campos, cams.camvec, cams.camup, cams.fov, 0.1f, 0.1f + cams.near_);
+			{
+				NearFarScreen_.DrawGraph(0, 0, false);
+				doing();
+				DrawEffekseer3D();
+			}
+		}
+	}
+	//特に何もせず描画
+	template <typename T1, typename T2>
+	void near_nomal(T1 sky_doing, T2 doing, DXDraw::cam_info& cams, bool update_effekseer = true) {
+		//空
+		SkyScreen.SetDraw_Screen(cams.campos - cams.camvec, VGet(0, 0, 0), cams.camup, cams.fov, 1000.0f, 5000.0f);
+		{
+			sky_doing();
+		}
+		NearScreen_.SetDraw_Screen(cams.campos, cams.camvec, cams.camup, cams.fov, cams.near_, cams.far_);
+		{
 			Effekseer_Sync3DSetting();
-			GraphFilter(FarScreen_.get(), DX_GRAPH_FILTER_GAUSS, 16, 200);
-			FarScreen_.DrawGraph(0, 0, false);
+			SkyScreen.DrawGraph(0, 0, FALSE);
 			if (update_effekseer) {
 				UpdateEffekseer3D();
 			}
 			doing();
 			DrawEffekseer3D();
-			//至近
-			NearScreen_.SetDraw_Screen(cams.campos, cams.camvec, cams.camup, cams.fov, 0.1f, 0.1f + cams.near_);
-			NearFarScreen_.DrawGraph(0, 0, false);
-			doing();
-			DrawEffekseer3D();
 		}
-	}
-	//特に何もせず描画
-	template <typename T2>
-	void near_nomal(T2 doing, DXDraw::cam_info& cams, bool update_effekseer = true) {
-		NearScreen_.SetDraw_Screen(cams.campos, cams.camvec, cams.camup, cams.fov, cams.near_, cams.far_);
-		Effekseer_Sync3DSetting();
-		SkyScreen.DrawGraph(0, 0, FALSE);
-		if (update_effekseer) {
-			UpdateEffekseer3D();
-		}
-		doing();
-		DrawEffekseer3D();
 	}
 public:
-	template <typename T2>
-	void BUF_draw(T2 doing, DXDraw::cam_info& cams, bool update_effekseer = true) {
+	template <typename T1 ,typename T2>
+	void BUF_draw(T1 sky_doing, T2 doing, DXDraw::cam_info& cams, bool update_effekseer = true) {
 		//nearに描画
 		if (dof_flag) {
-			near_dof(doing, cams, update_effekseer);
+			near_dof(sky_doing, doing, cams, update_effekseer);
 		}
 		else {
-			near_nomal(doing, cams, update_effekseer);
+			near_nomal(sky_doing, doing, cams, update_effekseer);
 		}
 		//結果描画
 		BufScreen.SetDraw_Screen();

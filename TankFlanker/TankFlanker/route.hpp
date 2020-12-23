@@ -8,8 +8,11 @@ class main_c : Mainclass {
 
 	DXDraw::cam_info cam_easy;
 	DXDraw::cam_info cam_easy2;
+	DXDraw::cam_info cam_easy3;
 
 	GraphHandle outScreen2;
+	GraphHandle UI_Screen;																									//描画スクリーン
+	GraphHandle UI_Screen2;																									//描画スクリーン
 	//操作
 	VECTOR_ref campos_TPS;			//カメラ
 	switchs TPS;					//操作スイッチ
@@ -43,16 +46,18 @@ public:
 			FileRead_close(mdata);
 			SetOutApplicationLogValidFlag(TRUE);	//log
 		}
-		auto Drawparts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, useVR_e, shadow_e);										//汎用
-		auto UIparts = std::make_unique<UI>();																					//UI
-		auto Debugparts = std::make_unique<DeBuG>(FRAME_RATE);																	//デバッグ
-		auto Hostpassparts = std::make_unique<HostPassEffect>(dof_e, bloom_e, Drawparts->disp_x, Drawparts->disp_y);			//ホストパスエフェクト(VR、フルスクリーン共用)
-		auto Hostpass2parts = std::make_unique<HostPassEffect>(dof_e, bloom_e, Drawparts->out_disp_x, Drawparts->out_disp_y);	//ホストパスエフェクト(フルスクリーン向け)
-		auto mapparts = std::make_unique<Mapclass>();																			//MAP
+		auto Drawparts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, useVR_e, shadow_e);							//汎用
+		auto UIparts = std::make_unique<UI>();																		//UI
+		auto Debugparts = std::make_unique<DeBuG>(FRAME_RATE);														//デバッグ
+		auto Hostpassparts = std::make_unique<HostPassEffect>(dof_e, bloom_e, Drawparts->disp_x, Drawparts->disp_y);//ホストパスエフェクト(VR、フルスクリーン共用)
+		UI_Screen = GraphHandle::Make(Drawparts->disp_x, Drawparts->disp_y, true);									//VR、フルスクリーン共用UI
+		auto Hostpass2parts = std::make_unique<HostPassEffect>(dof_e, bloom_e, deskx, desky);						//ホストパスエフェクト(フルスクリーン向け)
+		UI_Screen2 = GraphHandle::Make(deskx, desky, true);															//フルスクリーン向けUI
+		auto mapparts = std::make_unique<Mapclass>();																//MAP
 		//model
-		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);															//身体
-		MV1::Load("data/model/body/col.mv1", &this->body_col, true);															//身体
-		outScreen2 = GraphHandle::Make(Drawparts->out_disp_x, Drawparts->out_disp_y, true);										//描画スクリーン
+		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);												//身体
+		MV1::Load("data/model/body/col.mv1", &this->body_col, true);												//身体col
+		outScreen2 = GraphHandle::Make(deskx, desky, true);															//TPS用描画スクリーン
 		//GUNデータ
 		{
 			this->gun_data.resize(1);
@@ -71,7 +76,7 @@ public:
 			chara.resize(3);
 			auto& mine = chara[0];
 			//自機セット
-			mine.Ready_chara(this->gun_data, sel_g, this->body_obj,this->body_col);
+			mine.Ready_chara(this->gun_data, sel_g, this->body_obj, this->body_col);
 			mine.Set_chara_Position(VGet(0.0f, 4.0f, 0.f), MATRIX_ref::RotY(DX_PI_F));
 			mine.Set_chara();
 			//その他
@@ -124,6 +129,16 @@ public:
 				}
 				mine.start_c = true;
 				SetMousePoint(deskx / 2, desky / 2);
+
+				cam_easy.fov = deg2rad(Drawparts->use_vr ? 90 : 45);	//
+				cam_easy.near_ = 0.1f;
+				cam_easy.far_ = 1000.f;
+				cam_easy2.fov = deg2rad(45);	//
+				cam_easy2.near_ = 0.1f;
+				cam_easy2.far_ = 1000.f;
+				cam_easy3.fov = deg2rad(45);
+				cam_easy3.near_ = 0.1f;
+				cam_easy3.far_ = 1000.f;
 				//
 				while (ProcessMessage() == 0) {
 					const auto waits = GetNowHiPerformanceCount();
@@ -1269,9 +1284,6 @@ public:
 								cam_easy.camvec = cam_easy.campos + mine.mat_HMD.zvec()*-1.f;
 								cam_easy.camup = mine.mat_HMD.yvec();
 							}
-							cam_easy.fov = deg2rad(Drawparts->use_vr ? 90 : 45);	//
-							cam_easy.near_ = 0.1f;
-							cam_easy.far_ = 1000.f;
 						}
 						Set3DSoundListenerPosAndFrontPosAndUpVec(cam_easy.campos.get(), cam_easy.camvec.get(), cam_easy.camup.get());
 						UpdateEffekseer3D();
@@ -1295,17 +1307,12 @@ public:
 						//描画
 						{
 							{
-								Hostpassparts->UI_Screen.SetDraw_Screen();
+								this->UI_Screen.SetDraw_Screen();
 								{
 									UIparts->set_draw(mine, Drawparts->use_vr);
 								}
-								//sky
-								Hostpassparts->SkyScreen.SetDraw_Screen(cam_easy.campos - cam_easy.camvec, VGet(0, 0, 0), cam_easy.camup, cam_easy.fov, 1000.0f, 5000.0f);
-								{
-									mapparts->sky_draw();
-								}
 								//被写体深度描画
-								Hostpassparts->BUF_draw(draw_by_shadow, cam_easy);
+								Hostpassparts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, cam_easy);
 								//最終描画
 								Hostpassparts->MAIN_draw();
 							}
@@ -1321,7 +1328,7 @@ public:
 								SetCameraNearFar(0.01f, 2.f);
 								SetUseZBuffer3D(FALSE);												//zbufuse
 								SetWriteZBuffer3D(FALSE);											//zbufwrite
-								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->UI_Screen.get(), TRUE);
+								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, this->UI_Screen.get(), TRUE);
 								SetUseZBuffer3D(TRUE);												//zbufuse
 								SetWriteZBuffer3D(TRUE);											//zbufwrite
 								//UI2
@@ -1335,32 +1342,24 @@ public:
 							cam_easy2.campos = ct.pos + ct.pos_HMD - ct.rec_HMD;
 							cam_easy2.camvec = cam_easy2.campos + ct.mat_HMD.zvec()*-1.f;
 							cam_easy2.camup = ct.mat_HMD.yvec();
-							cam_easy2.fov = deg2rad(45);	//
-							cam_easy2.near_ = 0.1f;
-							cam_easy2.far_ = 1000.f;
 
 							{
-								Hostpass2parts->UI_Screen.SetDraw_Screen();
+								this->UI_Screen2.SetDraw_Screen();
 								{
 									UIparts->set_draw(mine, false);
 								}
-								//sky
-								Hostpass2parts->SkyScreen.SetDraw_Screen(cam_easy2.campos - cam_easy2.camvec, VGet(0, 0, 0), cam_easy2.camup, cam_easy2.fov, 1000.0f, 5000.0f);
-								{
-									mapparts->sky_draw();
-								}
 								//被写体深度描画
-								Hostpass2parts->BUF_draw(draw_by_shadow, cam_easy2);
+								Hostpass2parts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, cam_easy2);
 								//最終描画
 								Hostpass2parts->MAIN_draw();
 							}
 
 							//Screen2に移す
-							outScreen2.SetDraw_Screen(cam_easy2.campos, cam_easy2.camvec, cam_easy2.camup, cam_easy2.fov, cam_easy2.near_, cam_easy2.far_);
+							outScreen2.SetDraw_Screen();
 							{
 								Hostpass2parts->MAIN_Screen.DrawGraph(0, 0, true);
 								//UI
-								Hostpass2parts->UI_Screen.DrawGraph(0, 0, true);
+								this->UI_Screen2.DrawGraph(0, 0, true);
 								//UI2
 								UIparts->item_draw(this->item_data, cam_easy2.campos);
 							}
@@ -1370,30 +1369,21 @@ public:
 							this->TPS.get_in(CheckHitKey(KEY_INPUT_LCONTROL) != 0);
 							//TPS視点
 							if (this->TPS.first) {
-								DXDraw::cam_info cam_tmp;
-								cam_tmp.campos = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(this->campos_TPS, mine.mat_HMD);
-								cam_tmp.camvec = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.125f, 0.f), mine.mat_HMD);
+								cam_easy3.campos = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(this->campos_TPS, mine.mat_HMD);
+								cam_easy3.camvec = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.125f, 0.f), mine.mat_HMD);
 								if (Drawparts->use_vr) {
 									MATRIX_ref mat = (mine.obj_gun.GetMatrix()*MATRIX_ref::Mtrans(mine.pos_RIGHTHAND).Inverse());
-									cam_tmp.campos = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(this->campos_TPS, mat);
-									cam_tmp.camvec = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.125f, 0.f), mat);
+									cam_easy3.campos = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(this->campos_TPS, mat);
+									cam_easy3.camvec = mine.pos - mine.rec_HMD + mine.pos_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.125f, 0.f), mat);
 								}
-								cam_tmp.camup = VGet(0, 1.f, 0);
-								cam_tmp.fov = deg2rad(45);
-								cam_tmp.near_ = 0.2f;
-								cam_tmp.far_ = 100.f;
-								//sky
-								Hostpass2parts->SkyScreen.SetDraw_Screen(cam_tmp.campos - cam_tmp.camvec, VGet(0, 0, 0), cam_tmp.camup, cam_tmp.fov, 1000.0f, 5000.0f);
-								{
-									mapparts->sky_draw();
-								}
+								cam_easy3.camup = VGet(0, 1.f, 0);
 								//被写体深度描画
 								{
-									Hostpass2parts->BUF_draw(draw_by_shadow, cam_tmp);
+									Hostpass2parts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, cam_easy3);
 								}
 								//最終描画
 								Hostpass2parts->MAIN_draw();
-								GraphHandle::SetDraw_Screen((int32_t)DX_SCREEN_BACK, cam_tmp.campos, cam_tmp.camvec, cam_tmp.camup, cam_tmp.fov, cam_tmp.near_, cam_tmp.far_);
+								GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), false);
 								{
 									Hostpass2parts->MAIN_Screen.DrawGraph(0, 0, true);
 								}
