@@ -13,15 +13,10 @@ private:
 	//MV1 tree_model, tree_far;				    //–Ø
 	MV1 sky;	  //‹ó
 	//MV1 sea;	  //ŠC
-	int disp_x = 1920;
-	int disp_y = 1080;
-
 	SoundHandle envi;
 public:
 
-	Mapclass(const int& xd, const int& yd) {
-		disp_x = xd;
-		disp_y = yd;
+	Mapclass() {
 	}
 	~Mapclass() {
 
@@ -62,10 +57,10 @@ public:
 			while (true) {
 				auto p = getparams::_str(mdata);
 				if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
-					int p1 = 0;
+					size_t p1 = 0;
 					float p2 = 0.f, p3 = 0.f, p4 = 0.f;
 					for (auto& g : gun_data) {
-						if (p.find(g.mag.name) != std::string::npos) {
+						if (p.find(g.magazine.name) != std::string::npos) {
 							p1 = g.id;
 							break;
 						}
