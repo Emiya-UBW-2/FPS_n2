@@ -259,69 +259,6 @@ public:
 	//player
 	class Chara {
 	private:
-		class sendstat {
-			
-		public:
-			MV1::ani anime[9];
-			MATRIX_ref gun_f;
-			MATRIX_ref bodys_f;
-
-			MATRIX_ref head_f;
-			MATRIX_ref RIGHTarm1_f;
-			MATRIX_ref RIGHTarm2_f;
-			MATRIX_ref RIGHThand_f;
-			MATRIX_ref LEFTarm1_f;
-			MATRIX_ref LEFTarm2_f;
-			MATRIX_ref LEFThand_f;
-			MATRIX_ref bodyg_f;
-			MATRIX_ref bodyb_f;
-			MATRIX_ref body_f;
-			bool start_c = true;
-
-			void get_data(Chara& data) {
-				for (int i = 0; i < 9; i++) {
-					this->anime[i].per = data.body.get_anime(i).per;
-					this->anime[i].time = data.body.get_anime(i).time;
-				}
-				this->gun_f = data.obj.GetMatrix();
-				this->bodys_f = data.body.GetMatrix();
-				this->head_f = data.body.GetFrameLocalMatrix(data.head_f.first);
-				this->RIGHTarm1_f = data.body.GetFrameLocalMatrix(data.RIGHTarm1_f.first);
-				this->RIGHTarm2_f = data.body.GetFrameLocalMatrix(data.RIGHTarm2_f.first);
-				this->RIGHThand_f = data.body.GetFrameLocalMatrix(data.RIGHThand_f.first);
-				this->LEFTarm1_f = data.body.GetFrameLocalMatrix(data.LEFTarm1_f.first);
-				this->LEFTarm2_f = data.body.GetFrameLocalMatrix(data.LEFTarm2_f.first);
-				this->LEFThand_f = data.body.GetFrameLocalMatrix(data.LEFThand_f.first);
-				this->bodyg_f = data.body.GetFrameLocalMatrix(data.bodyg_f.first);
-				this->bodyb_f = data.body.GetFrameLocalMatrix(data.bodyb_f.first);
-				this->body_f = data.body.GetFrameLocalMatrix(data.body_f.first);
-				this->start_c = data.start_c;
-			}
-			void put_data(Chara& data) {
-				for (int i = 0; i < 9; i++) {
-					data.body.get_anime(i).per = this->anime[i].per;
-					data.body.get_anime(i).time = this->anime[i].time;
-				}
-				data.obj.SetMatrix(this->gun_f*MATRIX_ref::Mtrans(VGet(0, 0, 5.f)));//
-				data.body.SetMatrix(this->bodys_f*MATRIX_ref::Mtrans(VGet(0, 0, 5.f)));//
-				data.body.SetFrameLocalMatrix(data.head_f.first, this->head_f);
-				data.body.SetFrameLocalMatrix(data.RIGHTarm1_f.first, this->RIGHTarm1_f);
-				data.body.SetFrameLocalMatrix(data.RIGHTarm2_f.first, this->RIGHTarm2_f);
-				data.body.SetFrameLocalMatrix(data.RIGHThand_f.first, this->RIGHThand_f);
-				data.body.SetFrameLocalMatrix(data.LEFTarm1_f.first, this->LEFTarm1_f);
-				data.body.SetFrameLocalMatrix(data.LEFTarm2_f.first, this->LEFTarm2_f);
-				data.body.SetFrameLocalMatrix(data.LEFThand_f.first, this->LEFThand_f);
-				data.body.SetFrameLocalMatrix(data.bodyg_f.first, this->bodyg_f);
-				data.body.SetFrameLocalMatrix(data.bodyb_f.first, this->bodyb_f);
-				data.body.SetFrameLocalMatrix(data.body_f.first, this->body_f);
-				data.start_c = this->start_c;
-			}
-		};
-		struct ef_guns {
-			EffectS effect;
-			ammos* ptr = nullptr;
-			float cnt = -1.f;
-		};
 		class ammo_obj {
 		public:
 			MV1 second;
@@ -392,8 +329,160 @@ public:
 			std::vector<int> mag_in;	//マガジン内
 			uint8_t select = 0;			//セレクター
 		};
+		class fs {
+		public:
+			//
+			frames head_f;
+			//
+			frames LEFTeye_f;
+			frames RIGHTeye_f;
+			//
+			frames bodyg_f;
+			frames bodyc_f;
+			frames bodyb_f;
+			frames body_f;
+			//右手座標系
+			frames RIGHThand2_f;
+			frames RIGHThand_f;
+			frames RIGHTarm2_f;
+			frames RIGHTarm1_f;
+			//左手座標系
+			frames LEFThand2_f;
+			frames LEFThand_f;
+			frames LEFTarm2_f;
+			frames LEFTarm1_f;
+
+			//右手座標系
+			frames RIGHTreg2_f;
+			frames RIGHTreg_f;
+			frames RIGHTfoot2_f;
+			frames RIGHTfoot1_f;
+			//左手座標系
+			frames LEFTreg2_f;
+			frames LEFTreg_f;
+			frames LEFTfoot2_f;
+			frames LEFTfoot1_f;
+
+			void get_frame(MV1& obj_,float*head_hight) {
+				for (int i = 0; i < int(obj_.frame_num()); i++) {
+					std::string p = obj_.frame_name(i);
+					if (p == std::string("グルーブ")) {
+						this->bodyg_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p == std::string("下半身")) {
+						this->bodyc_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+
+					else if (p.find("左足") != std::string::npos && p.find("首") == std::string::npos && p.find("先") == std::string::npos && p.find("ＩＫ") == std::string::npos) {
+						this->LEFTfoot1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("左ひざ") != std::string::npos) {
+						this->LEFTfoot2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("左足首") != std::string::npos && p.find("先") == std::string::npos) {
+						this->LEFTreg_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("左足首先") != std::string::npos) {
+						this->LEFTreg2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+
+					else if (p.find("右足") != std::string::npos && p.find("首") == std::string::npos && p.find("先") == std::string::npos && p.find("ＩＫ") == std::string::npos) {
+						this->RIGHTfoot1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("右ひざ") != std::string::npos) {
+						this->RIGHTfoot2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("右足首") != std::string::npos && p.find("先") == std::string::npos) {
+						this->RIGHTreg_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("右足首先") != std::string::npos) {
+						this->RIGHTreg2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("上半身") != std::string::npos && p.find("上半身2") == std::string::npos) {
+						this->bodyb_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("上半身2") != std::string::npos) {
+						this->body_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("頭") != std::string::npos && p.find("先") == std::string::npos) {
+						this->head_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+						*head_hight = obj_.frame(this->head_f.first).y();
+					}
+					else if (p.find("右目先") != std::string::npos) {
+						this->RIGHTeye_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("左目先") != std::string::npos) {
+						this->LEFTeye_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+
+					else if (p.find("右腕") != std::string::npos && p.find("捩") == std::string::npos) {
+						this->RIGHTarm1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("右ひじ") != std::string::npos) {
+						this->RIGHTarm2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p == std::string("右手首")) {
+						this->RIGHThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("右手首先") != std::string::npos) {
+						this->RIGHThand2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+
+					else if (p.find("左腕") != std::string::npos && p.find("捩") == std::string::npos) {
+						this->LEFTarm1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("左ひじ") != std::string::npos) {
+						this->LEFTarm2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p == std::string("左手首")) {
+						this->LEFThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+					else if (p.find("左手首先") != std::string::npos) {
+						this->LEFThand2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),obj_.GetFrameLocalMatrix(i)) };
+					}
+				}
+			}
+
+			void copy_frame(MV1& obj_mine, fs& frame_tgt_,MV1* obj_tgt) {
+				obj_tgt->SetMatrix(obj_mine.GetMatrix());
+				//
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.head_f.first, obj_mine.GetFrameLocalMatrix(this->head_f.first));
+				//
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.LEFTeye_f.first, obj_mine.GetFrameLocalMatrix(this->LEFTeye_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTeye_f.first, obj_mine.GetFrameLocalMatrix(this->RIGHTeye_f.first));
+				//
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.bodyg_f.first, obj_mine.GetFrameLocalMatrix(this->bodyg_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.bodyc_f.first, obj_mine.GetFrameLocalMatrix(this->bodyc_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.bodyb_f.first, obj_mine.GetFrameLocalMatrix(this->bodyb_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.body_f.first, obj_mine.GetFrameLocalMatrix(this->body_f.first));
+				//右手座標系
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.RIGHThand2_f.first, obj_mine.GetFrameLocalMatrix(this->RIGHThand2_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.RIGHThand_f.first, obj_mine.GetFrameLocalMatrix(this->RIGHThand_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTarm2_f.first, obj_mine.GetFrameLocalMatrix(this->RIGHTarm2_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTarm1_f.first, obj_mine.GetFrameLocalMatrix(this->RIGHTarm1_f.first));
+				//左手座標系
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.LEFThand2_f.first, obj_mine.GetFrameLocalMatrix(this->LEFThand2_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.LEFThand_f.first, obj_mine.GetFrameLocalMatrix(this->LEFThand_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.LEFTarm2_f.first, obj_mine.GetFrameLocalMatrix(this->LEFTarm2_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.LEFTarm1_f.first, obj_mine.GetFrameLocalMatrix(this->LEFTarm1_f.first));
+				//右手座標系
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTreg2_f.first, obj_mine.GetFrameLocalMatrix(this->RIGHTreg2_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTreg_f.first, obj_mine.GetFrameLocalMatrix(this->RIGHTreg_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTfoot2_f.first, obj_mine.GetFrameLocalMatrix(this->RIGHTfoot2_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTfoot1_f.first, obj_mine.GetFrameLocalMatrix(this->RIGHTfoot1_f.first));
+				//左手座標系
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.LEFTreg2_f.first, obj_mine.GetFrameLocalMatrix(this->LEFTreg2_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.LEFTreg_f.first, obj_mine.GetFrameLocalMatrix(this->LEFTreg_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.LEFTfoot2_f.first, obj_mine.GetFrameLocalMatrix(this->LEFTfoot2_f.first));
+				obj_tgt->SetFrameLocalMatrix(frame_tgt_.LEFTfoot1_f.first, obj_mine.GetFrameLocalMatrix(this->LEFTfoot1_f.first));
+
+				for (int i = 0; i < 9; i++) {
+					obj_tgt->get_anime(i).per = obj_mine.get_anime(i).per;
+					obj_tgt->get_anime(i).time = obj_mine.get_anime(i).time;
+				}
+			}
+		};
 	public:
-		sendstat senddata;
 		/*エフェクト*/
 		std::array<EffectS, effects> effcs;
 		size_t use_effcsgun = 0;
@@ -411,6 +500,7 @@ public:
 		/*モデル、音声*/
 		Audios audio;
 		MV1 obj, mag, body;
+		MV1 col;
 		/**/
 		float reload_cnt = 0.f;//リロード開始までのカウント
 		switchs trigger;//トリガー
@@ -443,148 +533,50 @@ public:
 		float body_xrad = 0.f;//胴体角度
 		float body_yrad = 0.f;//胴体角度
 		float body_zrad = 0.f;//胴体角度
-		frames head_f;
+		//フレーム
+		fs frame_;
 		float head_hight = 0.f;
-		frames LEFTeye_f;
-		frames RIGHTeye_f;
-		//
-		frames bodyg_f;
-		frames bodyc_f;
-		frames bodyb_f;
-		frames body_f;
+		float head_hight2 = 0.f;
 		//右手座標系
 		VECTOR_ref pos_RIGHTHAND;
 		MATRIX_ref mat_RIGHTHAND;
 		VECTOR_ref vecadd_RIGHTHAND, vecadd_RIGHTHAND_p;//
-		frames RIGHThand2_f;
-		frames RIGHThand_f;
-		frames RIGHTarm2_f;
-		frames RIGHTarm1_f;
 		//左手座標系
 		VECTOR_ref pos_LEFTHAND;
 		MATRIX_ref mat_LEFTHAND;
-		frames LEFThand2_f;
-		frames LEFThand_f;
-		frames LEFTarm2_f;
-		frames LEFTarm1_f;
-
 		//右手座標系
 		MATRIX_ref mat_RIGHTREG_rep;
 		VECTOR_ref pos_RIGHTREG;
 		MATRIX_ref mat_RIGHTREG;
-		frames RIGHTreg2_f;
-		frames RIGHTreg_f;
-		frames RIGHTfoot2_f;
-		frames RIGHTfoot1_f;
 		//左手座標系
 		MATRIX_ref mat_LEFTREG_rep;
 		VECTOR_ref pos_LEFTREG;
 		MATRIX_ref mat_LEFTREG;
-		frames LEFTreg2_f;
-		frames LEFTreg_f;
-		frames LEFTfoot2_f;
-		frames LEFTfoot1_f;
-
 		//
 		VECTOR_ref pos_WAIST_rep;
 		MATRIX_ref mat_WAIST_rep;
 		VECTOR_ref pos_WAIST;
 		MATRIX_ref mat_WAIST;
 		//
+		fs colframe_;
+		//
 		bool canget_magitem = false;
 		std::string canget_mag;
 		bool start_c = true;
 		//
-		void Ready_chara(std::vector<Gun>& gun_data, const size_t& itr, MV1& hand_) {
+		void Ready_chara(std::vector<Gun>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
 			this->gun_ptr = &gun_data[itr];
 			this->gun_stat.resize(gun_data.size());
 			for (auto& s : this->gun_stat) {
 				s.in = 0;
 				s.select = 0;
 			}
-			//手
-			hand_.DuplicateonAnime(&this->body);
-			for (int i = 0; i < int(this->body.frame_num()); i++) {
-				std::string p = this->body.frame_name(i);
-				if (p == std::string("グルーブ")) {
-					bodyg_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p == std::string("下半身")) {
-					bodyc_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-
-				else if (p.find("左足") != std::string::npos && p.find("首") == std::string::npos && p.find("先") == std::string::npos && p.find("ＩＫ") == std::string::npos) {
-					LEFTfoot1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("左ひざ") != std::string::npos) {
-					LEFTfoot2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("左足首") != std::string::npos && p.find("先") == std::string::npos) {
-					LEFTreg_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("左足首先") != std::string::npos) {
-					LEFTreg2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-
-				else if (p.find("右足") != std::string::npos && p.find("首") == std::string::npos && p.find("先") == std::string::npos && p.find("ＩＫ") == std::string::npos) {
-					RIGHTfoot1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("右ひざ") != std::string::npos) {
-					RIGHTfoot2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("右足首") != std::string::npos && p.find("先") == std::string::npos) {
-					RIGHTreg_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("右足首先") != std::string::npos) {
-					RIGHTreg2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-
-				else if (p.find("下半身先") != std::string::npos) {
-
-				}
-				else if (p.find("上半身") != std::string::npos && p.find("上半身2") == std::string::npos) {
-					bodyb_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("上半身2") != std::string::npos) {
-					body_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("頭") != std::string::npos && p.find("先") == std::string::npos) {
-					head_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-					head_hight = this->body.frame(head_f.first).y();
-				}
-				else if (p.find("右目先") != std::string::npos) {
-					RIGHTeye_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("左目先") != std::string::npos) {
-					LEFTeye_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-
-				else if (p.find("右腕") != std::string::npos && p.find("捩") == std::string::npos) {
-					RIGHTarm1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("右ひじ") != std::string::npos) {
-					RIGHTarm2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p == std::string("右手首")) {
-					RIGHThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("右手首先") != std::string::npos) {
-					RIGHThand2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-
-				else if (p.find("左腕") != std::string::npos && p.find("捩") == std::string::npos) {
-					LEFTarm1_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("左ひじ") != std::string::npos) {
-					LEFTarm2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p == std::string("左手首")) {
-					LEFThand_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-				else if (p.find("左手首先") != std::string::npos) {
-					LEFThand2_f = { int(i),MATRIX_ref::Vtrans(VGet(0,0,0),this->body.GetFrameLocalMatrix(i)) };
-				}
-			}
+			//身体
+			body_.DuplicateonAnime(&this->body);
+			frame_.get_frame(this->body, &this->head_hight);
+			col_.DuplicateonAnime(&this->col);
+			colframe_.get_frame(this->col,&this->head_hight2);
+			col.SetupCollInfo(8, 8, 8,-1);
 		}
 		void Set_chara_Position(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) {
 			this->spawn_pos = pos_;
@@ -633,6 +625,9 @@ public:
 		void Draw_chara() {
 			this->body.DrawModel();
 			this->obj.DrawModel();
+			DrawLine3D(this->obj.frame(this->ptr_now->frame[2].first).get(), (this->obj.frame(this->ptr_now->frame[2].first) - this->obj.GetMatrix().zvec()*100.f).get(), GetColor(255, 0, 0));
+			//this->col.DrawModel();
+
 			if ((!this->reloadf || this->down_mag) && this->gun_stat[this->ptr_now->id].mag_in.size() >= 1) {
 				this->mag.DrawModel();
 			}
@@ -655,9 +650,13 @@ public:
 			for (auto& t : this->effcs) {
 				t.handle.Dispose();
 			}
+			for (auto& t : this->effcs_gndhit) {
+				t.handle.Dispose();
+			}
 		}
 		void Init_chara() {
 			this->body.Dispose();
+			this->col.Dispose();
 			Delete_chara();
 			gun_ptr = nullptr;
 		}
