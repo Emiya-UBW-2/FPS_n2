@@ -1321,7 +1321,7 @@ public:
 								SetCameraNearFar(0.01f, 2.f);
 								SetUseZBuffer3D(FALSE);												//zbufuse
 								SetWriteZBuffer3D(FALSE);											//zbufwrite
-								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->MAIN_Screen.get(), TRUE);
+								DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->get_main().get(), TRUE);
 								SetUseZBuffer3D(TRUE);												//zbufuse
 								SetWriteZBuffer3D(TRUE);											//zbufwrite
 								//UI
@@ -1357,7 +1357,7 @@ public:
 							//Screen2‚ÉˆÚ‚·
 							outScreen2.SetDraw_Screen();
 							{
-								Hostpass2parts->MAIN_Screen.DrawGraph(0, 0, true);
+								Hostpass2parts->get_main().DrawGraph(0, 0, true);
 								//UI
 								this->UI_Screen2.DrawGraph(0, 0, true);
 								//UI2
@@ -1385,7 +1385,7 @@ public:
 								Hostpass2parts->MAIN_draw();
 								GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), false);
 								{
-									Hostpass2parts->MAIN_Screen.DrawGraph(0, 0, true);
+									Hostpass2parts->get_main().DrawGraph(0, 0, true);
 								}
 							}
 							else {//FPSŽ‹“_
