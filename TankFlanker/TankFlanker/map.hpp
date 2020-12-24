@@ -72,7 +72,7 @@ public:
 					item_data.resize(item_data.size() + 1);
 					item_data.back().Set_item(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(),1);
 					if (item_data.back().ptr != nullptr) {
-						item_data.back().cap = int(item_data.back().ptr->magazine->cap);
+						item_data.back().magazine.cap = int(item_data.back().ptr->magazine->cap);
 					}
 				}
 				else {

@@ -1049,7 +1049,7 @@ public:
 									easing_set(&c.vecadd_RIGHTHAND_p, VGet(0, 0, 1.f), 0.9f);
 									//リコイル
 									if (c.gunf) {
-										if (c.ammo_cnt >= 1) {
+										if (c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) {
 											c.obj_gun.get_anime(0).per = 1.f;
 											c.obj_gun.get_anime(1).per = 0.f;
 											c.obj_gun.get_anime(0).time += 60.f / GetFPS();
@@ -1069,65 +1069,95 @@ public:
 										}
 
 									}
-									{
 										//マガジン排出
-										if (c.obj_gun.get_anime(5).per >= 0.5f && !c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
-											c.audio.mag_down.play_3D(c.pos_RIGHTHAND, 1.f);
-											int32_t dnm = int32_t(c.ammo_cnt) - 1;
-											//弾数
-											if (c.ammo_cnt >= 1) {
-												c.ammo_cnt = 1;
-											}
-											else {
-												dnm = 0;
-											}
-											c.gun_stat[c.gun_ptr->id].in -= dnm;
-											//バイブレーション　バッテリー消費が激しいためコメントアウト
-											/*
-												Drawparts->Haptic(Drawparts->get_hand1_num(), unsigned short(60000));
-											*/
-											//マガジン排出
-											c.reload_cnt = 0.f;
-											c.gun_stat[c.gun_ptr->id].mag_in.erase(c.gun_stat[c.gun_ptr->id].mag_in.begin());
-											//マガジン排出
-											bool tt = false;
-											for (auto& g : this->item_data) {
-												if (g.ptr == nullptr && g.cate == 1) {
-													tt = true;
-													g.Set_item(c.gun_ptr, c.pos_mag, c.mat_mag, 1);
-													g.add = (c.obj_gun.frame(c.gun_ptr->frame[1].first) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).Norm()*-1.f / GetFPS();//排莢ベクトル
-													g.cap = dnm;
-													break;
-												}
-											}
-											if (!tt) {
-												this->item_data.resize(this->item_data.size() + 1);
-												auto& g = this->item_data.back();
+									if (c.obj_gun.get_anime(5).per >= 0.5f && !c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
+										//音
+										c.audio.mag_down.play_3D(c.pos_RIGHTHAND, 1.f);
+										//バイブレーション　バッテリー消費が激しいためコメントアウト
+										/*
+											Drawparts->Haptic(Drawparts->get_hand1_num(), unsigned short(60000));
+										*/
+										//弾数
+										auto dnm = (c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) ? c.gun_stat[c.gun_ptr->id].ammo_cnt - 1 : 0;
+										//マガジン排出
+										c.gun_stat[c.gun_ptr->id].mag_release();
+										c.reload_cnt = 0.f;
+										//マガジン排出
+										bool tt = false;
+										for (auto& g : this->item_data) {
+											if (g.ptr == nullptr && g.cate == 1) {
+												tt = true;
 												g.Set_item(c.gun_ptr, c.pos_mag, c.mat_mag, 1);
 												g.add = (c.obj_gun.frame(c.gun_ptr->frame[1].first) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).Norm()*-1.f / GetFPS();//排莢ベクトル
-												g.cap = dnm;
+												g.magazine.cap = dnm;
+												break;
 											}
-											//
-											c.reloadf = true;
 										}
-										//セレクター
-										if (c.selkey.second == 1) {
-											++c.gun_stat[c.gun_ptr->id].select %= c.gun_ptr->select.size();
+										if (!tt) {
+											this->item_data.resize(this->item_data.size() + 1);
+											auto& g = this->item_data.back();
+											g.Set_item(c.gun_ptr, c.pos_mag, c.mat_mag, 1);
+											g.add = (c.obj_gun.frame(c.gun_ptr->frame[1].first) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).Norm()*-1.f / GetFPS();//排莢ベクトル
+											g.magazine.cap = dnm;
 										}
+										//
+										c.reloadf = true;
 									}
-									//
+									//マガジン挿入
 									if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
-										c.reload_cnt += 1.f / GetFPS();
 										if (Drawparts->use_vr) {
 											if (c.reload_cnt < c.gun_ptr->reload_time) {
 												c.down_mag = false;
 											}
+											if (c.down_mag) {
+												if ((c.obj_mag.frame(3) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).size() <= 0.05f) {
+													c.obj_gun.get_anime(1).time = 0.f;
+													c.obj_gun.get_anime(0).per = 1.f;
+													c.obj_gun.get_anime(1).per = 0.f;
+													if (c.gun_stat[c.gun_ptr->id].ammo_cnt == 0) {
+														c.obj_gun.get_anime(3).per = 1.f;
+													}
+													c.audio.mag_set.play_3D(c.pos_RIGHTHAND, 1.f);
+													c.gun_stat[c.gun_ptr->id].mag_slide();//チャンバーに装填
+													c.reloadf = false;
+												}
+												c.pos_mag = c.pos_LEFTHAND;
+												c.mat_mag = c.obj_mag.GetFrameLocalMatrix(3)* (c.mat_LEFTHAND*MATRIX_ref::RotVec2(c.mat_LEFTHAND.yvec(), (c.obj_gun.frame(c.gun_ptr->frame[0].first) - c.pos_LEFTHAND)));
+											}
 										}
+										else {
+											if (c.down_mag) {
+												if (c.reload_cnt > c.gun_ptr->reload_time) {
+													c.obj_gun.get_anime(1).time = 0.f;
+													c.obj_gun.get_anime(0).per = 1.f;
+													c.obj_gun.get_anime(1).per = 0.f;
+													if (c.gun_stat[c.gun_ptr->id].ammo_cnt == 0) {
+														c.obj_gun.get_anime(3).per = 1.f;
+													}
+													c.audio.mag_set.play_3D(c.pos_RIGHTHAND, 1.f);
+													c.gun_stat[c.gun_ptr->id].mag_slide();//チャンバーに装填
+													c.reloadf = false;
+												}
+												c.pos_mag = c.pos_LEFTHAND;
+												c.mat_mag = c.mat_LEFTHAND;
+											}
+										}
+										c.reload_cnt += 1.f / GetFPS();//挿入までのカウント
+										//
+									}
+									else {
+										c.down_mag = false;
+										c.pos_mag = c.obj_gun.frame(c.gun_ptr->frame[1].first);
+										c.mat_mag = c.mat_RIGHTHAND;
+									}
+									//セレクター
+									if (c.selkey.second == 1) {
+										++c.gun_stat[c.gun_ptr->id].select %= c.gun_ptr->select.size();
 									}
 									//セフティ
 									easing_set(&c.obj_gun.get_anime(4).per, float(0.f), 0.5f);
 									//射撃
-									if (!c.gunf && c.ammo_cnt >= 1) {
+									if (!c.gunf && c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) {
 										if (c.gun_ptr->select[c.gun_stat[c.gun_ptr->id].select] == 2) {//フルオート用
 											c.trigger.second = 0;
 										}
@@ -1135,17 +1165,10 @@ public:
 									c.trigger.get_in(c.obj_gun.get_anime(2).per >= 0.5f);
 									if (c.trigger.second == 1) {
 										c.audio.trigger.play_3D(c.pos_RIGHTHAND, 1.f);
-									}
-
-									{
-										if (c.trigger.second == 1 && !c.gunf && c.ammo_cnt >= 1) {
+										if (!c.gunf && c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) {
 											c.gunf = true;
 											//弾数管理
-											c.ammo_cnt--;
-											c.gun_stat[c.gun_ptr->id].in--;
-											if (!c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1 && c.gun_stat[c.gun_ptr->id].mag_in.front() > 0) {
-												c.gun_stat[c.gun_ptr->id].mag_in.front()--;
-											}
+											c.gun_stat[c.gun_ptr->id].mag_shot(c.reloadf);
 											//持ち手を持つとココが相殺される
 											c.vecadd_RIGHTHAND_p = MATRIX_ref::Vtrans(c.vecadd_RIGHTHAND_p,
 												MATRIX_ref::RotY(deg2rad(float((int32_t)(c.gun_ptr->recoil_xdn*100.f) + GetRand((int32_t)((c.gun_ptr->recoil_xup - c.gun_ptr->recoil_xdn)*100.f))) / (100.f*(c.LEFT_hand ? 3.f : 1.f))))*
@@ -1158,37 +1181,6 @@ public:
 											//サウンド
 											c.audio.shot.play_3D(c.pos_RIGHTHAND, 1.f);
 											c.audio.slide.play_3D(c.pos_RIGHTHAND, 1.f);
-										}
-										//マガジン取得
-										if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
-											if (c.down_mag) {
-												if (Drawparts->use_vr) {
-													auto p = MATRIX_ref::RotVec2(c.mat_LEFTHAND.yvec(), (c.obj_gun.frame(c.gun_ptr->frame[0].first) - c.pos_LEFTHAND));
-													c.mat_mag = c.obj_mag.GetFrameLocalMatrix(3)* (c.mat_LEFTHAND*p);
-												}
-												else {
-													c.mat_mag = c.mat_LEFTHAND;
-												}
-												c.pos_mag = c.pos_LEFTHAND;
-												if (Drawparts->use_vr ? ((c.obj_mag.frame(3) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).size() <= 0.05f) : (c.reload_cnt > c.gun_ptr->reload_time)) {
-													c.obj_gun.get_anime(1).time = 0.f;
-													c.obj_gun.get_anime(0).per = 1.f;
-													c.obj_gun.get_anime(1).per = 0.f;
-													if (c.ammo_cnt == 0) {
-														c.obj_gun.get_anime(3).per = 1.f;
-													}
-													c.audio.mag_set.play_3D(c.pos_RIGHTHAND, 1.f);
-													if (c.ammo_cnt <= 1) {
-														c.ammo_cnt += c.gun_stat[c.gun_ptr->id].mag_in.front();
-													}
-													c.reloadf = false;
-												}
-											}
-										}
-										else {
-											c.down_mag = false;
-											c.mat_mag = c.mat_RIGHTHAND;
-											c.pos_mag = c.obj_gun.frame(c.gun_ptr->frame[1].first);
 										}
 									}
 								}

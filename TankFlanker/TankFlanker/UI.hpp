@@ -99,7 +99,7 @@ public:
 				}
 				if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 					//‹óŒx
-					if (chara.ammo_cnt == 0) {
+					if (chara.gun_stat[chara.gun_ptr->id].ammo_cnt == 0) {
 						font->DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += fonthight;
 					}
 				}
@@ -187,7 +187,7 @@ public:
 				//’e
 				{
 					font->DrawString(xp, yp, chara.gun_ptr->mod.name, GetColor(255, 255, 255));
-					font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2), GetColor(255, 255, 255), "%04d / %04d", chara.ammo_cnt, chara.gun_stat[chara.gun_ptr->id].in - chara.ammo_cnt);
+					font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2), GetColor(255, 255, 255), "%04d / %04d", chara.gun_stat[chara.gun_ptr->id].ammo_cnt, chara.gun_stat[chara.gun_ptr->id].ammo_total - chara.gun_stat[chara.gun_ptr->id].ammo_cnt);
 				}
 			}
 			//ƒ}ƒKƒWƒ“ŠÖ˜A(‰¼)
@@ -234,7 +234,7 @@ public:
 						DrawCircle(int(p.x()), int(p.y()), y_r(36), GetColor(255, 0, 0), FALSE, 3);
 						DrawCircle(int(p.x()), int(p.y()), y_r(24), GetColor(255, 0, 0));
 						font24.DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr->magazine->mod.name, GetColor(255, 0, 0));
-						font24.DrawStringFormat(int(p.x()) + y_r(36), int(p.y()) + y_r(36) + y_r(18), GetColor(255, 0, 0), "%d/%d", g.cap, g.ptr->magazine->cap);
+						font24.DrawStringFormat(int(p.x()) + y_r(36), int(p.y()) + y_r(36) + y_r(18), GetColor(255, 0, 0), "%d/%d", g.magazine.cap, g.ptr->magazine->cap);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}

@@ -176,14 +176,14 @@ public:
 		size_t id = 0;
 		Models mod;
 		/**/
-		int cap = 1;
+		size_t cap = 1;
 		std::vector<Ammos> ammo;
 		/**/
 		void set_data() {
 			this->mod.model.SetMatrix(MGetIdent());
 			{
 				int mdata = FileRead_open(("data/mag/" + this->mod.name + "/data.txt").c_str(), FALSE);
-				this->cap = getparams::_int(mdata);//口径
+				this->cap = getparams::_long(mdata);//口径
 				//弾データ
 				while (true) {
 					auto p = getparams::_str(mdata);
@@ -317,10 +317,59 @@ public:
 	//player
 	class Chara {
 	private:
-		struct gun_state {
-			int in = 0;				//所持弾数
-			std::vector<int> mag_in;	//マガジン内
+		struct gun_state {//銃のデータ
+			size_t ammo_cnt = 0;		//装弾数カウント
+			size_t ammo_total = 0;		//所持弾数
+			std::vector<size_t> mag_in;	//マガジン内
 			uint8_t select = 0;			//セレクター
+
+			void init() {
+				this->ammo_total = 0;
+				this->select = 0;
+			}
+			//マガジンを1つ追加(装填無し)
+			void mag_plus(Mags* magazine) {
+				this->ammo_total += magazine->cap;
+				this->mag_in.insert(this->mag_in.end(), magazine->cap);
+			}
+			//マガジンを1つ追加(装填あり)
+			void mag_insert(Mags* magazine) {
+				mag_plus(magazine);
+
+				if (this->mag_in.size() >= 1) {
+					this->ammo_cnt = this->mag_in.front();//改良
+				}
+				else {
+					this->ammo_cnt = std::clamp<size_t>(this->ammo_total, 0, magazine->cap);//改良
+				}
+			}
+			//マガジンを落とす
+			void mag_release() {
+				size_t dnm = this->ammo_cnt - 1;
+				//弾数
+				if (this->ammo_cnt >= 1) {
+					this->ammo_cnt = 1;
+				}
+				else {
+					dnm = 0;
+				}
+				this->ammo_total -= dnm;
+				this->mag_in.erase(this->mag_in.begin());
+			}
+			//射撃する
+			void mag_shot(const bool& reloadf) {
+				this->ammo_cnt--;
+				this->ammo_total--;
+				if (!reloadf && this->mag_in.size() >= 1 && this->mag_in.front() > 0) {
+					this->mag_in.front()--;
+				}
+			}
+			//スライドを引いて1発装填
+			void mag_slide() {
+				if (this->ammo_cnt <= 1) {
+					this->ammo_cnt += this->mag_in.front();
+				}
+			}
 		};
 		class fs {
 		public:
@@ -487,7 +536,6 @@ public:
 		//所持弾数などのデータ
 		std::vector<gun_state> gun_stat;
 		/*武器ポインタ*/
-		size_t ammo_cnt = 0;				//装弾数カウント
 		Gun* gun_ptr = nullptr;				//現在使用中の武装
 		/*モデル、音声*/
 		Audios audio;
@@ -572,20 +620,10 @@ public:
 			//マガジン
 			this->gun_stat.resize(gun_data.size());
 			for (auto& s : this->gun_stat) {
-				s.in = 0;
-				s.select = 0;
+				s.init();
 			}
-			//マガジン+1
-			{
-				this->gun_stat[this->gun_ptr->id].in += this->gun_ptr->magazine->cap;
-				this->gun_stat[this->gun_ptr->id].mag_in.insert(this->gun_stat[this->gun_ptr->id].mag_in.end(), this->gun_ptr->magazine->cap);
-				if (this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1) {
-					this->ammo_cnt = this->gun_stat[this->gun_ptr->id].mag_in.front();//改良
-				}
-				else {
-					this->ammo_cnt = std::clamp<size_t>(this->gun_stat[this->gun_ptr->id].in, 0, this->gun_ptr->magazine->cap);//改良
-				}
-			}
+
+			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
 
 			this->gunf = false;
 			this->vecadd_RIGHTHAND = VGet(0, 0, 1.f);
@@ -654,7 +692,7 @@ public:
 		MV1 obj;
 		Gun* ptr = nullptr;
 		//マガジン専用パラメーター
-		int cap = 0;
+		Mags magazine;
 		//
 		void Set_item(Gun*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_, int cat) {
 			bool choose = true;
@@ -730,8 +768,7 @@ public:
 					if (zz) {
 						chara.canget_mag = this->ptr->magazine->mod.name;
 						if (chara.getmag.second == 1) {
-							chara.gun_stat[this->ptr->id].in += this->cap;
-							chara.gun_stat[this->ptr->id].mag_in.insert(chara.gun_stat[this->ptr->id].mag_in.end(), this->cap);
+							chara.gun_stat[this->ptr->id].mag_plus(&(this->magazine));
 							if (chara.gun_stat[this->ptr->id].mag_in.size() == 1) {
 								chara.reloadf = true;
 							}
