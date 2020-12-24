@@ -31,7 +31,6 @@ private:
 		SoundHandle trigger;
 		SoundHandle mag_down;
 		SoundHandle mag_set;
-		SoundHandle case_down;
 
 		void set(int mdata) {
 			SetUseASyncLoadFlag(TRUE);
@@ -41,9 +40,27 @@ private:
 			trigger = SoundHandle::Load("data/audio/trigger_" + getparams::_str(mdata) + ".wav");
 			mag_down = SoundHandle::Load("data/audio/mag_down_" + getparams::_str(mdata) + ".wav");
 			mag_set = SoundHandle::Load("data/audio/mag_set_" + getparams::_str(mdata) + ".wav");
-			case_down = SoundHandle::Load("data/audio/case_" + getparams::_str(mdata) + ".wav");
 			SetCreate3DSoundFlag(FALSE);
 			SetUseASyncLoadFlag(FALSE);
+
+		}
+
+		void Duplicate(Audios& tgt) {
+			SetCreate3DSoundFlag(TRUE);
+			this->shot = tgt.shot.Duplicate();
+			this->slide = tgt.slide.Duplicate();
+			this->trigger = tgt.trigger.Duplicate();
+			this->mag_down = tgt.mag_down.Duplicate();
+			this->mag_set = tgt.mag_set.Duplicate();
+			SetCreate3DSoundFlag(FALSE);
+		}
+
+		void Dispose() {
+			this->shot.Dispose();
+			this->slide.Dispose();
+			this->trigger.Dispose();
+			this->mag_down.Dispose();
+			this->mag_set.Dispose();
 		}
 	};
 	//弾データ
@@ -65,37 +82,10 @@ private:
 			FileRead_close(mdata);
 		}
 	};
-	//マガジンデータ
-	class Mags {
-	private:
-	public:
-		std::string name;
-		int cap = 1;
-		std::vector<Ammos> ammo;
-		MV1 obj;
-
-		void set(void) {
-			if (this->name.find("none") == std::string::npos) {
-				int mdata = FileRead_open(("data/mag/" + this->name + "/data.txt").c_str(), FALSE);
-				this->cap = getparams::_int(mdata);//口径
-				//弾データ
-				while (true) {
-					auto p = getparams::_str(mdata);
-					if (getparams::getright(p.c_str()).find("end") != std::string::npos) {
-						break;
-					}
-					else {
-						this->ammo.resize(this->ammo.size() + 1);
-						this->ammo.back().name = p;
-					}
-				}
-				FileRead_close(mdata);
-				MV1::Load("data/mag/" + this->name + "/mag.mv1", &obj, true);
-			}
-		}
-	};
 	//実際に発射される弾
+public:
 	class Chara;
+private:
 	class ammos {
 	private:
 	public:
@@ -166,30 +156,59 @@ private:
 			}
 		}
 	};
+	class Models {
+	private:
+	public:
+		GraphHandle UIScreen;
+		MV1 model;
+		std::string name;
+		void set(std::string path, std::string named) {
+			name = named;
+			MV1::Load(path + named + "/model.mv1", &model, true);
+			UIScreen = GraphHandle::Load(path + named + "/pic.bmp");
+		}
+	};
 public:
+	//マガジンデータ
+	class Mags {
+	private:
+	public:
+		size_t id = 0;
+		Models mod;
+		/**/
+		int cap = 1;
+		std::vector<Ammos> ammo;
+		/**/
+		void set_data() {
+			this->mod.model.SetMatrix(MGetIdent());
+			{
+				int mdata = FileRead_open(("data/mag/" + this->mod.name + "/data.txt").c_str(), FALSE);
+				this->cap = getparams::_int(mdata);//口径
+				//弾データ
+				while (true) {
+					auto p = getparams::_str(mdata);
+					if (getparams::getright(p.c_str()).find("end") != std::string::npos) {
+						break;
+					}
+					else {
+						this->ammo.resize(this->ammo.size() + 1);
+						this->ammo.back().name = p;
+					}
+				}
+				FileRead_close(mdata);
+			}
+		}
+	};
 	//銃データ
 	class Gun {
 	private:
-		class Models {
-		private:
-		public:
-			GraphHandle UIScreen;
-			MV1 obj_gun;
-			std::string name;
-			void set(std::string named) {
-				name = named;
-				MV1::Load("data/gun/" + named + "/model.mv1", &obj_gun, true);
-				UIScreen = GraphHandle::Load("data/gun/" + named + "/pic.bmp");
-			}
-		};
 	public:
 		size_t id = 0;
-		std::string name;
+		Models mod;
+		/**/
 		std::vector<frames> frame;
 		std::vector <uint8_t> select;//セレクター
-		Models mod;
 		Audios audio;
-		size_t ammo_max = 0;//マガジンの装弾数
 		float recoil_xup = 0.f;
 		float recoil_xdn = 0.f;
 		float recoil_yup = 0.f;
@@ -199,10 +218,10 @@ public:
 		float ammo_pene = 10.f;//貫通
 		float ammo_damege = 10.f;//ダメージ
 		std::vector<Ammos> ammo;
-		Mags magazine;
-		void set_data() {
-			this->name = this->mod.name;
-			this->mod.obj_gun.SetMatrix(MGetIdent());
+		Mags* magazine;
+		/**/
+		void set_data(std::vector<Mags>& mag_data) {
+			this->mod.model.SetMatrix(MGetIdent());
 			{
 				//フレーム
 				this->frame.resize(6);
@@ -212,13 +231,13 @@ public:
 				this->frame[3].first = INT_MAX;
 				this->frame[4].first = INT_MAX;
 				this->frame[5].first = INT_MAX;
-				for (int i = 0; i < this->mod.obj_gun.frame_num(); i++) {
-					std::string s = this->mod.obj_gun.frame_name(i);
+				for (int i = 0; i < this->mod.model.frame_num(); i++) {
+					std::string s = this->mod.model.frame_name(i);
 					if (s.find("mag_fall") != std::string::npos) {
 						this->frame[0].first = i;//マガジン
-						this->frame[0].second = this->mod.obj_gun.frame(i);
+						this->frame[0].second = this->mod.model.frame(i);
 						this->frame[1].first = i + 1;
-						this->frame[1].second = this->mod.obj_gun.frame(i + 1);
+						this->frame[1].second = this->mod.model.frame(i + 1);
 					}
 					else if (s.find("mazzule") != std::string::npos) {
 						this->frame[2].first = i;//マズル
@@ -228,7 +247,7 @@ public:
 					}
 					else if (s.find("site") != std::string::npos) {
 						this->frame[4].first = i;//アイアンサイト
-						this->frame[4].second = this->mod.obj_gun.frame(i);
+						this->frame[4].second = this->mod.model.frame(i);
 					}
 					else if (s.find("RIGHT") != std::string::npos) {
 						this->frame[5].first = i;//左手
@@ -236,7 +255,7 @@ public:
 				}
 				//テキスト
 				{
-					int mdata = FileRead_open(("data/gun/" + this->name + "/data.txt").c_str(), FALSE);
+					int mdata = FileRead_open(("data/gun/" + this->mod.name + "/data.txt").c_str(), FALSE);
 					//セレクター設定
 					while (true) {
 						auto p = getparams::_str(mdata);
@@ -273,7 +292,7 @@ public:
 						}
 					}
 					//マガジン
-					this->magazine.name = getparams::_str(mdata);
+					auto tmp = getparams::_str(mdata);
 					//反動
 					this->recoil_xup = getparams::_float(mdata);
 					this->recoil_xdn = getparams::_float(mdata);
@@ -286,9 +305,11 @@ public:
 					for (auto& a : this->ammo) {
 						a.set();
 					}
-					this->magazine.set();
-
-					this->ammo_max = this->magazine.cap;
+					for (auto& g : mag_data) {
+						if (tmp == g.mod.name) {
+							this->magazine = &g;
+						}
+					}
 				}
 			}
 		}
@@ -466,9 +487,8 @@ public:
 		//所持弾数などのデータ
 		std::vector<gun_state> gun_stat;
 		/*武器ポインタ*/
-		Gun* ptr_now = nullptr;				//現在使用中の武装
 		size_t ammo_cnt = 0;				//装弾数カウント
-		Gun* gun_ptr;						//銃スロット
+		Gun* gun_ptr = nullptr;				//現在使用中の武装
 		/*モデル、音声*/
 		Audios audio;
 		MV1 obj_gun, obj_mag;
@@ -482,8 +502,12 @@ public:
 		bool reloadf = false;
 		bool down_mag = false;
 		//プレイヤー座標系
-		VECTOR_ref spawn_pos;							//移動
-		VECTOR_ref pos, add_pos, add_pos_buf;							//移動
+		VECTOR_ref pos;							//位置
+		MATRIX_ref mat;							//位置
+		VECTOR_ref spawn_pos;					//spawn
+		MATRIX_ref spawn_mat;					//spawn
+		VECTOR_ref add_pos, add_pos_buf;		//移動
+
 		switchs ads, squat;
 		bool wkey = false;
 		bool skey = false;
@@ -496,11 +520,7 @@ public:
 		VECTOR_ref pos_mag;
 		MATRIX_ref mat_mag;
 		//頭部座標系
-		VECTOR_ref pos_HMD;
-		MATRIX_ref mat_HMD;
-
-		VECTOR_ref rec_HMD;
-
+		VECTOR_ref pos_HMD, rec_HMD;
 		float add_ypos = 0.f;//垂直加速度
 		float body_xrad = 0.f;//胴体角度
 		float body_yrad = 0.f;//胴体角度
@@ -536,71 +556,69 @@ public:
 		std::string canget_mag;
 		bool start_c = true;
 		//
-		void Ready_chara(std::vector<Gun>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
+		void set(std::vector<Gun>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
 			this->gun_ptr = &gun_data[itr];
-			this->gun_stat.resize(gun_data.size());
-			for (auto& s : this->gun_stat) {
-				s.in = 0;
-				s.select = 0;
-			}
 			//身体
 			body_.DuplicateonAnime(&this->body);
 			frame_.get_frame(this->body, &this->head_hight);
 			col_.DuplicateonAnime(&this->col);
 			colframe_.get_frame(this->col,&this->head_hight2);
 			col.SetupCollInfo(8, 8, 8,-1);
-		}
-		void Set_chara_Position(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) {
-			this->spawn_pos = pos_;
-			this->pos = this->spawn_pos;
-			this->mat_HMD = mat_H;
-		}
-		void Set_chara() {
-			this->ptr_now = this->gun_ptr;
-			this->ptr_now->mod.obj_gun.DuplicateonAnime(&this->obj_gun);
-			this->obj_mag = this->ptr_now->magazine.obj.Duplicate();
-			this->LEFT_hand = false;
-			
-			//マガジン+1
-			this->gun_stat[this->ptr_now->id].in += this->ptr_now->magazine.cap;
-			this->gun_stat[this->ptr_now->id].mag_in.insert(this->gun_stat[this->ptr_now->id].mag_in.end(), this->ptr_now->magazine.cap);
-			//
-			if (this->gun_stat[this->ptr_now->id].mag_in.size() >= 1) {
-				this->ammo_cnt = this->gun_stat[this->ptr_now->id].mag_in.front();//改良
-			}
-			else {
-				this->ammo_cnt = std::clamp<size_t>(this->gun_stat[this->ptr_now->id].in, 0, this->ptr_now->ammo_max);//改良
-			}
 
+			this->gun_ptr->mod.model.DuplicateonAnime(&this->obj_gun);
+			this->obj_mag = this->gun_ptr->magazine->mod.model.Duplicate();
+			this->LEFT_hand = false;
+
+			//マガジン
+			this->gun_stat.resize(gun_data.size());
+			for (auto& s : this->gun_stat) {
+				s.in = 0;
+				s.select = 0;
+			}
+			//マガジン+1
+			{
+				this->gun_stat[this->gun_ptr->id].in += this->gun_ptr->magazine->cap;
+				this->gun_stat[this->gun_ptr->id].mag_in.insert(this->gun_stat[this->gun_ptr->id].mag_in.end(), this->gun_ptr->magazine->cap);
+				if (this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1) {
+					this->ammo_cnt = this->gun_stat[this->gun_ptr->id].mag_in.front();//改良
+				}
+				else {
+					this->ammo_cnt = std::clamp<size_t>(this->gun_stat[this->gun_ptr->id].in, 0, this->gun_ptr->magazine->cap);//改良
+				}
+			}
 
 			this->gunf = false;
 			this->vecadd_RIGHTHAND = VGet(0, 0, 1.f);
 			this->vecadd_RIGHTHAND_p = this->vecadd_RIGHTHAND;
 			this->reloadf = false;
 			this->down_mag = true;
-			this->selkey.second = 0;
+			this->selkey.ready(false);
 			for (auto& a : this->obj_gun.get_anime()) {
 				a.per = 0.f;
 			}
 			for (auto& a : this->bullet) {
 				a.ready();
 			}
-			SetCreate3DSoundFlag(TRUE);
-			this->audio.shot = this->ptr_now->audio.shot.Duplicate();
-			this->audio.slide = this->ptr_now->audio.slide.Duplicate();
-			this->audio.trigger = this->ptr_now->audio.trigger.Duplicate();
-			this->audio.mag_down = this->ptr_now->audio.mag_down.Duplicate();
-			this->audio.mag_set = this->ptr_now->audio.mag_set.Duplicate();
-			this->audio.case_down = this->ptr_now->audio.case_down.Duplicate();
-			SetCreate3DSoundFlag(FALSE);
+			this->audio.Duplicate(this->gun_ptr->audio);
 		}
+		void spawn(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) {
+			this->spawn_pos = pos_;
+			this->pos = this->spawn_pos;
+			this->spawn_mat = mat_H;
+			this->mat = this->spawn_mat;
+
+			this->add_ypos = 0.f;
+			this->body.SetMatrix(MATRIX_ref::Mtrans(this->pos - this->rec_HMD));
+			this->body.PhysicsResetState();
+		}
+
 		void Draw_chara() {
 			this->body.DrawModel();
 			this->obj_gun.DrawModel();
-			DrawLine3D(this->obj_gun.frame(this->ptr_now->frame[2].first).get(), (this->obj_gun.frame(this->ptr_now->frame[2].first) - this->obj_gun.GetMatrix().zvec()*100.f).get(), GetColor(255, 0, 0));
+			DrawLine3D(this->obj_gun.frame(this->gun_ptr->frame[2].first).get(), (this->obj_gun.frame(this->gun_ptr->frame[2].first) - this->obj_gun.GetMatrix().zvec()*100.f).get(), GetColor(255, 0, 0));
 			//this->col.DrawModel();
 
-			if ((!this->reloadf || this->down_mag) && this->gun_stat[this->ptr_now->id].mag_in.size() >= 1) {
+			if ((!this->reloadf || this->down_mag) && this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1) {
 				this->obj_mag.DrawModel();
 			}
 		}
@@ -610,27 +628,18 @@ public:
 			}
 		}
 		void Delete_chara() {
-			this->ptr_now = nullptr;
+			this->gun_ptr = nullptr;
+			this->body.Dispose();
+			this->col.Dispose();
 			this->obj_gun.Dispose();
 			this->obj_mag.Dispose();
-			this->audio.shot.Dispose();
-			this->audio.slide.Dispose();
-			this->audio.trigger.Dispose();
-			this->audio.mag_down.Dispose();
-			this->audio.mag_set.Dispose();
-			this->audio.case_down.Dispose();
+			this->audio.Dispose();
 			for (auto& t : this->effcs) {
 				t.handle.Dispose();
 			}
 			for (auto& t : this->effcs_gndhit) {
 				t.handle.Dispose();
 			}
-		}
-		void Init_chara() {
-			this->body.Dispose();
-			this->col.Dispose();
-			Delete_chara();
-			gun_ptr = nullptr;
 		}
 	};
 	//アイテム
@@ -652,7 +661,7 @@ public:
 			this->cate = cat;
 			switch (this->cate) {
 			case 1:
-				choose = gundata->magazine.name.find("none") == std::string::npos;
+				choose = gundata->magazine->mod.name.find("none") == std::string::npos;
 				break;
 			default:
 				choose = true;
@@ -663,14 +672,14 @@ public:
 				this->pos = pos_;
 				this->add = VGet(0, 0, 0);
 				this->mat = mat_;
-				//手
+				//
 				this->ptr = gundata;
 				switch (this->cate) {
 				case 1:
-					this->obj = this->ptr->magazine.obj.Duplicate();
+					this->obj = this->ptr->magazine->mod.model.Duplicate();
 					break;
 				default:
-					this->obj = this->ptr->mod.obj_gun.Duplicate();
+					this->obj = this->ptr->mod.model.Duplicate();
 					break;
 				}
 			}
@@ -719,7 +728,7 @@ public:
 					zz = (Segment_Point_MinLength(startpos.get(), endpos.get(), this->pos.get()) <= 0.2f);
 					chara.canget_magitem |= zz;
 					if (zz) {
-						chara.canget_mag = this->ptr->magazine.name;
+						chara.canget_mag = this->ptr->magazine->mod.name;
 						if (chara.getmag.second == 1) {
 							chara.gun_stat[this->ptr->id].in += this->cap;
 							chara.gun_stat[this->ptr->id].mag_in.insert(chara.gun_stat[this->ptr->id].mag_in.end(), this->cap);
@@ -744,7 +753,7 @@ public:
 		void Draw_item(Chara& chara) {
 			if (this->ptr != nullptr) {
 				if (this->cate == 1) {
-					if (chara.canget_magitem && chara.canget_mag == this->ptr->name) {
+					if (chara.canget_magitem && chara.canget_mag == this->ptr->mod.name) {
 						DrawLine3D(this->pos.get(), (this->pos + VGet(0, 0.1f, 0)).get(), GetColor(255, 0, 0));
 						auto c = MV1GetDifColorScale(this->obj.get());
 						MV1SetDifColorScale(this->obj.get(), GetColorF(0.f, 1.f, 0.f, 1.f));

@@ -21,8 +21,6 @@ z:\dxlib_vc\dx_vc\effekseer.h(3790): warning C4100: 'source': 引数は関数の
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-z:\fps_n22\tankflanker\tankflanker\sub.hpp(297): warning C4240: 非標準の拡張機能が使用されています: 'Mainclass::Chara' へのアクセスは 'public' として定義されています (以前のバージョンでは 'private' でした)
-  z:\fps_n22\tankflanker\tankflanker\sub.hpp(98): note: 'Mainclass::Chara' の宣言を確認してください
 z:\fps_n22\tankflanker\tankflanker\main.cpp(8): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 z:\fps_n22\tankflanker\tankflanker\main.cpp(8): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 z:\fps_n22\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。

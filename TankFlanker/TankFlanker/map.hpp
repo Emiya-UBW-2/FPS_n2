@@ -60,7 +60,7 @@ public:
 					size_t p1 = 0;
 					float p2 = 0.f, p3 = 0.f, p4 = 0.f;
 					for (auto& g : gun_data) {
-						if (p.find(g.magazine.name) != std::string::npos) {
+						if (p.find(g.magazine->mod.name) != std::string::npos) {
 							p1 = g.id;
 							break;
 						}
@@ -72,7 +72,7 @@ public:
 					item_data.resize(item_data.size() + 1);
 					item_data.back().Set_item(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(),1);
 					if (item_data.back().ptr != nullptr) {
-						item_data.back().cap = int(item_data.back().ptr->ammo_max);
+						item_data.back().cap = int(item_data.back().ptr->magazine->cap);
 					}
 				}
 				else {
