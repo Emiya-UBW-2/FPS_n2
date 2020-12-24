@@ -113,7 +113,7 @@ public:
 
 	};
 	//マガジンオブジェ
-	class Magazine_info {
+	class Magazines_info {
 	private:
 		size_t type = 0;
 		size_t type_gun = 0;
@@ -126,12 +126,22 @@ public:
 	public:
 	};
 	//銃オブジェ
-	class Magazine_info {
+	class Gun_info {
 	private:
 		size_t type_gun = 0;
 		std::vector<Parts_info> parts;
 		std::vector<can_attach> cans;
 		std::vector<need_attach> needs;
+	public:
+	};
+	//アイテム
+	class Items_info {
+	private:
+		int cate = 0;		//種類
+		Parts_info parts;
+		Ammos_info ammos;
+		Magazines_info magazines;
+		Gun_info guns;
 	public:
 	};
 public:
