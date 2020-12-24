@@ -63,8 +63,80 @@ private:
 			this->mag_set.Dispose();
 		}
 	};
+	//銃、マガジン共通モデル
+	class Models {
+	private:
+	public:
+		GraphHandle UIScreen;
+		MV1 model;
+		std::string name;
+		void set(std::string path, std::string named) {
+			name = named;
+			MV1::Load(path + named + "/model.mv1", &model, true);
+			UIScreen = GraphHandle::Load(path + named + "/pic.bmp");
+		}
+	};
+public:
+	class Chara;
+	//必要アイテム
+	class need_attach {
+	private:
+		size_t type = 0;
+		bool ok = false;
+	public:
+	};
+	//装着可能アイテム
+	class can_attach {
+	private:
+		std::string name;
+	public:
+	};
+	//パーツオブジェ
+	class Parts_info {
+	private:
+		size_t type = 0;
+		std::vector<Parts_info> parts;
+		std::vector<can_attach> cans;
+		std::vector<need_attach> needs;
+	public:
+
+	};
+	//弾オブジェ
+	class Ammos_info {
+	private:
+		size_t type = 0;
+		float caliber = 0.f;
+		float speed = 100.f;//弾速
+		float pene = 10.f;//貫通
+		float damage = 10.f;//ダメージ
+	public:
+
+	};
+	//マガジンオブジェ
+	class Magazine_info {
+	private:
+		size_t type = 0;
+		size_t type_gun = 0;
+		float caliber = 0.f;
+		float speed = 100.f;//弾速
+		float pene = 10.f;//貫通
+		float damage = 10.f;//ダメージ
+		size_t capa = 1;
+		std::vector<Ammos_info> ammo;
+	public:
+	};
+	//銃オブジェ
+	class Magazine_info {
+	private:
+		size_t type_gun = 0;
+		std::vector<Parts_info> parts;
+		std::vector<can_attach> cans;
+		std::vector<need_attach> needs;
+	public:
+	};
+public:
 	//弾データ
-	class Ammos {
+	class Ammo_info {
 	private:
 	public:
 		std::string name;
@@ -74,7 +146,7 @@ private:
 		float damage = 10.f;//ダメージ
 
 		void set(void) {
-			int mdata = FileRead_open(("data/ammo/" + this->name + ".txt").c_str(), FALSE);
+			int mdata = FileRead_open(("data/ammo/" + this->name + "/data.txt").c_str(), FALSE);
 			this->caliber = getparams::_float(mdata)*0.001f;//口径
 			this->speed = getparams::_float(mdata);	//弾速
 			this->pene = getparams::_float(mdata);	//貫通
@@ -83,24 +155,21 @@ private:
 		}
 	};
 	//実際に発射される弾
-public:
-	class Chara;
-private:
-	class ammos {
+	class Ammos {
 	private:
 	public:
 		bool hit{ false };
 		bool flug{ false };
 		float cnt = 0.f;
 		unsigned int color = 0;
-		Ammos* spec = nullptr;
+		Ammo_info* spec = nullptr;
 		float yadd = 0.f;
 		VECTOR_ref pos, repos;
 		VECTOR_ref vec;
 		void ready() {
 			this->flug = false;
 		}
-		void set(Ammos* spec_t, const VECTOR_ref& pos_t, const VECTOR_ref& vec_t) {
+		void set(Ammo_info* spec_t, const VECTOR_ref& pos_t, const VECTOR_ref& vec_t) {
 			this->hit = false;
 			this->flug = true;
 			this->cnt = 0.f;
@@ -113,7 +182,7 @@ private:
 			this->vec = vec_t;
 		}
 		template<class Y, class D>
-		void update(Chara* c,std::vector<Chara>* chara, std::unique_ptr<Y, D>& mapparts) {
+		void update(Chara* c, std::vector<Chara>* chara, std::unique_ptr<Y, D>& mapparts) {
 			if (this->flug) {
 				this->repos = this->pos;
 				this->pos += this->vec * (this->spec->speed / GetFPS());
@@ -156,19 +225,7 @@ private:
 			}
 		}
 	};
-	class Models {
-	private:
-	public:
-		GraphHandle UIScreen;
-		MV1 model;
-		std::string name;
-		void set(std::string path, std::string named) {
-			name = named;
-			MV1::Load(path + named + "/model.mv1", &model, true);
-			UIScreen = GraphHandle::Load(path + named + "/pic.bmp");
-		}
-	};
-public:
+	/**/
 	//マガジンデータ
 	class Mags {
 	private:
@@ -177,7 +234,7 @@ public:
 		Models mod;
 		/**/
 		size_t cap = 1;
-		std::vector<Ammos> ammo;
+		std::vector<Ammo_info> ammo;
 		/**/
 		void set_data() {
 			this->mod.model.SetMatrix(MGetIdent());
@@ -199,8 +256,9 @@ public:
 			}
 		}
 	};
+	/**/
 	//銃データ
-	class Gun {
+	class Guns{
 	private:
 	public:
 		size_t id = 0;
@@ -217,7 +275,7 @@ public:
 		float ammo_speed = 100.f;//弾速
 		float ammo_pene = 10.f;//貫通
 		float ammo_damege = 10.f;//ダメージ
-		std::vector<Ammos> ammo;
+		std::vector<Ammo_info> ammo;
 		Mags* magazine;
 		/**/
 		void set_data(std::vector<Mags>& mag_data) {
@@ -314,9 +372,17 @@ public:
 			}
 		}
 	};
+	/**/
+public:
 	//player
 	class Chara {
 	private:
+		struct ammo_state {//弾データ
+			size_t ammo_in = 0;
+		};
+		struct mag_state {//マガジンデータ
+			size_t ammo_in = 0;
+		};
 		struct gun_state {//銃のデータ
 			size_t ammo_cnt = 0;		//装弾数カウント
 			size_t ammo_total = 0;		//所持弾数
@@ -531,12 +597,12 @@ public:
 		std::array<EffectS, 12> effcs_gndhit;
 		size_t use_effcsgndhit = 0;
 		/*確保する弾*/
-		std::array<ammos, 64> bullet;
+		std::array<Ammos, 64> bullet;
 		size_t use_bullet = 0;
 		//所持弾数などのデータ
 		std::vector<gun_state> gun_stat;
 		/*武器ポインタ*/
-		Gun* gun_ptr = nullptr;				//現在使用中の武装
+		Guns* gun_ptr = nullptr;				//現在使用中の武装
 		/*モデル、音声*/
 		Audios audio;
 		MV1 obj_gun, obj_mag;
@@ -604,7 +670,7 @@ public:
 		std::string canget_mag;
 		bool start_c = true;
 		//
-		void set(std::vector<Gun>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
+		void set(std::vector<Guns>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
 			this->gun_ptr = &gun_data[itr];
 			//身体
 			body_.DuplicateonAnime(&this->body);
@@ -690,11 +756,11 @@ public:
 		VECTOR_ref pos, add;
 		MATRIX_ref mat;
 		MV1 obj;
-		Gun* ptr = nullptr;
+		Guns* ptr = nullptr;
 		//マガジン専用パラメーター
 		Mags magazine;
 		//
-		void Set_item(Gun*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_, int cat) {
+		void Set_item(Guns*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_, int cat) {
 			bool choose = true;
 			this->cate = cat;
 			switch (this->cate) {

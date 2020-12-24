@@ -20,7 +20,7 @@ class main_c : Mainclass {
 	//データ
 	MV1 body_obj;					//身体モデル
 	MV1 body_col;					//身体モデル
-	std::vector<Gun>  gun_data;		//GUNデータ
+	std::vector<Guns>  gun_data;		//GUNデータ
 	std::vector<Mags> mag_data;		//GUNデータ
 	std::vector<Chara> chara;		//キャラ
 	std::vector<Items> item_data;	//拾えるアイテム

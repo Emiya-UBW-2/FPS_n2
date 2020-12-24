@@ -29,7 +29,7 @@ public:
 		envi = SoundHandle::Load(dir + "/envi.wav");
 		SetUseASyncLoadFlag(FALSE);
 	}
-	void Set_map(const char* item_txt, std::vector<Items>& item_data, std::vector<Gun>& gun_data) {
+	void Set_map(const char* item_txt, std::vector<Items>& item_data, std::vector<Guns>& gun_data) {
 		map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 		VECTOR_ref size;
 		for (int i = 0; i < map_col.mesh_num(); i++) {
