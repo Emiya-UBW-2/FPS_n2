@@ -116,8 +116,32 @@ public:
 							if (p.HitFlag) {
 								endpos = p.HitPosition;
 							}
-							DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 0, 0));
-
+							for (auto& tgt : this->chara) {
+								if (&tgt != &c) {
+									{
+										auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, 0);
+										if (q.HitFlag) {
+											endpos = q.HitPosition;
+										}
+									}
+									{
+										auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, 1);
+										if (q.HitFlag) {
+											endpos = q.HitPosition;
+										}
+									}
+									{
+										auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, 2);
+										if (q.HitFlag) {
+											endpos = q.HitPosition;
+										}
+									}
+								}
+							}
+							DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 50, 0));
+							SetUseLighting(FALSE);
+							DrawSphere3D(endpos.get(), 0.01f, 8, GetColor(255, 50, 0), GetColor(255, 255, 255), TRUE);
+							SetUseLighting(TRUE);
 						}
 					}
 					for (auto& g : this->item_data) {
@@ -174,6 +198,7 @@ public:
 						}
 						{
 							for (auto& c : chara) {
+								easing_set(&c.HP_r, float(c.HP), 0.95f);
 								if (c.HP == 0) {
 									c.spawn(c.spawn_pos, c.spawn_mat);
 									c.add_ypos = 0.f;
@@ -305,13 +330,13 @@ public:
 								if (Drawparts->get_hand2_num() != -1) {
 									auto& ptr_ = (*Drawparts->get_device())[Drawparts->get_hand2_num()];
 									if (ptr_.turn && ptr_.now) {
-										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) {
+										if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
 											//running
 											mine.wkey = false;
 											mine.skey = false;
 											mine.akey = false;
 											mine.dkey = false;
-											mine.running = false;//(ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
+											mine.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
 											auto speed = (mine.running ? 6.f : 2.f) / GetFPS();
 											if (mine.running) {
 												easing_set(&mine.add_pos_buf, (mine.mat.zvec()*ptr_.touch.y())*speed, 0.95f);

@@ -253,7 +253,12 @@ public:
 
 					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
 					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
-					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + ys - y_r(2), GetColor(std::min(int(255.f*cos(tmp)*2.f), 255), std::min(int(255.f*sin(tmp)*2.f), 255), 0), TRUE);
+
+					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + ys - y_r(2), GetColor(0, 255, 0), TRUE);
+					DrawBox(
+						xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + y_r(2),
+						xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP_r / chara.HP_full, yp + ys - y_r(2),
+						GetColor(255, 255, 0), TRUE);
 
 					font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", chara.HP, chara.HP_full);
 				}
@@ -298,21 +303,27 @@ public:
 		int xs = 0, ys = 0, xp = 0, yp = 0;
 		SetCameraNearFar(0.01f, 100.f);
 		for (auto& c : chara) {
-			VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_.head_f.first) + VGet(0, 0.3f, 0)).get());
-			if (p.z() >= 0.f&&p.z() <= 1.f) {
-				xp = int(p.x());
-				yp = int(p.y());
-				xs = x_r(200);
-				ys = y_r(18) + y_r(8);
+			if (abs(c.HP - int(c.HP_r)) >= 3) {
+				VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_.head_f.first) + VGet(0, 0.3f, 0)).get());
+				if (p.z() >= 0.f&&p.z() <= 1.f) {
+					xp = int(p.x());
+					yp = int(p.y());
+					xs = x_r(200);
+					ys = y_r(18) + y_r(8);
 
 
-				auto tmp = deg2rad(90 * c.HP / c.HP_full);
+					auto tmp = deg2rad(90 * c.HP / c.HP_full);
 
-				DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
-				DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
-				DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP / c.HP_full, yp + ys - y_r(2), GetColor(std::min(int(255.f*cos(tmp)*2.f), 255), std::min(int(255.f*sin(tmp)*2.f), 255), 0), TRUE);
+					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
+					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
+					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP / c.HP_full, yp + ys - y_r(2), GetColor(0, 255, 0), TRUE);
+					DrawBox(
+						xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP / c.HP_full, yp + y_r(2),
+						xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP_r / c.HP_full, yp + ys - y_r(2),
+						GetColor(255, 255, 0), TRUE);
 
-				font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", c.HP, c.HP_full);
+					font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", c.HP, c.HP_full);
+				}
 			}
 		}
 	}

@@ -740,6 +740,7 @@ public:
 		bool canget_magitem = false;
 		std::string canget_mag;
 		bool start_c = true;
+		float HP_r = 100;
 		int HP = 100;
 		int HP_full = 100;
 
@@ -772,10 +773,6 @@ public:
 			for (auto& s : this->gun_stat) {
 				s.init();
 			}
-
-			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
-			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
-			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
 
 			this->gunf = false;
 			this->vecadd_RIGHTHAND = VGet(0, 0, 1.f);
@@ -814,6 +811,11 @@ public:
 			this->kill_id = 0;
 			this->kill_streak = 0;
 			this->kill_time = 0.f;
+
+			this->gun_stat[this->gun_ptr->id].init();
+			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
+			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
+			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
 		}
 
 		void Draw_chara() {
