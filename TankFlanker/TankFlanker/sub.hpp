@@ -816,6 +816,10 @@ public:
 			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1
 			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1
 			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1
+
+			this->body_xrad = 0.f;//“·‘ÌŠp“x
+			this->body_yrad = 0.f;//“·‘ÌŠp“x
+			this->body_zrad = 0.f;//“·‘ÌŠp“x
 		}
 
 		void Draw_chara() {

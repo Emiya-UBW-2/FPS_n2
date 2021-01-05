@@ -31,8 +31,8 @@ c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp
 c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
   コード生成しています。
-  15 of 2911 functions ( 0.5%) were compiled, the rest were copied from previous compilation.
-    14 functions were new in current compilation
+  1 of 2911 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
     1 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
 EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\ハンドサイン\source\repos\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
