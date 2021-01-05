@@ -249,15 +249,13 @@ public:
 					ys = fonthight + y_r(8);
 				}
 				{
-					auto tmp = deg2rad(90 * chara.HP / chara.HP_full);
-
 					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
 					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
 
 					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + ys - y_r(2), GetColor(0, 255, 0), TRUE);
 					DrawBox(
 						xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + y_r(2),
-						xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP_r / chara.HP_full, yp + ys - y_r(2),
+						xp - xs / 2 + y_r(2) + (xs - y_r(4))*int(chara.HP_r) / chara.HP_full, yp + ys - y_r(2),
 						GetColor(255, 255, 0), TRUE);
 
 					font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", chara.HP, chara.HP_full);
@@ -312,14 +310,12 @@ public:
 					ys = y_r(18) + y_r(8);
 
 
-					auto tmp = deg2rad(90 * c.HP / c.HP_full);
-
 					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
 					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
 					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP / c.HP_full, yp + ys - y_r(2), GetColor(0, 255, 0), TRUE);
 					DrawBox(
 						xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP / c.HP_full, yp + y_r(2),
-						xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP_r / c.HP_full, yp + ys - y_r(2),
+						xp - xs / 2 + y_r(2) + (xs - y_r(4))*int(c.HP_r) / c.HP_full, yp + ys - y_r(2),
 						GetColor(255, 255, 0), TRUE);
 
 					font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", c.HP, c.HP_full);
