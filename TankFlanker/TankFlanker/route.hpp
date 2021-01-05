@@ -91,13 +91,13 @@ public:
 			mine.spawn(VGet(0.0f, 4.0f, 0.f), MATRIX_ref::RotY(DX_PI_F));
 			//その他
 			chara[1].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[1].spawn(VGet(0.0f, 4.0f, 2.f), MATRIX_ref::RotY(DX_PI_F*2));
+			chara[1].spawn(VGet(8.0f, 4.0f, 8.f), MATRIX_ref::RotY(DX_PI_F*2));
 
 			chara[2].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[2].spawn(VGet(0.0f, 4.0f, 4.f), MATRIX_ref::RotY(DX_PI_F*2));
+			chara[2].spawn(VGet(-8.0f, 4.0f, 8.f), MATRIX_ref::RotY(DX_PI_F*2));
 
 			//マップ読み込み
-			mapparts->Ready_map("data/map");			//mapparts->Ready_map("data/new");
+			mapparts->Ready_map("data/map_new");			//mapparts->Ready_map("data/new");
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
 			//ライティング
@@ -109,6 +109,16 @@ public:
 					mapparts->map_get().DrawModel();
 					for (auto& c : this->chara) {
 						c.Draw_chara();
+						{
+							VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame[2].first);
+							VECTOR_ref endpos = startpos - c.obj_gun.GetMatrix().zvec()*100.f;
+							auto p = mapparts->map_col_line(startpos, endpos, 0);
+							if (p.HitFlag) {
+								endpos = p.HitPosition;
+							}
+							DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 0, 0));
+
+						}
 					}
 					for (auto& g : this->item_data) {
 						g.Draw_item(this->chara[0]);
@@ -161,6 +171,24 @@ public:
 							}
 							oldv_1 = ptr_.turn && ptr_.now;
 							mine.pos_WAIST = mine.pos_WAIST - mine.pos_WAIST_rep;
+						}
+						{
+							for (auto& c : chara) {
+								if (c.HP == 0) {
+									c.spawn(c.spawn_pos, c.spawn_mat);
+									c.add_ypos = 0.f;
+									c.body.SetMatrix(MATRIX_ref::Mtrans(c.pos - c.rec_HMD));
+									c.body.PhysicsResetState();
+								}
+								if (c.kill_f) {
+									c.kill_time -= 1.f / GetFPS();
+									if (c.kill_time <= 0.f) {
+										c.kill_time = 0.f;
+										c.kill_streak = 0;
+										c.kill_f = false;
+									}
+								}
+							}
 						}
 						//プレイヤー操作
 						{
@@ -1010,7 +1038,9 @@ public:
 
 							c.frame_.copy_frame(c.body, c.colframe_, &c.col);
 							c.col.work_anime();
-							c.col.RefreshCollInfo(-1);
+							c.col.RefreshCollInfo(-1, 0);
+							c.col.RefreshCollInfo(-1, 1);
+							c.col.RefreshCollInfo(-1, 2);
 							//
 							if (!(Drawparts->use_vr && (&c == &mine))) {
 								//視点取得
@@ -1284,6 +1314,7 @@ public:
 								SetWriteZBuffer3D(TRUE);											//zbufwrite
 								//UI2
 								UIparts->item_draw(this->item_data, cam_easy.campos);
+								UIparts->HP_draw(chara);
 							}, cam_easy);
 						}
 						//2P描画
@@ -1322,6 +1353,7 @@ public:
 								this->UI_Screen2.DrawGraph(0, 0, true);
 								//UI2
 								UIparts->item_draw(this->item_data, cam_easy2.campos);
+								UIparts->HP_draw(chara);
 							}
 						}
 						//ディスプレイ描画

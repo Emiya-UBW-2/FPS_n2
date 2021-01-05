@@ -142,6 +142,8 @@ public:
 					yp = t_disp_y / 2 + t_disp_y / 12;
 				}
 				if (chara.canget_magitem) {
+					if (chara.getmag.second == 1) {
+					}
 					if (use_vr) {
 						font->DrawString_MID(xp, yp, chara.canget_mag + "を拾う : 〇", GetColor(255, 128, 0));
 					}
@@ -206,6 +208,56 @@ public:
 					font24.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d total=%d", a, chara.gun_ptr->magazine->cap, pp); yp += fonthight;
 				}
 			}
+			//キル
+			if (chara.kill_streak > 0) {
+				if (use_vr) {
+					xp = t_disp_x / 2 + t_disp_y / 6;
+					yp = t_disp_y / 2 - t_disp_y / 12 + fonthight * 3;
+				}
+				else {
+					xp = t_disp_x / 2 + t_disp_y / 6;
+					yp = t_disp_y / 2 - t_disp_y / 12 + fonthight * 3;
+				}
+				font24.DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "%d Combo!", chara.kill_streak); yp += fonthight;
+			}
+
+			if (chara.kill_f) {
+				if (use_vr) {
+					xp = t_disp_x / 2;
+					yp = t_disp_y / 2 - t_disp_y / 12;
+				}
+				else {
+					xp = t_disp_x / 2;
+					yp = t_disp_y / 2 - t_disp_y / 12;
+				}
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((chara.kill_time * 2) / 7.f)), 0, 255));
+				font24.DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", chara.kill_id); yp += fonthight;
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			}
+			//HP
+			{
+				if (use_vr) {
+					xp = t_disp_x / 2;
+					yp = t_disp_y / 2 + t_disp_y / 6;
+					xs = x_r(200);
+					ys = fonthight + y_r(8);
+				}
+				else {
+					xp = t_disp_x / 2;
+					yp = t_disp_y / 2 + t_disp_y / 6;
+					xs = x_r(200);
+					ys = fonthight + y_r(8);
+				}
+				{
+					auto tmp = deg2rad(90 * chara.HP / chara.HP_full);
+
+					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
+					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
+					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + ys - y_r(2), GetColor(std::min(int(255.f*cos(tmp)*2.f), 255), std::min(int(255.f*sin(tmp)*2.f), 255), 0), TRUE);
+
+					font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", chara.HP, chara.HP_full);
+				}
+			}
 			//終わり
 		}
 	}
@@ -241,4 +293,28 @@ public:
 			}
 		}
 	}
+
+	void HP_draw(std::vector<Chara>&chara) {
+		int xs = 0, ys = 0, xp = 0, yp = 0;
+		SetCameraNearFar(0.01f, 100.f);
+		for (auto& c : chara) {
+			VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_.head_f.first) + VGet(0, 0.3f, 0)).get());
+			if (p.z() >= 0.f&&p.z() <= 1.f) {
+				xp = int(p.x());
+				yp = int(p.y());
+				xs = x_r(200);
+				ys = y_r(18) + y_r(8);
+
+
+				auto tmp = deg2rad(90 * c.HP / c.HP_full);
+
+				DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
+				DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
+				DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP / c.HP_full, yp + ys - y_r(2), GetColor(std::min(int(255.f*cos(tmp)*2.f), 255), std::min(int(255.f*sin(tmp)*2.f), 255), 0), TRUE);
+
+				font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", c.HP, c.HP_full);
+			}
+		}
+	}
+
 };

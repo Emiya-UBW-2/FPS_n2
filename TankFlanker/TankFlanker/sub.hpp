@@ -204,15 +204,76 @@ public:
 					}
 					//*
 					for (auto& tgt : *chara) {
-						auto q = tgt.col.CollCheck_Line(this->repos, this->pos, -1);
-						if (q.HitFlag == TRUE) {
-							this->pos = q.HitPosition;
-							//hit
-							c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
-							//
-							this->hit = true;
-							this->flug = false;
-							break;
+						{
+							auto q = tgt.col.CollCheck_Line(this->repos, this->pos, -1,0);
+							if (q.HitFlag == TRUE) {
+								this->pos = q.HitPosition;
+								//hit
+								c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
+								//
+								this->hit = true;
+								this->flug = false;
+
+								tgt.HP = std::clamp(tgt.HP - 20, 0, tgt.HP_full);
+								if (tgt.HP == 0) {
+									c->kill_f = true;
+									c->kill_id = &tgt - &(*chara)[0];
+									if (c->kill_time != 0.f) {
+										c->kill_streak++;
+										c->score += std::clamp(25 - c->kill_streak * 5, 0, 25);
+									}
+									c->kill_time = 7.f;
+									c->score += 50;
+								}
+								break;
+							}
+						}
+						{
+							auto q = tgt.col.CollCheck_Line(this->repos, this->pos, -1,1);
+							if (q.HitFlag == TRUE) {
+								this->pos = q.HitPosition;
+								//hit
+								c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
+								//
+								this->hit = true;
+								this->flug = false;
+								tgt.HP = std::clamp(tgt.HP - 100, 0, tgt.HP_full);
+								if (tgt.HP == 0) {
+									c->kill_f = true;
+									c->kill_id = &tgt - &(*chara)[0];
+									if (c->kill_time != 0.f) {
+										c->kill_streak++;
+										c->score += std::clamp(25 - c->kill_streak * 5, 0, 25);
+									}
+									c->kill_time = 7.f;
+									c->score += 70;
+								}
+								break;
+							}
+						}
+						{
+							auto q = tgt.col.CollCheck_Line(this->repos, this->pos, -1,2);
+							if (q.HitFlag == TRUE) {
+								this->pos = q.HitPosition;
+								//hit
+								c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
+								//
+								this->hit = true;
+								this->flug = false;
+
+								tgt.HP = std::clamp(tgt.HP - 34, 0, tgt.HP_full);
+								if (tgt.HP == 0) {
+									c->kill_f = true;
+									c->kill_id = &tgt - &(*chara)[0];
+									if (c->kill_time != 0.f) {
+										c->kill_streak++;
+										c->score += std::clamp(25 - c->kill_streak * 5, 0, 25);
+									}
+									c->kill_time = 7.f;
+									c->score += 100;
+								}
+								break;
+							}
 						}
 					}
 					if (p.HitFlag == TRUE && this->flug) {
@@ -679,6 +740,17 @@ public:
 		bool canget_magitem = false;
 		std::string canget_mag;
 		bool start_c = true;
+		int HP = 100;
+		int HP_full = 100;
+
+		bool kill_f = false;
+		size_t kill_id = 0;
+		float kill_time = 0.f;
+		int kill_streak = 0;
+		bool hit_f{ false };
+		float hit_time = 0.f;
+
+		int score = 0;
 		//
 		void set(std::vector<Guns>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
 			this->gun_ptr = &gun_data[itr];
@@ -687,7 +759,9 @@ public:
 			frame_.get_frame(this->body, &this->head_hight);
 			col_.DuplicateonAnime(&this->col);
 			colframe_.get_frame(this->col,&this->head_hight2);
-			col.SetupCollInfo(8, 8, 8,-1);
+			for (int i = 0; i < col.mesh_num(); i++) {
+				col.SetupCollInfo(8, 8, 8, -1, i);
+			}
 
 			this->gun_ptr->mod.model.DuplicateonAnime(&this->obj_gun);
 			this->obj_mag = this->gun_ptr->magazine->mod.model.Duplicate();
@@ -699,6 +773,8 @@ public:
 				s.init();
 			}
 
+			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1
+			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1
 			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1
 
 			this->gunf = false;
@@ -714,6 +790,13 @@ public:
 				a.ready();
 			}
 			this->audio.Duplicate(this->gun_ptr->audio);
+			this->HP = this->HP_full;
+
+			this->kill_f = false;
+			this->kill_id = 0;
+			this->kill_streak = 0;
+			this->kill_time = 0.f;
+			score = 0;
 		}
 		void spawn(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) {
 			this->spawn_pos = pos_;
@@ -724,12 +807,18 @@ public:
 			this->add_ypos = 0.f;
 			this->body.SetMatrix(MATRIX_ref::Mtrans(this->pos - this->rec_HMD));
 			this->body.PhysicsResetState();
+
+			this->HP = this->HP_full;
+
+			this->kill_f = false;
+			this->kill_id = 0;
+			this->kill_streak = 0;
+			this->kill_time = 0.f;
 		}
 
 		void Draw_chara() {
 			this->body.DrawModel();
 			this->obj_gun.DrawModel();
-			DrawLine3D(this->obj_gun.frame(this->gun_ptr->frame[2].first).get(), (this->obj_gun.frame(this->gun_ptr->frame[2].first) - this->obj_gun.GetMatrix().zvec()*100.f).get(), GetColor(255, 0, 0));
 			//this->col.DrawModel();
 
 			if ((!this->reloadf || this->down_mag) && this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1) {
@@ -843,7 +932,7 @@ public:
 					chara.canget_magitem |= zz;
 					if (zz) {
 						chara.canget_mag = this->ptr->magazine->mod.name;
-						if (chara.getmag.second == 1) {
+						if (chara.getmag.second == 1 && this->magazine.cap != 0) {
 							chara.gun_stat[this->ptr->id].mag_plus(&(this->magazine));
 							if (chara.gun_stat[this->ptr->id].mag_in.size() == 1) {
 								chara.reloadf = true;
