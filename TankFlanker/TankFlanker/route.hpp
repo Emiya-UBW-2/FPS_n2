@@ -1313,8 +1313,7 @@ public:
 								SetUseZBuffer3D(TRUE);												//zbufuse
 								SetWriteZBuffer3D(TRUE);											//zbufwrite
 								//UI2
-								UIparts->item_draw(this->item_data, cam_easy.campos);
-								UIparts->HP_draw(chara);
+								UIparts->item_draw(chara, this->item_data, cam_easy.campos);
 							}, cam_easy);
 						}
 						//2P描画
@@ -1352,8 +1351,7 @@ public:
 								//UI
 								this->UI_Screen2.DrawGraph(0, 0, true);
 								//UI2
-								UIparts->item_draw(this->item_data, cam_easy2.campos);
-								UIparts->HP_draw(chara);
+								UIparts->item_draw(chara, this->item_data, cam_easy2.campos);
 							}
 						}
 						//ディスプレイ描画
