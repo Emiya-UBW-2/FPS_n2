@@ -145,7 +145,8 @@ public:
 							}
 							DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 50, 0));
 							SetUseLighting(FALSE);
-							DrawSphere3D(endpos.get(), 0.01f, 8, GetColor(255, 50, 0), GetColor(255, 255, 255), TRUE);
+							
+							DrawSphere3D(endpos.get(), std::clamp(powf((endpos - GetCameraPosition()).size(),2)*0.002f,0.001f,0.05f), 8, GetColor(255, 50, 0), GetColor(255, 255, 255), TRUE);
 							SetUseLighting(TRUE);
 						}
 					}
@@ -1185,7 +1186,7 @@ public:
 							//銃共通
 							{
 								if (c.obj_gun.get_anime(3).per == 1.f) {
-									c.audio.slide.play_3D(c.pos_RIGHTHAND, 1.f);
+									c.audio.slide.play_3D(c.pos_RIGHTHAND, 15.f);
 								}
 								c.obj_gun.get_anime(3).per = std::max(c.obj_gun.get_anime(3).per - 12.f / GetFPS(), 0.f);
 							}
@@ -1223,7 +1224,7 @@ public:
 										//マガジン排出
 									if (c.obj_gun.get_anime(5).per >= 0.5f && !c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
 										//音
-										c.audio.mag_down.play_3D(c.pos_RIGHTHAND, 1.f);
+										c.audio.mag_down.play_3D(c.pos_RIGHTHAND, 15.f);
 										//バイブレーション　バッテリー消費が激しいためコメントアウト
 										/*
 											Drawparts->Haptic(Drawparts->get_hand1_num(), unsigned short(60000));
@@ -1268,7 +1269,7 @@ public:
 													if (c.gun_stat[c.gun_ptr->id].ammo_cnt == 0) {
 														c.obj_gun.get_anime(3).per = 1.f;
 													}
-													c.audio.mag_set.play_3D(c.pos_RIGHTHAND, 1.f);
+													c.audio.mag_set.play_3D(c.pos_RIGHTHAND, 15.f);
 													c.gun_stat[c.gun_ptr->id].mag_slide();//チャンバーに装填
 													c.reloadf = false;
 												}
@@ -1285,7 +1286,7 @@ public:
 													if (c.gun_stat[c.gun_ptr->id].ammo_cnt == 0) {
 														c.obj_gun.get_anime(3).per = 1.f;
 													}
-													c.audio.mag_set.play_3D(c.pos_RIGHTHAND, 1.f);
+													c.audio.mag_set.play_3D(c.pos_RIGHTHAND, 15.f);
 													c.gun_stat[c.gun_ptr->id].mag_slide();//チャンバーに装填
 													c.reloadf = false;
 												}
@@ -1315,7 +1316,7 @@ public:
 									}
 									c.trigger.get_in(c.obj_gun.get_anime(2).per >= 0.5f);
 									if (c.trigger.second == 1) {
-										c.audio.trigger.play_3D(c.pos_RIGHTHAND, 1.f);
+										c.audio.trigger.play_3D(c.pos_RIGHTHAND, 5.f);
 										if (!c.gunf && c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) {
 											c.gunf = true;
 											//弾数管理
@@ -1330,8 +1331,8 @@ public:
 											//エフェクト
 											c.effcs[ef_fire].set(c.obj_gun.frame(c.gun_ptr->frame[2].first), c.mat_RIGHTHAND.zvec()*-1.f, 0.0025f / 0.1f);
 											//サウンド
-											c.audio.shot.play_3D(c.pos_RIGHTHAND, 1.f);
-											c.audio.slide.play_3D(c.pos_RIGHTHAND, 1.f);
+											c.audio.shot.play_3D(c.pos_RIGHTHAND, 100.f);
+											c.audio.slide.play_3D(c.pos_RIGHTHAND, 15.f);
 										}
 									}
 								}
@@ -1451,7 +1452,7 @@ public:
 								SetUseZBuffer3D(TRUE);												//zbufuse
 								SetWriteZBuffer3D(TRUE);											//zbufwrite
 								//UI2
-								UIparts->item_draw(chara, this->item_data, cam_easy.campos);
+								UIparts->item_draw(chara, this->item_data, cam_easy.campos, Drawparts->use_vr);
 							}, cam_easy);
 						}
 						//2P描画
@@ -1475,7 +1476,7 @@ public:
 							{
 								this->UI_Screen2.SetDraw_Screen();
 								{
-									UIparts->set_draw(mine, false);
+									UIparts->set_draw(ct, false);
 								}
 								//被写体深度描画
 								Hostpass2parts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, cam_easy2);
@@ -1489,7 +1490,7 @@ public:
 								//UI
 								this->UI_Screen2.DrawGraph(0, 0, true);
 								//UI2
-								UIparts->item_draw(chara, this->item_data, cam_easy2.campos);
+								UIparts->item_draw(chara, this->item_data, cam_easy2.campos, false);
 							}
 						}
 						//ディスプレイ描画

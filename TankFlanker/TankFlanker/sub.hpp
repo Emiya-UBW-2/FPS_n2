@@ -224,6 +224,8 @@ public:
 									}
 									c->kill_time = 7.f;
 									c->score += 50;
+									c->kill_count++;
+									tgt.death_count++;
 								}
 								break;
 							}
@@ -247,6 +249,8 @@ public:
 									}
 									c->kill_time = 7.f;
 									c->score += 70;
+									c->kill_count++;
+									tgt.death_count++;
 								}
 								break;
 							}
@@ -271,6 +275,8 @@ public:
 									}
 									c->kill_time = 7.f;
 									c->score += 100;
+									c->kill_count++;
+									tgt.death_count++;
 								}
 								break;
 							}
@@ -754,6 +760,8 @@ public:
 		float hit_time = 0.f;
 
 		int score = 0;
+		int kill_count = 0;
+		int death_count = 0;
 		//
 		void set(std::vector<Guns>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
 			this->gun_ptr = &gun_data[itr];
@@ -795,7 +803,9 @@ public:
 			this->kill_id = 0;
 			this->kill_streak = 0;
 			this->kill_time = 0.f;
-			score = 0;
+			this->score = 0;
+			this->kill_count = 0;
+			this->death_count = 0;
 		}
 		void spawn(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) {
 			this->spawn_pos = pos_;
