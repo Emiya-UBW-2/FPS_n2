@@ -21,6 +21,19 @@ z:\dxlib_vc\dx_vc\effekseer.h(3790): warning C4100: 'source': 引数は関数の
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(214): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(215): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(218): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(219): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(243): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(244): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(244): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(243): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(252): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(253): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(253): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(252): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
+z:\fps_n22\tankflanker\tankflanker\ui.hpp(297): warning C4189: 'font': ローカル変数が初期化されましたが、参照されていません
 z:\fps_n22\tankflanker\tankflanker\main.cpp(8): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 z:\fps_n22\tankflanker\tankflanker\main.cpp(8): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 z:\fps_n22\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。

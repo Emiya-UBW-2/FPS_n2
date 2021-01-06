@@ -228,6 +228,7 @@ public:
 								if (&c - &chara[0] >= (Drawparts->use_vr ? 2 : 1)) {
 									bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
 									bool skey = (CheckHitKey(KEY_INPUT_S) != 0);
+									skey = false;
 									bool akey = (CheckHitKey(KEY_INPUT_A) != 0);
 									bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
 									c.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
@@ -279,21 +280,13 @@ public:
 										xv_t.y(0.f);
 										xv_t = xv_t.Norm();
 
-										if (wkey) {
-											easing_set(&c.add_pos_buf, zv_t*-speed, 0.95f);
-										}
-										if (skey) {
-											easing_set(&c.add_pos_buf, zv_t*speed, 0.95f);
-										}
-										if (akey) {
-											easing_set(&c.add_pos_buf, xv_t*speed, 0.95f);
-										}
-										if (dkey) {
-											easing_set(&c.add_pos_buf, xv_t*-speed, 0.95f);
-										}
-										if (!wkey && !skey && !akey && !dkey) {
-											easing_set(&c.add_pos_buf, VGet(0, 0, 0), 0.95f);
-										}
+										easing_set(&c.add_pos_buf,
+											VECTOR_ref(wkey ? (zv_t*-speed) : VGet(0, 0, 0))
+											+ (skey ? (zv_t*speed) : VGet(0, 0, 0))
+											+ (akey ? (xv_t*speed) : VGet(0, 0, 0))
+											+ (dkey ? (xv_t*-speed) : VGet(0, 0, 0))
+											, 0.95f);
+
 										if (c.add_ypos == 0.f) {
 											if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
 												c.add_ypos = 0.04f;
@@ -342,7 +335,7 @@ public:
 											//running
 											mine.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
 											auto speed = (mine.running ? 6.f : 4.f) / GetFPS();
-											easing_set(&mine.add_pos_buf, (mine.mat.zvec()*ptr_.touch.y() + mine.mat.xvec()*ptr_.touch.x())*speed, 0.95f);
+											easing_set(&mine.add_pos_buf, (mine.mat.zvec()*std::max(ptr_.touch.y(),0.f) + mine.mat.xvec()*ptr_.touch.x())*speed, 0.95f);
 										}
 										else {
 											easing_set(&mine.add_pos_buf, VGet(0, 0, 0), 0.95f);
@@ -387,6 +380,7 @@ public:
 
 									bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
 									bool skey = (CheckHitKey(KEY_INPUT_S) != 0);
+									skey = false;
 									bool akey = (CheckHitKey(KEY_INPUT_A) != 0);
 									bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
 									ct.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
@@ -440,21 +434,13 @@ public:
 										xv_t.y(0.f);
 										xv_t = xv_t.Norm();
 
-										if (wkey) {
-											easing_set(&ct.add_pos_buf, zv_t*-speed, 0.95f);
-										}
-										if (skey) {
-											easing_set(&ct.add_pos_buf, zv_t*speed, 0.95f);
-										}
-										if (akey) {
-											easing_set(&ct.add_pos_buf, xv_t*speed, 0.95f);
-										}
-										if (dkey) {
-											easing_set(&ct.add_pos_buf, xv_t*-speed, 0.95f);
-										}
-										if (!wkey && !skey && !akey && !dkey) {
-											easing_set(&ct.add_pos_buf, VGet(0, 0, 0), 0.95f);
-										}
+										easing_set(&ct.add_pos_buf,
+											VECTOR_ref(wkey ? (zv_t*-speed) : VGet(0, 0, 0))
+											+ (skey ? (zv_t*speed) : VGet(0, 0, 0))
+											+ (akey ? (xv_t*speed) : VGet(0, 0, 0))
+											+ (dkey ? (xv_t*-speed) : VGet(0, 0, 0))
+											, 0.95f);
+
 										if (ct.add_ypos == 0.f) {
 											if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
 												ct.add_ypos = 0.04f;
@@ -485,6 +471,7 @@ public:
 							else {
 								bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
 								bool skey = (CheckHitKey(KEY_INPUT_S) != 0);
+								skey = false;
 								bool akey = (CheckHitKey(KEY_INPUT_A) != 0);
 								bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
 								mine.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
@@ -539,21 +526,12 @@ public:
 									xv_t.y(0.f);
 									xv_t = xv_t.Norm();
 
-									if (wkey) {
-										easing_set(&mine.add_pos_buf, zv_t*-speed, 0.95f);
-									}
-									if (skey) {
-										easing_set(&mine.add_pos_buf, zv_t*speed, 0.95f);
-									}
-									if (akey) {
-										easing_set(&mine.add_pos_buf, xv_t*speed, 0.95f);
-									}
-									if (dkey) {
-										easing_set(&mine.add_pos_buf, xv_t*-speed, 0.95f);
-									}
-									if (!wkey && !skey && !akey && !dkey) {
-										easing_set(&mine.add_pos_buf, VGet(0, 0, 0), 0.95f);
-									}
+									easing_set(&mine.add_pos_buf,
+										VECTOR_ref(wkey ? (zv_t*-speed) : VGet(0, 0, 0))
+										+ (skey ? (zv_t*speed) : VGet(0, 0, 0))
+										+ (akey ? (xv_t*speed) : VGet(0, 0, 0))
+										+ (dkey ? (xv_t*-speed) : VGet(0, 0, 0))
+										, 0.95f);
 									if (mine.add_ypos == 0.f) {
 										if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
 											mine.add_ypos = 0.04f;
