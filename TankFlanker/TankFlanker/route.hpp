@@ -28,7 +28,9 @@ class main_c : Mainclass {
 	bool oldv = false;
 	bool oldv_1 = false;
 	bool oldv_2 = false;
+	bool oldv_2_2 = false;
 	bool oldv_3 = false;
+	bool oldv_3_2 = false;
 
 	bool start_c = true;
 	bool ending = true;
@@ -116,8 +118,32 @@ public:
 							if (p.HitFlag) {
 								endpos = p.HitPosition;
 							}
-							DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 0, 0));
-
+							for (auto& tgt : this->chara) {
+								if (&tgt != &c) {
+									{
+										auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, 0);
+										if (q.HitFlag) {
+											endpos = q.HitPosition;
+										}
+									}
+									{
+										auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, 1);
+										if (q.HitFlag) {
+											endpos = q.HitPosition;
+										}
+									}
+									{
+										auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, 2);
+										if (q.HitFlag) {
+											endpos = q.HitPosition;
+										}
+									}
+								}
+							}
+							DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 50, 0));
+							SetUseLighting(FALSE);
+							DrawSphere3D(endpos.get(), 0.01f, 8, GetColor(255, 50, 0), GetColor(255, 255, 255), TRUE);
+							SetUseLighting(TRUE);
 						}
 					}
 					for (auto& g : this->item_data) {
@@ -140,6 +166,8 @@ public:
 				//ƒvƒŒƒCƒ„[‘€ì•Ï”ŒQ
 				this->xrad_p = 0.f;									//ƒ}ƒEƒXƒGƒCƒ€
 				this->TPS.ready(false);
+				oldv_3_2 = true;
+				oldv_2_2 = true;
 				for (auto& c : chara) {
 					c.ads.ready(false);
 					c.running = false;
@@ -174,6 +202,7 @@ public:
 						}
 						{
 							for (auto& c : chara) {
+								easing_set(&c.HP_r, float(c.HP), 0.95f);
 								if (c.HP == 0) {
 									c.spawn(c.spawn_pos, c.spawn_mat);
 									c.add_ypos = 0.f;
@@ -305,20 +334,15 @@ public:
 								if (Drawparts->get_hand2_num() != -1) {
 									auto& ptr_ = (*Drawparts->get_device())[Drawparts->get_hand2_num()];
 									if (ptr_.turn && ptr_.now) {
-										if ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) {
+										if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
 											//running
 											mine.wkey = false;
 											mine.skey = false;
 											mine.akey = false;
 											mine.dkey = false;
-											mine.running = false;//(ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
-											auto speed = (mine.running ? 6.f : 2.f) / GetFPS();
-											if (mine.running) {
-												easing_set(&mine.add_pos_buf, (mine.mat.zvec()*ptr_.touch.y())*speed, 0.95f);
-											}
-											else {
-												easing_set(&mine.add_pos_buf, (mine.mat.zvec()*ptr_.touch.y() + mine.mat.xvec()*ptr_.touch.x())*speed, 0.95f);
-											}
+											mine.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
+											auto speed = (mine.running ? 6.f : 4.f) / GetFPS();
+											easing_set(&mine.add_pos_buf, (mine.mat.zvec()*ptr_.touch.y() + mine.mat.xvec()*ptr_.touch.x())*speed, 0.95f);
 										}
 										else {
 											easing_set(&mine.add_pos_buf, VGet(0, 0, 0), 0.95f);
@@ -646,8 +670,11 @@ public:
 										auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[1]];
 										Drawparts->GetDevicePositionVR(Drawparts->tracker_num[1], &mine.pos_LEFTREG, &mine.mat_LEFTREG);
 										c.mat_LEFTREG = MATRIX_ref::Axis1(c.mat_LEFTREG.xvec()*-1.f, c.mat_LEFTREG.yvec(), c.mat_LEFTREG.zvec()*-1.f);
-										if (mine.start_c || (ptr_.turn && ptr_.now) != oldv_2) {
-											mine.mat_LEFTREG_rep = mine.mat_LEFTREG;
+										if ((mine.start_c || (ptr_.turn && ptr_.now) != oldv_2) && oldv_2_2) {
+										mine.mat_LEFTREG_rep = mine.mat_LEFTREG;
+										if (!mine.start_c) {
+											//oldv_2_2 = false;
+										}
 										}
 										oldv_2 = ptr_.turn && ptr_.now;
 										mine.mat_LEFTREG = 
@@ -658,7 +685,34 @@ public:
 											//Šî€
 											VECTOR_ref tgt_pt = c.pos_LEFTREG;
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.LEFTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, 1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
+											VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec();//x=0‚Æ‚·‚é
+											float cos_t = getcos_tri((c.body.frame(c.frame_.LEFTreg_f.first) - c.body.frame(c.frame_.LEFTfoot2_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot2_f.first) - c.body.frame(c.frame_.LEFTfoot1_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot1_f.first) - tgt_pt).size());
+											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+											//ã˜r
+											c.body.SetFrameLocalMatrix(c.frame_.LEFTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_.LEFTfoot1_f.second));
+											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_.LEFTfoot2_f.first) - c.body.frame(c.frame_.LEFTfoot1_f.first), m_inv.Inverse()), vec_t);
+											c.body.SetFrameLocalMatrix(c.frame_.LEFTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_.LEFTfoot1_f.second));
+
+											//‰º˜r
+											c.body.SetFrameLocalMatrix(c.frame_.LEFTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_.LEFTfoot2_f.second));
+											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_.LEFTreg_f.first) - c.body.frame(c.frame_.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+											c.body.SetFrameLocalMatrix(c.frame_.LEFTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_.LEFTfoot2_f.second));
+											//Žè
+											c.body.SetFrameLocalMatrix(c.frame_.LEFTreg_f.first, c.mat_LEFTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_.LEFTreg_f.second));
+										}
+
+										{
+											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_.LEFTreg2_f.first) + VGet(0, 1.6f, 0), mine.body.frame(mine.frame_.LEFTreg2_f.first), 0);
+											if (pp.HitFlag) {
+												mine.pos_LEFTREG = VECTOR_ref(pp.HitPosition) - (mine.body.frame(mine.frame_.LEFTreg2_f.first) - mine.body.frame(mine.frame_.LEFTreg_f.first));
+											}
+										}
+
+										{
+											//Šî€
+											VECTOR_ref tgt_pt = c.pos_LEFTREG;
+											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.LEFTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
+											VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec();//x=0‚Æ‚·‚é
 											float cos_t = getcos_tri((c.body.frame(c.frame_.LEFTreg_f.first) - c.body.frame(c.frame_.LEFTfoot2_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot2_f.first) - c.body.frame(c.frame_.LEFTfoot1_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot1_f.first) - tgt_pt).size());
 											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 											//ã˜r
@@ -679,8 +733,11 @@ public:
 										auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[2]];
 										Drawparts->GetDevicePositionVR(Drawparts->tracker_num[2], &mine.pos_RIGHTREG, &mine.mat_RIGHTREG);
 										c.mat_RIGHTREG = MATRIX_ref::Axis1(c.mat_RIGHTREG.xvec()*-1.f, c.mat_RIGHTREG.yvec(), c.mat_RIGHTREG.zvec()*-1.f);
-										if (mine.start_c || (ptr_.turn && ptr_.now) != oldv_3) {
+										if ((mine.start_c || (ptr_.turn && ptr_.now) != oldv_3) && oldv_3_2) {
 											mine.mat_RIGHTREG_rep = mine.mat_RIGHTREG;
+											if (!mine.start_c) {
+												//oldv_3_2 = false;
+											}
 										}
 										oldv_3 = ptr_.turn && ptr_.now;
 										mine.mat_RIGHTREG = 
@@ -691,7 +748,32 @@ public:
 											//Šî€
 											VECTOR_ref tgt_pt = c.pos_RIGHTREG;
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, 1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
+											VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec();//x=0‚Æ‚·‚é
+											float cos_t = getcos_tri((c.body.frame(c.frame_.RIGHTreg_f.first) - c.body.frame(c.frame_.RIGHTfoot2_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot2_f.first) - c.body.frame(c.frame_.RIGHTfoot1_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot1_f.first) - tgt_pt).size());
+											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+											//ã˜r
+											c.body.SetFrameLocalMatrix(c.frame_.RIGHTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_.RIGHTfoot1_f.second));
+											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_.RIGHTfoot2_f.first) - c.body.frame(c.frame_.RIGHTfoot1_f.first), m_inv.Inverse()), vec_t);
+											c.body.SetFrameLocalMatrix(c.frame_.RIGHTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_.RIGHTfoot1_f.second));
+											//‰º˜r
+											c.body.SetFrameLocalMatrix(c.frame_.RIGHTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_.RIGHTfoot2_f.second));
+											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_.RIGHTreg_f.first) - c.body.frame(c.frame_.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+											c.body.SetFrameLocalMatrix(c.frame_.RIGHTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_.RIGHTfoot2_f.second));
+											//Žè
+											c.body.SetFrameLocalMatrix(c.frame_.RIGHTreg_f.first, c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_.RIGHTreg_f.second));
+										}
+
+										{
+											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_.RIGHTreg2_f.first) + VGet(0, 1.6f, 0), mine.body.frame(mine.frame_.RIGHTreg2_f.first), 0);
+											if (pp.HitFlag) {
+												mine.pos_RIGHTREG = VECTOR_ref(pp.HitPosition) - (mine.body.frame(mine.frame_.RIGHTreg2_f.first) - mine.body.frame(mine.frame_.RIGHTreg_f.first));
+											}
+										}
+										{
+											//Šî€
+											VECTOR_ref tgt_pt = c.pos_RIGHTREG;
+											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
+											VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec();//x=0‚Æ‚·‚é
 											float cos_t = getcos_tri((c.body.frame(c.frame_.RIGHTreg_f.first) - c.body.frame(c.frame_.RIGHTfoot2_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot2_f.first) - c.body.frame(c.frame_.RIGHTfoot1_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot1_f.first) - tgt_pt).size());
 											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 											//ã˜r
@@ -1294,19 +1376,30 @@ public:
 								{
 									UIparts->set_draw(mine, Drawparts->use_vr);
 								}
-								//”íŽÊ‘Ì[“x•`‰æ
-								Hostpassparts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, cam_easy);
-								//ÅI•`‰æ
-								Hostpassparts->MAIN_draw();
 							}
 							//VR‚ÉˆÚ‚·
 							Drawparts->draw_VR( [&] {
+								auto tmp = GetDrawScreen();
+								{
+									auto tmp_cam = cam_easy;
+									tmp_cam.campos = GetCameraPosition();
+									tmp_cam.camvec = GetCameraTarget();
+									//”íŽÊ‘Ì[“x•`‰æ
+									Hostpassparts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, tmp_cam);
+									//ÅI•`‰æ
+									Hostpassparts->MAIN_draw();
+								}
+								GraphHandle::SetDraw_Screen(tmp);
+
+								//main
+								Hostpassparts->get_main().DrawGraph(0, 0, true);
+
 								SetCameraNearFar(0.01f, 2.f);
 								SetUseZBuffer3D(FALSE);												//zbufuse
 								SetWriteZBuffer3D(FALSE);											//zbufwrite
 								{
 									//main
-									DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->get_main().get(), TRUE);
+									//DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->get_main().get(), TRUE);
 									//UI
 									DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, this->UI_Screen.get(), TRUE);
 								}
