@@ -324,6 +324,7 @@ public:
 								{
 									//+視点取得
 									auto& ptr_ = (*Drawparts->get_device())[Drawparts->get_hmd_num()];
+									mine.pos_HMD_old = mine.pos_HMD;
 									Drawparts->GetDevicePositionVR(Drawparts->get_hmd_num(), &mine.pos_HMD, &mine.mat);
 									if (mine.start_c || (ptr_.turn && ptr_.now) != oldv) {
 										mine.rec_HMD = VGet(mine.pos_HMD.x(), 0.f, mine.pos_HMD.z());
@@ -586,63 +587,75 @@ public:
 						for (auto& c : chara) {
 							//壁その他の判定
 							{
-								VECTOR_ref pos_t2 = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
-								VECTOR_ref pos_t = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
-								pos_t += c.add_pos;
-								//壁
+								//VR用
 								{
-									mapparts->map_col_wall(pos_t2, &pos_t);
-									if ((c.add_pos - (pos_t - pos_t2)).size() != 0.f) {
-										c.add_pos = pos_t - pos_t2;
-										if (c.add_ypos == 0.f) {
-											c.add_pos_buf = c.add_pos;
-										}
+									VECTOR_ref pos_t2 = (c.pos + (VGet(c.pos_HMD_old.x(), 0.f, c.pos_HMD_old.z())) - c.rec_HMD);
+									VECTOR_ref pos_t = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
+									//壁
+									{
+										mapparts->map_col_wall(pos_t2, &pos_t);
 									}
+									c.pos = pos_t - (VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
 								}
-								//落下
+								//共通
 								{
-									auto pp = mapparts->map_col_line(pos_t + VGet(0, 1.6f, 0), pos_t, 0);
-									if (c.add_ypos <= 0.f && pp.HitFlag == 1) {
-										if (VECTOR_ref(VGet(0, 1.f, 0.f)).dot(pp.Normal) >= cos(deg2rad(30))) {
-											pos_t = pp.HitPosition;
-										}
-										else {
-											//ブロックするベクトル
-											auto v_t = VECTOR_ref(pp.Normal);
-											v_t.y(0);
-											v_t = v_t.Norm();
-											//
-											pos_t -= c.add_pos;
-											c.add_pos += v_t * c.add_pos.cross(v_t.cross(c.add_pos).Norm()).size();
+									VECTOR_ref pos_t2 = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
+									VECTOR_ref pos_t = pos_t2 + c.add_pos;
+									//壁
+									{
+										mapparts->map_col_wall(pos_t2, &pos_t);
+										if ((c.add_pos - (pos_t - pos_t2)).size() != 0.f) {
+											c.add_pos = pos_t - pos_t2;
 											if (c.add_ypos == 0.f) {
 												c.add_pos_buf = c.add_pos;
 											}
-											pos_t += c.add_pos;
 										}
-										c.add_ypos = 0.f;
 									}
-									else {
-										pos_t.yadd(c.add_ypos);
-										c.add_ypos += M_GR / std::powf(GetFPS(), 2.f);
-										//復帰
-										if (pos_t.y() <= -5.f) {
-											pos_t = c.spawn_pos;
-											if (Drawparts->use_vr) {
-												if (&c == &chara[1]) {
-													this->xrad_p = 0;
-												}
+									//落下
+									{
+										auto pp = mapparts->map_col_line(pos_t + VGet(0, 1.6f, 0), pos_t, 0);
+										if (c.add_ypos <= 0.f && pp.HitFlag == 1) {
+											if (VECTOR_ref(VGet(0, 1.f, 0.f)).dot(pp.Normal) >= cos(deg2rad(30))) {
+												pos_t = pp.HitPosition;
 											}
 											else {
-												if (&c == &mine) {
-													this->xrad_p = 0;
+												//ブロックするベクトル
+												auto v_t = VECTOR_ref(pp.Normal);
+												v_t.y(0);
+												v_t = v_t.Norm();
+												//
+												pos_t -= c.add_pos;
+												c.add_pos += v_t * c.add_pos.cross(v_t.cross(c.add_pos).Norm()).size();
+												if (c.add_ypos == 0.f) {
+													c.add_pos_buf = c.add_pos;
 												}
+												pos_t += c.add_pos;
 											}
-											c.spawn(pos_t, c.spawn_mat);
+											c.add_ypos = 0.f;
+										}
+										else {
+											pos_t.yadd(c.add_ypos);
+											c.add_ypos += M_GR / std::powf(GetFPS(), 2.f);
+											//復帰
+											if (pos_t.y() <= -5.f) {
+												pos_t = c.spawn_pos;
+												if (Drawparts->use_vr) {
+													if (&c == &chara[1]) {
+														this->xrad_p = 0;
+													}
+												}
+												else {
+													if (&c == &mine) {
+														this->xrad_p = 0;
+													}
+												}
+												c.spawn(pos_t, c.spawn_mat);
+											}
 										}
 									}
+									//反映
+									c.pos = pos_t - (VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
 								}
-								//反映
-								c.pos = pos_t - (VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
 							}
 							//pos
 							if (Drawparts->use_vr && (&c == &mine)) {
@@ -698,7 +711,10 @@ public:
 											//基準
 											VECTOR_ref tgt_pt = c.pos_LEFTREG;
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.LEFTfoot1_f.first)).Norm(), m_inv.Inverse());//基準
-											VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec();//x=0とする
+											//VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0とする
+
+											VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
+
 											float cos_t = getcos_tri((c.body.frame(c.frame_.LEFTreg_f.first) - c.body.frame(c.frame_.LEFTfoot2_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot2_f.first) - c.body.frame(c.frame_.LEFTfoot1_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot1_f.first) - tgt_pt).size());
 											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 											//上腕
@@ -725,7 +741,10 @@ public:
 											//基準
 											VECTOR_ref tgt_pt = c.pos_LEFTREG;
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.LEFTfoot1_f.first)).Norm(), m_inv.Inverse());//基準
-											VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec();//x=0とする
+											//VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0とする
+
+											VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
+
 											float cos_t = getcos_tri((c.body.frame(c.frame_.LEFTreg_f.first) - c.body.frame(c.frame_.LEFTfoot2_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot2_f.first) - c.body.frame(c.frame_.LEFTfoot1_f.first)).size(), (c.body.frame(c.frame_.LEFTfoot1_f.first) - tgt_pt).size());
 											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 											//上腕
@@ -761,7 +780,11 @@ public:
 											//基準
 											VECTOR_ref tgt_pt = c.pos_RIGHTREG;
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//基準
-											VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec();//x=0とする
+											//VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0とする
+
+
+											VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
+
 											float cos_t = getcos_tri((c.body.frame(c.frame_.RIGHTreg_f.first) - c.body.frame(c.frame_.RIGHTfoot2_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot2_f.first) - c.body.frame(c.frame_.RIGHTfoot1_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot1_f.first) - tgt_pt).size());
 											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 											//上腕
@@ -786,7 +809,10 @@ public:
 											//基準
 											VECTOR_ref tgt_pt = c.pos_RIGHTREG;
 											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//基準
-											VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec();//x=0とする
+											//VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0とする
+
+											VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
+
 											float cos_t = getcos_tri((c.body.frame(c.frame_.RIGHTreg_f.first) - c.body.frame(c.frame_.RIGHTfoot2_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot2_f.first) - c.body.frame(c.frame_.RIGHTfoot1_f.first)).size(), (c.body.frame(c.frame_.RIGHTfoot1_f.first) - tgt_pt).size());
 											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 											//上腕

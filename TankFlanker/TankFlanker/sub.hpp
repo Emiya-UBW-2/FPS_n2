@@ -347,7 +347,7 @@ public:
 		float ammo_pene = 10.f;//貫通
 		float ammo_damege = 10.f;//ダメージ
 		std::vector<Ammo_info> ammo;
-		Mags* magazine;
+		Mags* magazine=nullptr;
 		/**/
 		void set_data(std::vector<Mags>& mag_data) {
 			this->mod.model.SetMatrix(MGetIdent());
@@ -706,7 +706,7 @@ public:
 		VECTOR_ref pos_mag;
 		MATRIX_ref mat_mag;
 		//頭部座標系
-		VECTOR_ref pos_HMD, rec_HMD;
+		VECTOR_ref pos_HMD, pos_HMD_old, rec_HMD;
 		float add_ypos = 0.f;//垂直加速度
 		float body_xrad = 0.f;//胴体角度
 		float body_yrad = 0.f;//胴体角度
