@@ -695,10 +695,10 @@ public:
 		VECTOR_ref add_pos, add_pos_buf;		//移動
 
 		switchs ads, squat;
-		bool wkey = false;
-		bool skey = false;
-		bool akey = false;
-		bool dkey = false;
+		//bool wkey = false;
+		//bool skey = false;
+		//bool akey = false;
+		//bool dkey = false;
 		bool running = false;										//走るか否か
 		VECTOR_ref gunpos;											//マウスエイム用銃座標
 		switchs getmag;

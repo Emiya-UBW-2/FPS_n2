@@ -27,12 +27,9 @@ c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp
 c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
   コード生成しています。
-  All 2913 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  3 of 2913 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
 EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\ハンドサイン\source\repos\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   TankFlanker.vcxproj -> C:\Users\ハンドサイン\source\repos\FPS_n2\TankFlanker\x64\Release\FPS_n2.exe
-c:\users\ハンドサイン\source\repos\openvr\openvr.h(4856): warning C26495: Variable 'vr::COpenVRContext::m_pVRSystem' is uninitialized. Always initialize a member variable (type.6).
-c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3353): warning C6385: 'p' から無効なデータを読み取っています: 読み取り可能なサイズは '_Old_6`m_size' バイトですが、'4' バイトを読み取る可能性があります。
-c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3287): warning C26495: Variable 'Effekseer::Model::Vertex::VColor' is uninitialized. Always initialize a member variable (type.6).
-c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\dxlib_ref\dxlib_ref.h(291): warning C26495: Variable 'DXDraw::Material' is uninitialized. Always initialize a member variable (type.6).
-c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\dxlib_ref\dxlib_ref.h(239): warning C26495: Variable 'DXDraw::Mirror_mod::AmbientColor' is uninitialized. Always initialize a member variable (type.6).

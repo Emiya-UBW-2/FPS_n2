@@ -221,19 +221,31 @@ public:
 							//cpu
 							for (auto& c : chara) {
 								if (&c - &chara[0] >= (Drawparts->use_vr ? 2 : 1)) {
-									c.wkey = (CheckHitKey(KEY_INPUT_W) != 0);
-									c.skey = (CheckHitKey(KEY_INPUT_S) != 0);
-									c.akey = (CheckHitKey(KEY_INPUT_A) != 0);
-									c.dkey = (CheckHitKey(KEY_INPUT_D) != 0);
+									bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
+									bool skey = (CheckHitKey(KEY_INPUT_S) != 0);
+									bool akey = (CheckHitKey(KEY_INPUT_A) != 0);
+									bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
 									c.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
 									c.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
 									auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
 									auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
-
-									int32_t x_m= deskx / 2, y_m= desky / 2;
-
+									if (c.running) {
+										c.squat.first = false;
+									}
+									if (c.ads.first) {
+										c.running = false;
+									}
+									if (!wkey && !skey && !akey && !dkey) {
+										c.running = false;
+									}
+									if (c.running) {
+										skey = false;
+										akey = false;
+										dkey = false;
+									}
 									//HMD_mat
 									{
+										int32_t x_m = deskx / 2, y_m = desky / 2;
 										c.mat *= MATRIX_ref::RotAxis(c.mat.zvec(), c.body_zrad).Inverse();
 										if (qkey) {
 											easing_set(&c.body_zrad, deg2rad(-30), 0.9f);
@@ -253,20 +265,6 @@ public:
 									}
 									//ˆÚ“®
 									{
-										if (c.running) {
-											c.squat.first = false;
-										}
-										if (c.ads.first) {
-											c.running = false;
-										}
-										if (!c.wkey && !c.skey && !c.akey && !c.dkey) {
-											c.running = false;
-										}
-										if (c.running) {
-											c.skey = false;
-											c.akey = false;
-											c.dkey = false;
-										}
 										auto speed = (c.running ? 6.f : ((c.ads.first ? 2.f : 4.f)*(c.squat.first ? 0.4f : 1.f))) / GetFPS();
 										VECTOR_ref zv_t = c.mat.zvec();
 										zv_t.y(0.f);
@@ -276,19 +274,19 @@ public:
 										xv_t.y(0.f);
 										xv_t = xv_t.Norm();
 
-										if (c.wkey) {
+										if (wkey) {
 											easing_set(&c.add_pos_buf, zv_t*-speed, 0.95f);
 										}
-										if (c.skey) {
+										if (skey) {
 											easing_set(&c.add_pos_buf, zv_t*speed, 0.95f);
 										}
-										if (c.akey) {
+										if (akey) {
 											easing_set(&c.add_pos_buf, xv_t*speed, 0.95f);
 										}
-										if (c.dkey) {
+										if (dkey) {
 											easing_set(&c.add_pos_buf, xv_t*-speed, 0.95f);
 										}
-										if (!c.wkey && !c.skey && !c.akey && !c.dkey) {
+										if (!wkey && !skey && !akey && !dkey) {
 											easing_set(&c.add_pos_buf, VGet(0, 0, 0), 0.95f);
 										}
 										if (c.add_ypos == 0.f) {
@@ -337,10 +335,6 @@ public:
 									if (ptr_.turn && ptr_.now) {
 										if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
 											//running
-											mine.wkey = false;
-											mine.skey = false;
-											mine.akey = false;
-											mine.dkey = false;
 											mine.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
 											auto speed = (mine.running ? 6.f : 4.f) / GetFPS();
 											easing_set(&mine.add_pos_buf, (mine.mat.zvec()*ptr_.touch.y() + mine.mat.xvec()*ptr_.touch.x())*speed, 0.95f);
@@ -385,10 +379,31 @@ public:
 								//2P
 								{
 									auto& ct = chara[1];
+
+									bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
+									bool skey = (CheckHitKey(KEY_INPUT_S) != 0);
+									bool akey = (CheckHitKey(KEY_INPUT_A) != 0);
+									bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
+									ct.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
+									ct.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
+									auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
+									auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
+									if (ct.running) {
+										ct.squat.first = false;
+									}
+									if (ct.ads.first) {
+										ct.running = false;
+									}
+									if (!wkey && !skey && !akey && !dkey) {
+										ct.running = false;
+									}
+									if (ct.running) {
+										skey = false;
+										akey = false;
+										dkey = false;
+									}
 									//HMD_mat
 									{
-										auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
-										auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
 										ct.mat *= MATRIX_ref::RotAxis(ct.mat.zvec(), ct.body_zrad).Inverse();
 										if (qkey) {
 											easing_set(&ct.body_zrad, deg2rad(-30), 0.9f);
@@ -411,26 +426,6 @@ public:
 									}
 									//ˆÚ“®
 									{
-										ct.wkey = (CheckHitKey(KEY_INPUT_W) != 0);
-										ct.skey = (CheckHitKey(KEY_INPUT_S) != 0);
-										ct.akey = (CheckHitKey(KEY_INPUT_A) != 0);
-										ct.dkey = (CheckHitKey(KEY_INPUT_D) != 0);
-										ct.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
-										ct.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
-										if (ct.running) {
-											ct.squat.first = false;
-										}
-										if (ct.ads.first) {
-											ct.running = false;
-										}
-										if (!ct.wkey && !ct.skey && !ct.akey && !ct.dkey) {
-											ct.running = false;
-										}
-										if (ct.running) {
-											ct.skey = false;
-											ct.akey = false;
-											ct.dkey = false;
-										}
 										auto speed = (ct.running ? 6.f : ((ct.ads.first ? 2.f : 4.f)*(ct.squat.first ? 0.4f : 1.f))) / GetFPS();
 										VECTOR_ref zv_t = ct.mat.zvec();
 										zv_t.y(0.f);
@@ -440,19 +435,19 @@ public:
 										xv_t.y(0.f);
 										xv_t = xv_t.Norm();
 
-										if (ct.wkey) {
+										if (wkey) {
 											easing_set(&ct.add_pos_buf, zv_t*-speed, 0.95f);
 										}
-										if (ct.skey) {
+										if (skey) {
 											easing_set(&ct.add_pos_buf, zv_t*speed, 0.95f);
 										}
-										if (ct.akey) {
+										if (akey) {
 											easing_set(&ct.add_pos_buf, xv_t*speed, 0.95f);
 										}
-										if (ct.dkey) {
+										if (dkey) {
 											easing_set(&ct.add_pos_buf, xv_t*-speed, 0.95f);
 										}
-										if (!ct.wkey && !ct.skey && !ct.akey && !ct.dkey) {
+										if (!wkey && !skey && !akey && !dkey) {
 											easing_set(&ct.add_pos_buf, VGet(0, 0, 0), 0.95f);
 										}
 										if (ct.add_ypos == 0.f) {
@@ -483,10 +478,31 @@ public:
 								}
 							}
 							else {
+								bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
+								bool skey = (CheckHitKey(KEY_INPUT_S) != 0);
+								bool akey = (CheckHitKey(KEY_INPUT_A) != 0);
+								bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
+								mine.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
+								mine.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
+								auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
+								auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
+								if (mine.running) {
+									mine.squat.first = false;
+								}
+								if (mine.ads.first) {
+									mine.running = false;
+								}
+								if (!wkey && !skey && !akey && !dkey) {
+									mine.running = false;
+								}
+								if (mine.running) {
+									skey = false;
+									akey = false;
+									dkey = false;
+								}
+
 								//HMD_mat
 								{
-									auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
-									auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
 									mine.mat *= MATRIX_ref::RotAxis(mine.mat.zvec(), mine.body_zrad).Inverse();
 									if (qkey) {
 										easing_set(&mine.body_zrad, deg2rad(-30), 0.9f);
@@ -509,26 +525,6 @@ public:
 								}
 								//ˆÚ“®
 								{
-									mine.wkey = (CheckHitKey(KEY_INPUT_W) != 0);
-									mine.skey = (CheckHitKey(KEY_INPUT_S) != 0);
-									mine.akey = (CheckHitKey(KEY_INPUT_A) != 0);
-									mine.dkey = (CheckHitKey(KEY_INPUT_D) != 0);
-									mine.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
-									mine.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
-									if (mine.running) {
-										mine.squat.first = false;
-									}
-									if (mine.ads.first) {
-										mine.running = false;
-									}
-									if (!mine.wkey && !mine.skey && !mine.akey && !mine.dkey) {
-										mine.running = false;
-									}
-									if (mine.running) {
-										mine.skey = false;
-										mine.akey = false;
-										mine.dkey = false;
-									}
 									auto speed = (mine.running ? 6.f : ((mine.ads.first ? 2.f : 4.f)*(mine.squat.first ? 0.4f : 1.f))) / GetFPS();
 									VECTOR_ref zv_t = mine.mat.zvec();
 									zv_t.y(0.f);
@@ -538,19 +534,19 @@ public:
 									xv_t.y(0.f);
 									xv_t = xv_t.Norm();
 
-									if (mine.wkey) {
+									if (wkey) {
 										easing_set(&mine.add_pos_buf, zv_t*-speed, 0.95f);
 									}
-									if (mine.skey) {
+									if (skey) {
 										easing_set(&mine.add_pos_buf, zv_t*speed, 0.95f);
 									}
-									if (mine.akey) {
+									if (akey) {
 										easing_set(&mine.add_pos_buf, xv_t*speed, 0.95f);
 									}
-									if (mine.dkey) {
+									if (dkey) {
 										easing_set(&mine.add_pos_buf, xv_t*-speed, 0.95f);
 									}
-									if (!mine.wkey && !mine.skey && !mine.akey && !mine.dkey) {
+									if (!wkey && !skey && !akey && !dkey) {
 										easing_set(&mine.add_pos_buf, VGet(0, 0, 0), 0.95f);
 									}
 									if (mine.add_ypos == 0.f) {
@@ -1477,7 +1473,7 @@ public:
 								Hostpass2parts->MAIN_draw();
 							}
 							//Screen2‚ÉˆÚ‚·
-							outScreen2.SetDraw_Screen();
+							outScreen2.SetDraw_Screen(cam_easy2.campos, cam_easy2.camvec, cam_easy2.camup, cam_easy2.fov, cam_easy2.near_, cam_easy2.far_);
 							{
 								Hostpass2parts->get_main().DrawGraph(0, 0, true);
 								//UI

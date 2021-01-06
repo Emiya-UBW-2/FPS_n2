@@ -91,9 +91,11 @@ public:
 	}
 
 	void set_draw(Mainclass::Chara& chara, bool use_vr = true) {
-		int t_disp_x = 1920;
-		int t_disp_y = 1080;
-		GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+		int t_disp_x = deskx;
+		int t_disp_y = desky;
+		if (use_vr) {
+			GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+		}
 
 		//FontHandle* font_big = &font24;
 		FontHandle* font = (use_vr) ? &font12 : &font18;
