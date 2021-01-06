@@ -463,6 +463,7 @@ public:
 			void init() {
 				this->ammo_total = 0;
 				this->select = 0;
+				this->mag_in.clear();
 			}
 			//ƒ}ƒKƒWƒ“‚ğ1‚Â’Ç‰Á(‘•“U–³‚µ)
 			void mag_plus(Mags* magazine) {

@@ -76,6 +76,20 @@ public:
 		GraphHandle::SetDraw_Screen((int32_t)DX_SCREEN_BACK);
 		ScreenFlip();
 	}
+
+	void draw_HP(int xpos, int ypos, int xsize, int ysize, int now, int will, int max) {
+		DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, GetColor(64, 64, 64), TRUE);
+		DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, GetColor(128, 128, 128), FALSE);
+
+		DrawBox(xpos - xsize / 2 + y_r(2), ypos + y_r(2), xpos - xsize / 2 + y_r(2) + (xsize - y_r(4))*now / max, ypos + ysize - y_r(2), GetColor(0, 255, 0), TRUE);
+		DrawBox(
+			xpos - xsize / 2 + y_r(2) + (xsize - y_r(4))*now / max, ypos + y_r(2),
+			xpos - xsize / 2 + y_r(2) + (xsize - y_r(4))*will / max, ypos + ysize - y_r(2),
+			GetColor(255, 255, 0), TRUE);
+
+		font24.DrawStringFormat_MID(xpos + y_r(2), ypos + y_r(2), GetColor(255, 255, 255), "%d/%d", now, max);
+	}
+
 	void set_draw(Mainclass::Chara& chara, bool use_vr = true) {
 		int t_disp_x = 1920;
 		int t_disp_y = 1080;
@@ -240,31 +254,22 @@ public:
 					xp = t_disp_x / 2;
 					yp = t_disp_y / 2 + t_disp_y / 6;
 					xs = x_r(200);
-					ys = fonthight + y_r(8);
+					ys = y_r(18) + y_r(8);
 				}
 				else {
 					xp = t_disp_x / 2;
 					yp = t_disp_y / 2 + t_disp_y / 6;
 					xs = x_r(200);
-					ys = fonthight + y_r(8);
+					ys = y_r(18) + y_r(8);
 				}
-				{
-					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
-					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
-
-					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + ys - y_r(2), GetColor(0, 255, 0), TRUE);
-					DrawBox(
-						xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + y_r(2),
-						xp - xs / 2 + y_r(2) + (xs - y_r(4))*int(chara.HP_r) / chara.HP_full, yp + ys - y_r(2),
-						GetColor(255, 255, 0), TRUE);
-
-					font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", chara.HP, chara.HP_full);
-				}
+				draw_HP(xp, yp, xs, ys, chara.HP, int(chara.HP_r), chara.HP_full);
 			}
 			//èIÇÌÇË
 		}
 	}
-	void item_draw(std::vector<Items>&item_data, const VECTOR_ref& pos) {
+	void item_draw(std::vector<Chara>&chara,std::vector<Items>&item_data, const VECTOR_ref& pos) {
+		int xs = 0, ys = 0, xp = 0, yp = 0;
+
 		SetCameraNearFar(0.01f, 10.f);
 		for (auto& g : item_data) {
 			if (g.ptr != nullptr && g.cate == 0) {
@@ -295,33 +300,24 @@ public:
 				}
 			}
 		}
-	}
+		//HP
+		{
+			SetCameraNearFar(0.01f, 100.f);
+			for (auto& c : chara) {
+				if (abs(c.HP - int(c.HP_r)) >= 3) {
+					VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_.head_f.first) + VGet(0, 0.3f, 0)).get());
+					if (p.z() >= 0.f&&p.z() <= 1.f) {
+						xp = int(p.x());
+						yp = int(p.y());
+						xs = x_r(200);
+						ys = y_r(18) + y_r(8);
 
-	void HP_draw(std::vector<Chara>&chara) {
-		int xs = 0, ys = 0, xp = 0, yp = 0;
-		SetCameraNearFar(0.01f, 100.f);
-		for (auto& c : chara) {
-			if (abs(c.HP - int(c.HP_r)) >= 3) {
-				VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_.head_f.first) + VGet(0, 0.3f, 0)).get());
-				if (p.z() >= 0.f&&p.z() <= 1.f) {
-					xp = int(p.x());
-					yp = int(p.y());
-					xs = x_r(200);
-					ys = y_r(18) + y_r(8);
-
-
-					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
-					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
-					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP / c.HP_full, yp + ys - y_r(2), GetColor(0, 255, 0), TRUE);
-					DrawBox(
-						xp - xs / 2 + y_r(2) + (xs - y_r(4))*c.HP / c.HP_full, yp + y_r(2),
-						xp - xs / 2 + y_r(2) + (xs - y_r(4))*int(c.HP_r) / c.HP_full, yp + ys - y_r(2),
-						GetColor(255, 255, 0), TRUE);
-
-					font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", c.HP, c.HP_full);
+						draw_HP(xp, yp, xs, ys, c.HP, int(c.HP_r), c.HP_full);
+					}
 				}
 			}
 		}
+		//
 	}
 
 };

@@ -90,13 +90,13 @@ public:
 			auto& mine = chara[0];
 			//自機セット
 			mine.set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			mine.spawn(VGet(0.0f, 4.0f, 0.f), MATRIX_ref::RotY(DX_PI_F));
+			mine.spawn(VGet(-8.0f, 2.0f, -8.f), MATRIX_ref::RotY(DX_PI_F));
 			//その他
 			chara[1].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[1].spawn(VGet(8.0f, 4.0f, 8.f), MATRIX_ref::RotY(DX_PI_F*2));
+			chara[1].spawn(VGet(8.0f, 2.0f, 8.f), MATRIX_ref::RotY(DX_PI_F*2));
 
 			chara[2].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[2].spawn(VGet(-8.0f, 4.0f, 8.f), MATRIX_ref::RotY(DX_PI_F*2));
+			chara[2].spawn(VGet(-8.0f, 2.0f, 8.f), MATRIX_ref::RotY(DX_PI_F*3/2));
 
 			//マップ読み込み
 			mapparts->Ready_map("data/map_new");			//mapparts->Ready_map("data/new");
@@ -205,9 +205,6 @@ public:
 								easing_set(&c.HP_r, float(c.HP), 0.95f);
 								if (c.HP == 0) {
 									c.spawn(c.spawn_pos, c.spawn_mat);
-									c.add_ypos = 0.f;
-									c.body.SetMatrix(MATRIX_ref::Mtrans(c.pos - c.rec_HMD));
-									c.body.PhysicsResetState();
 								}
 								if (c.kill_f) {
 									c.kill_time -= 1.f / GetFPS();
@@ -295,6 +292,9 @@ public:
 											easing_set(&c.add_pos_buf, VGet(0, 0, 0), 0.95f);
 										}
 										if (c.add_ypos == 0.f) {
+											if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
+												c.add_ypos = 0.03f;
+											}
 											c.add_pos = c.add_pos_buf;
 										}
 										else {
@@ -349,7 +349,7 @@ public:
 										}
 										if (mine.add_ypos == 0.f) {
 											if ((ptr_.on[0] & BUTTON_SIDE) != 0) {
-												mine.add_ypos = 0.05f;
+												mine.add_ypos = 0.03f;
 											}
 											mine.add_pos = mine.add_pos_buf;
 										}
@@ -455,6 +455,9 @@ public:
 											easing_set(&ct.add_pos_buf, VGet(0, 0, 0), 0.95f);
 										}
 										if (ct.add_ypos == 0.f) {
+											if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
+												ct.add_ypos = 0.05f;
+											}
 											ct.add_pos = ct.add_pos_buf;
 										}
 										else {
@@ -550,6 +553,9 @@ public:
 										easing_set(&mine.add_pos_buf, VGet(0, 0, 0), 0.95f);
 									}
 									if (mine.add_ypos == 0.f) {
+										if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
+											mine.add_ypos = 0.05f;
+										}
 										mine.add_pos = mine.add_pos_buf;
 									}
 									else {
@@ -621,10 +627,17 @@ public:
 										//復帰
 										if (pos_t.y() <= -5.f) {
 											pos_t = c.spawn_pos;
+											if (Drawparts->use_vr) {
+												if (&c == &chara[1]) {
+													this->xrad_p = 0;
+												}
+											}
+											else {
+												if (&c == &mine) {
+													this->xrad_p = 0;
+												}
+											}
 											c.spawn(pos_t, c.spawn_mat);
-											c.add_ypos = 0.f;
-											c.body.SetMatrix(MATRIX_ref::Mtrans(c.pos - c.rec_HMD));
-											c.body.PhysicsResetState();
 										}
 									}
 								}
@@ -1380,16 +1393,16 @@ public:
 							//VRに移す
 							Drawparts->draw_VR( [&] {
 								auto tmp = GetDrawScreen();
+								auto tmp_cam = cam_easy;
+								tmp_cam.campos = GetCameraPosition();
+								tmp_cam.camvec = GetCameraTarget();
 								{
-									auto tmp_cam = cam_easy;
-									tmp_cam.campos = GetCameraPosition();
-									tmp_cam.camvec = GetCameraTarget();
 									//被写体深度描画
 									Hostpassparts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, tmp_cam);
 									//最終描画
 									Hostpassparts->MAIN_draw();
 								}
-								GraphHandle::SetDraw_Screen(tmp);
+								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_);
 
 								//main
 								Hostpassparts->get_main().DrawGraph(0, 0, true);
