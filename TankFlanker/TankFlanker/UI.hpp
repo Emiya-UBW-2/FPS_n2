@@ -266,6 +266,18 @@ public:
 				}
 				draw_HP(xp, yp, xs, ys, chara.HP, int(chara.HP_r), chara.HP_full);
 			}
+			//スコア
+			{
+				if (use_vr) {
+					xp = t_disp_x / 2 + t_disp_y / 6;
+					yp = t_disp_y / 2 - t_disp_y / 6;
+				}
+				else {
+					xp = t_disp_x / 2 + t_disp_y / 6;
+					yp = t_disp_y / 2 - t_disp_y / 6;
+				}
+				font24.DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "score : %d", chara.score); yp += fonthight;
+			}
 			//終わり
 		}
 	}
