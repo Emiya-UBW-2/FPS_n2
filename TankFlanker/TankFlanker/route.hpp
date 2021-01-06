@@ -103,7 +103,10 @@ public:
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
 			//ライティング
-			Drawparts->Set_Light_Shadow(mapparts->map_col_get().mesh_maxpos(0), mapparts->map_col_get().mesh_minpos(0), VGet(0.5f, -0.5f, 0.5f), [&] {mapparts->map_get().DrawModel(); });
+			Drawparts->Set_Light_Shadow(mapparts->map_col_get().mesh_maxpos(0), mapparts->map_col_get().mesh_minpos(0), VGet(0.5f, -0.5f, 0.5f), [&] {
+				mapparts->map_get().DrawMesh(0);
+				mapparts->map_get().DrawMesh(1);
+			});
 			//描画するものを指定する(仮)
 			auto draw_by_shadow = [&] {
 				Drawparts->Draw_by_Shadow(
@@ -172,8 +175,9 @@ public:
 					c.ads.ready(false);
 					c.running = false;
 					c.squat.ready(false);
+					c.start_b = false;
+					c.start_c = true;
 				}
-				mine.start_c = true;
 				SetMousePoint(deskx / 2, desky / 2);
 
 				cam_easy.fov = deg2rad(Drawparts->use_vr ? 90 : 45);	//
@@ -291,7 +295,7 @@ public:
 										}
 										if (c.add_ypos == 0.f) {
 											if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
-												c.add_ypos = 0.03f;
+												c.add_ypos = 0.04f;
 											}
 											c.add_pos = c.add_pos_buf;
 										}
@@ -344,7 +348,7 @@ public:
 										}
 										if (mine.add_ypos == 0.f) {
 											if ((ptr_.on[0] & BUTTON_SIDE) != 0) {
-												mine.add_ypos = 0.03f;
+												mine.add_ypos = 0.04f;
 											}
 											mine.add_pos = mine.add_pos_buf;
 										}
@@ -452,7 +456,7 @@ public:
 										}
 										if (ct.add_ypos == 0.f) {
 											if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
-												ct.add_ypos = 0.05f;
+												ct.add_ypos = 0.04f;
 											}
 											ct.add_pos = ct.add_pos_buf;
 										}
@@ -551,7 +555,7 @@ public:
 									}
 									if (mine.add_ypos == 0.f) {
 										if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
-											mine.add_ypos = 0.05f;
+											mine.add_ypos = 0.04f;
 										}
 										mine.add_pos = mine.add_pos_buf;
 									}
@@ -1368,7 +1372,13 @@ public:
 								c_.start_c = false;
 							}
 							else {
-								c_.body.PhysicsCalculation(1000.f / GetFPS());
+								if (c_.start_b) {
+									c_.body.PhysicsResetState();
+									c_.start_b = false;
+								}
+								else {
+									c_.body.PhysicsCalculation(1000.f / GetFPS());
+								}
 							}
 						}
 						//campos,camvec,camupの指定

@@ -740,6 +740,7 @@ public:
 		//
 		bool canget_magitem = false;
 		std::string canget_mag;
+		bool start_b = true;
 		bool start_c = true;
 		float HP_r = 100;
 		int HP = 100;
@@ -803,8 +804,7 @@ public:
 			this->mat = this->spawn_mat;
 
 			this->add_ypos = 0.f;
-			this->body.SetMatrix(MATRIX_ref::Mtrans(this->pos - this->rec_HMD));
-			this->body.PhysicsResetState();
+			this->start_b = true;
 
 			this->HP = this->HP_full;
 
