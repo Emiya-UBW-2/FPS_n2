@@ -254,11 +254,14 @@ public:
 					ys = fonthight + y_r(8);
 				}
 				{
-					auto tmp = deg2rad(90 * chara.HP / chara.HP_full);
-
 					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(64, 64, 64), TRUE);
 					DrawBox(xp - xs / 2, yp, xp + xs / 2, yp + ys, GetColor(128, 128, 128), FALSE);
-					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + ys - y_r(2), GetColor(std::min(int(255.f*cos(tmp)*2.f), 255), std::min(int(255.f*sin(tmp)*2.f), 255), 0), TRUE);
+
+					DrawBox(xp - xs / 2 + y_r(2), yp + y_r(2), xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + ys - y_r(2), GetColor(0, 255, 0), TRUE);
+					DrawBox(
+						xp - xs / 2 + y_r(2) + (xs - y_r(4))*chara.HP / chara.HP_full, yp + y_r(2),
+						xp - xs / 2 + y_r(2) + (xs - y_r(4))*int(chara.HP_r) / chara.HP_full, yp + ys - y_r(2),
+						GetColor(255, 255, 0), TRUE);
 
 					font24.DrawStringFormat_MID(xp + y_r(2), yp + y_r(2), GetColor(255, 255, 255), "%d/%d", chara.HP, chara.HP_full);
 				}
