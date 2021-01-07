@@ -14,7 +14,12 @@ private:
 	MV1 sky;	  //‹ó
 	//MV1 sea;	  //ŠC
 	SoundHandle envi;
+
+	std::vector<VECTOR_ref> way_point;
 public:
+	std::vector<VECTOR_ref>& get_waypoint() {
+		return way_point;
+	}
 
 	Mapclass() {
 	}
@@ -47,6 +52,19 @@ public:
 		for (int i = 0; i < map_col.mesh_num(); i++) {
 			map_col.SetupCollInfo(1,1,1, 0, i);
 		}
+
+		{
+			MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
+			MV1_REF_POLYGONLIST p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
+			for (int i = 0; i < p.PolygonNum; i++) {
+				if (p.Polygons[i].MaterialIndex == 1) {
+					//–Ø
+					way_point.resize(way_point.size() + 1);
+					way_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
+				}
+			}
+		}
+
 		SetFogStartEnd(10.0f, 25.f);
 		SetFogColor(12,6,0);
 
