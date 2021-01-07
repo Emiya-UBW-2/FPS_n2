@@ -47,8 +47,8 @@ public:
 		for (int i = 0; i < map_col.mesh_num(); i++) {
 			map_col.SetupCollInfo(1,1,1, 0, i);
 		}
-		SetFogStartEnd(0.0f, 300.f);
-		SetFogColor(128, 128, 128);
+		SetFogStartEnd(10.0f, 25.f);
+		SetFogColor(12,6,0);
 
 		item_data.clear();
 		{
@@ -121,8 +121,7 @@ public:
 					HitFlag = true;// ここにきたらポリゴンとプレイヤーが当たっているということなので、ポリゴンに当たったフラグを立てる
 					if (MoveVector.size() >= 0.0001f) {	// x軸かy軸方向に 0.0001f 以上移動した場合は移動したと判定
 						// 壁に当たったら壁に遮られない移動成分分だけ移動する
-						VECTOR_ref SlideVec = k_->Normal;
-						*NowPos = SlideVec.cross(MoveVector.cross(SlideVec))+ OldPos;
+						*NowPos = VECTOR_ref(k_->Normal).cross(MoveVector.cross(k_->Normal))+ OldPos;
 						bool j = false;
 						for (auto& b_ : kabe_) {
 							if (Hit_Capsule_Tri(*NowPos, *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {
@@ -140,15 +139,15 @@ public:
 					}
 				}
 			}
+			//*
 			if (
-				false//HitFlag
+				HitFlag
 				) {		// 壁に当たっていたら壁から押し出す処理を行う
 				for (int k = 0; k < PLAYER_HIT_TRYNUM; k++) {			// 壁からの押し出し処理を試みる最大数だけ繰り返し
-					bool i = false;
+					bool HitF = false;
 					for (auto& k_ : kabe_) {
 						if (Hit_Capsule_Tri(*NowPos, *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, k_->Position[0], k_->Position[1], k_->Position[2])) {// プレイヤーと当たっているかを判定
-							VECTOR_ref SlideVec = k_->Normal;
-							*NowPos += SlideVec * PLAYER_HIT_SLIDE_LENGTH;					// 当たっていたら規定距離分プレイヤーを壁の法線方向に移動させる
+							*NowPos += VECTOR_ref(k_->Normal) * PLAYER_HIT_SLIDE_LENGTH;					// 当たっていたら規定距離分プレイヤーを壁の法線方向に移動させる
 							bool j = false;
 							for (auto& b_ : kabe_) {
 								if (Hit_Capsule_Tri(*NowPos, *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {// 当たっていたらループを抜ける
@@ -159,14 +158,15 @@ public:
 							if (!j) {// 全てのポリゴンと当たっていなかったらここでループ終了
 								break;
 							}
-							i = true;
+							HitF = true;
 						}
 					}
-					if (!i) {//全部のポリゴンで押し出しを試みる前に全ての壁ポリゴンと接触しなくなったということなのでループから抜ける
+					if (!HitF) {//全部のポリゴンで押し出しを試みる前に全ての壁ポリゴンと接触しなくなったということなのでループから抜ける
 						break;
 					}
 				}
 			}
+			//*/
 			kabe_.clear();
 		}
 		MV1CollResultPolyDimTerminate(HitDim);	// 検出したプレイヤーの周囲のポリゴン情報を開放する

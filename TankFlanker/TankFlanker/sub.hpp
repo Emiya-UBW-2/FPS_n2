@@ -699,15 +699,19 @@ public:
 		VECTOR_ref spawn_pos;					//spawn
 		MATRIX_ref spawn_mat;					//spawn
 		VECTOR_ref add_pos, add_pos_buf;		//移動
-
+		float xrad_p = 0.f;				//マウスエイム用変数確保
 		switchs ads, squat;
-		//bool wkey = false;
-		//bool skey = false;
-		//bool akey = false;
-		//bool dkey = false;
+		bool wkey = false;
+		bool skey = false;
+		bool akey = false;
+		bool dkey = false;
 		bool running = false;										//走るか否か
 		VECTOR_ref gunpos;											//マウスエイム用銃座標
 		switchs getmag;
+		//AI用
+		float ai_time_a = 0.f;
+		float ai_time_d = 0.f;
+		float ai_time_shoot = 0.f;
 		//マガジン座標系
 		VECTOR_ref pos_mag;
 		MATRIX_ref mat_mag;
@@ -808,6 +812,11 @@ public:
 			this->death_count = 0;
 		}
 		void spawn(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) {
+			this->ai_time_shoot = 0.f;
+			this->ai_time_a = 0.f;
+			this->ai_time_d = 0.f;
+
+			this->xrad_p = 0;
 			this->spawn_pos = pos_;
 			this->pos = this->spawn_pos;
 			this->spawn_mat = mat_H;
@@ -824,6 +833,8 @@ public:
 			this->kill_time = 0.f;
 
 			this->gun_stat[this->gun_ptr->id].init();
+			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
+			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
 			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
 			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
 			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
@@ -875,6 +886,7 @@ public:
 		Guns* ptr = nullptr;
 		//マガジン専用パラメーター
 		Mags magazine;
+		float del_timer = 0.f;
 		//
 		void Set_item(Guns*gundata, const VECTOR_ref& pos_, const MATRIX_ref& mat_, int cat) {
 			bool choose = true;

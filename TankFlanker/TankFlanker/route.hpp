@@ -16,7 +16,6 @@ class main_c : Mainclass {
 	//操作
 	VECTOR_ref campos_TPS;			//カメラ
 	switchs TPS;					//操作スイッチ
-	float xrad_p = 0.f;				//マウスエイム用変数確保
 	//データ
 	MV1 body_obj;					//身体モデル
 	MV1 body_col;					//身体モデル
@@ -90,7 +89,7 @@ public:
 			auto& mine = chara[0];
 			//自機セット
 			mine.set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			mine.spawn(VGet(-8.0f, 2.0f, -8.f), MATRIX_ref::RotY(DX_PI_F));
+			mine.spawn(VGet(-8.0f, 2.0f, -8.f), MATRIX_ref::RotY(DX_PI_F*5/2));
 			//その他
 			chara[1].set(this->gun_data, sel_g, this->body_obj, this->body_col);
 			chara[1].spawn(VGet(8.0f, 2.0f, 8.f), MATRIX_ref::RotY(DX_PI_F*2));
@@ -111,43 +110,46 @@ public:
 			auto draw_by_shadow = [&] {
 				Drawparts->Draw_by_Shadow(
 					[&] {
-					mapparts->map_get().DrawModel();
+					mapparts->map_get().DrawMesh(0);
+					mapparts->map_get().DrawMesh(1);
+					SetFogEnable(FALSE);
+					mapparts->map_get().DrawMesh(2);
+					SetFogEnable(TRUE);
+
 					for (auto& c : this->chara) {
 						c.Draw_chara();
 						{
 							VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame[2].first);
 							VECTOR_ref endpos = startpos - c.obj_gun.GetMatrix().zvec()*100.f;
-							auto p = mapparts->map_col_line(startpos, endpos, 0);
-							if (p.HitFlag) {
-								endpos = p.HitPosition;
+							while (true) {
+								auto p = mapparts->map_col_line(startpos, endpos, 0);
+								if (p.HitFlag) {
+									if (endpos == p.HitPosition) {
+										break;
+									}
+									endpos = p.HitPosition;
+								}
+								else {
+									break;
+								}
 							}
 							for (auto& tgt : this->chara) {
-								if (&tgt != &c) {
-									{
-										auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, 0);
-										if (q.HitFlag) {
-											endpos = q.HitPosition;
-										}
-									}
-									{
-										auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, 1);
-										if (q.HitFlag) {
-											endpos = q.HitPosition;
-										}
-									}
-									{
-										auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, 2);
-										if (q.HitFlag) {
-											endpos = q.HitPosition;
-										}
+								if (&tgt == &c) {
+									continue;
+								}
+								for (int i = 0; i < 3; i++) {
+									auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, i);
+									if (q.HitFlag) {
+										endpos = q.HitPosition;
 									}
 								}
 							}
-							DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 50, 0));
+							DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 0, 0));
 							SetUseLighting(FALSE);
-							
-							DrawSphere3D(endpos.get(), std::clamp(powf((endpos - GetCameraPosition()).size(),2)*0.002f,0.001f,0.05f), 8, GetColor(255, 50, 0), GetColor(255, 255, 255), TRUE);
+							SetFogEnable(FALSE);
+							DrawSphere3D(endpos.get(), std::clamp(powf((endpos - GetCameraPosition()).size() + 0.5f, 2)*0.002f, 0.001f, 0.05f), 8, GetColor(255, 0, 0), GetColor(255, 255, 255), TRUE);
 							SetUseLighting(TRUE);
+							SetFogEnable(TRUE);
 						}
 					}
 					for (auto& g : this->item_data) {
@@ -168,11 +170,11 @@ public:
 				//環境
 				mapparts->Start_map();
 				//プレイヤー操作変数群
-				this->xrad_p = 0.f;									//マウスエイム
 				this->TPS.ready(false);
 				oldv_3_2 = true;
 				oldv_2_2 = true;
 				for (auto& c : chara) {
+					c.xrad_p = 0.f;
 					c.ads.ready(false);
 					c.running = false;
 					c.squat.ready(false);
@@ -226,32 +228,145 @@ public:
 							//cpu
 							for (auto& c : chara) {
 								if (&c - &chara[0] >= (Drawparts->use_vr ? 2 : 1)) {
-									bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
-									bool skey = (CheckHitKey(KEY_INPUT_S) != 0);
-									skey = false;
-									bool akey = (CheckHitKey(KEY_INPUT_A) != 0);
-									bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
-									c.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
-									c.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
+									//c.wkey = (CheckHitKey(KEY_INPUT_W) != 0);
+									//c.skey = (CheckHitKey(KEY_INPUT_S) != 0);
+									//c.akey = (CheckHitKey(KEY_INPUT_A) != 0);
+									//c.dkey = (CheckHitKey(KEY_INPUT_D) != 0);
+									//c.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
+									//c.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
+
+									c.running = false;
+									//c.squat.get_in(false);
+									bool aim = false;
+									bool shoot = false;
+									bool reload = false;
+
 									auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
 									auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
+
+									int phase = 0;
 									if (c.running) {
 										c.squat.first = false;
 									}
 									if (c.ads.first) {
 										c.running = false;
 									}
-									if (!wkey && !skey && !akey && !dkey) {
+									if (!c.wkey && !c.skey && !c.akey && !c.dkey) {
 										c.running = false;
 									}
 									if (c.running) {
-										skey = false;
-										akey = false;
-										dkey = false;
+										c.skey = false;
+										c.akey = false;
+										c.dkey = false;
 									}
 									//HMD_mat
 									{
-										int32_t x_m = deskx / 2, y_m = desky / 2;
+										int32_t x_m = 0, y_m = 0;
+
+										for (auto& tgt : chara) {
+											if (&c == &tgt) {
+												continue;
+											}
+
+											VECTOR_ref vec_x = c.body.GetFrameLocalWorldMatrix(c.frame_.head_f.first).xvec();
+											VECTOR_ref vec_y = c.body.GetFrameLocalWorldMatrix(c.frame_.head_f.first).yvec();
+											VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_.head_f.first).zvec()*-1.f;
+
+
+											VECTOR_ref vec_2 = tgt.body.frame(c.frame_.bodyb_f.first) - c.obj_gun.frame(c.gun_ptr->frame[2].first);
+
+
+											if (vec_z.dot(vec_2.Norm()) >= 0) {
+												bool tt = false;
+												VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame[2].first);
+												VECTOR_ref endpos = startpos - c.obj_gun.GetMatrix().zvec()*100.f;
+												while (true) {
+													auto p = mapparts->map_col_line(startpos, endpos, 0);
+													if (p.HitFlag) {
+														if (endpos == p.HitPosition) {
+															break;
+														}
+														endpos = p.HitPosition;
+													}
+													else {
+														break;
+													}
+												}
+												if (&tgt != &c) {
+													for (int i = 0; i < 3; i++) {
+														auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, i);
+														if (q.HitFlag) {
+															endpos = q.HitPosition;
+															tt = true;
+														}
+													}
+												}
+												if (tt) {
+													phase = 1;
+												}
+											}
+
+
+											switch (phase) {
+											case 0://通常フェイズ
+											{
+												c.wkey = false;
+												c.skey = false;
+												c.akey = false;
+												c.dkey = false;
+												c.squat.first = false;
+											}
+											break;
+											case 1://戦闘フェイズ
+											{
+												x_m = -int(vec_x.dot(vec_2) * 120) + int(-5.f + float(GetRand(5 * 2)));
+												y_m = -int(vec_y.dot(vec_2) * 120) + int(-5.f + float(GetRand(5 * 2)));
+
+												c.ai_time_shoot += 1.f / GetFPS();
+												if (c.ai_time_shoot < 0.f) {
+													c.akey = false;
+													c.dkey = false;
+													if (c.ai_time_shoot >= -5) {
+														shoot = GetRand(100) <= 10;
+														aim = true;
+														c.squat.first = true;
+													}
+												}
+												else {
+													c.squat.first = false;
+
+													shoot = GetRand(100) <= 5;
+
+													if (c.ai_time_shoot >= GetRand(20) + 5) {
+														c.ai_time_shoot = -float(GetRand(1) + 6);
+													}
+
+													if (!c.akey) {
+														c.ai_time_d += 1.f / GetFPS();
+														if (c.ai_time_d > GetRand(3) + 1) {
+															c.akey = true;
+															c.ai_time_d = 0.f;
+														}
+													}
+													else {
+														c.ai_time_a += 1.f / GetFPS();
+														if (c.ai_time_a > GetRand(3) + 1) {
+															c.akey = false;
+															c.ai_time_a = 0.f;
+														}
+													}
+													c.dkey = !c.akey;
+												}
+												if (c.gun_stat[c.gun_ptr->id].ammo_cnt == 0 && !c.reloadf) {
+													reload = true;
+												}
+											}
+											break;
+											default:
+												break;
+											}
+										}
+
 										c.mat *= MATRIX_ref::RotAxis(c.mat.zvec(), c.body_zrad).Inverse();
 										if (qkey) {
 											easing_set(&c.body_zrad, deg2rad(-30), 0.9f);
@@ -264,10 +379,10 @@ public:
 										}
 										c.mat *= MATRIX_ref::RotAxis(c.mat.zvec(), c.body_zrad);
 
-										c.mat = MATRIX_ref::RotX(-this->xrad_p)*c.mat;
-										this->xrad_p = std::clamp(this->xrad_p - deg2rad(std::clamp(y_m - desky / 2, -120, 120))*0.1f, deg2rad(-80), deg2rad(60));
-										c.mat *= MATRIX_ref::RotY(deg2rad(std::clamp(x_m - deskx / 2, -120, 120))*0.1f);
-										c.mat = MATRIX_ref::RotX(this->xrad_p)*c.mat;
+										c.mat = MATRIX_ref::RotX(-c.xrad_p)*c.mat;
+										c.xrad_p = std::clamp(c.xrad_p - deg2rad(std::clamp(y_m, -120, 120))*0.1f, deg2rad(-80), deg2rad(60));
+										c.mat *= MATRIX_ref::RotY(deg2rad(std::clamp(x_m, -120, 120))*0.1f);
+										c.mat = MATRIX_ref::RotX(c.xrad_p)*c.mat;
 									}
 									//移動
 									{
@@ -281,15 +396,15 @@ public:
 										xv_t = xv_t.Norm();
 
 										easing_set(&c.add_pos_buf,
-											VECTOR_ref(wkey ? (zv_t*-speed) : VGet(0, 0, 0))
-											+ (skey ? (zv_t*speed) : VGet(0, 0, 0))
-											+ (akey ? (xv_t*speed) : VGet(0, 0, 0))
-											+ (dkey ? (xv_t*-speed) : VGet(0, 0, 0))
+											VECTOR_ref(c.wkey ? (zv_t*-speed) : VGet(0, 0, 0))
+											+ (c.skey ? (zv_t*speed) : VGet(0, 0, 0))
+											+ (c.akey ? (xv_t*speed) : VGet(0, 0, 0))
+											+ (c.dkey ? (xv_t*-speed) : VGet(0, 0, 0))
 											, 0.95f);
 
 										if (c.add_ypos == 0.f) {
-											if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
-												c.add_ypos = 0.04f;
+											if (false) {
+												c.add_ypos = 0.06f;
 											}
 											c.add_pos = c.add_pos_buf;
 										}
@@ -302,15 +417,15 @@ public:
 										//マガジン取得
 										c.down_mag = true;
 										//引き金(左クリック)
-										easing_set(&c.obj_gun.get_anime(2).per, float(((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) && !c.running), 0.5f);
+										easing_set(&c.obj_gun.get_anime(2).per, float(shoot && !c.running), 0.5f);
 										//ADS
-										c.ads.first = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) && (!c.reloadf);
+										c.ads.first = aim && (!c.reloadf);
 										//セレクター(中ボタン)
-										c.selkey.get_in((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0);
+										c.selkey.get_in(false);
 										//マグキャッチ(Rキー)
-										easing_set(&c.obj_gun.get_anime(5).per, float((CheckHitKey(KEY_INPUT_R) != 0)), 0.5f);
+										easing_set(&c.obj_gun.get_anime(5).per, float(reload), 0.5f);
 										//銃取得
-										c.getmag.get_in(CheckHitKey(KEY_INPUT_F) != 0);
+										c.getmag.get_in(false);
 									}
 								}
 							}
@@ -342,7 +457,7 @@ public:
 										}
 										if (mine.add_ypos == 0.f) {
 											if ((ptr_.on[0] & BUTTON_SIDE) != 0) {
-												mine.add_ypos = 0.04f;
+												mine.add_ypos = 0.06f;
 											}
 											mine.add_pos = mine.add_pos_buf;
 										}
@@ -380,7 +495,6 @@ public:
 
 									bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
 									bool skey = (CheckHitKey(KEY_INPUT_S) != 0);
-									skey = false;
 									bool akey = (CheckHitKey(KEY_INPUT_A) != 0);
 									bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
 									ct.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
@@ -416,10 +530,10 @@ public:
 										ct.mat *= MATRIX_ref::RotAxis(ct.mat.zvec(), ct.body_zrad);
 										int32_t x_m, y_m;
 										GetMousePoint(&x_m, &y_m);
-										ct.mat = MATRIX_ref::RotX(-this->xrad_p)*ct.mat;
-										this->xrad_p = std::clamp(this->xrad_p - deg2rad(std::clamp(y_m - desky / 2, -120, 120))*0.1f, deg2rad(-80), deg2rad(60));
+										ct.mat = MATRIX_ref::RotX(-ct.xrad_p)*ct.mat;
+										ct.xrad_p = std::clamp(ct.xrad_p - deg2rad(std::clamp(y_m - desky / 2, -120, 120))*0.1f, deg2rad(-80), deg2rad(60));
 										ct.mat *= MATRIX_ref::RotY(deg2rad(std::clamp(x_m - deskx / 2, -120, 120))*0.1f);
-										ct.mat = MATRIX_ref::RotX(this->xrad_p)*ct.mat;
+										ct.mat = MATRIX_ref::RotX(ct.xrad_p)*ct.mat;
 										SetMousePoint(deskx / 2, desky / 2);
 										SetMouseDispFlag(FALSE);
 									}
@@ -443,7 +557,7 @@ public:
 
 										if (ct.add_ypos == 0.f) {
 											if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
-												ct.add_ypos = 0.04f;
+												ct.add_ypos = 0.06f;
 											}
 											ct.add_pos = ct.add_pos_buf;
 										}
@@ -471,7 +585,6 @@ public:
 							else {
 								bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
 								bool skey = (CheckHitKey(KEY_INPUT_S) != 0);
-								skey = false;
 								bool akey = (CheckHitKey(KEY_INPUT_A) != 0);
 								bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
 								mine.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
@@ -508,10 +621,10 @@ public:
 									mine.mat *= MATRIX_ref::RotAxis(mine.mat.zvec(), mine.body_zrad);
 									int32_t x_m, y_m;
 									GetMousePoint(&x_m, &y_m);
-									mine.mat = MATRIX_ref::RotX(-this->xrad_p)*mine.mat;
-									this->xrad_p = std::clamp(this->xrad_p - deg2rad(std::clamp(y_m - desky / 2, -120, 120))*0.1f, deg2rad(-80), deg2rad(60));
+									mine.mat = MATRIX_ref::RotX(-mine.xrad_p)*mine.mat;
+									mine.xrad_p = std::clamp(mine.xrad_p - deg2rad(std::clamp(y_m - desky / 2, -120, 120))*0.1f, deg2rad(-80), deg2rad(60));
 									mine.mat *= MATRIX_ref::RotY(deg2rad(std::clamp(x_m - deskx / 2, -120, 120))*0.1f);
-									mine.mat = MATRIX_ref::RotX(this->xrad_p)*mine.mat;
+									mine.mat = MATRIX_ref::RotX(mine.xrad_p)*mine.mat;
 									SetMousePoint(deskx / 2, desky / 2);
 									SetMouseDispFlag(FALSE);
 								}
@@ -534,12 +647,12 @@ public:
 										, 0.95f);
 									if (mine.add_ypos == 0.f) {
 										if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
-											mine.add_ypos = 0.04f;
+											mine.add_ypos = 0.06f;
 										}
 										mine.add_pos = mine.add_pos_buf;
 									}
 									else {
-										easing_set(&mine.add_pos, VGet(0, 0, 0), 0.995f);
+										//easing_set(&mine.add_pos, VGet(0, 0, 0), 0.995f);
 									}
 								}
 								//操作
@@ -584,9 +697,9 @@ public:
 									{
 										mapparts->map_col_wall(pos_t2, &pos_t);
 										if ((c.add_pos - (pos_t - pos_t2)).size() != 0.f) {
-											c.add_pos = pos_t - pos_t2;
+											//c.add_pos = pos_t - pos_t2;
 											if (c.add_ypos == 0.f) {
-												c.add_pos_buf = c.add_pos;
+												//c.add_pos_buf = c.add_pos;
 											}
 										}
 									}
@@ -620,12 +733,12 @@ public:
 												pos_t = c.spawn_pos;
 												if (Drawparts->use_vr) {
 													if (&c == &chara[1]) {
-														this->xrad_p = 0;
+														c.xrad_p = 0;
 													}
 												}
 												else {
 													if (&c == &mine) {
-														this->xrad_p = 0;
+														c.xrad_p = 0;
 													}
 												}
 												c.spawn(pos_t, c.spawn_mat);
@@ -1220,6 +1333,7 @@ public:
 												g.Set_item(c.gun_ptr, c.pos_mag, c.mat_mag, 1);
 												g.add = (c.obj_gun.frame(c.gun_ptr->frame[1].first) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).Norm()*-1.f / GetFPS();//排莢ベクトル
 												g.magazine.cap = dnm;
+												g.del_timer = 0.f;
 												break;
 											}
 										}
@@ -1229,6 +1343,7 @@ public:
 											g.Set_item(c.gun_ptr, c.pos_mag, c.mat_mag, 1);
 											g.add = (c.obj_gun.frame(c.gun_ptr->frame[1].first) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).Norm()*-1.f / GetFPS();//排莢ベクトル
 											g.magazine.cap = dnm;
+											g.del_timer = 0.f;
 										}
 										//
 										c.reloadf = true;
@@ -1298,6 +1413,7 @@ public:
 										if (!c.gunf && c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) {
 											c.gunf = true;
 											//弾数管理
+											
 											c.gun_stat[c.gun_ptr->id].mag_shot(c.reloadf);
 											//持ち手を持つとココが相殺される
 											c.vecadd_RIGHTHAND_p = MATRIX_ref::Vtrans(c.vecadd_RIGHTHAND_p,
@@ -1341,6 +1457,31 @@ public:
 								}
 								for (auto& g : this->item_data) {
 									g.Get_item_2(c, mapparts);
+								}
+
+								for (auto& g : this->item_data) {
+									if (g.ptr != nullptr && g.cate == 1 && g.magazine.cap==0) {
+										g.del_timer += 1.f / GetFPS();
+									}
+								}
+								while (true) {
+									bool p = false;
+									size_t id = 0;
+									for (auto& g : this->item_data) {
+										if (g.ptr!=nullptr && g.cate == 1) {
+											if (g.del_timer >= 5.f) {
+												g.Delete_item();
+												id = &g - &this->item_data[0];
+												p = true;
+											}
+										}
+									}
+									if (p) {
+										this->item_data.erase(this->item_data.begin() + id);
+									}
+									else {
+										break;
+									}
 								}
 							}
 						}

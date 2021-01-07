@@ -218,7 +218,9 @@ public:
 						xp = x_r(220) + font_bighight * chara.gun_stat[chara.gun_ptr->id].mag_in.size();
 						yp = t_disp_y - x_r(20) - font_bighight * chara.gun_stat[chara.gun_ptr->id].mag_in.size();
 					}
-					DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat[chara.gun_ptr->id].mag_in.front(), chara.gun_ptr->magazine->cap), yp + font_bighight+1, GetColor(255, 255, 0), FALSE);
+					if (chara.gun_stat[chara.gun_ptr->id].mag_in.size() > 0) {
+						DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat[chara.gun_ptr->id].mag_in.front(), chara.gun_ptr->magazine->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
+					}
 					for (auto& a : chara.gun_stat[chara.gun_ptr->id].mag_in) {
 						font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a, chara.gun_ptr->magazine->cap); 
 						xp -= font_bighight;
