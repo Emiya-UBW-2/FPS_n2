@@ -210,15 +210,16 @@ public:
 				}
 				//マガジン関連(仮)
 				{
+					int size = int(chara.gun_stat[chara.gun_ptr->id].mag_in.size());
 					if (use_vr) {
-						xp = t_disp_x / 2 - x_r(140) + font_bighight * chara.gun_stat[chara.gun_ptr->id].mag_in.size();
-						yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20) - font_bighight * chara.gun_stat[chara.gun_ptr->id].mag_in.size();
+						xp = t_disp_x / 2 - x_r(140) + font_bighight * size;
+						yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20) - font_bighight * size;
 					}
 					else {
-						xp = x_r(220) + font_bighight * chara.gun_stat[chara.gun_ptr->id].mag_in.size();
-						yp = t_disp_y - x_r(20) - font_bighight * chara.gun_stat[chara.gun_ptr->id].mag_in.size();
+						xp = x_r(220) + font_bighight * size;
+						yp = t_disp_y - x_r(20) - font_bighight * size;
 					}
-					if (chara.gun_stat[chara.gun_ptr->id].mag_in.size() > 0) {
+					if (size > 0) {
 						DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat[chara.gun_ptr->id].mag_in.front(), chara.gun_ptr->magazine->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
 					}
 					for (auto& a : chara.gun_stat[chara.gun_ptr->id].mag_in) {
@@ -242,8 +243,8 @@ public:
 
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				DrawBox(
-					xp - powf(per, 2) * t_disp_x / 2 / powf(255, 2), yp,
-					xp + powf(per, 2) * t_disp_x / 2 / powf(255, 2), yp + font_bighight + 2,
+					xp - int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp,
+					xp + int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp + font_bighight + 2,
 					GetColor(255, 255, 255), TRUE);
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((chara.kill_time * 2) / 7.f)), 0, 255));
 				font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", chara.kill_id); yp += font_bighight*2;	//キル
@@ -251,8 +252,8 @@ public:
 				if (chara.kill_streak > 0) {
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					DrawBox(
-						xp - powf(per, 4) * t_disp_x / 2 / powf(255, 4), yp,
-						xp + powf(per, 4) * t_disp_x / 2 / powf(255, 4), yp + font_bighight + 2,
+						xp - int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp,
+						xp + int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp + font_bighight + 2,
 						GetColor(255, 255, 255), TRUE);
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((chara.kill_time * 2) / 7.f)), 0, 255));
 					font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", chara.kill_streak); yp += font_bighight;			//キルストリーク

@@ -16,9 +16,25 @@ private:
 	SoundHandle envi;
 
 	std::vector<VECTOR_ref> way_point;
+
+	GraphHandle minmap;
+
+	int x_size = 0;
+	int y_size = 0;
 public:
+
+
 	std::vector<VECTOR_ref>& get_waypoint() {
 		return way_point;
+	}
+	GraphHandle& get_minmap(){
+		return minmap;
+	}
+	int& get_x_size(){
+		return x_size;
+	}
+	int& get_y_size(){
+		return y_size;
 	}
 
 	Mapclass() {
@@ -32,6 +48,7 @@ public:
 		MV1::Load(dir + "/sky/model.mv1", &sky, true);	 //‹ó
 		SetUseASyncLoadFlag(TRUE);
 		envi = SoundHandle::Load(dir + "/envi.wav");
+		minmap = GraphHandle::Load(dir + "/minimap.png");
 		SetUseASyncLoadFlag(FALSE);
 	}
 	void Set_map(const char* item_txt, std::vector<Items>& item_data, std::vector<Guns>& gun_data) {
@@ -99,6 +116,8 @@ public:
 			}
 			FileRead_close(mdata);
 		}
+
+		minmap.GetSize(&x_size, &y_size);
 	}
 	void Start_map() {
 		envi.play(DX_PLAYTYPE_LOOP, TRUE);

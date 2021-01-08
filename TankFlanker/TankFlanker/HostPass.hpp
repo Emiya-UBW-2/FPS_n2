@@ -100,7 +100,7 @@ private:
 		{
 			sky_doing();
 		}
-		NearScreen_.SetDraw_Screen(cams.campos, cams.camvec, cams.camup, cams.fov, cams.near_, cams.far_);
+		NearScreen_.SetDraw_Screen(cams.campos, cams.camvec, cams.camup, cams.fov, 0.1f, cams.far_);
 		{
 			Effekseer_Sync3DSetting();
 			SkyScreen.DrawGraph(0, 0, FALSE);

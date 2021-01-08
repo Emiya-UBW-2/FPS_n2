@@ -712,8 +712,8 @@ public:
 		float ai_time_a = 0.f;
 		float ai_time_d = 0.f;
 		float ai_time_shoot = 0.f;
-		int wayp_now = 0;
-		std::array<int, 5> wayp_pre;
+
+		std::array<int, 6> wayp_pre;
 		//ƒ}ƒKƒWƒ“À•WŒn
 		VECTOR_ref pos_mag;
 		MATRIX_ref mat_mag;
@@ -844,7 +844,6 @@ public:
 			this->body_xrad = 0.f;//“·‘ÌŠp“x
 			this->body_yrad = 0.f;//“·‘ÌŠp“x
 			this->body_zrad = 0.f;//“·‘ÌŠp“x
-			this->wayp_now = 0;
 			for (auto& w : this->wayp_pre) {
 				w = 0;
 			}

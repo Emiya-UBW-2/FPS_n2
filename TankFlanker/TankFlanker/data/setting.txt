@@ -1,4 +1,4 @@
-hostpass=true
+hostpass=false
 bloom=true
 shadow=true
 usevr=true

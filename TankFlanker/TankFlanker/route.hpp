@@ -33,6 +33,11 @@ class main_c : Mainclass {
 
 	bool start_c = true;
 	bool ending = true;
+
+	float xr_cam = 0.f;
+	float yr_cam = 0.f;
+	GraphHandle UI_player;																									//描画スクリーン
+	GraphHandle UI_minimap;																									//描画スクリーン
 	//
 public:
 	main_c() {
@@ -60,7 +65,8 @@ public:
 		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);												//身体
 		MV1::Load("data/model/body/col.mv1", &this->body_col, true);												//身体col
 		outScreen2 = GraphHandle::Make(deskx, desky, true);															//TPS用描画スクリーン
-
+		UI_minimap = GraphHandle::Make(300, 300, true);
+		UI_player = GraphHandle::Load("data/UI/player.bmp");
 		auto font = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
 		//MAGデータ
 		{
@@ -87,17 +93,20 @@ public:
 		do {
 			//キャラ設定
 			size_t sel_g = 0;
-			chara.resize(3);
+			chara.resize(4);
 			auto& mine = chara[0];
 			//自機セット
 			mine.set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			mine.spawn(VGet(-8.0f, 2.0f, -8.f), MATRIX_ref::RotY(DX_PI_F*5/2));
+			mine.spawn(VGet(8.0f, 2.0f, -8.f), MATRIX_ref::RotY(DX_PI_F * 2));
 			//その他
 			chara[1].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[1].spawn(VGet(8.0f, 2.0f, 8.f), MATRIX_ref::RotY(DX_PI_F*2));
+			chara[1].spawn(VGet(8.0f, 2.0f, 8.f), MATRIX_ref::RotY(DX_PI_F * 2));
 
 			chara[2].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[2].spawn(VGet(-8.0f, 2.0f, 8.f), MATRIX_ref::RotY(DX_PI_F*3/2));
+			chara[2].spawn(VGet(-8.0f, 2.0f, 8.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
+
+			chara[3].set(this->gun_data, sel_g, this->body_obj, this->body_col);
+			chara[3].spawn(VGet(-8.0f, 2.0f, -8.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
 
 			//マップ読み込み
 			mapparts->Ready_map("data/map_new");			//mapparts->Ready_map("data/new");
@@ -153,24 +162,6 @@ public:
 							SetUseLighting(TRUE);
 							SetFogEnable(TRUE);
 						}
-
-						{
-							if (c.wayp_pre[3] >= 0 && c.wayp_pre[2] >= 0) {
-								DrawLine3D((mapparts->get_waypoint()[c.wayp_pre[3]] + VGet(0, 1.f, 0)).get(), (mapparts->get_waypoint()[c.wayp_pre[2]] + VGet(0, 1.f, 0)).get(), GetColor(0, 0, 255));
-							}
-							if (c.wayp_pre[2] >= 0 && c.wayp_pre[1] >= 0) {
-								DrawLine3D((mapparts->get_waypoint()[c.wayp_pre[2]] + VGet(0, 1.f, 0)).get(), (mapparts->get_waypoint()[c.wayp_pre[1]] + VGet(0, 1.f, 0)).get(), GetColor(0, 0, 255));
-							}
-							if (c.wayp_pre[1] >= 0 && c.wayp_pre[0] >= 0) {
-								DrawLine3D((mapparts->get_waypoint()[c.wayp_pre[1]] + VGet(0, 1.f, 0)).get(), (mapparts->get_waypoint()[c.wayp_pre[0]] + VGet(0, 1.f, 0)).get(), GetColor(0, 0, 255));
-							}
-							if (c.wayp_pre[0] >= 0 && c.wayp_now >= 0) {
-								DrawLine3D((mapparts->get_waypoint()[c.wayp_pre[0]] + VGet(0, 1.f, 0)).get(), (c.body.GetMatrix().pos() + VGet(0, 1.f, 0)).get(), GetColor(0, 0, 255));
-							}
-							if (c.wayp_now >= 0) {
-								DrawLine3D((mapparts->get_waypoint()[c.wayp_now] + VGet(0, 1.f, 0)).get(), (c.body.GetMatrix().pos() + VGet(0, 1.f, 0)).get(), GetColor(255, 255, 0));
-							}
-						}
 					}
 					for (auto& g : this->item_data) {
 						g.Draw_item(this->chara[0]);
@@ -210,17 +201,17 @@ public:
 						for (auto& w : mapparts->get_waypoint()) {
 							auto id = &w - &mapparts->get_waypoint()[0];
 							bool tt = true;
-							for (auto& w : c.wayp_pre) {
-								if (id == w) {
+							for (auto& ww : c.wayp_pre) {
+								if (id == ww) {
 									tt = false;
 								}
 							}
-							if (tt && id != c.wayp_now) {
+							if (tt) {
 								if (tmp.size() >= (w - poss).size()) {
 									auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0), 0);
 									if (p.HitFlag == FALSE) {
 										tmp = w;
-										now = id;
+										now = int(id);
 									}
 								}
 							}
@@ -229,21 +220,22 @@ public:
 							for (auto& w : c.wayp_pre) {
 								w = now;
 							}
-							c.wayp_now = now;
 						}
 					}
 				}
 				SetMousePoint(deskx / 2, desky / 2);
 
-				cam_easy.fov = deg2rad(Drawparts->use_vr ? 90 : 45);	//
+				cam_easy.fov = deg2rad(Drawparts->use_vr ? 65 : 45);	//
 				cam_easy.near_ = 0.1f;
-				cam_easy.far_ = 1000.f;
+				cam_easy.far_ = 100.f;
 				cam_easy2.fov = deg2rad(45);	//
 				cam_easy2.near_ = 0.1f;
-				cam_easy2.far_ = 1000.f;
+				cam_easy2.far_ = 100.f;
+
+				cam_easy3.campos = VGet(0, 10, -10);
 				cam_easy3.fov = deg2rad(45);
 				cam_easy3.near_ = 0.1f;
-				cam_easy3.far_ = 1000.f;
+				cam_easy3.far_ = 100.f;
 				//
 				while (ProcessMessage() == 0) {
 					const auto waits = GetNowHiPerformanceCount();
@@ -274,17 +266,17 @@ public:
 										for (auto& w : mapparts->get_waypoint()) {
 											auto id = &w - &mapparts->get_waypoint()[0];
 											bool tt = true;
-											for (auto& w : c.wayp_pre) {
-												if (id == w) {
+											for (auto& ww : c.wayp_pre) {
+												if (id == ww) {
 													tt = false;
 												}
 											}
-											if (tt && id != c.wayp_now) {
+											if (tt) {
 												if (tmp.size() >= (w - poss).size()) {
 													auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0), 0);
 													if (p.HitFlag == FALSE) {
 														tmp = w;
-														now = id;
+														now = int(id);
 													}
 												}
 											}
@@ -293,7 +285,6 @@ public:
 											for (auto& w : c.wayp_pre) {
 												w = now;
 											}
-											c.wayp_now = now;
 										}
 									}
 								}
@@ -311,24 +302,15 @@ public:
 						{
 							//cpu
 							for (auto& c : chara) {
-								if (&c - &chara[0] >= (Drawparts->use_vr ? 2 : 1)) {
-									//c.wkey = (CheckHitKey(KEY_INPUT_W) != 0);
-									//c.skey = (CheckHitKey(KEY_INPUT_S) != 0);
-									//c.akey = (CheckHitKey(KEY_INPUT_A) != 0);
-									//c.dkey = (CheckHitKey(KEY_INPUT_D) != 0);
-									//c.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
-									//c.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
-
+								if (&c - &chara[0] >= (Drawparts->use_vr ? 1 : 1)) {
 									c.running = false;
-									//c.squat.get_in(false);
 									bool aim = false;
 									bool shoot = false;
 									bool reload = false;
-
-									auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
-									auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
-
+									auto qkey = false;
+									auto ekey = false;
 									int phase = 0;
+
 									if (c.running) {
 										c.squat.first = false;
 									}
@@ -353,8 +335,6 @@ public:
 												continue;
 											}
 											auto tmp = tgt.body.frame(tgt.frame_.bodyb_f.first) - c.obj_gun.frame(c.gun_ptr->frame[2].first);
-
-
 											bool tt = true;
 											{
 												VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame[2].first);
@@ -367,8 +347,6 @@ public:
 											if (!tt) {
 												continue;
 											}
-
-
 											if (vec_2.size() >= tmp.size()) {
 												vec_2 = tmp;
 												pp = false;
@@ -396,7 +374,7 @@ public:
 												c.akey = false;
 												c.dkey = false;
 												c.squat.first = false;
-												vec_2 = mapparts->get_waypoint()[c.wayp_now]- c.body.GetMatrix().pos();
+												vec_2 = mapparts->get_waypoint()[c.wayp_pre[0]]- c.body.GetMatrix().pos();
 												x_m = -int(vec_x.dot(vec_2) * 40);
 												y_m = -int(vec_y.dot(vec_2) * 40);
 
@@ -408,28 +386,26 @@ public:
 													for (auto& w : mapparts->get_waypoint()) {
 														auto id = &w - &mapparts->get_waypoint()[0];
 														bool tt = true;
-														for (auto& w : c.wayp_pre) {
-															if (id == w) {
+														for (auto& ww : c.wayp_pre) {
+															if (id == ww) {
 																tt = false;
 															}
 														}
-														if (tt && id != c.wayp_now) {
+														if (tt) {
 															if (tmp.size() >= (w - poss).size()) {
 																auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0), 0);
 																if (p.HitFlag == FALSE) {
 																	tmp = w;
-																	now = id;
+																	now = int(id);
 																}
 															}
 														}
 													}
 													if (now != -1) {
-														c.wayp_pre[4] = c.wayp_pre[3];
-														c.wayp_pre[3] = c.wayp_pre[2];
-														c.wayp_pre[2] = c.wayp_pre[1];
-														c.wayp_pre[1] = c.wayp_pre[0];
-														c.wayp_pre[0] = c.wayp_now;
-														c.wayp_now = now;
+														for (int i = int(c.wayp_pre.size())-1; i >= 1; i--) {
+															c.wayp_pre[i] = c.wayp_pre[i-1];
+														}
+														c.wayp_pre[0] = now;
 													}
 												}
 											}
@@ -569,7 +545,14 @@ public:
 											//running
 											mine.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
 											auto speed = (mine.running ? 6.f : 4.f) / GetFPS();
-											easing_set(&mine.add_pos_buf, (mine.mat.zvec()*std::max(ptr_.touch.y(),0.f) + mine.mat.xvec()*ptr_.touch.x())*speed, 0.95f);
+
+											if (Drawparts->tracker_num.size() > 0) {
+												auto p = mine.body.GetFrameLocalWorldMatrix(mine.frame_.bodyb_f.first);
+												easing_set(&mine.add_pos_buf, (p.zvec()*-ptr_.touch.y() + p.xvec()*-ptr_.touch.x())*speed, 0.95f);
+											}
+											else {
+												easing_set(&mine.add_pos_buf, (mine.mat.zvec()*ptr_.touch.y() + mine.mat.xvec()*ptr_.touch.x())*speed, 0.95f);
+											}
 										}
 										else {
 											easing_set(&mine.add_pos_buf, VGet(0, 0, 0), 0.95f);
@@ -609,6 +592,7 @@ public:
 									}
 								}
 								//2P
+								/*
 								{
 									auto& ct = chara[1];
 
@@ -700,6 +684,7 @@ public:
 										ct.getmag.get_in(CheckHitKey(KEY_INPUT_F) != 0);
 									}
 								}
+								//*/
 							}
 							else {
 								bool wkey = (CheckHitKey(KEY_INPUT_W) != 0);
@@ -871,17 +856,17 @@ public:
 													for (auto& w : mapparts->get_waypoint()) {
 														auto id = &w - &mapparts->get_waypoint()[0];
 														bool tt = true;
-														for (auto& w : c.wayp_pre) {
-															if (id == w) {
+														for (auto& ww : c.wayp_pre) {
+															if (id == ww) {
 																tt = false;
 															}
 														}
-														if (tt && id != c.wayp_now) {
+														if (tt) {
 															if (tmp.size() >= (w - poss).size()) {
 																auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0), 0);
 																if (p.HitFlag == FALSE) {
 																	tmp = w;
-																	now = id;
+																	now = int(id);
 																}
 															}
 														}
@@ -890,7 +875,6 @@ public:
 														for (auto& w : c.wayp_pre) {
 															w = now;
 														}
-														c.wayp_now = now;
 													}
 												}
 											}
@@ -1725,50 +1709,46 @@ public:
 								SetWriteZBuffer3D(TRUE);											//zbufwrite
 								//UI2
 								UIparts->item_draw(chara, this->item_data, cam_easy.campos, Drawparts->use_vr);
-								for (auto& g : mapparts->get_waypoint()) {
-									VECTOR_ref p = ConvWorldPosToScreenPos((g+VGet(0,1.f,0)).get());
-									if (p.z() >= 0.f&&p.z() <= 1.f) {
-										font.DrawStringFormat(p.x(), p.y(), GetColor(255, 0, 0), "%d", &g - &mapparts->get_waypoint()[0]);
-									}
-								}
 							}, cam_easy);
 						}
-						//2P描画
-						if (Drawparts->use_vr) {
-							auto& ct = chara[1];
-							//cam_s.cam
-							cam_easy2.campos = ct.pos + ct.pos_HMD - ct.rec_HMD;
-							cam_easy2.camvec = cam_easy2.campos + ct.mat.zvec()*-1.f;
-							cam_easy2.camup = ct.mat.yvec();
+						if (!this->TPS.first) {
+							//2P描画
+							if (Drawparts->use_vr) {
+								auto& ct = chara[1];
+								//cam_s.cam
+								cam_easy2.campos = ct.pos + ct.pos_HMD - ct.rec_HMD;
+								cam_easy2.camvec = cam_easy2.campos + ct.mat.zvec()*-1.f;
+								cam_easy2.camup = ct.mat.yvec();
 
-							//影用意
-							Drawparts->Ready_Shadow(cam_easy2.campos,
-								[&] {
-								for (auto& c : this->chara) { c.Draw_chara(); }
-								for (auto& g : this->item_data) { g.Draw_item(); }
-							},
-								VGet(5.f, 2.5f, 5.f),
-								VGet(5.f, 2.5f, 5.f)
-								);
-							//書き込み
-							{
-								this->UI_Screen2.SetDraw_Screen();
+								//影用意
+								Drawparts->Ready_Shadow(cam_easy2.campos,
+									[&] {
+									for (auto& c : this->chara) { c.Draw_chara(); }
+									for (auto& g : this->item_data) { g.Draw_item(); }
+								},
+									VGet(5.f, 2.5f, 5.f),
+									VGet(5.f, 2.5f, 5.f)
+									);
+								//書き込み
 								{
-									UIparts->set_draw(ct, false);
+									this->UI_Screen2.SetDraw_Screen();
+									{
+										UIparts->set_draw(ct, false);
+									}
+									//被写体深度描画
+									Hostpass2parts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, cam_easy2);
+									//最終描画
+									Hostpass2parts->MAIN_draw();
 								}
-								//被写体深度描画
-								Hostpass2parts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, cam_easy2);
-								//最終描画
-								Hostpass2parts->MAIN_draw();
-							}
-							//Screen2に移す
-							outScreen2.SetDraw_Screen(cam_easy2.campos, cam_easy2.camvec, cam_easy2.camup, cam_easy2.fov, cam_easy2.near_, cam_easy2.far_);
-							{
-								Hostpass2parts->get_main().DrawGraph(0, 0, true);
-								//UI
-								this->UI_Screen2.DrawGraph(0, 0, true);
-								//UI2
-								UIparts->item_draw(chara, this->item_data, cam_easy2.campos, false);
+								//Screen2に移す
+								outScreen2.SetDraw_Screen(cam_easy2.campos, cam_easy2.camvec, cam_easy2.camup, cam_easy2.fov, cam_easy2.near_, cam_easy2.far_);
+								{
+									Hostpass2parts->get_main().DrawGraph(0, 0, true);
+									//UI
+									this->UI_Screen2.DrawGraph(0, 0, true);
+									//UI2
+									UIparts->item_draw(chara, this->item_data, cam_easy2.campos, false);
+								}
 							}
 						}
 						//ディスプレイ描画
@@ -1777,13 +1757,40 @@ public:
 							//TPS視点
 							if (this->TPS.first) {
 								{
-									cam_easy3.campos = mine.pos + mine.pos_HMD - mine.rec_HMD + MATRIX_ref::Vtrans(this->campos_TPS, mine.mat);
-									cam_easy3.camvec = mine.pos + mine.pos_HMD - mine.rec_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.125f, 0.f), mine.mat);
-									if (Drawparts->use_vr) {
-										MATRIX_ref mat = (mine.obj_gun.GetMatrix()*MATRIX_ref::Mtrans(mine.pos_RIGHTHAND).Inverse());
-										cam_easy3.campos = mine.pos + mine.pos_HMD - mine.rec_HMD + MATRIX_ref::Vtrans(this->campos_TPS, mat);
-										cam_easy3.camvec = mine.pos + mine.pos_HMD - mine.rec_HMD + MATRIX_ref::Vtrans(VGet(-0.35f, 0.125f, 0.f), mat);
+									if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
+										yr_cam -= deg2rad(60) / GetFPS();
 									}
+									if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
+										yr_cam += deg2rad(60) / GetFPS();
+									}
+									if (CheckHitKey(KEY_INPUT_UP) != 0) {
+										xr_cam -= deg2rad(60) / GetFPS();
+									}
+									if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
+										xr_cam += deg2rad(60) / GetFPS();
+									}
+
+									if (CheckHitKey(KEY_INPUT_A) != 0) {
+										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / GetFPS()*cos(yr_cam));
+										cam_easy3.campos.z(cam_easy3.campos.z() + 10.f / GetFPS()*sin(yr_cam));
+									}
+									if (CheckHitKey(KEY_INPUT_D) != 0) {
+										cam_easy3.campos.x(cam_easy3.campos.x() + 10.f / GetFPS()*cos(yr_cam));
+										cam_easy3.campos.z(cam_easy3.campos.z() - 10.f / GetFPS()*sin(yr_cam));
+									}
+									if (CheckHitKey(KEY_INPUT_W) != 0) {
+										cam_easy3.campos.z(cam_easy3.campos.z() + 10.f / GetFPS()*cos(yr_cam));
+										cam_easy3.campos.x(cam_easy3.campos.x() + 10.f / GetFPS()*sin(yr_cam));
+									}
+									if (CheckHitKey(KEY_INPUT_S) != 0) {
+										cam_easy3.campos.z(cam_easy3.campos.z() - 10.f / GetFPS()*cos(yr_cam));
+										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / GetFPS()*sin(yr_cam));
+									}
+									cam_easy3.campos.x(std::clamp(cam_easy3.campos.x(), -10.f, 10.f));
+									cam_easy3.campos.z(std::clamp(cam_easy3.campos.z(), -10.f, 10.f));
+									xr_cam = std::clamp(xr_cam, deg2rad(-89), deg2rad(89));
+
+									cam_easy3.camvec = cam_easy3.campos + MATRIX_ref::Vtrans(VGet(0, 0, 1), MATRIX_ref::RotX(xr_cam)*MATRIX_ref::RotY(yr_cam));
 									cam_easy3.camup = VGet(0, 1.f, 0);
 								}
 								//影用意
@@ -1802,15 +1809,55 @@ public:
 									//最終描画
 									Hostpass2parts->MAIN_draw();
 								}
-								GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), cam_easy3.campos, cam_easy3.camvec, cam_easy3.camup, cam_easy3.fov, cam_easy3.near_, cam_easy3.far_);
+								UI_minimap.SetDraw_Screen(true);
+								{
+									int xp = 0;
+									int yp = 0;
+									float radp = 0.f;
+
+									xp = 150;
+									yp = 150;
+									{
+										auto& cc = mine;
+										auto t = cc.body.GetMatrix().pos();
+										VECTOR_ref vec_z = cc.body.GetFrameLocalWorldMatrix(cc.frame_.head_f.first).zvec()*-1.f;
+										radp = -atan2f(vec_z.x(), vec_z.z());
+										auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
+										auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
+										xp -= int(x_2*cos(radp) - y_2 * sin(radp));
+										yp -= int(y_2*cos(radp) + x_2 * sin(radp));
+									}
+
+									DrawRotaGraph(xp, yp, 1.f, radp, mapparts->get_minmap().get(), TRUE);
+									for (auto& c : this->chara) {
+										auto t = c.body.GetMatrix().pos();
+										VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_.head_f.first).zvec()*-1.f;
+										auto rad = atan2f(vec_z.x(), vec_z.z());
+										auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
+										auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
+
+										int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
+										int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
+
+										DrawRotaGraph(xt, yt, 1.f, rad + radp, UI_player.get(), TRUE);
+									}
+									{
+										auto& cc = mine;
+										auto t = cc.body.GetMatrix().pos();
+										VECTOR_ref vec_z = cc.body.GetFrameLocalWorldMatrix(cc.frame_.head_f.first).zvec()*-1.f;
+										auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
+										auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
+
+										int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
+										int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
+
+										DrawCircle(xt, yt, 150, GetColor(0, 0, 0), FALSE, 3);
+									}
+								}
+								GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), false);
 								{
 									Hostpass2parts->get_main().DrawGraph(0, 0, true);
-									for (auto& g : mapparts->get_waypoint()) {
-										VECTOR_ref p = ConvWorldPosToScreenPos((g + VGet(0, 1.f, 0)).get());
-										if (p.z() >= 0.f&&p.z() <= 1.f) {
-											font.DrawStringFormat(p.x(), p.y(), GetColor(255, 0, 0), "%d", &g - &mapparts->get_waypoint()[0]);
-										}
-									}
+									UI_minimap.DrawGraph(64, 64, true);
 								}
 							}
 							else {//FPS視点
