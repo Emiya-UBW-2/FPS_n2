@@ -208,9 +208,9 @@ public:
 							}
 							if (tt) {
 								if (tmp.size() >= (w - poss).size()) {
-									auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0), 0);
+									auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0), 0);
 									if (p.HitFlag == FALSE) {
-										tmp = w;
+										tmp = (w - poss);
 										now = int(id);
 									}
 								}
@@ -273,9 +273,9 @@ public:
 											}
 											if (tt) {
 												if (tmp.size() >= (w - poss).size()) {
-													auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0), 0);
+													auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0), 0);
 													if (p.HitFlag == FALSE) {
-														tmp = w;
+														tmp = (w - poss);
 														now = int(id);
 													}
 												}
@@ -393,9 +393,9 @@ public:
 														}
 														if (tt) {
 															if (tmp.size() >= (w - poss).size()) {
-																auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0), 0);
+																auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 1.f, 0), 0);
 																if (p.HitFlag == FALSE) {
-																	tmp = w;
+																	tmp = (w - poss);
 																	now = int(id);
 																}
 															}
@@ -865,7 +865,7 @@ public:
 															if (tmp.size() >= (w - poss).size()) {
 																auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0), 0);
 																if (p.HitFlag == FALSE) {
-																	tmp = w;
+																	tmp = (w - poss);
 																	now = int(id);
 																}
 															}
