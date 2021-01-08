@@ -195,8 +195,8 @@ public:
 						int now = -1;
 						auto poss = c.pos + c.pos_HMD - c.rec_HMD;
 						auto tmp = VECTOR_ref(VGet(0, 100.f, 0));
-						for (auto& w : c.wayp_pre) {
-							w = now;
+						for (auto& ww : c.wayp_pre) {
+							ww = now;
 						}
 						for (auto& w : mapparts->get_waypoint()) {
 							auto id = &w - &mapparts->get_waypoint()[0];
