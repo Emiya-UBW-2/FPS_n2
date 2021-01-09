@@ -225,7 +225,7 @@ public:
 				}
 				SetMousePoint(deskx / 2, desky / 2);
 
-				cam_easy.fov = deg2rad(Drawparts->use_vr ? 65 : 45);	//
+				cam_easy.fov = deg2rad(Drawparts->use_vr ? 90 : 45);	//
 				cam_easy.near_ = 0.1f;
 				cam_easy.far_ = 100.f;
 				cam_easy2.fov = deg2rad(45);	//
