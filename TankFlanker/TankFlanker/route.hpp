@@ -63,7 +63,7 @@ public:
 		UI_Screen2 = GraphHandle::Make(deskx, desky, true);															//フルスクリーン向けUI
 		auto mapparts = std::make_unique<Mapclass>();																//MAP
 		//model
-		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);												//身体
+		MV1::Load("data/model/body_new/model.mv1", &this->body_obj, true);												//身体
 		MV1::Load("data/model/body/col.mv1", &this->body_col, true);												//身体col
 		outScreen2 = GraphHandle::Make(deskx, desky, true);															//TPS用描画スクリーン
 		UI_minimap = GraphHandle::Make(300, 300, true);
