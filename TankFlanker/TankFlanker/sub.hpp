@@ -713,6 +713,7 @@ public:
 		//AI—p
 		float ai_time_a = 0.f;
 		float ai_time_d = 0.f;
+		float ai_time_q = 0.f;
 		float ai_time_e = 0.f;
 		float ai_time_shoot = 0.f;
 		bool ai_reload = false;

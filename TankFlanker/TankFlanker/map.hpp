@@ -16,7 +16,8 @@ private:
 	SoundHandle envi;
 
 	std::vector<VECTOR_ref> way_point;
-	std::vector<VECTOR_ref> lean_point;
+	std::vector<VECTOR_ref> lean_point_q;
+	std::vector<VECTOR_ref> lean_point_e;
 
 	GraphHandle minmap;
 
@@ -28,8 +29,11 @@ public:
 	std::vector<VECTOR_ref>& get_waypoint() {
 		return way_point;
 	}
-	std::vector<VECTOR_ref>& get_leanpoint() {
-		return lean_point;
+	std::vector<VECTOR_ref>& get_leanpoint_q() {
+		return lean_point_q;
+	}
+	std::vector<VECTOR_ref>& get_leanpoint_e() {
+		return lean_point_e;
 	}
 	GraphHandle& get_minmap() {
 		return minmap;
@@ -85,8 +89,13 @@ public:
 				}
 				else if (p.Polygons[i].MaterialIndex == 2) {
 					//–Ø
-					lean_point.resize(lean_point.size() + 1);
-					lean_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
+					lean_point_e.resize(lean_point_e.size() + 1);
+					lean_point_e.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
+				}
+				else if (p.Polygons[i].MaterialIndex == 3) {
+					//–Ø
+					lean_point_q.resize(lean_point_q.size() + 1);
+					lean_point_q.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
 				}
 			}
 		}
@@ -137,7 +146,8 @@ public:
 		sky.Dispose();	 //‹ó
 		envi.Dispose();
 		way_point.clear();
-		lean_point.clear();
+		lean_point_q.clear();
+		lean_point_e.clear();
 	}
 	auto& map_get() { return map; }
 	auto& map_col_get() { return map_col; }

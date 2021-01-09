@@ -98,16 +98,16 @@ public:
 			auto& mine = chara[0];
 			//自機セット
 			mine.set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			mine.spawn(VGet(8.0f, 2.0f, -8.f), MATRIX_ref::RotY(DX_PI_F * 2));
+			mine.spawn(VGet(8.0f, 1.0f, -8.f), MATRIX_ref::RotY(DX_PI_F * 2));
 			//その他
 			chara[1].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[1].spawn(VGet(8.0f, 2.0f, 8.f), MATRIX_ref::RotY(DX_PI_F * 2));
+			chara[1].spawn(VGet(8.0f, 1.0f, 8.f), MATRIX_ref::RotY(DX_PI_F * 2));
 
 			chara[2].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[2].spawn(VGet(-8.0f, 2.0f, 8.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
+			chara[2].spawn(VGet(-8.0f, 1.0f, 8.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
 
 			chara[3].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[3].spawn(VGet(-8.0f, 2.0f, -8.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
+			chara[3].spawn(VGet(-8.0f, 1.0f, -8.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
 
 			//マップ読み込み
 			mapparts->Ready_map("data/map_new");			//mapparts->Ready_map("data/new");
@@ -226,15 +226,15 @@ public:
 				}
 				SetMousePoint(deskx / 2, desky / 2);
 
-				cam_easy.fov = deg2rad(Drawparts->use_vr ? 90 : 45);	//
+				cam_easy.fov = deg2rad(Drawparts->use_vr ? 90 : fov_pc);	//
 				cam_easy.near_ = 0.1f;
 				cam_easy.far_ = 100.f;
-				cam_easy2.fov = deg2rad(45);	//
+				cam_easy2.fov = deg2rad(fov_pc);	//
 				cam_easy2.near_ = 0.1f;
 				cam_easy2.far_ = 100.f;
 
-				cam_easy3.campos = VGet(0, 10, -10);
-				cam_easy3.fov = deg2rad(45);
+				cam_easy3.campos = VGet(0, 2, -10);
+				cam_easy3.fov = deg2rad(fov_pc);
 				cam_easy3.near_ = 0.1f;
 				cam_easy3.far_ = 100.f;
 				//
@@ -307,7 +307,6 @@ public:
 									bool aim = false;
 									bool shoot = false;
 									bool reload = false;
-									c.qkey = false;
 									int phase = 0;
 
 									if (c.running) {
@@ -328,6 +327,7 @@ public:
 									{
 										int32_t x_m = 0, y_m = 0;
 										bool pp = true;
+										bool is_player = false;
 										VECTOR_ref vec_2 = chara[0].body.frame(chara[0].frame_.bodyb_f.first) - c.obj_gun.frame(c.gun_ptr->frame[2].first);
 										if (c.ai_time_shoot < 0.f) {
 											vec_2 = chara[0].body.frame(chara[0].frame_.head_f.first) - c.obj_gun.frame(c.gun_ptr->frame[2].first);
@@ -358,6 +358,7 @@ public:
 											}
 											if (vec_2.size() >= tmp.size()) {
 												vec_2 = tmp;
+												is_player = (&tgt == &mine);
 												pp = false;
 											}
 										}
@@ -385,17 +386,13 @@ public:
 												c.ai_reload = false;
 												c.wkey = true;
 												c.skey = false;
-												c.akey = false;
-												c.dkey = false;
+												c.akey = GetRand(100) <= 75;
+												c.dkey = GetRand(100) <= 75;
 												c.squat.first = false;
 
-												if (c.ekey) {
-													c.ai_time_e += 1.f / GetFPS();
-													if (c.ai_time_e >= 2) {
-														c.ekey = false;
-														c.ai_time_e = 0.f;
-													}
-												}
+												c.qkey = false;
+												c.ekey = false;
+
 
 												vec_2 = mapparts->get_waypoint()[c.wayp_pre[0]]- c.body.GetMatrix().pos();
 												x_m = -int(vec_x.dot(vec_2) * 80);
@@ -438,6 +435,7 @@ public:
 												c.running = false;
 												c.ai_reload = false;
 												c.wkey = false;
+												c.skey = true;
 												if (c.ekey) {
 													c.ai_time_e += 1.f / GetFPS();
 													if (c.ai_time_e >= 2) {
@@ -447,39 +445,77 @@ public:
 												}
 												{
 													auto poss = c.body.GetMatrix().pos();
-													for (auto& w : mapparts->get_waypoint()) {
+													for (auto& w : mapparts->get_leanpoint_e()) {
 														if ((w-poss).size()<=0.5f) {
 															c.ekey = true;
+															c.qkey = false;
 															c.ai_time_e = 0.f;
 															break;
 														}
 													}
 												}
+												if (c.qkey) {
+													c.ai_time_q += 1.f / GetFPS();
+													if (c.ai_time_q >= 2) {
+														c.qkey = false;
+														c.ai_time_q = 0.f;
+													}
+												}
+												{
+													auto poss = c.body.GetMatrix().pos();
+													for (auto& w : mapparts->get_leanpoint_q()) {
+														if ((w - poss).size() <= 0.5f) {
+															c.ekey = false;
+															c.qkey = true;
+															c.ai_time_q = 0.f;
+															break;
+														}
+													}
+												}
 
-												x_m = -int(vec_x.dot(vec_2) * 40);// +int(-5.f + float(GetRand(5 * 2)));
-												y_m = -int(vec_y.dot(vec_2) * 40);// +int(-5.f + float(GetRand(5 * 2)));
+												x_m = -int(vec_x.dot(vec_2) * 25) +int(float(-500 + GetRand(500 * 2)) / 100.f);
+												y_m = -int(vec_y.dot(vec_2) * 25) +int(float(-500 + GetRand(500 * 2)) / 100.f);
 
 												c.ai_time_shoot += 1.f / GetFPS();
 												if (c.ai_time_shoot < 0.f) {
 													c.akey = false;
 													c.dkey = false;
+													c.wkey = true;
+													c.skey = true;
+
 													if (c.ai_time_shoot >= -5) {
-														shoot =GetRand(100) <= 10;
+														if (is_player) {
+															shoot = GetRand(100) <= 5;
+														}
+														else {
+															shoot = GetRand(100) <= 20;
+														}
 														aim = true;
 														c.squat.first = true;
 													}
 												}
 												else {
 													c.squat.first = false;
-
-													shoot = GetRand(100) <= 15;
+													if (is_player) {
+														shoot = GetRand(100) <= 10;
+													}
+													else {
+														shoot = GetRand(100) <= 30;
+													}
 
 													if (c.ai_time_shoot >= GetRand(20) + 5) {
 														c.ai_time_shoot = float(-8);
 													}
 													if (c.ekey && !c.akey) {
 														c.akey = true;
+														c.dkey = false;
+														c.ai_time_d = 0.f;
 														c.ai_time_a = 0.f;
+													}
+													if (c.qkey && !c.dkey) {
+														c.dkey = true;
+														c.akey = false;
+														c.ai_time_d = 0.f;
 														c.ai_time_a = 0.f;
 													}
 
@@ -514,6 +550,7 @@ public:
 												c.running = true;
 												c.squat.first = false;
 
+												c.qkey = false;
 												c.ekey = false;
 
 												if(c.ai_reload) {
@@ -527,8 +564,8 @@ public:
 													c.ai_reload = false;
 												}
 												vec_2 = mapparts->get_waypoint()[c.wayp_pre[0]] - c.body.GetMatrix().pos();
-												x_m = -int(vec_x.dot(vec_2) * 80);
-												y_m = -int(vec_y.dot(vec_2) * 80);
+												x_m = -int(vec_x.dot(vec_2) * 40);
+												y_m = -int(vec_y.dot(vec_2) * 40);
 
 												//到達時に判断
 												if (vec_2.size() <= 0.5f) {
@@ -569,10 +606,10 @@ public:
 
 										c.mat *= MATRIX_ref::RotAxis(c.mat.zvec(), c.body_zrad).Inverse();
 										if (c.qkey) {
-											easing_set(&c.body_zrad, deg2rad(-30), 0.9f);
+											easing_set(&c.body_zrad, deg2rad(-40), 0.9f);
 										}
 										else if (c.ekey) {
-											easing_set(&c.body_zrad, deg2rad(30), 0.9f);
+											easing_set(&c.body_zrad, deg2rad(40), 0.9f);
 										}
 										else {
 											easing_set(&c.body_zrad, 0.f, 0.9f);
@@ -819,10 +856,10 @@ public:
 								{
 									mine.mat *= MATRIX_ref::RotAxis(mine.mat.zvec(), mine.body_zrad).Inverse();
 									if (mine.qkey) {
-										easing_set(&mine.body_zrad, deg2rad(-30), 0.9f);
+										easing_set(&mine.body_zrad, deg2rad(-40), 0.9f);
 									}
 									else if (mine.ekey) {
-										easing_set(&mine.body_zrad, deg2rad(30), 0.9f);
+										easing_set(&mine.body_zrad, deg2rad(40), 0.9f);
 									}
 									else {
 										easing_set(&mine.body_zrad, 0.f, 0.9f);
@@ -1281,12 +1318,12 @@ public:
 								}
 								//身体
 								MATRIX_ref mg_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
-								MATRIX_ref mb_inv = MATRIX_ref::RotY(deg2rad(15));
+								MATRIX_ref mb_inv = MATRIX_ref::RotY(deg2rad(15))*MATRIX_ref::RotZ(c.body_zrad);
 								MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(30))*MATRIX_ref::RotZ(c.body_zrad)*MATRIX_ref::RotX(c.body_xrad)*mg_inv;
 								{
 									if (c.reloadf) {
-										mb_inv = MGetIdent();
-										m_inv = MATRIX_ref::RotZ(c.body_zrad)*MATRIX_ref::RotX(c.body_xrad)*mg_inv;
+										mb_inv = MATRIX_ref::RotZ(c.body_zrad)*MGetIdent();
+										m_inv = MATRIX_ref::RotZ(c.body_zrad)* MATRIX_ref::RotX(c.body_xrad)*mg_inv;
 									}
 									c.body.SetMatrix(MATRIX_ref::Mtrans(c.pos - c.rec_HMD));
 									//
@@ -1815,18 +1852,20 @@ public:
 
 								//main
 								Hostpassparts->get_main().DrawGraph(0, 0, true);
-
-								SetCameraNearFar(0.01f, 2.f);
-								SetUseZBuffer3D(FALSE);												//zbufuse
-								SetWriteZBuffer3D(FALSE);											//zbufwrite
-								{
-									//main
-									//DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, Hostpassparts->get_main().get(), TRUE);
-									//UI
-									DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, Drawparts->use_vr ? 1.8f : 1.475f, 0.f, this->UI_Screen.get(), TRUE);
+								//UI
+								if (Drawparts->use_vr) {
+									SetCameraNearFar(0.01f, 2.f);
+									SetUseZBuffer3D(FALSE);												//zbufuse
+									SetWriteZBuffer3D(FALSE);											//zbufwrite
+									{
+										DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, 1.8f, 0.f, this->UI_Screen.get(), TRUE);
+									}
+									SetUseZBuffer3D(TRUE);												//zbufuse
+									SetWriteZBuffer3D(TRUE);											//zbufwrite
 								}
-								SetUseZBuffer3D(TRUE);												//zbufuse
-								SetWriteZBuffer3D(TRUE);											//zbufwrite
+								else {
+									this->UI_Screen.DrawGraph(0, 0, TRUE);
+								}
 								//UI2
 								UIparts->item_draw(chara, this->item_data, cam_easy.campos, Drawparts->use_vr);
 							}, cam_easy);
@@ -1834,7 +1873,7 @@ public:
 						if (!this->TPS.first) {
 							//2P描画
 							if (Drawparts->use_vr) {
-								auto& ct = chara[1];
+								auto& ct = chara[sel_cam];
 								//cam_s.cam
 								cam_easy2.campos = ct.pos + ct.pos_HMD - ct.rec_HMD;
 								cam_easy2.camvec = cam_easy2.campos + ct.mat.zvec()*-1.f;
@@ -1873,6 +1912,62 @@ public:
 						}
 						//ディスプレイ描画
 						{
+							UI_minimap.SetDraw_Screen(true);
+							{
+								auto* cc = &mine;
+								if (this->TPS.first) {
+									cc = &chara[sel_cam];
+								}
+								else {
+									if (Drawparts->use_vr) {
+										cc = &chara[sel_cam];
+									}
+									else {
+										cc = &chara[0];
+									}
+								}
+								int xp = 0;
+								int yp = 0;
+								float radp = 0.f;
+
+								xp = 150;
+								yp = 150;
+								{
+									auto t = cc->body.GetMatrix().pos();
+									VECTOR_ref vec_z = cc->body.GetFrameLocalWorldMatrix(cc->frame_.head_f.first).zvec()*-1.f;
+									radp = -atan2f(vec_z.x(), vec_z.z());
+									auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
+									auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
+									xp -= int(x_2*cos(radp) - y_2 * sin(radp));
+									yp -= int(y_2*cos(radp) + x_2 * sin(radp));
+								}
+
+								DrawRotaGraph(xp, yp, 1.f, radp, mapparts->get_minmap().get(), TRUE);
+								for (auto& c : this->chara) {
+									auto t = c.body.GetMatrix().pos();
+									VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_.head_f.first).zvec()*-1.f;
+									auto rad = atan2f(vec_z.x(), vec_z.z());
+									auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
+									auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
+
+									int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
+									int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
+
+									DrawRotaGraph(xt, yt, 1.f, rad + radp, UI_player.get(), TRUE);
+								}
+								{
+									auto t = cc->body.GetMatrix().pos();
+									VECTOR_ref vec_z = cc->body.GetFrameLocalWorldMatrix(cc->frame_.head_f.first).zvec()*-1.f;
+									auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
+									auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
+
+									int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
+									int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
+
+									DrawCircle(xt, yt, 150, GetColor(0, 0, 0), FALSE, 3);
+								}
+							}
+
 							this->TPS.get_in(CheckHitKey(KEY_INPUT_LCONTROL) != 0);
 							//TPS視点
 							if (this->TPS.first) {
@@ -1890,47 +1985,36 @@ public:
 										sel_cam = 0;
 									}
 
-									VECTOR_ref vec_2 = chara[sel_cam].body.frame(chara[sel_cam].frame_.head_f.first) - cam_easy3.campos;
-									VECTOR_ref vec_y = cam_easy3.camup;
-									VECTOR_ref vec_x = (cam_easy3.camvec - cam_easy3.campos).cross(vec_y);
+									VECTOR_ref vec_2 = (chara[sel_cam].body.frame(chara[sel_cam].frame_.head_f.first) - cam_easy3.campos).Norm();
+									VECTOR_ref vec_y = cam_easy3.camup.Norm();
+									VECTOR_ref vec_z = (cam_easy3.camvec - cam_easy3.campos).Norm();
+									VECTOR_ref vec_x = (vec_z.cross(vec_y)).Norm();
 
 									{
-										//xr_cam -= deg2rad(int(vec_y.dot(vec_2) * 5))*0.1f;
-										yr_cam -= deg2rad(int(vec_x.dot(vec_2) * 5))*0.1f;
+										xr_cam -= deg2rad(int(vec_z.cross(vec_2).dot(vec_x) * 50))*0.1f;
+										yr_cam -= deg2rad(int(vec_x.dot(vec_2) * 50))*0.1f;
 									}
 
 									if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
-										yr_cam -= deg2rad(60) / GetFPS();
-									}
-									if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
-										yr_cam += deg2rad(60) / GetFPS();
-									}
-									if (CheckHitKey(KEY_INPUT_UP) != 0) {
-										xr_cam -= deg2rad(60) / GetFPS();
-									}
-									if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
-										xr_cam += deg2rad(60) / GetFPS();
-									}
-
-									if (CheckHitKey(KEY_INPUT_A) != 0) {
 										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / GetFPS()*cos(yr_cam));
 										cam_easy3.campos.z(cam_easy3.campos.z() + 10.f / GetFPS()*sin(yr_cam));
 									}
-									if (CheckHitKey(KEY_INPUT_D) != 0) {
+									if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
 										cam_easy3.campos.x(cam_easy3.campos.x() + 10.f / GetFPS()*cos(yr_cam));
 										cam_easy3.campos.z(cam_easy3.campos.z() - 10.f / GetFPS()*sin(yr_cam));
 									}
-									if (CheckHitKey(KEY_INPUT_W) != 0) {
+									if (CheckHitKey(KEY_INPUT_UP) != 0) {
 										cam_easy3.campos.z(cam_easy3.campos.z() + 10.f / GetFPS()*cos(yr_cam));
 										cam_easy3.campos.x(cam_easy3.campos.x() + 10.f / GetFPS()*sin(yr_cam));
 									}
-									if (CheckHitKey(KEY_INPUT_S) != 0) {
+									if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
 										cam_easy3.campos.z(cam_easy3.campos.z() - 10.f / GetFPS()*cos(yr_cam));
 										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / GetFPS()*sin(yr_cam));
 									}
+
 									cam_easy3.campos.x(std::clamp(cam_easy3.campos.x(), -10.f, 10.f));
 									cam_easy3.campos.z(std::clamp(cam_easy3.campos.z(), -10.f, 10.f));
-									//xr_cam = std::clamp(xr_cam, deg2rad(-89), deg2rad(89));
+									xr_cam = std::clamp(xr_cam, deg2rad(-89), deg2rad(89));
 
 									cam_easy3.camvec = cam_easy3.campos + MATRIX_ref::Vtrans(VGet(0, 0, 1), MATRIX_ref::RotX(xr_cam)*MATRIX_ref::RotY(yr_cam));
 									cam_easy3.camup = VGet(0, 1.f, 0);
@@ -1951,51 +2035,6 @@ public:
 									//最終描画
 									Hostpass2parts->MAIN_draw();
 								}
-								UI_minimap.SetDraw_Screen(true);
-								{
-									int xp = 0;
-									int yp = 0;
-									float radp = 0.f;
-
-									xp = 150;
-									yp = 150;
-									{
-										auto& cc = mine;
-										auto t = cc.body.GetMatrix().pos();
-										VECTOR_ref vec_z = cc.body.GetFrameLocalWorldMatrix(cc.frame_.head_f.first).zvec()*-1.f;
-										radp = -atan2f(vec_z.x(), vec_z.z());
-										auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
-										auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
-										xp -= int(x_2*cos(radp) - y_2 * sin(radp));
-										yp -= int(y_2*cos(radp) + x_2 * sin(radp));
-									}
-
-									DrawRotaGraph(xp, yp, 1.f, radp, mapparts->get_minmap().get(), TRUE);
-									for (auto& c : this->chara) {
-										auto t = c.body.GetMatrix().pos();
-										VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_.head_f.first).zvec()*-1.f;
-										auto rad = atan2f(vec_z.x(), vec_z.z());
-										auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
-										auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
-
-										int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
-										int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
-
-										DrawRotaGraph(xt, yt, 1.f, rad + radp, UI_player.get(), TRUE);
-									}
-									{
-										auto& cc = mine;
-										auto t = cc.body.GetMatrix().pos();
-										VECTOR_ref vec_z = cc.body.GetFrameLocalWorldMatrix(cc.frame_.head_f.first).zvec()*-1.f;
-										auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
-										auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
-
-										int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
-										int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
-
-										DrawCircle(xt, yt, 150, GetColor(0, 0, 0), FALSE, 3);
-									}
-								}
 								GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), false);
 								{
 									Hostpass2parts->get_main().DrawGraph(0, 0, true);
@@ -2011,6 +2050,7 @@ public:
 									else {
 										Drawparts->outScreen[0].DrawGraph(0, 0, false);
 									}
+									UI_minimap.DrawGraph(64, 64, true);
 								}
 							}
 							//デバッグ
