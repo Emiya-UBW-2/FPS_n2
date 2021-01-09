@@ -21,33 +21,16 @@ c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3727): warni
 c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(214): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(215): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(218): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(219): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(245): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(246): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(246): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(245): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(254): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(255): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(255): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(254): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(299): warning C4189: 'font': ローカル変数が初期化されましたが、参照されていません
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(201): warning C4456: 'w' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(198): note: 'w' の宣言を確認してください
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(211): warning C4244: '=': '__int64' から 'int' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(266): warning C4456: 'w' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(263): note: 'w' の宣言を確認してください
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(276): warning C4244: '=': '__int64' から 'int' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(399): warning C4456: 'w' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(396): note: 'w' の宣言を確認してください
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(409): warning C4244: '=': '__int64' から 'int' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(415): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(869): warning C4456: 'w' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(866): note: 'w' の宣言を確認してください
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(879): warning C4244: '=': '__int64' から 'int' への変換です。データが失われる可能性があります。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(1834): error C3867: 'Mapclass::get_x_size': 非標準の構文です。メンバーにポインタを作成するには '&' を使用してください
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(1834): error C2296: '/': 無効です。左オペランドには型 'int &(__cdecl Mapclass::* )(void)' が指定されています。
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(1835): error C3867: 'Mapclass::get_y_size': 非標準の構文です。メンバーにポインタを作成するには '&' を使用してください
-c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(1835): error C2296: '/': 無効です。左オペランドには型 'int &(__cdecl Mapclass::* )(void)' が指定されています。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(300): warning C4189: 'font': ローカル変数が初期化されましたが、参照されていません
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
+  コード生成しています。
+  3 of 3020 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  コード生成が終了しました。
+EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\ハンドサイン\source\repos\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+  TankFlanker.vcxproj -> C:\Users\ハンドサイン\source\repos\FPS_n2\TankFlanker\x64\Release\FPS_n2.exe

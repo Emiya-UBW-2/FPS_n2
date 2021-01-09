@@ -705,13 +705,18 @@ public:
 		bool skey = false;
 		bool akey = false;
 		bool dkey = false;
+		bool qkey = false;
+		bool ekey = false;
 		bool running = false;										//走るか否か
 		VECTOR_ref gunpos;											//マウスエイム用銃座標
 		switchs getmag;
 		//AI用
 		float ai_time_a = 0.f;
 		float ai_time_d = 0.f;
+		float ai_time_q = 0.f;
+		float ai_time_e = 0.f;
 		float ai_time_shoot = 0.f;
+		bool ai_reload = false;
 
 		std::array<int, 6> wayp_pre;
 		//マガジン座標系
@@ -817,6 +822,7 @@ public:
 			this->ai_time_shoot = 0.f;
 			this->ai_time_a = 0.f;
 			this->ai_time_d = 0.f;
+			this->ai_time_e = 0.f;
 
 			this->xrad_p = 0;
 			this->spawn_pos = pos_;
