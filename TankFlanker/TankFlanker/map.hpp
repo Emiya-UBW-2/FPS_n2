@@ -7,7 +7,7 @@
 #define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
 #define PLAYER_HIT_SLIDE_LENGTH		0.05f	// 一度の壁押し出し処理でスライドさせる距離
 
-class Mapclass:Mainclass {
+class Mapclass :Mainclass {
 private:
 	MV1 map, map_col;					    //地面
 	//MV1 tree_model, tree_far;				    //木
@@ -16,6 +16,7 @@ private:
 	SoundHandle envi;
 
 	std::vector<VECTOR_ref> way_point;
+	std::vector<VECTOR_ref> lean_point;
 
 	GraphHandle minmap;
 
@@ -27,13 +28,16 @@ public:
 	std::vector<VECTOR_ref>& get_waypoint() {
 		return way_point;
 	}
-	GraphHandle& get_minmap(){
+	std::vector<VECTOR_ref>& get_leanpoint() {
+		return lean_point;
+	}
+	GraphHandle& get_minmap() {
 		return minmap;
 	}
-	int& get_x_size(){
+	int& get_x_size() {
 		return x_size;
 	}
-	int& get_y_size(){
+	int& get_y_size() {
 		return y_size;
 	}
 
@@ -67,7 +71,7 @@ public:
 			}
 		}
 		for (int i = 0; i < map_col.mesh_num(); i++) {
-			map_col.SetupCollInfo(1,1,1, 0, i);
+			map_col.SetupCollInfo(1, 1, 1, 0, i);
 		}
 
 		{
@@ -79,11 +83,16 @@ public:
 					way_point.resize(way_point.size() + 1);
 					way_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
 				}
+				else if (p.Polygons[i].MaterialIndex == 2) {
+					//木
+					lean_point.resize(lean_point.size() + 1);
+					lean_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
+				}
 			}
 		}
 
 		SetFogStartEnd(10.0f, 25.f);
-		SetFogColor(12,6,0);
+		SetFogColor(12, 6, 0);
 
 		item_data.clear();
 		{
@@ -105,7 +114,7 @@ public:
 					p4 = getparams::_float(mdata);
 
 					item_data.resize(item_data.size() + 1);
-					item_data.back().Set_item(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(),1);
+					item_data.back().Set_item(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(), 1);
 					if (item_data.back().ptr != nullptr) {
 						item_data.back().magazine.cap = int(item_data.back().ptr->magazine->cap);
 					}
@@ -127,6 +136,8 @@ public:
 		map_col.Dispose();		   //mapコリジョン
 		sky.Dispose();	 //空
 		envi.Dispose();
+		way_point.clear();
+		lean_point.clear();
 	}
 	auto& map_get() { return map; }
 	auto& map_col_get() { return map_col; }

@@ -38,6 +38,7 @@ class main_c : Mainclass {
 	float yr_cam = 0.f;
 	GraphHandle UI_player;																									//描画スクリーン
 	GraphHandle UI_minimap;																									//描画スクリーン
+	int sel_cam = 0;
 	//
 public:
 	main_c() {
@@ -303,12 +304,10 @@ public:
 							//cpu
 							for (auto& c : chara) {
 								if (&c - &chara[0] >= (Drawparts->use_vr ? 1 : 1)) {
-									c.running = false;
 									bool aim = false;
 									bool shoot = false;
 									bool reload = false;
-									auto qkey = false;
-									auto ekey = false;
+									c.qkey = false;
 									int phase = 0;
 
 									if (c.running) {
@@ -330,15 +329,25 @@ public:
 										int32_t x_m = 0, y_m = 0;
 										bool pp = true;
 										VECTOR_ref vec_2 = chara[0].body.frame(chara[0].frame_.bodyb_f.first) - c.obj_gun.frame(c.gun_ptr->frame[2].first);
+										if (c.ai_time_shoot < 0.f) {
+											vec_2 = chara[0].body.frame(chara[0].frame_.head_f.first) - c.obj_gun.frame(c.gun_ptr->frame[2].first);
+										}
 										for (auto& tgt : chara) {
 											if (&c == &tgt) {
 												continue;
 											}
 											auto tmp = tgt.body.frame(tgt.frame_.bodyb_f.first) - c.obj_gun.frame(c.gun_ptr->frame[2].first);
+											if (c.ai_time_shoot < 0.f) {
+												tmp = tgt.body.frame(tgt.frame_.head_f.first) - c.obj_gun.frame(c.gun_ptr->frame[2].first);
+											}
+
 											bool tt = true;
 											{
 												VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame[2].first);
 												VECTOR_ref endpos = tgt.body.frame(tgt.frame_.bodyb_f.first);
+												if (c.ai_time_shoot < 0.f) {
+													endpos = tgt.body.frame(tgt.frame_.head_f.first);
+												}
 												auto p = mapparts->map_col_line(startpos, endpos, 0);
 												if (p.HitFlag) {
 													tt = false;
@@ -365,18 +374,32 @@ public:
 													phase = 1;
 												}
 											}
+											if (c.reloadf) {
+												phase = 2;
+											}
 
 											switch (phase) {
 											case 0://通常フェイズ
 											{
+												c.running = false;
+												c.ai_reload = false;
 												c.wkey = true;
 												c.skey = false;
 												c.akey = false;
 												c.dkey = false;
 												c.squat.first = false;
+
+												if (c.ekey) {
+													c.ai_time_e += 1.f / GetFPS();
+													if (c.ai_time_e >= 2) {
+														c.ekey = false;
+														c.ai_time_e = 0.f;
+													}
+												}
+
 												vec_2 = mapparts->get_waypoint()[c.wayp_pre[0]]- c.body.GetMatrix().pos();
-												x_m = -int(vec_x.dot(vec_2) * 40);
-												y_m = -int(vec_y.dot(vec_2) * 40);
+												x_m = -int(vec_x.dot(vec_2) * 80);
+												y_m = -int(vec_y.dot(vec_2) * 80);
 
 												//到達時に判断
 												if (vec_2.size() <= 0.5f) {
@@ -412,7 +435,26 @@ public:
 											break;
 											case 1://戦闘フェイズ
 											{
+												c.running = false;
+												c.ai_reload = false;
 												c.wkey = false;
+												if (c.ekey) {
+													c.ai_time_e += 1.f / GetFPS();
+													if (c.ai_time_e >= 2) {
+														c.ekey = false;
+														c.ai_time_e = 0.f;
+													}
+												}
+												{
+													auto poss = c.body.GetMatrix().pos();
+													for (auto& w : mapparts->get_waypoint()) {
+														if ((w-poss).size()<=0.5f) {
+															c.ekey = true;
+															c.ai_time_e = 0.f;
+															break;
+														}
+													}
+												}
 
 												x_m = -int(vec_x.dot(vec_2) * 40);// +int(-5.f + float(GetRand(5 * 2)));
 												y_m = -int(vec_y.dot(vec_2) * 40);// +int(-5.f + float(GetRand(5 * 2)));
@@ -422,7 +464,7 @@ public:
 													c.akey = false;
 													c.dkey = false;
 													if (c.ai_time_shoot >= -5) {
-														shoot = GetRand(100) <= 10;
+														shoot =GetRand(100) <= 10;
 														aim = true;
 														c.squat.first = true;
 													}
@@ -430,10 +472,15 @@ public:
 												else {
 													c.squat.first = false;
 
-													shoot = GetRand(100) <= 5;
+													shoot = GetRand(100) <= 15;
 
 													if (c.ai_time_shoot >= GetRand(20) + 5) {
-														c.ai_time_shoot = -float(GetRand(1) + 6);
+														c.ai_time_shoot = float(-8);
+													}
+													if (c.ekey && !c.akey) {
+														c.akey = true;
+														c.ai_time_a = 0.f;
+														c.ai_time_a = 0.f;
 													}
 
 													if (!c.akey) {
@@ -454,6 +501,64 @@ public:
 												}
 												if (c.gun_stat[c.gun_ptr->id].ammo_cnt == 0 && !c.reloadf) {
 													reload = true;
+													c.ai_reload = true;
+												}
+											}
+											break;
+											case 2://リロードフェイズ
+											{
+												c.wkey = true;
+												c.skey = false;
+												c.akey = false;
+												c.dkey = false;
+												c.running = true;
+												c.squat.first = false;
+
+												c.ekey = false;
+
+												if(c.ai_reload) {
+													auto pppa = c.wayp_pre[1];
+													auto ppp = c.wayp_pre[2];
+													for (int i = int(c.wayp_pre.size()) - 1; i >= 2; i--) {
+														c.wayp_pre[i] = c.wayp_pre[0];
+													}
+													c.wayp_pre[1] = ppp;
+													c.wayp_pre[0] = pppa;
+													c.ai_reload = false;
+												}
+												vec_2 = mapparts->get_waypoint()[c.wayp_pre[0]] - c.body.GetMatrix().pos();
+												x_m = -int(vec_x.dot(vec_2) * 80);
+												y_m = -int(vec_y.dot(vec_2) * 80);
+
+												//到達時に判断
+												if (vec_2.size() <= 0.5f) {
+													int now = -1;
+													auto poss = c.body.GetMatrix().pos();
+													auto tmp = VECTOR_ref(VGet(0, 100.f, 0));
+													for (auto& w : mapparts->get_waypoint()) {
+														auto id = &w - &mapparts->get_waypoint()[0];
+														bool tt = true;
+														for (auto& ww : c.wayp_pre) {
+															if (id == ww) {
+																tt = false;
+															}
+														}
+														if (tt) {
+															if (tmp.size() >= (w - poss).size()) {
+																auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 1.f, 0), 0);
+																if (p.HitFlag == FALSE) {
+																	tmp = (w - poss);
+																	now = int(id);
+																}
+															}
+														}
+													}
+													if (now != -1) {
+														for (int i = int(c.wayp_pre.size()) - 1; i >= 1; i--) {
+															c.wayp_pre[i] = c.wayp_pre[i - 1];
+														}
+														c.wayp_pre[0] = now;
+													}
 												}
 											}
 											break;
@@ -463,10 +568,10 @@ public:
 										}
 
 										c.mat *= MATRIX_ref::RotAxis(c.mat.zvec(), c.body_zrad).Inverse();
-										if (qkey) {
+										if (c.qkey) {
 											easing_set(&c.body_zrad, deg2rad(-30), 0.9f);
 										}
-										else if (ekey) {
+										else if (c.ekey) {
 											easing_set(&c.body_zrad, deg2rad(30), 0.9f);
 										}
 										else {
@@ -693,8 +798,8 @@ public:
 								bool dkey = (CheckHitKey(KEY_INPUT_D) != 0);
 								mine.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
 								mine.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
-								auto qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
-								auto ekey = (CheckHitKey(KEY_INPUT_E) != 0);
+								mine.qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
+								mine.ekey = (CheckHitKey(KEY_INPUT_E) != 0);
 								if (mine.running) {
 									mine.squat.first = false;
 								}
@@ -713,10 +818,10 @@ public:
 								//HMD_mat
 								{
 									mine.mat *= MATRIX_ref::RotAxis(mine.mat.zvec(), mine.body_zrad).Inverse();
-									if (qkey) {
+									if (mine.qkey) {
 										easing_set(&mine.body_zrad, deg2rad(-30), 0.9f);
 									}
-									else if (ekey) {
+									else if (mine.ekey) {
 										easing_set(&mine.body_zrad, deg2rad(30), 0.9f);
 									}
 									else {
@@ -1283,10 +1388,25 @@ public:
 
 
 									if (c.running) {
-										c.body.get_anime(6).per = 1.f;
-										c.body.get_anime(6).time += 30.f / GetFPS();
-										if (c.body.get_anime(6).time >= c.body.get_anime(6).alltime) {
+										if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
+											c.body.get_anime(3).per = 1.f;
+											c.body.get_anime(3).time += 30.f / GetFPS() * ((c.body.get_anime(3).alltime / 30.f) / c.gun_ptr->reload_time);
+											if (c.body.get_anime(3).time >= c.body.get_anime(3).alltime) {
+												c.body.get_anime(3).time = 0.f;
+											}
+
+											c.body.get_anime(6).per = 0.f;
 											c.body.get_anime(6).time = 0.f;
+										}
+										else {
+											c.body.get_anime(3).per = 0.f;
+											c.body.get_anime(3).time = 0.f;
+
+											c.body.get_anime(6).per = 1.f;
+											c.body.get_anime(6).time += 30.f / GetFPS();
+											if (c.body.get_anime(6).time >= c.body.get_anime(6).alltime) {
+												c.body.get_anime(6).time = 0.f;
+											}
 										}
 									}
 									else {
@@ -1757,6 +1877,28 @@ public:
 							//TPS視点
 							if (this->TPS.first) {
 								{
+									if (CheckHitKey(KEY_INPUT_4) != 0) {
+										sel_cam = 3;
+									}
+									if (CheckHitKey(KEY_INPUT_3) != 0) {
+										sel_cam = 2;
+									}
+									if (CheckHitKey(KEY_INPUT_2) != 0) {
+										sel_cam = 1;
+									}
+									if (CheckHitKey(KEY_INPUT_1) != 0) {
+										sel_cam = 0;
+									}
+
+									VECTOR_ref vec_2 = chara[sel_cam].body.frame(chara[sel_cam].frame_.head_f.first) - cam_easy3.campos;
+									VECTOR_ref vec_y = cam_easy3.camup;
+									VECTOR_ref vec_x = (cam_easy3.camvec - cam_easy3.campos).cross(vec_y);
+
+									{
+										//xr_cam -= deg2rad(int(vec_y.dot(vec_2) * 5))*0.1f;
+										yr_cam -= deg2rad(int(vec_x.dot(vec_2) * 5))*0.1f;
+									}
+
 									if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
 										yr_cam -= deg2rad(60) / GetFPS();
 									}
@@ -1788,7 +1930,7 @@ public:
 									}
 									cam_easy3.campos.x(std::clamp(cam_easy3.campos.x(), -10.f, 10.f));
 									cam_easy3.campos.z(std::clamp(cam_easy3.campos.z(), -10.f, 10.f));
-									xr_cam = std::clamp(xr_cam, deg2rad(-89), deg2rad(89));
+									//xr_cam = std::clamp(xr_cam, deg2rad(-89), deg2rad(89));
 
 									cam_easy3.camvec = cam_easy3.campos + MATRIX_ref::Vtrans(VGet(0, 0, 1), MATRIX_ref::RotX(xr_cam)*MATRIX_ref::RotY(yr_cam));
 									cam_easy3.camup = VGet(0, 1.f, 0);
