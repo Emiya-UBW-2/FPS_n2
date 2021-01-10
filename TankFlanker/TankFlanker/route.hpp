@@ -63,7 +63,7 @@ public:
 		UI_Screen2 = GraphHandle::Make(deskx, desky, true);															//フルスクリーン向けUI
 		auto mapparts = std::make_unique<Mapclass>();																//MAP
 		//model
-		MV1::Load("data/model/body_new/model.mv1", &this->body_obj, true);												//身体
+		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);												//身体
 		MV1::Load("data/model/body/col.mv1", &this->body_col, true);												//身体col
 		outScreen2 = GraphHandle::Make(deskx, desky, true);															//TPS用描画スクリーン
 		UI_minimap = GraphHandle::Make(300, 300, true);
@@ -98,25 +98,26 @@ public:
 			auto& mine = chara[0];
 			//自機セット
 			mine.set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			mine.spawn(VGet(8.0f, 1.0f, -8.f), MATRIX_ref::RotY(DX_PI_F * 2));
+			mine.spawn(VGet(24.0f, 5.0f, -24.f), MATRIX_ref::RotY(DX_PI_F * 2));
 			//その他
 			chara[1].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[1].spawn(VGet(8.0f, 1.0f, 8.f), MATRIX_ref::RotY(DX_PI_F * 2));
+			chara[1].spawn(VGet(24.0f, 5.0f, 24.f), MATRIX_ref::RotY(DX_PI_F * 2));
 
 			chara[2].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[2].spawn(VGet(-8.0f, 1.0f, 8.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
+			chara[2].spawn(VGet(-24.0f, 5.0f, 20.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
 
 			chara[3].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[3].spawn(VGet(-8.0f, 1.0f, -8.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
+			chara[3].spawn(VGet(-24.0f, 5.0f, -24.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
 
 			//マップ読み込み
-			mapparts->Ready_map("data/map_new");			//mapparts->Ready_map("data/new");
+			mapparts->Ready_map("data/map_new2");			//mapparts->Ready_map("data/new");
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
 			//ライティング
 			Drawparts->Set_Light_Shadow(mapparts->map_col_get().mesh_maxpos(0), mapparts->map_col_get().mesh_minpos(0), VGet(0.5f, -0.5f, 0.5f), [&] {
-				mapparts->map_get().DrawMesh(0);
-				mapparts->map_get().DrawMesh(1);
+				for (int i = 0; i < 2; i++) {
+					mapparts->map_get().DrawMesh(i);
+				}
 			});
 			//描画するものを指定する(仮)
 			auto draw_by_shadow = [&] {
@@ -124,9 +125,15 @@ public:
 					[&] {
 					mapparts->map_get().DrawMesh(0);
 					mapparts->map_get().DrawMesh(1);
-					SetFogEnable(FALSE);
 					mapparts->map_get().DrawMesh(2);
+					SetFogEnable(FALSE);
+					mapparts->map_get().DrawMesh(3);
 					SetFogEnable(TRUE);
+					/*
+					for (int i = 1; i < mapparts->map_get().mesh_num(); i++) {
+						mapparts->map_get().DrawMesh(i);
+					}
+					//*/
 
 					for (auto& c : this->chara) {
 						c.Draw_chara();
@@ -134,7 +141,7 @@ public:
 							VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame[2].first);
 							VECTOR_ref endpos = startpos - c.obj_gun.GetMatrix().zvec()*100.f;
 							while (true) {
-								auto p = mapparts->map_col_line(startpos, endpos, 0);
+								auto p = mapparts->map_col_line(startpos, endpos);
 								if (p.HitFlag) {
 									if (endpos == p.HitPosition) {
 										break;
@@ -209,7 +216,7 @@ public:
 							}
 							if (tt) {
 								if (tmp.size() >= (w - poss).size()) {
-									auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0), 0);
+									auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0));
 									if (p.HitFlag == FALSE) {
 										tmp = (w - poss);
 										now = int(id);
@@ -233,7 +240,7 @@ public:
 				cam_easy2.near_ = 0.1f;
 				cam_easy2.far_ = 100.f;
 
-				cam_easy3.campos = VGet(0, 2, -10);
+				cam_easy3.campos = VGet(0, 10, -10);
 				cam_easy3.fov = deg2rad(fov_pc);
 				cam_easy3.near_ = 0.1f;
 				cam_easy3.far_ = 100.f;
@@ -274,7 +281,7 @@ public:
 											}
 											if (tt) {
 												if (tmp.size() >= (w - poss).size()) {
-													auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0), 0);
+													auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0));
 													if (p.HitFlag == FALSE) {
 														tmp = (w - poss);
 														now = int(id);
@@ -348,7 +355,7 @@ public:
 												if (c.ai_time_shoot < 0.f) {
 													endpos = tgt.body.frame(tgt.frame_.head_f.first);
 												}
-												auto p = mapparts->map_col_line(startpos, endpos, 0);
+												auto p = mapparts->map_col_line(startpos, endpos);
 												if (p.HitFlag) {
 													tt = false;
 												}
@@ -386,8 +393,8 @@ public:
 												c.ai_reload = false;
 												c.wkey = true;
 												c.skey = false;
-												c.akey = GetRand(100) <= 75;
-												c.dkey = GetRand(100) <= 75;
+												c.akey = false;
+												c.dkey = false;
 												c.squat.first = false;
 
 												c.qkey = false;
@@ -395,8 +402,8 @@ public:
 
 
 												vec_2 = mapparts->get_waypoint()[c.wayp_pre[0]]- c.body.GetMatrix().pos();
-												x_m = -int(vec_x.dot(vec_2) * 80);
-												y_m = -int(vec_y.dot(vec_2) * 80);
+												x_m = -int(vec_x.dot(vec_2) * 120);
+												y_m = -int(vec_y.dot(vec_2) * 120);
 
 												//到達時に判断
 												if (vec_2.size() <= 0.5f) {
@@ -413,7 +420,7 @@ public:
 														}
 														if (tt) {
 															if (tmp.size() >= (w - poss).size()) {
-																auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 1.f, 0), 0);
+																auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 1.f, 0));
 																if (p.HitFlag == FALSE) {
 																	tmp = (w - poss);
 																	now = int(id);
@@ -443,8 +450,9 @@ public:
 														c.ai_time_e = 0.f;
 													}
 												}
+												auto poss = c.body.GetMatrix().pos();
+
 												{
-													auto poss = c.body.GetMatrix().pos();
 													for (auto& w : mapparts->get_leanpoint_e()) {
 														if ((w-poss).size()<=0.5f) {
 															c.ekey = true;
@@ -462,7 +470,6 @@ public:
 													}
 												}
 												{
-													auto poss = c.body.GetMatrix().pos();
 													for (auto& w : mapparts->get_leanpoint_q()) {
 														if ((w - poss).size() <= 0.5f) {
 															c.ekey = false;
@@ -563,14 +570,14 @@ public:
 													c.wayp_pre[0] = pppa;
 													c.ai_reload = false;
 												}
-												vec_2 = mapparts->get_waypoint()[c.wayp_pre[0]] - c.body.GetMatrix().pos();
+												auto poss = c.body.GetMatrix().pos();
+												vec_2 = mapparts->get_waypoint()[c.wayp_pre[0]] - poss;
 												x_m = -int(vec_x.dot(vec_2) * 40);
 												y_m = -int(vec_y.dot(vec_2) * 40);
 
 												//到達時に判断
 												if (vec_2.size() <= 0.5f) {
 													int now = -1;
-													auto poss = c.body.GetMatrix().pos();
 													auto tmp = VECTOR_ref(VGet(0, 100.f, 0));
 													for (auto& w : mapparts->get_waypoint()) {
 														auto id = &w - &mapparts->get_waypoint()[0];
@@ -582,7 +589,7 @@ public:
 														}
 														if (tt) {
 															if (tmp.size() >= (w - poss).size()) {
-																auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 1.f, 0), 0);
+																auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 1.f, 0));
 																if (p.HitFlag == FALSE) {
 																	tmp = (w - poss);
 																	now = int(id);
@@ -951,12 +958,14 @@ public:
 									}
 									//落下
 									{
-										auto pp = mapparts->map_col_line(pos_t + VGet(0, 1.6f, 0), pos_t, 0);
+										auto pp = mapparts->map_col_line(pos_t + VGet(0, 1.8f, 0), pos_t);
 										if (c.add_ypos <= 0.f && pp.HitFlag == 1) {
 											if (VECTOR_ref(VGet(0, 1.f, 0.f)).dot(pp.Normal) >= cos(deg2rad(30))) {
 												pos_t = pp.HitPosition;
 											}
 											else {
+												pos_t = pp.HitPosition;
+												/*
 												//ブロックするベクトル
 												auto v_t = VECTOR_ref(pp.Normal);
 												v_t.y(0);
@@ -968,6 +977,7 @@ public:
 													c.add_pos_buf = c.add_pos;
 												}
 												pos_t += c.add_pos;
+												*/
 											}
 											c.add_ypos = 0.f;
 										}
@@ -1005,7 +1015,7 @@ public:
 														}
 														if (tt) {
 															if (tmp.size() >= (w - poss).size()) {
-																auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0), 0);
+																auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0));
 																if (p.HitFlag == FALSE) {
 																	tmp = (w - poss);
 																	now = int(id);
@@ -1100,7 +1110,7 @@ public:
 										}
 
 										{
-											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_.LEFTreg2_f.first) + VGet(0, 1.6f, 0), mine.body.frame(mine.frame_.LEFTreg2_f.first), 0);
+											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_.LEFTreg2_f.first) + VGet(0, 1.8f, 0), mine.body.frame(mine.frame_.LEFTreg2_f.first));
 											if (pp.HitFlag) {
 												mine.pos_LEFTREG = VECTOR_ref(pp.HitPosition) - (mine.body.frame(mine.frame_.LEFTreg2_f.first) - mine.body.frame(mine.frame_.LEFTreg_f.first));
 											}
@@ -1169,7 +1179,7 @@ public:
 										}
 
 										{
-											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_.RIGHTreg2_f.first) + VGet(0, 1.6f, 0), mine.body.frame(mine.frame_.RIGHTreg2_f.first), 0);
+											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_.RIGHTreg2_f.first) + VGet(0, 1.8f, 0), mine.body.frame(mine.frame_.RIGHTreg2_f.first), 0);
 											if (pp.HitFlag) {
 												mine.pos_RIGHTREG = VECTOR_ref(pp.HitPosition) - (mine.body.frame(mine.frame_.RIGHTreg2_f.first) - mine.body.frame(mine.frame_.RIGHTreg_f.first));
 											}
@@ -1823,7 +1833,11 @@ public:
 							//影用意
 							Drawparts->Ready_Shadow(cam_easy.campos,
 								[&] {
-								for (auto& c : this->chara) { c.Draw_chara(); }
+								for (auto& c : this->chara) {
+									if (((c.pos + c.pos_HMD - c.rec_HMD) - cam_easy.campos).size() <= 25.f) {
+										c.Draw_chara();
+									}
+								}
 								for (auto& g : this->item_data) { g.Draw_item(); }
 							},
 								VGet(5.f, 2.5f, 5.f),
@@ -1944,7 +1958,7 @@ public:
 
 								DrawRotaGraph(xp, yp, 1.f, radp, mapparts->get_minmap().get(), TRUE);
 								for (auto& c : this->chara) {
-									auto t = c.body.GetMatrix().pos();
+									auto t = (c.pos + c.pos_HMD - c.rec_HMD);
 									VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_.head_f.first).zvec()*-1.f;
 									auto rad = atan2f(vec_z.x(), vec_z.z());
 									auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
@@ -2012,8 +2026,8 @@ public:
 										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / GetFPS()*sin(yr_cam));
 									}
 
-									cam_easy3.campos.x(std::clamp(cam_easy3.campos.x(), -10.f, 10.f));
-									cam_easy3.campos.z(std::clamp(cam_easy3.campos.z(), -10.f, 10.f));
+									cam_easy3.campos.x(std::clamp(cam_easy3.campos.x(), -25.f, 25.f));
+									cam_easy3.campos.z(std::clamp(cam_easy3.campos.z(), -25.f, 25.f));
 									xr_cam = std::clamp(xr_cam, deg2rad(-89), deg2rad(89));
 
 									cam_easy3.camvec = cam_easy3.campos + MATRIX_ref::Vtrans(VGet(0, 0, 1), MATRIX_ref::RotX(xr_cam)*MATRIX_ref::RotY(yr_cam));

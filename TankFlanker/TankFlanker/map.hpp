@@ -2,7 +2,7 @@
 
 // プレイヤー関係の定義
 #define PLAYER_ENUM_DEFAULT_SIZE	1.8f	// 周囲のポリゴン検出に使用する球の初期サイズ
-#define PLAYER_HIT_WIDTH			0.5f	// 当たり判定カプセルの半径
+#define PLAYER_HIT_WIDTH			0.1f	// 当たり判定カプセルの半径
 #define PLAYER_HIT_HEIGHT			1.8f	// 当たり判定カプセルの高さ
 #define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
 #define PLAYER_HIT_SLIDE_LENGTH		0.05f	// 一度の壁押し出し処理でスライドさせる距離
@@ -86,16 +86,31 @@ public:
 					//木
 					way_point.resize(way_point.size() + 1);
 					way_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
+
+					auto p = map_col.CollCheck_Line(way_point.back() + VGet(0, 10.f, 0.f), way_point.back() + VGet(0, -10.f, 0.f), 0, 0);
+					if (p.HitFlag) {
+						way_point.back() = p.HitPosition;
+					}
 				}
 				else if (p.Polygons[i].MaterialIndex == 2) {
 					//木
 					lean_point_e.resize(lean_point_e.size() + 1);
 					lean_point_e.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
+
+					auto p = map_col.CollCheck_Line(lean_point_e.back() + VGet(0, 10.f, 0.f), lean_point_e.back() + VGet(0, -10.f, 0.f), 0, 0);
+					if (p.HitFlag) {
+						lean_point_e.back() = p.HitPosition;
+					}
 				}
 				else if (p.Polygons[i].MaterialIndex == 3) {
 					//木
 					lean_point_q.resize(lean_point_q.size() + 1);
 					lean_point_q.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
+
+					auto p = map_col.CollCheck_Line(lean_point_q.back() + VGet(0, 10.f, 0.f), lean_point_q.back() + VGet(0, -10.f, 0.f), 0, 0);
+					if (p.HitFlag) {
+						lean_point_q.back() = p.HitPosition;
+					}
 				}
 			}
 		}
@@ -151,7 +166,7 @@ public:
 	}
 	auto& map_get() { return map; }
 	auto& map_col_get() { return map_col; }
-	auto map_col_line(const VECTOR_ref& startpos, const VECTOR_ref& endpos, const int&  i) {
+	auto map_col_line(const VECTOR_ref& startpos, const VECTOR_ref& endpos, const int&  i=0) {
 		return map_col.CollCheck_Line(startpos, endpos, 0, i);
 	}
 	void map_col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos) {
