@@ -92,27 +92,24 @@ public:
 		}
 		UIparts->load_window("銃データ");						//ロード画面2
 		do {
-			//キャラ設定
-			size_t sel_g = 0;
-			chara.resize(4);
-			auto& mine = chara[0];
-			//自機セット
-			mine.set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			mine.spawn(VGet(24.0f, 5.0f, -24.f), MATRIX_ref::RotY(DX_PI_F * 2));
-			//その他
-			chara[1].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[1].spawn(VGet(24.0f, 5.0f, 24.f), MATRIX_ref::RotY(DX_PI_F * 2));
-
-			chara[2].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[2].spawn(VGet(-24.0f, 5.0f, 20.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
-
-			chara[3].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-			chara[3].spawn(VGet(-24.0f, 5.0f, -24.f), MATRIX_ref::RotY(DX_PI_F * 3 / 2));
-
 			//マップ読み込み
 			mapparts->Ready_map("data/map_new2");			//mapparts->Ready_map("data/new");
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item_data, this->gun_data);
+			//キャラ設定
+			size_t sel_g = 0;
+			chara.resize(mapparts->get_spawn_point().size());
+			auto& mine = chara[0];
+			{
+				//自機セット
+				mine.set(this->gun_data, sel_g, this->body_obj, this->body_col);
+				mine.spawn(mapparts->get_spawn_point()[0], MATRIX_ref::RotY(DX_PI_F * 2));
+				//その他
+				for (int i = 1; i < mapparts->get_spawn_point().size(); i++) {
+					chara[i].set(this->gun_data, sel_g, this->body_obj, this->body_col);
+					chara[i].spawn(mapparts->get_spawn_point()[i], MATRIX_ref::RotY(DX_PI_F * i));
+				}
+			}
 			//ライティング
 			Drawparts->Set_Light_Shadow(mapparts->map_col_get().mesh_maxpos(0), mapparts->map_col_get().mesh_minpos(0), VGet(0.5f, -0.5f, 0.5f), [&] {
 				for (int i = 0; i < 2; i++) {
@@ -140,18 +137,8 @@ public:
 						{
 							VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame[2].first);
 							VECTOR_ref endpos = startpos - c.obj_gun.GetMatrix().zvec()*100.f;
-							while (true) {
-								auto p = mapparts->map_col_line(startpos, endpos);
-								if (p.HitFlag) {
-									if (endpos == p.HitPosition) {
-										break;
-									}
-									endpos = p.HitPosition;
-								}
-								else {
-									break;
-								}
-							}
+							mapparts->map_col_nearest(startpos, &endpos);
+
 							for (auto& tgt : this->chara) {
 								if (&tgt == &c) {
 									continue;
@@ -163,10 +150,12 @@ public:
 									}
 								}
 							}
-							DrawLine3D(startpos.get(), endpos.get(), GetColor(255, 0, 0));
 							SetUseLighting(FALSE);
 							SetFogEnable(FALSE);
-							DrawSphere3D(endpos.get(), std::clamp(powf((endpos - GetCameraPosition()).size() + 0.5f, 2)*0.002f, 0.001f, 0.05f), 8, GetColor(255, 0, 0), GetColor(255, 255, 255), TRUE);
+
+							DXDraw::Capsule3D(startpos, endpos, 0.001f, GetColor(255, 0, 0), GetColor(255, 255, 255));
+							DrawSphere3D(endpos.get(), std::clamp(powf((endpos - GetCameraPosition()).size() + 0.5f, 2)*0.002f, 0.001f, 0.05f), 6, GetColor(255, 0, 0), GetColor(255, 255, 255), TRUE);
+
 							SetUseLighting(TRUE);
 							SetFogEnable(TRUE);
 						}
@@ -217,7 +206,7 @@ public:
 							if (tt) {
 								if (tmp.size() >= (w - poss).size()) {
 									auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0));
-									if (p.HitFlag == FALSE) {
+									if (!p.HitFlag) {
 										tmp = (w - poss);
 										now = int(id);
 									}
@@ -246,6 +235,7 @@ public:
 				cam_easy3.far_ = 100.f;
 				//
 				while (ProcessMessage() == 0) {
+					const auto fps_ = GetFPS();
 					const auto waits = GetNowHiPerformanceCount();
 					Debugparts->put_way();
 					{
@@ -282,7 +272,7 @@ public:
 											if (tt) {
 												if (tmp.size() >= (w - poss).size()) {
 													auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0));
-													if (p.HitFlag == FALSE) {
+													if (!p.HitFlag) {
 														tmp = (w - poss);
 														now = int(id);
 													}
@@ -297,7 +287,7 @@ public:
 									}
 								}
 								if (c.kill_f) {
-									c.kill_time -= 1.f / GetFPS();
+									c.kill_time -= 1.f / fps_;
 									if (c.kill_time <= 0.f) {
 										c.kill_time = 0.f;
 										c.kill_streak = 0;
@@ -421,7 +411,7 @@ public:
 														if (tt) {
 															if (tmp.size() >= (w - poss).size()) {
 																auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 1.f, 0));
-																if (p.HitFlag == FALSE) {
+																if (!p.HitFlag) {
 																	tmp = (w - poss);
 																	now = int(id);
 																}
@@ -442,9 +432,9 @@ public:
 												c.running = false;
 												c.ai_reload = false;
 												c.wkey = false;
-												c.skey = true;
+												c.skey = false;
 												if (c.ekey) {
-													c.ai_time_e += 1.f / GetFPS();
+													c.ai_time_e += 1.f / fps_;
 													if (c.ai_time_e >= 2) {
 														c.ekey = false;
 														c.ai_time_e = 0.f;
@@ -463,7 +453,7 @@ public:
 													}
 												}
 												if (c.qkey) {
-													c.ai_time_q += 1.f / GetFPS();
+													c.ai_time_q += 1.f / fps_;
 													if (c.ai_time_q >= 2) {
 														c.qkey = false;
 														c.ai_time_q = 0.f;
@@ -483,12 +473,12 @@ public:
 												x_m = -int(vec_x.dot(vec_2) * 25) +int(float(-500 + GetRand(500 * 2)) / 100.f);
 												y_m = -int(vec_y.dot(vec_2) * 25) +int(float(-500 + GetRand(500 * 2)) / 100.f);
 
-												c.ai_time_shoot += 1.f / GetFPS();
+												c.ai_time_shoot += 1.f / fps_;
 												if (c.ai_time_shoot < 0.f) {
 													c.akey = false;
 													c.dkey = false;
-													c.wkey = true;
-													c.skey = true;
+													c.wkey = false;
+													c.skey = false;
 
 													if (c.ai_time_shoot >= -5) {
 														if (is_player) {
@@ -527,14 +517,14 @@ public:
 													}
 
 													if (!c.akey) {
-														c.ai_time_d += 1.f / GetFPS();
+														c.ai_time_d += 1.f / fps_;
 														if (c.ai_time_d > GetRand(3) + 1) {
 															c.akey = true;
 															c.ai_time_d = 0.f;
 														}
 													}
 													else {
-														c.ai_time_a += 1.f / GetFPS();
+														c.ai_time_a += 1.f / fps_;
 														if (c.ai_time_a > GetRand(3) + 1) {
 															c.akey = false;
 															c.ai_time_a = 0.f;
@@ -561,13 +551,11 @@ public:
 												c.ekey = false;
 
 												if(c.ai_reload) {
-													auto pppa = c.wayp_pre[1];
-													auto ppp = c.wayp_pre[2];
-													for (int i = int(c.wayp_pre.size()) - 1; i >= 2; i--) {
+													auto ppp = c.wayp_pre[1];
+													for (int i = int(c.wayp_pre.size()) - 1; i >= 1; i--) {
 														c.wayp_pre[i] = c.wayp_pre[0];
 													}
-													c.wayp_pre[1] = ppp;
-													c.wayp_pre[0] = pppa;
+													c.wayp_pre[0] = ppp;
 													c.ai_reload = false;
 												}
 												auto poss = c.body.GetMatrix().pos();
@@ -590,7 +578,7 @@ public:
 														if (tt) {
 															if (tmp.size() >= (w - poss).size()) {
 																auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 1.f, 0));
-																if (p.HitFlag == FALSE) {
+																if (!p.HitFlag) {
 																	tmp = (w - poss);
 																	now = int(id);
 																}
@@ -630,7 +618,7 @@ public:
 									}
 									//移動
 									{
-										auto speed = (c.running ? 6.f : ((c.ads.first ? 2.f : 4.f)*(c.squat.first ? 0.4f : 1.f))) / GetFPS();
+										auto speed = (c.running ? 6.f : ((c.ads.first ? 2.f : 4.f)*(c.squat.first ? 0.4f : 1.f))) / fps_;
 										VECTOR_ref zv_t = c.mat.zvec();
 										zv_t.y(0.f);
 										zv_t = zv_t.Norm();
@@ -693,7 +681,7 @@ public:
 										if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
 											//running
 											mine.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
-											auto speed = (mine.running ? 6.f : 4.f) / GetFPS();
+											auto speed = (mine.running ? 6.f : 4.f) / fps_;
 
 											if (Drawparts->tracker_num.size() > 0) {
 												auto p = mine.body.GetFrameLocalWorldMatrix(mine.frame_.bodyb_f.first);
@@ -791,7 +779,7 @@ public:
 									}
 									//移動
 									{
-										auto speed = (ct.running ? 6.f : ((ct.ads.first ? 2.f : 4.f)*(ct.squat.first ? 0.4f : 1.f))) / GetFPS();
+										auto speed = (ct.running ? 6.f : ((ct.ads.first ? 2.f : 4.f)*(ct.squat.first ? 0.4f : 1.f))) / fps_;
 										VECTOR_ref zv_t = ct.mat.zvec();
 										zv_t.y(0.f);
 										zv_t = zv_t.Norm();
@@ -883,7 +871,7 @@ public:
 								}
 								//移動
 								{
-									auto speed = (mine.running ? 6.f : ((mine.ads.first ? 2.f : 4.f)*(mine.squat.first ? 0.4f : 1.f))) / GetFPS();
+									auto speed = (mine.running ? 6.f : ((mine.ads.first ? 2.f : 4.f)*(mine.squat.first ? 0.4f : 1.f))) / fps_;
 									VECTOR_ref zv_t = mine.mat.zvec();
 									zv_t.y(0.f);
 									zv_t = zv_t.Norm();
@@ -959,7 +947,7 @@ public:
 									//落下
 									{
 										auto pp = mapparts->map_col_line(pos_t + VGet(0, 1.8f, 0), pos_t);
-										if (c.add_ypos <= 0.f && pp.HitFlag == 1) {
+										if (c.add_ypos <= 0.f && pp.HitFlag) {
 											if (VECTOR_ref(VGet(0, 1.f, 0.f)).dot(pp.Normal) >= cos(deg2rad(30))) {
 												pos_t = pp.HitPosition;
 											}
@@ -983,7 +971,7 @@ public:
 										}
 										else {
 											pos_t.yadd(c.add_ypos);
-											c.add_ypos += M_GR / std::powf(GetFPS(), 2.f);
+											c.add_ypos += M_GR / std::powf(fps_, 2.f);
 											//復帰
 											if (pos_t.y() <= -5.f) {
 												pos_t = c.spawn_pos;
@@ -1016,7 +1004,7 @@ public:
 														if (tt) {
 															if (tmp.size() >= (w - poss).size()) {
 																auto p = mapparts->map_col_line(w + VGet(0, 1.f, 0), poss + VGet(0, 1.f, 0));
-																if (p.HitFlag == FALSE) {
+																if (!p.HitFlag) {
 																	tmp = (w - poss);
 																	now = int(id);
 																}
@@ -1048,7 +1036,7 @@ public:
 									float x_2 = v_.x();
 									float y_2 = -v_.z();
 									float r_ = std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
-									c.body_yrad += r_ * FRAME_RATE / GetFPS() / 10.f;
+									c.body_yrad += r_ * FRAME_RATE / fps_ / 10.f;
 								}
 								//身体,頭部,腰
 								MATRIX_ref m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
@@ -1179,7 +1167,7 @@ public:
 										}
 
 										{
-											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_.RIGHTreg2_f.first) + VGet(0, 1.8f, 0), mine.body.frame(mine.frame_.RIGHTreg2_f.first), 0);
+											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_.RIGHTreg2_f.first) + VGet(0, 1.8f, 0), mine.body.frame(mine.frame_.RIGHTreg2_f.first));
 											if (pp.HitFlag) {
 												mine.pos_RIGHTREG = VECTOR_ref(pp.HitPosition) - (mine.body.frame(mine.frame_.RIGHTreg2_f.first) - mine.body.frame(mine.frame_.RIGHTreg_f.first));
 											}
@@ -1316,7 +1304,7 @@ public:
 									float x_2 = v_.x();
 									float y_2 = -v_.z();
 									float r_ = std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
-									c.body_yrad += r_ * FRAME_RATE / GetFPS() / 10.f;
+									c.body_yrad += r_ * FRAME_RATE / fps_ / 10.f;
 								}
 								{
 									VECTOR_ref v_ = c.mat.zvec();
@@ -1349,7 +1337,7 @@ public:
 								}
 								//足
 								{
-									auto speed = (c.running ? 6.f : ((c.ads.first ? 2.f : 4.f)*(c.squat.first ? 0.4f : 1.f))) / GetFPS();
+									auto speed = (c.running ? 6.f : ((c.ads.first ? 2.f : 4.f)*(c.squat.first ? 0.4f : 1.f))) / fps_;
 									auto ratio_t = c.add_pos.size() / speed;
 									if (c.running) {
 										easing_set(&c.body.get_anime(8).per, 0.f, 0.95f);
@@ -1384,15 +1372,15 @@ public:
 										}
 										easing_set(&c.body.get_anime(0).per, 0.f, 0.95f);
 									}
-									c.body.get_anime(1).time += 30.f / GetFPS();
+									c.body.get_anime(1).time += 30.f / fps_;
 									if (c.body.get_anime(1).time >= c.body.get_anime(1).alltime) {
 										c.body.get_anime(1).time = 0.f;
 									}
-									c.body.get_anime(2).time += 30.f / GetFPS();
+									c.body.get_anime(2).time += 30.f / fps_;
 									if (c.body.get_anime(2).time >= c.body.get_anime(2).alltime) {
 										c.body.get_anime(2).time = 0.f;
 									}
-									c.body.get_anime(8).time += 30.f / GetFPS() * ((c.body.get_anime(8).alltime / 30.f) / c.gun_ptr->reload_time);
+									c.body.get_anime(8).time += 30.f / fps_ * ((c.body.get_anime(8).alltime / 30.f) / c.gun_ptr->reload_time);
 									if (c.body.get_anime(8).time >= c.body.get_anime(8).alltime) {
 										c.body.get_anime(8).time = 0.f;
 									}
@@ -1437,7 +1425,7 @@ public:
 									if (c.running) {
 										if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
 											c.body.get_anime(3).per = 1.f;
-											c.body.get_anime(3).time += 30.f / GetFPS() * ((c.body.get_anime(3).alltime / 30.f) / c.gun_ptr->reload_time);
+											c.body.get_anime(3).time += 30.f / fps_ * ((c.body.get_anime(3).alltime / 30.f) / c.gun_ptr->reload_time);
 											if (c.body.get_anime(3).time >= c.body.get_anime(3).alltime) {
 												c.body.get_anime(3).time = 0.f;
 											}
@@ -1450,7 +1438,7 @@ public:
 											c.body.get_anime(3).time = 0.f;
 
 											c.body.get_anime(6).per = 1.f;
-											c.body.get_anime(6).time += 30.f / GetFPS();
+											c.body.get_anime(6).time += 30.f / fps_;
 											if (c.body.get_anime(6).time >= c.body.get_anime(6).alltime) {
 												c.body.get_anime(6).time = 0.f;
 											}
@@ -1461,7 +1449,7 @@ public:
 										c.body.get_anime(6).time = 0.f;
 										if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
 											c.body.get_anime(3).per = 1.f;
-											c.body.get_anime(3).time += 30.f / GetFPS() * ((c.body.get_anime(3).alltime / 30.f) / c.gun_ptr->reload_time);
+											c.body.get_anime(3).time += 30.f / fps_ * ((c.body.get_anime(3).alltime / 30.f) / c.gun_ptr->reload_time);
 											if (c.body.get_anime(3).time >= c.body.get_anime(3).alltime) {
 												c.body.get_anime(3).time = 0.f;
 											}
@@ -1581,7 +1569,7 @@ public:
 								if (c.obj_gun.get_anime(3).per == 1.f) {
 									c.audio.slide.play_3D(c.pos_RIGHTHAND, 15.f);
 								}
-								c.obj_gun.get_anime(3).per = std::max(c.obj_gun.get_anime(3).per - 12.f / GetFPS(), 0.f);
+								c.obj_gun.get_anime(3).per = std::max(c.obj_gun.get_anime(3).per - 12.f / fps_, 0.f);
 							}
 						}
 						//
@@ -1597,7 +1585,7 @@ public:
 										if (c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) {
 											c.obj_gun.get_anime(0).per = 1.f;
 											c.obj_gun.get_anime(1).per = 0.f;
-											c.obj_gun.get_anime(0).time += 60.f / GetFPS();
+											c.obj_gun.get_anime(0).time += 60.f / fps_;
 											if (c.obj_gun.get_anime(0).time >= c.obj_gun.get_anime(0).alltime) {
 												c.obj_gun.get_anime(0).time = 0.f;
 												c.gunf = false;
@@ -1606,7 +1594,7 @@ public:
 										else {
 											c.obj_gun.get_anime(1).per = 1.f;
 											c.obj_gun.get_anime(0).per = 0.f;
-											c.obj_gun.get_anime(1).time += 60.f / GetFPS();
+											c.obj_gun.get_anime(1).time += 60.f / fps_;
 											if (c.obj_gun.get_anime(1).time >= c.obj_gun.get_anime(1).alltime) {
 												c.obj_gun.get_anime(1).time = c.obj_gun.get_anime(1).alltime;
 												c.gunf = false;
@@ -1633,7 +1621,7 @@ public:
 											if (g.ptr == nullptr && g.cate == 1) {
 												tt = true;
 												g.Set_item(c.gun_ptr, c.pos_mag, c.mat_mag, 1);
-												g.add = (c.obj_gun.frame(c.gun_ptr->frame[1].first) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).Norm()*-1.f / GetFPS();//排莢ベクトル
+												g.add = (c.obj_gun.frame(c.gun_ptr->frame[1].first) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).Norm()*-1.f / fps_;//排莢ベクトル
 												g.magazine.cap = dnm;
 												g.del_timer = 0.f;
 												break;
@@ -1643,7 +1631,7 @@ public:
 											this->item_data.resize(this->item_data.size() + 1);
 											auto& g = this->item_data.back();
 											g.Set_item(c.gun_ptr, c.pos_mag, c.mat_mag, 1);
-											g.add = (c.obj_gun.frame(c.gun_ptr->frame[1].first) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).Norm()*-1.f / GetFPS();//排莢ベクトル
+											g.add = (c.obj_gun.frame(c.gun_ptr->frame[1].first) - c.obj_gun.frame(c.gun_ptr->frame[0].first)).Norm()*-1.f / fps_;//排莢ベクトル
 											g.magazine.cap = dnm;
 											g.del_timer = 0.f;
 										}
@@ -1689,7 +1677,7 @@ public:
 												c.mat_mag = c.mat_LEFTHAND;
 											}
 										}
-										c.reload_cnt += 1.f / GetFPS();//挿入までのカウント
+										c.reload_cnt += 1.f / fps_;//挿入までのカウント
 										//
 									}
 									else {
@@ -1763,7 +1751,7 @@ public:
 
 								for (auto& g : this->item_data) {
 									if (g.ptr != nullptr && g.cate == 1 && g.magazine.cap==0) {
-										g.del_timer += 1.f / GetFPS();
+										g.del_timer += 1.f / fps_;
 									}
 								}
 								while (true) {
@@ -1799,7 +1787,7 @@ public:
 									c_.start_b = false;
 								}
 								else {
-									c_.body.PhysicsCalculation(1000.f / GetFPS());
+									c_.body.PhysicsCalculation(1000.f / fps_);
 								}
 							}
 						}
@@ -2010,20 +1998,20 @@ public:
 									}
 
 									if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
-										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / GetFPS()*cos(yr_cam));
-										cam_easy3.campos.z(cam_easy3.campos.z() + 10.f / GetFPS()*sin(yr_cam));
+										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / fps_ *cos(yr_cam));
+										cam_easy3.campos.z(cam_easy3.campos.z() + 10.f / fps_ *sin(yr_cam));
 									}
 									if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
-										cam_easy3.campos.x(cam_easy3.campos.x() + 10.f / GetFPS()*cos(yr_cam));
-										cam_easy3.campos.z(cam_easy3.campos.z() - 10.f / GetFPS()*sin(yr_cam));
+										cam_easy3.campos.x(cam_easy3.campos.x() + 10.f / fps_ *cos(yr_cam));
+										cam_easy3.campos.z(cam_easy3.campos.z() - 10.f / fps_ *sin(yr_cam));
 									}
 									if (CheckHitKey(KEY_INPUT_UP) != 0) {
-										cam_easy3.campos.z(cam_easy3.campos.z() + 10.f / GetFPS()*cos(yr_cam));
-										cam_easy3.campos.x(cam_easy3.campos.x() + 10.f / GetFPS()*sin(yr_cam));
+										cam_easy3.campos.z(cam_easy3.campos.z() + 10.f / fps_ *cos(yr_cam));
+										cam_easy3.campos.x(cam_easy3.campos.x() + 10.f / fps_ *sin(yr_cam));
 									}
 									if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
-										cam_easy3.campos.z(cam_easy3.campos.z() - 10.f / GetFPS()*cos(yr_cam));
-										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / GetFPS()*sin(yr_cam));
+										cam_easy3.campos.z(cam_easy3.campos.z() - 10.f / fps_ *cos(yr_cam));
+										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / fps_ *sin(yr_cam));
 									}
 
 									cam_easy3.campos.x(std::clamp(cam_easy3.campos.x(), -25.f, 25.f));

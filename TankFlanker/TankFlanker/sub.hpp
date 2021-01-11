@@ -198,15 +198,15 @@ public:
 				this->pos += this->vec * (this->spec->speed / GetFPS());
 				//”»’è
 				{
-					auto p = mapparts->map_col_line(this->repos, this->pos, 0);
-					if (p.HitFlag == TRUE) {
+					auto p = mapparts->map_col_line(this->repos, this->pos);
+					if (p.HitFlag) {
 						this->pos = p.HitPosition;
 					}
 					//*
 					for (auto& tgt : *chara) {
 						{
 							auto q = tgt.col.CollCheck_Line(this->repos, this->pos, -1,0);
-							if (q.HitFlag == TRUE) {
+							if (q.HitFlag) {
 								this->pos = q.HitPosition;
 								//hit
 								c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
@@ -232,7 +232,7 @@ public:
 						}
 						{
 							auto q = tgt.col.CollCheck_Line(this->repos, this->pos, -1,1);
-							if (q.HitFlag == TRUE) {
+							if (q.HitFlag) {
 								this->pos = q.HitPosition;
 								//hit
 								c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
@@ -257,7 +257,7 @@ public:
 						}
 						{
 							auto q = tgt.col.CollCheck_Line(this->repos, this->pos, -1,2);
-							if (q.HitFlag == TRUE) {
+							if (q.HitFlag) {
 								this->pos = q.HitPosition;
 								//hit
 								c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
@@ -282,7 +282,7 @@ public:
 							}
 						}
 					}
-					if (p.HitFlag == TRUE && this->flug) {
+					if (p.HitFlag && this->flug) {
 						this->flug = false;
 						c->effcs_gndhit[c->use_effcsgndhit].set(this->pos, p.Normal, 0.025f / 0.1f);
 						++c->use_effcsgndhit %= c->effcs_gndhit.size();
@@ -831,6 +831,7 @@ public:
 			this->mat = this->spawn_mat;
 
 			this->add_ypos = 0.f;
+			this->add_pos_buf.clear();
 			this->start_b = true;
 
 			this->HP = this->HP_full;
@@ -946,8 +947,8 @@ public:
 						}
 					}
 				}
-				auto pp = mapparts->map_col_line(this->pos + VGet(0, 1.f, 0), this->pos - VGet(0, 0.05f, 0), 0);
-				if (pp.HitFlag == 1) {
+				auto pp = mapparts->map_col_line(this->pos + VGet(0, 1.f, 0), this->pos - VGet(0, 0.05f, 0));
+				if (pp.HitFlag) {
 					this->pos = VECTOR_ref(pp.HitPosition) + VGet(0, 0.05f, 0);
 					this->mat *= MATRIX_ref::RotVec2(this->mat.xvec(), VECTOR_ref(pp.Normal));
 					easing_set(&this->add, VGet(0, 0, 0), 0.8f);
@@ -961,8 +962,8 @@ public:
 			if (this->ptr != nullptr) {
 				VECTOR_ref startpos = chara.pos_LEFTHAND;
 				VECTOR_ref endpos = startpos - chara.mat_LEFTHAND.zvec()*2.6f;
-				auto p = mapparts->map_col_line(startpos, endpos, 0);
-				if (p.HitFlag == 1) {
+				auto p = mapparts->map_col_line(startpos, endpos);
+				if (p.HitFlag) {
 					endpos = p.HitPosition;
 				}
 				bool zz=false;

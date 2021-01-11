@@ -22,12 +22,12 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\ui.hpp(300): warning C4189: 'font': ローカル変数が初期化されましたが、参照されていません
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(90): warning C4456: 'p' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(83): note: 'p' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(100): warning C4456: 'p' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(83): note: 'p' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(110): warning C4456: 'p' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(83): note: 'p' の宣言を確認してください
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(88): warning C4456: 'p' を宣言すると、以前のローカル宣言が隠蔽されます
+  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(81): note: 'p' の宣言を確認してください
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(98): warning C4456: 'p' を宣言すると、以前のローカル宣言が隠蔽されます
+  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(81): note: 'p' の宣言を確認してください
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(108): warning C4456: 'p' を宣言すると、以前のローカル宣言が隠蔽されます
+  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(81): note: 'p' の宣言を確認してください
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。

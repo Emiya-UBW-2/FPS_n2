@@ -4,7 +4,7 @@
 #define PLAYER_ENUM_DEFAULT_SIZE	1.8f	// 周囲のポリゴン検出に使用する球の初期サイズ
 #define PLAYER_HIT_WIDTH			0.1f	// 当たり判定カプセルの半径
 #define PLAYER_HIT_HEIGHT			1.8f	// 当たり判定カプセルの高さ
-#define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
+#define PLAYER_HIT_TRYNUM			8		// 壁押し出し処理の最大試行回数
 #define PLAYER_HIT_SLIDE_LENGTH		0.05f	// 一度の壁押し出し処理でスライドさせる距離
 
 class Mapclass :Mainclass {
@@ -18,6 +18,7 @@ private:
 	std::vector<VECTOR_ref> way_point;
 	std::vector<VECTOR_ref> lean_point_q;
 	std::vector<VECTOR_ref> lean_point_e;
+	std::vector<VECTOR_ref> spawn_point;
 
 	GraphHandle minmap;
 
@@ -34,6 +35,9 @@ public:
 	}
 	std::vector<VECTOR_ref>& get_leanpoint_e() {
 		return lean_point_e;
+	}
+	std::vector<VECTOR_ref>& get_spawn_point() {
+		return spawn_point;
 	}
 	GraphHandle& get_minmap() {
 		return minmap;
@@ -62,8 +66,8 @@ public:
 	void Set_map(const char* item_txt, std::vector<Items>& item_data, std::vector<Guns>& gun_data) {
 		//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 		VECTOR_ref size;
-		for (int i = 0; i < map_col.mesh_num(); i++) {
-			VECTOR_ref sizetmp = map_col.mesh_maxpos(i) - map_col.mesh_minpos(i);
+		{
+			VECTOR_ref sizetmp = map_col.mesh_maxpos(0) - map_col.mesh_minpos(0);
 			if (size.x() < sizetmp.x()) {
 				size.x(sizetmp.x());
 			}
@@ -74,9 +78,7 @@ public:
 				size.z(sizetmp.z());
 			}
 		}
-		for (int i = 0; i < map_col.mesh_num(); i++) {
-			map_col.SetupCollInfo(1, 1, 1, 0, i);
-		}
+		map_col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, 0);
 
 		{
 			MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
@@ -87,9 +89,9 @@ public:
 					way_point.resize(way_point.size() + 1);
 					way_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
 
-					auto p = map_col.CollCheck_Line(way_point.back() + VGet(0, 10.f, 0.f), way_point.back() + VGet(0, -10.f, 0.f), 0, 0);
-					if (p.HitFlag) {
-						way_point.back() = p.HitPosition;
+					auto pt = map_col.CollCheck_Line(way_point.back() + VGet(0, 10.f, 0.f), way_point.back() + VGet(0, -10.f, 0.f), 0, 0);
+					if (pt.HitFlag) {
+						way_point.back() = pt.HitPosition;
 					}
 				}
 				else if (p.Polygons[i].MaterialIndex == 2) {
@@ -97,9 +99,9 @@ public:
 					lean_point_e.resize(lean_point_e.size() + 1);
 					lean_point_e.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
 
-					auto p = map_col.CollCheck_Line(lean_point_e.back() + VGet(0, 10.f, 0.f), lean_point_e.back() + VGet(0, -10.f, 0.f), 0, 0);
-					if (p.HitFlag) {
-						lean_point_e.back() = p.HitPosition;
+					auto pt = map_col.CollCheck_Line(lean_point_e.back() + VGet(0, 10.f, 0.f), lean_point_e.back() + VGet(0, -10.f, 0.f), 0, 0);
+					if (pt.HitFlag) {
+						lean_point_e.back() = pt.HitPosition;
 					}
 				}
 				else if (p.Polygons[i].MaterialIndex == 3) {
@@ -107,15 +109,25 @@ public:
 					lean_point_q.resize(lean_point_q.size() + 1);
 					lean_point_q.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
 
-					auto p = map_col.CollCheck_Line(lean_point_q.back() + VGet(0, 10.f, 0.f), lean_point_q.back() + VGet(0, -10.f, 0.f), 0, 0);
-					if (p.HitFlag) {
-						lean_point_q.back() = p.HitPosition;
+					auto pt = map_col.CollCheck_Line(lean_point_q.back() + VGet(0, 10.f, 0.f), lean_point_q.back() + VGet(0, -10.f, 0.f), 0, 0);
+					if (pt.HitFlag) {
+						lean_point_q.back() = pt.HitPosition;
+					}
+				}
+				else if (p.Polygons[i].MaterialIndex == 4) {
+					//木
+					spawn_point.resize(spawn_point.size() + 1);
+					spawn_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
+
+					auto pt = map_col.CollCheck_Line(spawn_point.back() + VGet(0, 10.f, 0.f), spawn_point.back() + VGet(0, -10.f, 0.f), 0, 0);
+					if (pt.HitFlag) {
+						spawn_point.back() = pt.HitPosition;
 					}
 				}
 			}
 		}
 
-		SetFogStartEnd(10.0f, 25.f);
+		SetFogStartEnd(40.0f-15.f, 40.f);
 		SetFogColor(12, 6, 0);
 
 		item_data.clear();
@@ -163,11 +175,27 @@ public:
 		way_point.clear();
 		lean_point_q.clear();
 		lean_point_e.clear();
+		spawn_point.clear();
 	}
 	auto& map_get() { return map; }
 	auto& map_col_get() { return map_col; }
-	auto map_col_line(const VECTOR_ref& startpos, const VECTOR_ref& endpos, const int&  i=0) {
-		return map_col.CollCheck_Line(startpos, endpos, 0, i);
+	auto map_col_line(const VECTOR_ref& startpos, const VECTOR_ref& endpos) {
+		return map_col.CollCheck_Line(startpos, endpos, 0, 0);
+	}
+
+	void map_col_nearest(const VECTOR_ref& startpos, VECTOR_ref* endpos) {
+		while (true) {
+			auto p = this->map_col_line(startpos, *endpos);
+			if (p.HitFlag) {
+				if (*endpos == p.HitPosition) {
+					break;
+				}
+				*endpos = p.HitPosition;
+			}
+			else {
+				break;
+			}
+		}
 	}
 	void map_col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos) {
 		auto MoveVector = *NowPos - OldPos;

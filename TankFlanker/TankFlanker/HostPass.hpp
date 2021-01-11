@@ -42,9 +42,7 @@ private:
 	//ブルームエフェクト
 	void buf_bloom(const int& level = 255) {
 		if (bloom_flag) {
-			//GraphFilterBlt(BufScreen.get(), BufScreen_.get(), DX_GRAPH_FILTER_BRIGHT_CLIP, DX_CMP_LESS, 75, TRUE, GetColor(0, 0, 0), 255);
-			//GraphFilterBlt(BufScreen.get(), BufScreen_.get(), DX_GRAPH_FILTER_BRIGHT_CLIP, DX_CMP_GREATER, 77, TRUE, GetColor(0, 0, 0), 255);
-			GraphFilterBlt(BufScreen_.get(), BufScreen_.get(), DX_GRAPH_FILTER_TWO_COLOR, 250, GetColor(0, 0, 0), 255, GetColor(128, 128, 128), 255);
+			GraphFilterBlt(BufScreen.get(), BufScreen_.get(), DX_GRAPH_FILTER_TWO_COLOR, 250, GetColor(0, 0, 0), 255, GetColor(128, 128, 128), 255);
 			GraphFilterBlt(BufScreen_.get(), GaussScreen_.get(), DX_GRAPH_FILTER_DOWN_SCALE, EXTEND);
 			GraphFilter(GaussScreen_.get(), DX_GRAPH_FILTER_GAUSS, 16, 1000);
 		}
