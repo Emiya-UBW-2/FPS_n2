@@ -68,12 +68,19 @@ private:
 	private:
 	public:
 		GraphHandle UIScreen;
+		int xsize = 1;
+		int ysize = 1;
 		MV1 model;
 		std::string name;
-		void set(std::string path, std::string named) {
+		//*
+		void Ready(std::string path, std::string named) {
 			name = named;
 			MV1::Load(path + named + "/model.mv1", &model, true);
 			UIScreen = GraphHandle::Load(path + named + "/pic.bmp");
+		}
+		//*/
+		void set() {
+			GetGraphSize(UIScreen.get(), &xsize, &ysize);
 		}
 	};
 public:
@@ -341,7 +348,49 @@ public:
 		size_t id = 0;
 		Models mod;
 		/**/
-		std::vector<frames> frame;
+		//std::vector<frames> frame;
+		class fs {
+		public:
+			frames magazine_f;
+			frames magazine2_f;
+			frames mazzule_f;
+			frames left_f;
+			frames site_f;
+			frames right_f;
+
+			void reset() {
+				magazine_f.first = INT_MAX;
+				magazine2_f.first = INT_MAX;
+				mazzule_f.first = INT_MAX;
+				left_f.first = INT_MAX;
+				site_f.first = INT_MAX;
+				right_f.first = INT_MAX;
+			}
+
+			void get_frame(MV1& obj_) {
+				for (int i = 0; i < int(obj_.frame_num()); i++) {
+					std::string p = obj_.frame_name(i);
+					if (p.find("mag_fall") != std::string::npos) {
+						this->magazine_f = { i, obj_.frame(i) };//マガジン
+						this->magazine2_f = { i + 1, obj_.frame(i + 1) };//マガジン
+					}
+					else if (p.find("mazzule") != std::string::npos) {
+						this->mazzule_f = { i, obj_.frame(i) };//マズル
+					}
+					else if (p.find("LEFT") != std::string::npos) {
+						this->left_f = { i, obj_.frame(i) };//左手
+					}
+					else if (p.find("site") != std::string::npos) {
+						this->site_f = { i, obj_.frame(i) };//アイアンサイト
+					}
+					else if (p.find("RIGHT") != std::string::npos) {
+						this->right_f = { i, obj_.frame(i) };//左手
+					}
+				}
+			}
+
+		};
+		fs frame_s;
 		std::vector <uint8_t> select;//セレクター
 		Audios audio;
 		float recoil_xup = 0.f;
@@ -359,35 +408,8 @@ public:
 			this->mod.model.SetMatrix(MGetIdent());
 			{
 				//フレーム
-				this->frame.resize(6);
-				this->frame[0].first = INT_MAX;
-				this->frame[1].first = INT_MAX;
-				this->frame[2].first = INT_MAX;
-				this->frame[3].first = INT_MAX;
-				this->frame[4].first = INT_MAX;
-				this->frame[5].first = INT_MAX;
-				for (int i = 0; i < this->mod.model.frame_num(); i++) {
-					std::string s = this->mod.model.frame_name(i);
-					if (s.find("mag_fall") != std::string::npos) {
-						this->frame[0].first = i;//マガジン
-						this->frame[0].second = this->mod.model.frame(i);
-						this->frame[1].first = i + 1;
-						this->frame[1].second = this->mod.model.frame(i + 1);
-					}
-					else if (s.find("mazzule") != std::string::npos) {
-						this->frame[2].first = i;//マズル
-					}
-					else if (s.find("LEFT") != std::string::npos) {
-						this->frame[3].first = i;//左手
-					}
-					else if (s.find("site") != std::string::npos) {
-						this->frame[4].first = i;//アイアンサイト
-						this->frame[4].second = this->mod.model.frame(i);
-					}
-					else if (s.find("RIGHT") != std::string::npos) {
-						this->frame[5].first = i;//左手
-					}
-				}
+				this->frame_s.reset();
+				this->frame_s.get_frame(this->mod.model);
 				//テキスト
 				{
 					int mdata = FileRead_open(("data/gun/" + this->mod.name + "/data.txt").c_str(), FALSE);

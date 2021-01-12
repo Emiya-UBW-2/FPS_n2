@@ -93,31 +93,10 @@ public:
 
 	void draw_HP(int xpos, int ypos, int xsize, int ysize, int now, int will, int max) {
 		auto size = y_r(2);
-		DrawBox(
-			xpos - xsize / 2,
-			ypos,
-			xpos + xsize / 2,
-			ypos + ysize,
-			gray_1, TRUE);
-		DrawBox(
-			xpos - xsize / 2,
-			ypos,
-			xpos + xsize / 2,
-			ypos + ysize,
-			gray_2, FALSE);
-		DrawBox(
-			xpos - xsize / 2 + size,
-			ypos + size,
-			xpos - xsize / 2 + size + (xsize - size * 2)*now / max,
-			ypos + ysize - size,
-			green, TRUE);
-		DrawBox(
-			xpos - xsize / 2 + size + (xsize - size * 2)*now / max,
-			ypos + size,
-			xpos - xsize / 2 + size + (xsize - size * 2)*will / max,
-			ypos + ysize - size,
-			yellow, TRUE);
-
+		DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, gray_1, TRUE);
+		DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, gray_2, FALSE);
+		DrawBox(xpos - xsize / 2 + size, ypos + size, xpos - xsize / 2 + size + (xsize - size * 2)*now / max, ypos + ysize - size, green, TRUE);
+		DrawBox(xpos - xsize / 2 + size + (xsize - size * 2)*now / max, ypos + size, xpos - xsize / 2 + size + (xsize - size * 2)*will / max, ypos + ysize - size, yellow, TRUE);
 		font24.DrawStringFormat_MID(xpos + size, ypos + size, write, "%d/%d", now, max);
 	}
 
@@ -211,17 +190,15 @@ public:
 				}
 				//e
 				{
-					int x, y;
-					GetGraphSize(chara.gun_ptr->mod.UIScreen.get(), &x, &y);
 					if (use_vr) {
 						xs2 = y_r(120);
-						ys2 = xs2 * y / x;
+						ys2 = xs2 * chara.gun_ptr->mod.ysize / chara.gun_ptr->mod.xsize;
 						xp2 = xp;
 						yp2 = yp - ys2;
 					}
 					else {
 						xs2 = y_r(180);
-						ys2 = xs2 * y / x;
+						ys2 = xs2 * chara.gun_ptr->mod.ysize / chara.gun_ptr->mod.xsize;
 						xp2 = xp;
 						yp2 = yp - ys2;
 					}
@@ -250,7 +227,7 @@ public:
 					}
 					for (auto& a : chara.gun_stat[chara.gun_ptr->id].mag_in) {
 						font_big->DrawStringFormat(xp, yp, red, "%d/%d", a, chara.gun_ptr->magazine->cap);
-						xp -= font_bighight;
+						xp -= font_bighight / 3;
 						yp += font_bighight;
 					}
 				}
