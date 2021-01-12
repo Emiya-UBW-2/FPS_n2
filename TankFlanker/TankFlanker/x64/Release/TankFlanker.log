@@ -1,36 +1,36 @@
 ﻿  main.cpp
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3064): warning C4100: 'textureType': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3064): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'textureType': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3092): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3142): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3158): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3158): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3167): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3219): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'fileType': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3248): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3702): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3718): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3718): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3727): warning C4100: 'source': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\ui.hpp(300): warning C4189: 'font': ローカル変数が初期化されましたが、参照されていません
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3064): warning C4100: 'textureType': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3064): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'textureType': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3092): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3142): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3158): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3158): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3167): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3219): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'fileType': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3248): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3702): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3718): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3718): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3727): warning C4100: 'source': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(300): warning C4189: 'font': ローカル変数が初期化されましたが、参照されていません
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
   コード生成しています。
-  4 of 3024 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+  82 of 3024 functions ( 2.7%) were compiled, the rest were copied from previous compilation.
+    29 functions were new in current compilation
+    29 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
-EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
-  TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\FPS_n2.exe
+EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\ハンドサイン\source\repos\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+  TankFlanker.vcxproj -> C:\Users\ハンドサイン\source\repos\FPS_n2\TankFlanker\x64\Release\FPS_n2.exe

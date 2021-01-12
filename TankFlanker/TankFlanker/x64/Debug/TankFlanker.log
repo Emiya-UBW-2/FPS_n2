@@ -1,36 +1,32 @@
 ﻿  main.cpp
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3064): warning C4100: 'textureType': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3064): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'textureType': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3092): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3142): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3158): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3158): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3167): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3219): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'fileType': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3248): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3702): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3718): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3718): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3727): warning C4100: 'source': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\ui.hpp(300): warning C4189: 'font': ローカル変数が初期化されましたが、参照されていません
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(88): warning C4456: 'p' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(81): note: 'p' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(98): warning C4456: 'p' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(81): note: 'p' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(108): warning C4456: 'p' を宣言すると、以前のローカル宣言が隠蔽されます
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(81): note: 'p' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
-  TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Debug\FPS_n2.exe
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3064): warning C4100: 'textureType': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3064): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'textureType': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3083): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3092): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3142): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3158): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3158): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3167): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3219): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'fileType': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3238): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3248): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3702): warning C4100: 'path': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3718): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3718): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseer.h(3727): warning C4100: 'source': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\ui.hpp(320): warning C4189: 'font': ローカル変数が初期化されましたが、参照されていません
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(1967): warning C4189: 'xt': ローカル変数が初期化されましたが、参照されていません
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\route.hpp(1968): warning C4189: 'yt': ローカル変数が初期化されましたが、参照されていません
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\fps_n2\tankflanker\tankflanker\main.cpp(8): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\ハンドサイン\source\repos\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
+  TankFlanker.vcxproj -> C:\Users\ハンドサイン\source\repos\FPS_n2\TankFlanker\x64\Debug\FPS_n2.exe

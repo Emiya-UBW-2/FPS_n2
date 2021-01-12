@@ -23,6 +23,13 @@ private:
 	SoundHandle decision;
 	SoundHandle cancel;
 	SoundHandle cursor;
+
+	unsigned int red;
+	unsigned int green;
+	unsigned int write;
+	unsigned int yellow;
+	unsigned int gray_1;
+	unsigned int gray_2;
 public:
 	UI() {
 		SetUseASyncLoadFlag(TRUE);
@@ -47,6 +54,13 @@ public:
 		cursor = SoundHandle::Load("data/audio/cursor.wav");
 
 		SetUseASyncLoadFlag(FALSE);
+
+		red = GetColor(255, 0, 0);
+		green = GetColor(0, 255, 0);
+		write = GetColor(255, 255, 255);
+		yellow = GetColor(255, 255, 0);
+		gray_1 = GetColor(64, 64, 64);
+		gray_2 = GetColor(128, 128, 128);
 	}
 	~UI() {
 	}
@@ -62,9 +76,9 @@ public:
 
 			GraphHandle::SetDraw_Screen((int32_t)DX_SCREEN_BACK);
 			{
-				font18.DrawStringFormat(0, t_disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
-				font18.DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), GetColor(0, 255, 0), "%s 読み込み中 ", mes);
-				DrawBox(0, t_disp_y - y_r(50), int(float(t_disp_x) * bar / float(all)), t_disp_y - y_r(40), GetColor(0, 255, 0), TRUE);
+				font18.DrawStringFormat(0, t_disp_y - y_r(70), green, " loading... : %04d/%04d  ", tmp, all);
+				font18.DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), green, "%s 読み込み中 ", mes);
+				DrawBox(0, t_disp_y - y_r(50), int(float(t_disp_x) * bar / float(all)), t_disp_y - y_r(40), green, TRUE);
 			}
 			ScreenFlip();
 
@@ -78,16 +92,33 @@ public:
 	}
 
 	void draw_HP(int xpos, int ypos, int xsize, int ysize, int now, int will, int max) {
-		DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, GetColor(64, 64, 64), TRUE);
-		DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, GetColor(128, 128, 128), FALSE);
-
-		DrawBox(xpos - xsize / 2 + y_r(2), ypos + y_r(2), xpos - xsize / 2 + y_r(2) + (xsize - y_r(4))*now / max, ypos + ysize - y_r(2), GetColor(0, 255, 0), TRUE);
+		auto size = y_r(2);
 		DrawBox(
-			xpos - xsize / 2 + y_r(2) + (xsize - y_r(4))*now / max, ypos + y_r(2),
-			xpos - xsize / 2 + y_r(2) + (xsize - y_r(4))*will / max, ypos + ysize - y_r(2),
-			GetColor(255, 255, 0), TRUE);
+			xpos - xsize / 2,
+			ypos,
+			xpos + xsize / 2,
+			ypos + ysize,
+			gray_1, TRUE);
+		DrawBox(
+			xpos - xsize / 2,
+			ypos,
+			xpos + xsize / 2,
+			ypos + ysize,
+			gray_2, FALSE);
+		DrawBox(
+			xpos - xsize / 2 + size,
+			ypos + size,
+			xpos - xsize / 2 + size + (xsize - size * 2)*now / max,
+			ypos + ysize - size,
+			green, TRUE);
+		DrawBox(
+			xpos - xsize / 2 + size + (xsize - size * 2)*now / max,
+			ypos + size,
+			xpos - xsize / 2 + size + (xsize - size * 2)*will / max,
+			ypos + ysize - size,
+			yellow, TRUE);
 
-		font24.DrawStringFormat_MID(xpos + y_r(2), ypos + y_r(2), GetColor(255, 255, 255), "%d/%d", now, max);
+		font24.DrawStringFormat_MID(xpos + size, ypos + size, write, "%d/%d", now, max);
 	}
 
 	void set_draw(Mainclass::Chara& chara, bool use_vr = true) {
@@ -117,7 +148,7 @@ public:
 				if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 					//空警告
 					if (chara.gun_stat[chara.gun_ptr->id].ammo_cnt == 0) {
-						font->DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += fonthight;
+						font->DrawString_MID(xp, yp, "EMPTY", red); yp += fonthight;
 					}
 				}
 			}
@@ -134,16 +165,16 @@ public:
 				if (chara.gun_ptr->select.size() >= 1) {
 					switch (chara.gun_ptr->select[std::clamp<size_t>(chara.gun_stat[chara.gun_ptr->id].select, 0, chara.gun_ptr->select.size() - 1)]) {
 					case 1:
-						font_big->DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
+						font_big->DrawString_MID(xp, yp, "SEMI AUTO", green);
 						break;
 					case 2:
-						font_big->DrawString_MID(xp, yp, "FULL AUTO", GetColor(0, 255, 0));
+						font_big->DrawString_MID(xp, yp, "FULL AUTO", green);
 						break;
 					case 3:
-						font_big->DrawString_MID(xp, yp, "3B", GetColor(0, 255, 0));
+						font_big->DrawString_MID(xp, yp, "3B", green);
 						break;
 					case 4:
-						font_big->DrawString_MID(xp, yp, "2B", GetColor(0, 255, 0));
+						font_big->DrawString_MID(xp, yp, "2B", green);
 						break;
 					}
 				}
@@ -161,12 +192,7 @@ public:
 				if (chara.canget_magitem) {
 					if (chara.getmag.second == 1) {
 					}
-					if (use_vr) {
-						font->DrawString_MID(xp, yp, chara.canget_mag + "を拾う : 〇", GetColor(255, 128, 0));
-					}
-					else {
-						font->DrawString_MID(xp, yp, chara.canget_mag + "を拾う : F", GetColor(255, 128, 0));
-					}
+					font->DrawString_MID(xp, yp, chara.canget_mag + "を拾う : " + (use_vr ? "〇" : "F"), yellow);
 				}
 			}
 			//弾薬
@@ -205,8 +231,8 @@ public:
 				}
 				//弾
 				{
-					font->DrawString(xp, yp, chara.gun_ptr->mod.name, GetColor(255, 255, 255));
-					font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2), GetColor(255, 255, 255), "%04d / %04d", chara.gun_stat[chara.gun_ptr->id].ammo_cnt, chara.gun_stat[chara.gun_ptr->id].ammo_total - chara.gun_stat[chara.gun_ptr->id].ammo_cnt);
+					font->DrawString(xp, yp, chara.gun_ptr->mod.name, write);
+					font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2), write, "%04d / %04d", chara.gun_stat[chara.gun_ptr->id].ammo_cnt, chara.gun_stat[chara.gun_ptr->id].ammo_total - chara.gun_stat[chara.gun_ptr->id].ammo_cnt);
 				}
 				//マガジン関連(仮)
 				{
@@ -220,10 +246,10 @@ public:
 						yp = t_disp_y - x_r(20) - font_bighight * size;
 					}
 					if (size > 0) {
-						DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat[chara.gun_ptr->id].mag_in.front(), chara.gun_ptr->magazine->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
+						DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat[chara.gun_ptr->id].mag_in.front(), chara.gun_ptr->magazine->cap), yp + font_bighight + 1, yellow, FALSE);
 					}
 					for (auto& a : chara.gun_stat[chara.gun_ptr->id].mag_in) {
-						font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a, chara.gun_ptr->magazine->cap); 
+						font_big->DrawStringFormat(xp, yp, red, "%d/%d", a, chara.gun_ptr->magazine->cap);
 						xp -= font_bighight;
 						yp += font_bighight;
 					}
@@ -242,21 +268,15 @@ public:
 				int per = std::clamp(int(255.f*((chara.kill_time * 7) / 7.f)) - 255 * 6, 0, 255);
 
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-				DrawBox(
-					xp - int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp,
-					xp + int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp + font_bighight + 2,
-					GetColor(255, 255, 255), TRUE);
+				DrawBox(xp - int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp, xp + int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp + font_bighight + 2, write, TRUE);
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((chara.kill_time * 2) / 7.f)), 0, 255));
-				font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", chara.kill_id); yp += font_bighight*2;	//キル
+				font_big->DrawStringFormat_MID(xp, yp, red, "プレイヤー%d をキルしました", chara.kill_id); yp += font_bighight * 2;	//キル
 
 				if (chara.kill_streak > 0) {
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-					DrawBox(
-						xp - int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp,
-						xp + int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp + font_bighight + 2,
-						GetColor(255, 255, 255), TRUE);
+					DrawBox(xp - int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp, xp + int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp + font_bighight + 2, write, TRUE);
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((chara.kill_time * 2) / 7.f)), 0, 255));
-					font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", chara.kill_streak); yp += font_bighight;			//キルストリーク
+					font_big->DrawStringFormat_MID(xp, yp, red, "kill streak! x%d", chara.kill_streak); yp += font_bighight;			//キルストリーク
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
@@ -286,10 +306,10 @@ public:
 					xp = t_disp_x - font_bighight;
 					yp = t_disp_y / 2 - t_disp_y / 12 + font_bighight;
 				}
-				font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", chara.score); yp += font_bighight;			//スコア
-				font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", chara.kill_count); yp += font_bighight;			//キルデス
-				font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", chara.death_count); yp += font_bighight;			//キルデス
-				font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float(chara.kill_count) / float(std::max(chara.death_count, 1))); yp += font_bighight;			//キルデス
+				font_big->DrawStringFormat_RIGHT(xp, yp, red, "score      : %d", chara.score); yp += font_bighight;			//スコア
+				font_big->DrawStringFormat_RIGHT(xp, yp, red, "kill       : %d", chara.kill_count); yp += font_bighight;			//キルデス
+				font_big->DrawStringFormat_RIGHT(xp, yp, red, "death      : %d", chara.death_count); yp += font_bighight;			//キルデス
+				font_big->DrawStringFormat_RIGHT(xp, yp, red, "kill/death : %3.1f", float(chara.kill_count) / float(std::max(chara.death_count, 1))); yp += font_bighight;			//キルデス
 			}
 			//終わり
 		}
@@ -308,9 +328,9 @@ public:
 					float r_ = std::max((g.pos - pos).size(), 1.f);
 					if (r_ <= 10.f) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
-						DrawCircle(int(p.x()), int(p.y()), y_r(36), GetColor(255, 0, 0), FALSE, 3);
-						DrawCircle(int(p.x()), int(p.y()), y_r(24), GetColor(255, 0, 0));
-						font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr->mod.name, GetColor(255, 0, 0));
+						DrawCircle(int(p.x()), int(p.y()), y_r(36), red, FALSE, 3);
+						DrawCircle(int(p.x()), int(p.y()), y_r(24), red);
+						font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr->mod.name, red);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}
@@ -321,10 +341,10 @@ public:
 					float r_ = std::max((g.pos - pos).size(), 1.f);
 					if (r_ <= 10.f && g.ptr->magazine->mod.name.find("none") == std::string::npos) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
-						DrawCircle(int(p.x()), int(p.y()), y_r(36), GetColor(255, 0, 0), FALSE, 3);
-						DrawCircle(int(p.x()), int(p.y()), y_r(24), GetColor(255, 0, 0));
-						font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr->magazine->mod.name, GetColor(255, 0, 0));
-						font_big->DrawStringFormat(int(p.x()) + y_r(36), int(p.y()) + y_r(36) + y_r(18), GetColor(255, 0, 0), "%d/%d", g.magazine.cap, g.ptr->magazine->cap);
+						DrawCircle(int(p.x()), int(p.y()), y_r(36), red, FALSE, 3);
+						DrawCircle(int(p.x()), int(p.y()), y_r(24), red);
+						font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr->magazine->mod.name, red);
+						font_big->DrawStringFormat(int(p.x()) + y_r(36), int(p.y()) + y_r(36) + y_r(18), red, "%d/%d", g.magazine.cap, g.ptr->magazine->cap);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}

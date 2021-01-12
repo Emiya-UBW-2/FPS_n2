@@ -4,15 +4,13 @@
 #define PLAYER_ENUM_DEFAULT_SIZE	1.8f	// 周囲のポリゴン検出に使用する球の初期サイズ
 #define PLAYER_HIT_WIDTH			0.1f	// 当たり判定カプセルの半径
 #define PLAYER_HIT_HEIGHT			1.8f	// 当たり判定カプセルの高さ
-#define PLAYER_HIT_TRYNUM			8		// 壁押し出し処理の最大試行回数
+#define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
 #define PLAYER_HIT_SLIDE_LENGTH		0.05f	// 一度の壁押し出し処理でスライドさせる距離
 
 class Mapclass :Mainclass {
 private:
 	MV1 map, map_col;					    //地面
-	//MV1 tree_model, tree_far;				    //木
 	MV1 sky;	  //空
-	//MV1 sea;	  //海
 	SoundHandle envi;
 
 	std::vector<VECTOR_ref> way_point;
@@ -82,47 +80,31 @@ public:
 
 		{
 			MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
-			MV1_REF_POLYGONLIST p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
+			auto p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
 			for (int i = 0; i < p.PolygonNum; i++) {
 				if (p.Polygons[i].MaterialIndex == 1) {
-					//木
 					way_point.resize(way_point.size() + 1);
 					way_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
-
 					auto pt = map_col.CollCheck_Line(way_point.back() + VGet(0, 10.f, 0.f), way_point.back() + VGet(0, -10.f, 0.f), 0, 0);
-					if (pt.HitFlag) {
-						way_point.back() = pt.HitPosition;
-					}
+					if (pt.HitFlag) { way_point.back() = pt.HitPosition; }
 				}
 				else if (p.Polygons[i].MaterialIndex == 2) {
-					//木
 					lean_point_e.resize(lean_point_e.size() + 1);
 					lean_point_e.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
-
 					auto pt = map_col.CollCheck_Line(lean_point_e.back() + VGet(0, 10.f, 0.f), lean_point_e.back() + VGet(0, -10.f, 0.f), 0, 0);
-					if (pt.HitFlag) {
-						lean_point_e.back() = pt.HitPosition;
-					}
+					if (pt.HitFlag) { lean_point_e.back() = pt.HitPosition; }
 				}
 				else if (p.Polygons[i].MaterialIndex == 3) {
-					//木
 					lean_point_q.resize(lean_point_q.size() + 1);
 					lean_point_q.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
-
 					auto pt = map_col.CollCheck_Line(lean_point_q.back() + VGet(0, 10.f, 0.f), lean_point_q.back() + VGet(0, -10.f, 0.f), 0, 0);
-					if (pt.HitFlag) {
-						lean_point_q.back() = pt.HitPosition;
-					}
+					if (pt.HitFlag) { lean_point_q.back() = pt.HitPosition; }
 				}
 				else if (p.Polygons[i].MaterialIndex == 4) {
-					//木
 					spawn_point.resize(spawn_point.size() + 1);
 					spawn_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
-
 					auto pt = map_col.CollCheck_Line(spawn_point.back() + VGet(0, 10.f, 0.f), spawn_point.back() + VGet(0, -10.f, 0.f), 0, 0);
-					if (pt.HitFlag) {
-						spawn_point.back() = pt.HitPosition;
-					}
+					if (pt.HitFlag) { spawn_point.back() = pt.HitPosition; }
 				}
 			}
 		}

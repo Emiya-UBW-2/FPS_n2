@@ -69,6 +69,10 @@ public:
 		UI_minimap = GraphHandle::Make(300, 300, true);
 		UI_player = GraphHandle::Load("data/UI/player.bmp");
 		auto font = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
+
+		unsigned int red = GetColor(255, 0, 0);
+		unsigned int write = GetColor(255, 255, 255);
+
 		//MAGデータ
 		{
 			this->mag_data.resize(1);
@@ -153,8 +157,8 @@ public:
 							SetUseLighting(FALSE);
 							SetFogEnable(FALSE);
 
-							DXDraw::Capsule3D(startpos, endpos, 0.001f, GetColor(255, 0, 0), GetColor(255, 255, 255));
-							DrawSphere3D(endpos.get(), std::clamp(powf((endpos - GetCameraPosition()).size() + 0.5f, 2)*0.002f, 0.001f, 0.05f), 6, GetColor(255, 0, 0), GetColor(255, 255, 255), TRUE);
+							DXDraw::Capsule3D(startpos, endpos, 0.001f, red, write);
+							DrawSphere3D(endpos.get(), std::clamp(powf((endpos - GetCameraPosition()).size() + 0.5f, 2)*0.002f, 0.001f, 0.05f), 6, red, write, TRUE);
 
 							SetUseLighting(TRUE);
 							SetFogEnable(TRUE);
@@ -1821,11 +1825,7 @@ public:
 							//影用意
 							Drawparts->Ready_Shadow(cam_easy.campos,
 								[&] {
-								for (auto& c : this->chara) {
-									if (((c.pos + c.pos_HMD - c.rec_HMD) - cam_easy.campos).size() <= 25.f) {
-										c.Draw_chara();
-									}
-								}
+								for (auto& c : this->chara) { c.Draw_chara(); }
 								for (auto& g : this->item_data) { g.Draw_item(); }
 							},
 								VGet(5.f, 2.5f, 5.f),
@@ -1851,25 +1851,26 @@ public:
 									Hostpassparts->MAIN_draw();
 								}
 								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_);
-
-								//main
-								Hostpassparts->get_main().DrawGraph(0, 0, true);
-								//UI
-								if (Drawparts->use_vr) {
-									SetCameraNearFar(0.01f, 2.f);
-									SetUseZBuffer3D(FALSE);												//zbufuse
-									SetWriteZBuffer3D(FALSE);											//zbufwrite
-									{
-										DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, 1.8f, 0.f, this->UI_Screen.get(), TRUE);
+								{
+									//main
+									Hostpassparts->get_main().DrawGraph(0, 0, true);
+									//UI
+									if (Drawparts->use_vr) {
+										SetCameraNearFar(0.01f, 2.f);
+										SetUseZBuffer3D(FALSE);												//zbufuse
+										SetWriteZBuffer3D(FALSE);											//zbufwrite
+										{
+											DrawBillboard3D((cam_easy.campos + (cam_easy.camvec - cam_easy.campos).Norm()*1.0f).get(), 0.5f, 0.5f, 1.8f, 0.f, this->UI_Screen.get(), TRUE);
+										}
+										SetUseZBuffer3D(TRUE);												//zbufuse
+										SetWriteZBuffer3D(TRUE);											//zbufwrite
 									}
-									SetUseZBuffer3D(TRUE);												//zbufuse
-									SetWriteZBuffer3D(TRUE);											//zbufwrite
+									else {
+										this->UI_Screen.DrawGraph(0, 0, TRUE);
+									}
+									//UI2
+									UIparts->item_draw(chara, this->item_data, cam_easy.campos, Drawparts->use_vr);
 								}
-								else {
-									this->UI_Screen.DrawGraph(0, 0, TRUE);
-								}
-								//UI2
-								UIparts->item_draw(chara, this->item_data, cam_easy.campos, Drawparts->use_vr);
 							}, cam_easy);
 						}
 						if (!this->TPS.first) {
@@ -1938,8 +1939,8 @@ public:
 									auto t = cc->body.GetMatrix().pos();
 									VECTOR_ref vec_z = cc->body.GetFrameLocalWorldMatrix(cc->frame_.head_f.first).zvec()*-1.f;
 									radp = -atan2f(vec_z.x(), vec_z.z());
-									auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
-									auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
+									auto x_2 = t.x() / mapparts->map_col_get().mesh_maxpos(0).x() *(mapparts->get_x_size() / 2);
+									auto y_2 = -t.z() / mapparts->map_col_get().mesh_maxpos(0).z() *(mapparts->get_y_size() / 2);
 									xp -= int(x_2*cos(radp) - y_2 * sin(radp));
 									yp -= int(y_2*cos(radp) + x_2 * sin(radp));
 								}
@@ -1949,8 +1950,8 @@ public:
 									auto t = (c.pos + c.pos_HMD - c.rec_HMD);
 									VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_.head_f.first).zvec()*-1.f;
 									auto rad = atan2f(vec_z.x(), vec_z.z());
-									auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
-									auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
+									auto x_2 = t.x() / mapparts->map_col_get().mesh_maxpos(0).x() *(mapparts->get_x_size() / 2);
+									auto y_2 = -t.z() / mapparts->map_col_get().mesh_maxpos(0).z() *(mapparts->get_y_size() / 2);
 
 									int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
 									int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
@@ -1960,13 +1961,13 @@ public:
 								{
 									auto t = cc->body.GetMatrix().pos();
 									VECTOR_ref vec_z = cc->body.GetFrameLocalWorldMatrix(cc->frame_.head_f.first).zvec()*-1.f;
-									auto x_2 = t.x() / 10.f *(mapparts->get_x_size() / 2);
-									auto y_2 = -t.z() / 10.f *(mapparts->get_y_size() / 2);
+									auto x_2 = t.x() / mapparts->map_col_get().mesh_maxpos(0).x() *(mapparts->get_x_size() / 2);
+									auto y_2 = -t.z() / mapparts->map_col_get().mesh_maxpos(0).z() *(mapparts->get_y_size() / 2);
 
 									int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
 									int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
 
-									DrawCircle(xt, yt, 150, GetColor(0, 0, 0), FALSE, 3);
+									//DrawCircle(xt, yt, 150, GetColor(0, 0, 0), FALSE, 3);
 								}
 							}
 
@@ -2014,8 +2015,8 @@ public:
 										cam_easy3.campos.x(cam_easy3.campos.x() - 10.f / fps_ *sin(yr_cam));
 									}
 
-									cam_easy3.campos.x(std::clamp(cam_easy3.campos.x(), -25.f, 25.f));
-									cam_easy3.campos.z(std::clamp(cam_easy3.campos.z(), -25.f, 25.f));
+									cam_easy3.campos.x(std::clamp(cam_easy3.campos.x(), mapparts->map_col_get().mesh_minpos(0).x(), mapparts->map_col_get().mesh_maxpos(0).x()));
+									cam_easy3.campos.z(std::clamp(cam_easy3.campos.z(), mapparts->map_col_get().mesh_minpos(0).z(), mapparts->map_col_get().mesh_maxpos(0).z()));
 									xr_cam = std::clamp(xr_cam, deg2rad(-89), deg2rad(89));
 
 									cam_easy3.camvec = cam_easy3.campos + MATRIX_ref::Vtrans(VGet(0, 0, 1), MATRIX_ref::RotX(xr_cam)*MATRIX_ref::RotY(yr_cam));

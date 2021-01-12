@@ -933,17 +933,18 @@ public:
 		}
 		template<class Y, class D>
 		void Get_item_1(std::vector<Items>& item, std::unique_ptr<Y, D>& mapparts) {
+			const auto fps_ = GetFPS();
 			if (this->ptr != nullptr) {
 				this->obj.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
 				this->pos += this->add;
-				this->add.yadd(M_GR / powf(GetFPS(), 2.f));
+				this->add.yadd(M_GR / powf(fps_, 2.f));
 				for (auto& p : item) {
 					if (p.ptr != nullptr && &p != &*this) {
 						if ((p.pos - this->pos).size() <= 0.1f) {
-							p.add.xadd((p.pos - this->pos).x()*10.f / GetFPS());
-							p.add.zadd((p.pos - this->pos).z()*10.f / GetFPS());
-							this->add.xadd((this->pos - p.pos).x()*10.f / GetFPS());
-							this->add.zadd((this->pos - p.pos).z()*10.f / GetFPS());
+							p.add.xadd((p.pos - this->pos).x()*10.f / fps_);
+							p.add.zadd((p.pos - this->pos).z()*10.f / fps_);
+							this->add.xadd((this->pos - p.pos).x()*10.f / fps_);
+							this->add.zadd((this->pos - p.pos).z()*10.f / fps_);
 						}
 					}
 				}
