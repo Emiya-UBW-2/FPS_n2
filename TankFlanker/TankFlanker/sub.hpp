@@ -796,6 +796,7 @@ public:
 		int kill_count = 0;
 		int death_count = 0;
 		//
+
 		void set(std::vector<Guns>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
 			this->gun_ptr = &gun_data[itr];
 			//g‘Ì
@@ -852,6 +853,10 @@ public:
 			this->spawn_mat = mat_H;
 			this->mat = this->spawn_mat;
 
+			this->ads.ready(false);
+			this->running = false;
+			this->squat.ready(false);
+
 			this->add_ypos = 0.f;
 			this->add_pos_buf.clear();
 			this->start_b = true;
@@ -875,6 +880,41 @@ public:
 			this->body_zrad = 0.f;//“·‘ÌŠp“x
 			for (auto& w : this->wayp_pre) {
 				w = 0;
+			}
+		}
+
+		void start() {
+			this->start_b = false;
+			this->start_c = true;
+		}
+
+		template<class Y, class D>
+		void reset_waypoint(std::unique_ptr<Y, D>& mapparts) {
+			int now = -1;
+			auto poss = this->pos + this->pos_HMD - this->rec_HMD;
+			auto tmp = VECTOR_ref(VGet(0, 100.f, 0));
+			for (auto& w : mapparts->get_waypoint()) {
+				auto id = &w - &mapparts->get_waypoint()[0];
+				bool tt = true;
+				for (auto& ww : this->wayp_pre) {
+					if (id == ww) {
+						tt = false;
+					}
+				}
+				if (tt) {
+					if (tmp.size() >= (w - poss).size()) {
+						auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0));
+						if (!p.HitFlag) {
+							tmp = (w - poss);
+							now = int(id);
+						}
+					}
+				}
+			}
+			if (now != -1) {
+				for (auto& w : this->wayp_pre) {
+					w = now;
+				}
 			}
 		}
 
