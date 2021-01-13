@@ -160,14 +160,14 @@ public:
 		float caliber = 0.f;
 		float speed = 100.f;//弾速
 		float pene = 10.f;//貫通
-		float damage = 10.f;//ダメージ
+		int damage = 10;//ダメージ
 
 		void set(void) {
 			int mdata = FileRead_open(("data/ammo/" + this->name + "/data.txt").c_str(), FALSE);
 			this->caliber = getparams::_float(mdata)*0.001f;//口径
 			this->speed = getparams::_float(mdata);	//弾速
 			this->pene = getparams::_float(mdata);	//貫通
-			this->damage = getparams::_float(mdata);//ダメージ
+			this->damage = getparams::_int(mdata);//ダメージ
 			FileRead_close(mdata);
 		}
 	};
@@ -211,6 +211,9 @@ public:
 					}
 					//*
 					for (auto& tgt : *chara) {
+						if (tgt.HP == 0) {
+							continue;
+						}
 						{
 							auto q = tgt.col.CollCheck_Line(this->repos, this->pos, -1,0);
 							if (q.HitFlag) {
@@ -220,11 +223,11 @@ public:
 								//
 								this->hit = true;
 								this->flug = false;
-
-								tgt.HP = std::clamp(tgt.HP - 20, 0, tgt.HP_full);
+								tgt.HP = std::clamp(tgt.HP - this->spec->damage * 3 / 5, 0, tgt.HP_full);
 								if (tgt.HP == 0) {
 									c->kill_f = true;
 									c->kill_id = &tgt - &(*chara)[0];
+									tgt.death_id = &(*c) - &(*chara)[0];
 									if (c->kill_time != 0.f) {
 										c->kill_streak++;
 										c->score += std::clamp(25 - c->kill_streak * 5, 0, 25);
@@ -246,10 +249,11 @@ public:
 								//
 								this->hit = true;
 								this->flug = false;
-								tgt.HP = std::clamp(tgt.HP - 100, 0, tgt.HP_full);
+								tgt.HP = std::clamp(tgt.HP - this->spec->damage*3, 0, tgt.HP_full);
 								if (tgt.HP == 0) {
 									c->kill_f = true;
 									c->kill_id = &tgt - &(*chara)[0];
+									tgt.death_id = &(*c) - &(*chara)[0];
 									if (c->kill_time != 0.f) {
 										c->kill_streak++;
 										c->score += std::clamp(25 - c->kill_streak * 5, 0, 25);
@@ -271,11 +275,11 @@ public:
 								//
 								this->hit = true;
 								this->flug = false;
-
-								tgt.HP = std::clamp(tgt.HP - 34, 0, tgt.HP_full);
+								tgt.HP = std::clamp(tgt.HP - this->spec->damage, 0, tgt.HP_full);
 								if (tgt.HP == 0) {
 									c->kill_f = true;
 									c->kill_id = &tgt - &(*chara)[0];
+									tgt.death_id = &(*c) - &(*chara)[0];
 									if (c->kill_time != 0.f) {
 										c->kill_streak++;
 										c->score += std::clamp(25 - c->kill_streak * 5, 0, 25);
@@ -716,12 +720,14 @@ public:
 		bool reloadf = false;
 		bool down_mag = false;
 		//プレイヤー座標系
-		VECTOR_ref pos;							//位置
-		MATRIX_ref mat;							//位置
-		VECTOR_ref spawn_pos;					//spawn
-		MATRIX_ref spawn_mat;					//spawn
-		VECTOR_ref add_pos, add_pos_buf;		//移動
-		float xrad_p = 0.f;				//マウスエイム用変数確保
+		VECTOR_ref pos;				//位置
+		MATRIX_ref mat;				//位置
+		VECTOR_ref spawn_pos;		//spawn
+		MATRIX_ref spawn_mat;		//spawn
+		VECTOR_ref add_pos;			//移動
+		VECTOR_ref add_pos_buf;		//移動
+		VECTOR_ref add_pos_buf2;	//移動
+		float xrad_p = 0.f;			//マウスエイム用変数確保
 		switchs ads, squat;
 		bool wkey = false;
 		bool skey = false;
@@ -739,6 +745,7 @@ public:
 		float ai_time_e = 0.f;
 		float ai_time_shoot = 0.f;
 		bool ai_reload = false;
+		int ai_phase = 0;
 
 		std::array<int, 6> wayp_pre;
 		//マガジン座標系
@@ -756,6 +763,7 @@ public:
 		float head_hight2 = 0.f;
 		//右手座標系
 		VECTOR_ref pos_RIGHTHAND;
+		VECTOR_ref add_RIGHTHAND;
 		MATRIX_ref mat_RIGHTHAND;
 		VECTOR_ref vecadd_RIGHTHAND, vecadd_RIGHTHAND_p;//
 		//左手座標系
@@ -794,7 +802,10 @@ public:
 
 		int score = 0;
 		int kill_count = 0;
+		size_t death_id = 0;
 		int death_count = 0;
+
+		float death_timer = 0.f;
 		//
 
 		void set(std::vector<Guns>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
@@ -839,6 +850,7 @@ public:
 			this->kill_time = 0.f;
 			this->score = 0;
 			this->kill_count = 0;
+			this->death_id = 0;
 			this->death_count = 0;
 		}
 		void spawn(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) {
@@ -865,6 +877,7 @@ public:
 
 			this->kill_f = false;
 			this->kill_id = 0;
+			this->death_id = 0;
 			this->kill_streak = 0;
 			this->kill_time = 0.f;
 
@@ -881,6 +894,7 @@ public:
 			for (auto& w : this->wayp_pre) {
 				w = 0;
 			}
+
 		}
 
 		void start() {
@@ -903,7 +917,7 @@ public:
 				}
 				if (tt) {
 					if (tmp.size() >= (w - poss).size()) {
-						auto p = mapparts->map_col_line(w + VGet(0, 0.75f, 0), poss + VGet(0, 0.75f, 0));
+						auto p = mapparts->map_col_line(w + VGet(0, 0.5f, 0), poss + VGet(0, 0.5f, 0));
 						if (!p.HitFlag) {
 							tmp = (w - poss);
 							now = int(id);
@@ -916,6 +930,7 @@ public:
 					w = now;
 				}
 			}
+			this->ai_phase = 0;
 		}
 
 		void Draw_chara() {
