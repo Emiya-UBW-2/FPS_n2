@@ -38,6 +38,24 @@ class main_c : Mainclass {
 	GraphHandle UI_minimap;			//描画スクリーン
 	int sel_cam = 0;
 	float xcam = 1.f;
+
+
+
+	int input_low = 0;
+	int input_high=0;
+
+	int gamma=0;
+
+	int output_low=0;
+	int output_high=0;
+
+	int input_low2 = 0;
+	int input_high2 = 0;
+
+	int gamma2 = 0;
+
+	int output_low2 = 0;
+	int output_high2 = 0;
 public:
 	main_c() {
 		//設定読み込み
@@ -67,15 +85,14 @@ public:
 		//ミニマップ
 		UI_minimap = GraphHandle::Make(300, 300, true);
 		UI_player = GraphHandle::Load("data/UI/player.bmp");
-		// マスク画面を作成します
 		CreateMaskScreen();
-		// マスクデータをロードします
 		int MaskHandle = LoadMask("data/UI/testMask_.bmp");
 		bool loadmasks = true;
 		//
 		unsigned int red = GetColor(255, 0, 0);
 		unsigned int write = GetColor(255, 255, 255);
 
+		auto font = FontHandle::Create(18);
 		//MAGデータ
 		{
 			this->mag_data.resize(1);
@@ -1864,16 +1881,7 @@ public:
 								}
 								for (auto& c : chara) {
 									auto ttt = c.body.GetMatrix().pos();
-									VECTOR_ref p1 = ttt + VGet(-0.3f, 0, -0.3f);
-									VECTOR_ref p2 = ttt + VGet(-0.3f, 0, 0.3f);
-									VECTOR_ref p3 = ttt + VGet(0.3f, 0, -0.3f);
-									VECTOR_ref p4 = ttt + VGet(0.3f, 0, 0.3f);
-									VECTOR_ref p5 = ttt + VGet(-0.3f, 1.8f, -0.3f);
-									VECTOR_ref p6 = ttt + VGet(-0.3f, 1.8f, 0.3f);
-									VECTOR_ref p7 = ttt + VGet(0.3f, 1.8f, -0.3f);
-									VECTOR_ref p8 = ttt + VGet(0.3f, 1.8f, 0.3f);
-
-									if (CheckCameraViewClip_Box(p1.get(), p8.get())) {
+									if (CheckCameraViewClip_Box((ttt + VGet(-0.3f, 0, -0.3f)).get(), (ttt + VGet(0.3f, 1.8f, 0.3f)).get())) {
 										c.start_b = true;
 										continue;
 									}
@@ -2110,6 +2118,82 @@ public:
 									SetUseMaskScreenFlag(FALSE);
 								}
 							}
+							/*
+							{
+								int xp = 200;
+								int yp = 200;
+								int xs = 512;
+								int ys = 60;
+								//
+								input_low = std::clamp(input_low + 1, 0, (CheckHitKey(KEY_INPUT_T) != 0) ? 2 : 0);
+								if (input_low == 1) {
+									Hostpassparts->input_low -= 5;
+								}
+								input_low2 = std::clamp(input_low2 + 1, 0, (CheckHitKey(KEY_INPUT_Y) != 0) ? 2 : 0);
+								if (input_low2 == 1) {
+									Hostpassparts->input_low += 5;
+								}
+								//
+								input_high = std::clamp(input_high + 1, 0, (CheckHitKey(KEY_INPUT_U) != 0) ? 2 : 0);
+								if (input_high == 1) {
+									Hostpassparts->input_high -= 5;
+								}
+								input_high2 = std::clamp(input_high2 + 1, 0, (CheckHitKey(KEY_INPUT_I) != 0) ? 2 : 0);
+								if (input_high2 == 1) {
+									Hostpassparts->input_high += 5;
+								}
+								//
+								gamma = std::clamp(gamma + 1, 0, (CheckHitKey(KEY_INPUT_G) != 0) ? 2 : 0);
+								if (gamma == 1) {
+									Hostpassparts->gamma -= 0.2f;
+								}
+								gamma2 = std::clamp(gamma2 + 1, 0, (CheckHitKey(KEY_INPUT_H) != 0) ? 2 : 0);
+								if (gamma2 == 1) {
+									Hostpassparts->gamma += 0.2f;
+								}
+								//
+								output_low = std::clamp(output_low + 1, 0, (CheckHitKey(KEY_INPUT_V) != 0) ? 2 : 0);
+								if (output_low == 1) {
+									Hostpassparts->output_low -= 5;
+								}
+								output_low2 = std::clamp(output_low2 + 1, 0, (CheckHitKey(KEY_INPUT_B) != 0) ? 2 : 0);
+								if (output_low2 == 1) {
+									Hostpassparts->output_low += 5;
+								}
+								//
+								output_high = std::clamp(output_high + 1, 0, (CheckHitKey(KEY_INPUT_N) != 0) ? 2 : 0);
+								if (output_high == 1) {
+									Hostpassparts->output_high -= 5;
+								}
+								output_high2 = std::clamp(output_high2 + 1, 0, (CheckHitKey(KEY_INPUT_M) != 0) ? 2 : 0);
+								if (output_high2 == 1) {
+									Hostpassparts->output_high += 5;
+								}
+								//
+
+								Hostpassparts->input_low = std::clamp(Hostpassparts->input_low, 0, Hostpassparts->input_high);
+								Hostpassparts->input_high = std::clamp(Hostpassparts->input_high, Hostpassparts->input_low, 255);
+
+								Hostpassparts->gamma = std::max(1.f, Hostpassparts->gamma);
+
+								Hostpassparts->output_low = std::clamp(Hostpassparts->output_low, 0, Hostpassparts->output_high);
+								Hostpassparts->output_high = std::clamp(Hostpassparts->output_high, Hostpassparts->output_low, 255);
+
+								//in
+								DrawBox(xp, yp, xp + xs, yp + ys, GetColor(64, 64, 64), TRUE);
+								DrawBox(xp + xs * Hostpassparts->input_low / 255, yp, xp + xs * Hostpassparts->input_high / 255, yp + ys, GetColor(0, 255, 0), TRUE);
+								font.DrawStringFormat(xp, yp, GetColor(255, 255, 0), "input  : %d - %d(T,Y - U,I)", Hostpassparts->input_low, Hostpassparts->input_high);
+								//gamma
+								yp = 300;
+								font.DrawStringFormat(xp, yp, GetColor(  0, 255, 0), "ガンマ : %3.2f(G,H)", Hostpassparts->gamma);
+								//out
+								yp = 400;
+								DrawBox(xp, yp, xp + xs, yp + ys, GetColor(64, 64, 64), TRUE);
+								DrawBox(xp + xs * Hostpassparts->output_low / 255, yp, xp + xs * Hostpassparts->output_high / 255, yp + ys, GetColor(0, 255, 0), TRUE);
+								font.DrawStringFormat(xp, yp, GetColor(255, 255, 0), "output : %d - %d(V,B - N,M)", Hostpassparts->output_low, Hostpassparts->output_high);
+
+							}
+							//*/
 							//デバッグ
 							Debugparts->end_way();
 							Debugparts->debug(10, 10, float(GetNowHiPerformanceCount() - waits) / 1000.f);

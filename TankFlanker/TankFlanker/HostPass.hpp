@@ -18,6 +18,11 @@ private:
 	int disp_x = deskx;
 	int disp_y = desky;
 public:
+	int input_low = 25;
+	int input_high = 255;
+	float gamma = 1.8f;
+	int output_low = 0;
+	int output_high = 255;
 
 	HostPassEffect(const bool& dof_, const bool& bloom_, const int& xd, const int& yd) {
 		disp_x = xd;
@@ -55,6 +60,17 @@ private:
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 		}
 	}
+	//ƒŒƒxƒ‹•â³
+	void buf_levelcorrect(const int& level = 255) {
+		if (true) {
+			GraphFilterBlt(BufScreen.get(), BufScreen_.get(), DX_GRAPH_FILTER_LEVEL, input_low, input_high, int(gamma * 100), output_low, output_high);
+		}
+		BufScreen.SetDraw_Screen(false);
+		if (true) {
+			BufScreen_.DrawExtendGraph(0, 0, disp_x, disp_y, true);
+		}
+	}
+
 	//”íÊ‘Ì[“x•`‰æ
 	template <typename T1, typename T2>
 	void near_dof(T1 sky_doing, T2 doing, DXDraw::cam_info& cams, bool update_effekseer = true) {
@@ -128,9 +144,8 @@ public:
 	//
 	void MAIN_draw() {
 		//buf‚É•`‰æ
-		if (bloom_flag) {
-			buf_bloom(255);//ƒuƒ‹[ƒ€
-		}
+		buf_bloom(255);//ƒuƒ‹[ƒ€
+		buf_levelcorrect();
 		//Œ‹‰Ê•`‰æ
 		MAIN_Screen.SetDraw_Screen();
 		{
