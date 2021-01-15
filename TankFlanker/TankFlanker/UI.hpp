@@ -15,6 +15,8 @@ private:
 	GraphHandle UI_mag_set;
 	GraphHandle UI_get;
 	//font
+	FontHandle font72;
+	FontHandle font48;
 	FontHandle font36;
 	FontHandle font24;
 	FontHandle font18;
@@ -30,6 +32,8 @@ private:
 	unsigned int yellow;
 	unsigned int gray_1;
 	unsigned int gray_2;
+	float ready = 0.f;
+	float timer = 0.f;
 public:
 	UI() {
 		SetUseASyncLoadFlag(TRUE);
@@ -44,6 +48,8 @@ public:
 		UI_get = GraphHandle::Load("data/UI/get.bmp");
 		SetTransColor(0, 0, 0);
 
+		font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
+		font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
 		font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
 		font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
 		font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
@@ -100,6 +106,11 @@ public:
 		font24.DrawStringFormat_MID(xpos + size, ypos + size, write, "%d/%d", now, max);
 	}
 
+	void set_rule(const float& ready_, const float& timer_) {
+		this->ready = ready_;
+		this->timer = timer_;
+	}
+
 	void set_draw(Mainclass::Chara& chara, bool use_vr = true) {
 		int t_disp_x = deskx;
 		int t_disp_y = desky;
@@ -107,13 +118,40 @@ public:
 			GetScreenState(&t_disp_x, &t_disp_y, nullptr);
 		}
 
+		FontHandle* font_large = (use_vr) ? &font72 : &font48;
 		FontHandle* font_big = (use_vr) ? &font36 : &font24;
 		FontHandle* font = (use_vr) ? &font24 : &font18;
+		const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
 		const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
 		const int fonthight = (use_vr) ? y_r(24) : y_r(18);
 		int xs = 0, ys = 0, xp = 0, yp = 0;
 		int xp2 = 0, yp2 = 0, xs2 = 0, ys2 = 0;
 		{
+			//É^ÉCÉ}Å[
+			if(ready>=0.f){
+				if (use_vr) {
+					xp = t_disp_x / 2;
+					yp = t_disp_y / 2 - t_disp_y / 3;
+				}
+				else {
+					xp = t_disp_x / 2;
+					yp = t_disp_y / 2 - t_disp_y / 8;
+				}
+				font_large->DrawStringFormat_MID(xp, yp, red, "%02d:%02d", int(this->ready) / 60, int(this->ready) % 60); yp += font_largehight;
+			}
+			else {
+				if (use_vr) {
+					xp = t_disp_x / 2;
+					yp = t_disp_y / 2 - t_disp_y / 8;
+				}
+				else {
+					xp = t_disp_x / 2;
+					yp = fonthight;
+				}
+				font_big->DrawStringFormat_MID(xp, yp, red, "%02d:%02d", int(this->timer) / 60, int(this->timer) % 60); yp += font_bighight;
+
+
+			}
 			//åxçê
 			{
 				if (use_vr) {
@@ -169,9 +207,11 @@ public:
 					yp = t_disp_y / 2 + t_disp_y / 12;
 				}
 				if (chara.canget_magitem) {
-					if (chara.getmag.second == 1) {
-					}
-					font->DrawString_MID(xp, yp, chara.canget_mag + "ÇèEÇ§ : " + (use_vr ? "ÅZ" : "F"), yellow);
+					font->DrawString_MID(xp, yp, chara.canget_mag + "ÇèEÇ§ : " + (use_vr ? "ÅZ" : "F"), yellow); yp += fonthight;
+				}
+
+				if (chara.canget_meditem) {
+					font->DrawString_MID(xp, yp, chara.canget_med + "ÇèEÇ§ : " + (use_vr ? "ÅZ" : "F"), yellow); yp += fonthight;
 				}
 			}
 			//íeñÚ
@@ -294,12 +334,13 @@ public:
 	void item_draw(std::vector<Chara>&chara,std::vector<Items>&item_data, const VECTOR_ref& pos, bool use_vr = true) {
 		int xs = 0, ys = 0, xp = 0, yp = 0;
 		FontHandle* font_big = &font24;
-		FontHandle* font = (use_vr) ? &font12 : &font18;
+		//FontHandle* font = (use_vr) ? &font12 : &font18;
 		const int fonthight = (use_vr) ? y_r(12) : y_r(18);
 
 		SetCameraNearFar(0.01f, 10.f);
 		for (auto& g : item_data) {
-			if (g.ptr != nullptr && g.cate == 0) {
+
+			if (g.ptr_gun != nullptr) {
 				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
 					float r_ = std::max((g.pos - pos).size(), 1.f);
@@ -307,21 +348,36 @@ public:
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
 						DrawCircle(int(p.x()), int(p.y()), y_r(36), red, FALSE, 3);
 						DrawCircle(int(p.x()), int(p.y()), y_r(24), red);
-						font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr->mod.name, red);
+						font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr_gun->mod.name, red);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}
 			}
-			else if (g.ptr != nullptr && g.cate == 1) {
+
+			if (g.ptr_mag != nullptr) {
 				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
 					float r_ = std::max((g.pos - pos).size(), 1.f);
-					if (r_ <= 10.f && g.ptr->magazine->mod.name.find("none") == std::string::npos) {
+					if (r_ <= 10.f) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
 						DrawCircle(int(p.x()), int(p.y()), y_r(36), red, FALSE, 3);
 						DrawCircle(int(p.x()), int(p.y()), y_r(24), red);
-						font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr->magazine->mod.name, red);
-						font_big->DrawStringFormat(int(p.x()) + y_r(36), int(p.y()) + y_r(36) + y_r(18), red, "%d/%d", g.magazine.cap, g.ptr->magazine->cap);
+						font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr_mag->mod.name, red);
+						font_big->DrawStringFormat(int(p.x()) + y_r(36), int(p.y()) + y_r(36) + y_r(18), red, "%d/%d", g.magazine.cap, g.ptr_mag->cap);
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+					}
+				}
+			}
+
+			if (g.ptr_med != nullptr) {
+				VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+				if (p.z() >= 0.f&&p.z() <= 1.f) {
+					float r_ = std::max((g.pos - pos).size(), 1.f);
+					if (r_ <= 10.f) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
+						DrawCircle(int(p.x()), int(p.y()), y_r(36), red, FALSE, 3);
+						DrawCircle(int(p.x()), int(p.y()), y_r(24), red);
+						font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr_med->mod.name, red);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}
@@ -332,7 +388,7 @@ public:
 			SetCameraNearFar(0.01f, 100.f);
 			for (auto& c : chara) {
 				if (abs(c.HP - int(c.HP_r)) >= 3) {
-					VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_.head_f.first) + VGet(0, 0.3f, 0)).get());
+					VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_s.head_f.first) + VGet(0, 0.3f, 0)).get());
 					if (p.z() >= 0.f&&p.z() <= 1.f) {
 						xp = int(p.x());
 						yp = int(p.y());

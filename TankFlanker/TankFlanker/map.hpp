@@ -2,7 +2,7 @@
 
 // プレイヤー関係の定義
 #define PLAYER_ENUM_DEFAULT_SIZE	1.8f	// 周囲のポリゴン検出に使用する球の初期サイズ
-#define PLAYER_HIT_WIDTH			0.3f	// 当たり判定カプセルの半径
+#define PLAYER_HIT_WIDTH			0.15f	// 当たり判定カプセルの半径
 #define PLAYER_HIT_HEIGHT			1.8f	// 当たり判定カプセルの高さ
 #define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
 #define PLAYER_HIT_SLIDE_LENGTH		0.05f	// 一度の壁押し出し処理でスライドさせる距離
@@ -61,7 +61,11 @@ public:
 		minmap = GraphHandle::Load(dir + "/minimap.png");
 		SetUseASyncLoadFlag(FALSE);
 	}
-	void Set_map(const char* item_txt, std::vector<Items>& item_data, std::vector<Guns>& gun_data) {
+	void Set_map(const char* item_txt, std::vector<Items>& item_data, 
+		//std::vector<Guns>& gun_data,
+		std::vector<Mags>& mag_data,
+		std::vector<Meds>& med_data
+		) {
 		//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 		VECTOR_ref size;
 		{
@@ -121,8 +125,8 @@ public:
 				if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
 					size_t p1 = 0;
 					float p2 = 0.f, p3 = 0.f, p4 = 0.f;
-					for (auto& g : gun_data) {
-						if (p.find(g.magazine->mod.name) != std::string::npos) {
+					for (auto& g : mag_data) {
+						if (p.find(g.mod.name) != std::string::npos) {
 							p1 = g.id;
 							break;
 						}
@@ -132,10 +136,40 @@ public:
 					p4 = getparams::_float(mdata);
 
 					item_data.resize(item_data.size() + 1);
-					item_data.back().Set_item(&gun_data[p1], VGet(p2, p3, p4), MGetIdent(), 1);
-					if (item_data.back().ptr != nullptr) {
-						item_data.back().magazine.cap = int(item_data.back().ptr->magazine->cap);
+					item_data.back().id = item_data.size() - 1;
+					item_data.back().Set_item(&mag_data[p1], VGet(p2, p3, p4), MGetIdent());
+					if (item_data.back().ptr_mag != nullptr) {
+						item_data.back().magazine.cap = int(item_data.back().ptr_mag->cap);
 					}
+				}
+				else {
+					break;
+				}
+			}
+			//item_data meditem
+			while (true) {
+				auto p = getparams::_str(mdata);
+				if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
+					size_t p1 = 0;
+					float p2 = 0.f, p3 = 0.f, p4 = 0.f;
+					for (auto& g : med_data) {
+						if (p.find(g.mod.name) != std::string::npos) {
+							p1 = g.id;
+							break;
+						}
+					}
+					p2 = getparams::_float(mdata);
+					p3 = getparams::_float(mdata);
+					p4 = getparams::_float(mdata);
+
+					item_data.resize(item_data.size() + 1);
+					item_data.back().id = item_data.size() - 1;
+					item_data.back().Set_item(&med_data[p1], VGet(p2, p3, p4), MGetIdent());
+					/*
+					if (item_data.back().ptr_mag != nullptr) {
+						item_data.back().magazine.cap = int(item_data.back().ptr_mag->cap);
+					}
+					*/
 				}
 				else {
 					break;
@@ -267,4 +301,81 @@ public:
 		return;
 	}
 
+};
+
+class Minimapclass :Mainclass {
+private:
+	int x_size = 0;
+	int y_size = 0;
+	int x_pos = 0;
+	int y_pos = 0;
+
+	GraphHandle UI_player;			//描画スクリーン
+	GraphHandle UI_minimap;			//描画スクリーン
+	float xcam = 1.f;
+	int MaskHandle;
+	bool loadmasks = true;
+public:
+	void load() {
+		SetUseASyncLoadFlag(FALSE);
+		CreateMaskScreen();
+		MaskHandle = LoadMask("data/UI/testMask_.bmp");
+		GetMaskSize(&x_size, &y_size, MaskHandle);
+		UI_minimap = GraphHandle::Make(x_size, y_size, true);
+		UI_player = GraphHandle::Load("data/UI/player.bmp");
+		loadmasks = true;
+	}
+
+	template<class Y, class D>
+	void set(std::vector<Chara>&chara, Mainclass::Chara& cc,std::unique_ptr<Y, D>& mapparts) {
+		UI_minimap.SetDraw_Screen(true);
+		{
+			DrawBox(0, 0, x_size, y_size, GetColor(0, 128, 0), TRUE);
+			int xp = x_size / 2;
+			int yp = y_size / 2;
+			float radp = 0.f;
+			{
+				easing_set(&xcam, 1.f + (cc.add_pos_buf2.size() / ((cc.running ? 6.f : ((cc.ads.first ? 2.f : 4.f)*(cc.squat.first ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
+
+				auto t = cc.body.GetMatrix().pos();
+				VECTOR_ref vec_z = cc.body.GetFrameLocalWorldMatrix(cc.frame_s.head_f.first).zvec()*-1.f;
+				radp = -atan2f(vec_z.x(), vec_z.z());
+				auto x_2 = t.x() / mapparts->map_col_get().mesh_maxpos(0).x() *(mapparts->get_x_size() / 2)*xcam;
+				auto y_2 = -t.z() / mapparts->map_col_get().mesh_maxpos(0).z() *(mapparts->get_y_size() / 2)*xcam;
+				xp -= int(x_2*cos(radp) - y_2 * sin(radp));
+				yp -= int(y_2*cos(radp) + x_2 * sin(radp));
+			}
+
+			DrawRotaGraph(xp, yp, xcam, radp, mapparts->get_minmap().get(), TRUE);
+			for (auto& c : chara) {
+				auto t = (c.pos + c.pos_HMD - c.rec_HMD);
+				VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_s.head_f.first).zvec()*-1.f;
+				auto rad = atan2f(vec_z.x(), vec_z.z());
+				auto x_2 = t.x() / mapparts->map_col_get().mesh_maxpos(0).x() *(mapparts->get_x_size() / 2)*xcam;
+				auto y_2 = -t.z() / mapparts->map_col_get().mesh_maxpos(0).z() *(mapparts->get_y_size() / 2)*xcam;
+
+				int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
+				int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
+
+				DrawRotaGraph(xt, yt, xcam, rad + radp, UI_player.get(), TRUE);
+			}
+		}
+	}
+
+	void draw(const int& xpos, const int& ypos) {
+		if (x_pos != xpos || y_pos != ypos) {
+			loadmasks = true;
+		}
+		if (loadmasks) {
+			FillMaskScreen(0);
+			DrawMask(xpos, ypos, MaskHandle, DX_MASKTRANS_BLACK);
+			loadmasks = false;
+		}
+		x_pos = xpos;
+		y_pos = ypos;
+
+		SetUseMaskScreenFlag(TRUE);
+		UI_minimap.DrawGraph(xpos, ypos, true);
+		SetUseMaskScreenFlag(FALSE);
+	}
 };

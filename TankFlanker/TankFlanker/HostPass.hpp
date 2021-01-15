@@ -61,7 +61,7 @@ private:
 		}
 	}
 	//ƒŒƒxƒ‹•â³
-	void buf_levelcorrect(const int& level = 255) {
+	void buf_levelcorrect() {
 		if (true) {
 			GraphFilterBlt(BufScreen.get(), BufScreen_.get(), DX_GRAPH_FILTER_LEVEL, input_low, input_high, int(gamma * 100), output_low, output_high);
 		}
