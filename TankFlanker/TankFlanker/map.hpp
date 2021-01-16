@@ -62,7 +62,7 @@ public:
 		SetUseASyncLoadFlag(FALSE);
 	}
 	void Set_map(const char* item_txt, std::vector<Items>& item_data, 
-		//std::vector<Guns>& gun_data,
+		std::vector<Guns>& gun_data,
 		std::vector<Mags>& mag_data,
 		std::vector<Meds>& med_data
 		) {
@@ -192,6 +192,7 @@ public:
 		lean_point_q.clear();
 		lean_point_e.clear();
 		spawn_point.clear();
+		minmap.Dispose();
 	}
 	auto& map_get() { return map; }
 	auto& map_col_get() { return map_col; }
@@ -302,7 +303,6 @@ public:
 	}
 
 };
-
 class Minimapclass :Mainclass {
 private:
 	int x_size = 0;

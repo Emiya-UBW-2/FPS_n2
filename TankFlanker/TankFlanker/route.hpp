@@ -82,29 +82,22 @@ public:
 		UIparts->load_window("アイテムオブジェクト");	//ロード画面1
 		//GUNデータ2
 		for (auto& g : this->gun_data) {
-			g.id = &g - &this->gun_data[0];
-			g.set_data(this->mag_data);
+			g.set_data(this->mag_data, &g - &this->gun_data[0]);
 		}
 		//MAGデータ2
 		for (auto& g : this->mag_data) {
-			g.id = &g - &this->mag_data[0];
-			g.set_data();
+			g.set_data(&g - &this->mag_data[0]);
 		}
 		//MEDデータ2
 		for (auto& g : this->meds_data) {
-			g.id = &g - &this->meds_data[0];
-			g.set_data();
+			g.set_data(&g - &this->meds_data[0]);
 		}
 		UIparts->load_window("アイテムデータ");	//ロード画面2
 		do {
 			//マップ読み込み
-			mapparts->Ready_map("data/map_new2");			//mapparts->Ready_map("data/new");
+			mapparts->Ready_map("data/map_new2");
 			UIparts->load_window("マップ");
-			mapparts->Set_map("data/maps/set.txt", this->item,
-				//this->gun_data,
-				this->mag_data,
-				this->meds_data
-			);
+			mapparts->Set_map("data/maps/set.txt", this->item,this->gun_data, this->mag_data, this->meds_data);
 			//キャラ設定
 			size_t sel_g = 0;
 			chara.resize(mapparts->get_spawn_point().size());
@@ -112,15 +105,11 @@ public:
 			{
 				//自機セット
 				mine.set(this->gun_data, sel_g, this->body_obj, this->body_col);
-				mine.spawn(mapparts->get_spawn_point()[0], MATRIX_ref::RotY(
-					atan2f(mapparts->get_spawn_point()[0].x(), mapparts->get_spawn_point()[0].z())
-				));
+				mine.spawn(mapparts->get_spawn_point()[0], MATRIX_ref::RotY(atan2f(mapparts->get_spawn_point()[0].x(), mapparts->get_spawn_point()[0].z())));
 				//その他
 				for (int i = 1; i < mapparts->get_spawn_point().size(); i++) {
 					chara[i].set(this->gun_data, sel_g, this->body_obj, this->body_col);
-					chara[i].spawn(mapparts->get_spawn_point()[i], MATRIX_ref::RotY(
-						atan2f(mapparts->get_spawn_point()[i].x(), mapparts->get_spawn_point()[i].z())
-					));
+					chara[i].spawn(mapparts->get_spawn_point()[i], MATRIX_ref::RotY(atan2f(mapparts->get_spawn_point()[i].x(), mapparts->get_spawn_point()[i].z())));
 				}
 			}
 			//ライティング
@@ -212,7 +201,7 @@ public:
 				camera_TPS.fov = deg2rad(fov_pc);
 				camera_TPS.near_ = 0.1f;
 				camera_TPS.far_ = 100.f;
-
+				//ルール
 				ruleparts->set();
 				//
 				while (ProcessMessage() == 0) {
@@ -330,29 +319,27 @@ public:
 						}
 						//プレイヤー操作
 						{
-							//cpu
-							for (auto& c : chara) {
-								if (&c - &chara[0] >= (Drawparts->use_vr ? 1 : 1)) {
-									c.operation_NPC(mapparts, chara, !ruleparts->getstart() || ruleparts->getend());
-									c.operation_3();
-								}
-							}
 							//chara
 							if (Drawparts->use_vr) {
 								mine.operation_VR(Drawparts, !ruleparts->getstart() || ruleparts->getend(), &oldv_1_1);
-								mine.operation_3();
 								//2P
 								/*
 								{
 									auto& ct = chara[1];
 									ct.operation(!ruleparts->getstart() || ruleparts->getend());
-									ct.operation_3();
 								}
 								//*/
 							}
 							else {
 								mine.operation(!ruleparts->getstart() || ruleparts->getend());
-								mine.operation_3();
+							}
+							for (auto& c : chara) {
+								//cpu
+								if (&c - &chara[0] >= (Drawparts->use_vr ? 1 : 1)) {
+									c.operation_NPC(mapparts, chara, !ruleparts->getstart() || ruleparts->getend());
+								}
+								//common
+								c.operation_2();
 							}
 						}
 						//
@@ -1231,17 +1218,10 @@ public:
 								camera_main.camup = cc.mat.yvec();
 							}
 							else {
-								if (cc.death_timer <= 2.5f) {
-									easing_set(&camera_main.camvec, chara[cc.death_id].pos + chara[cc.death_id].pos_HMD - chara[cc.death_id].rec_HMD, 0.9f);
-									auto rad = atan2f((camera_main.camvec - camera_main.campos).x(), (camera_main.camvec - camera_main.campos).z());
-									easing_set(&camera_main.campos, cc.pos + cc.pos_HMD - cc.rec_HMD + VGet(-5.f*sin(rad), 2.f, -5.f*cos(rad)), 0.9f);
-									camera_main.camup = VGet(0, 1.f, 0);
-								}
-								else {
-									camera_main.campos = (cc.pos + cc.pos_HMD - cc.rec_HMD) + cc.mat.zvec()*5.f;
-									camera_main.camvec = cc.pos + cc.pos_HMD - cc.rec_HMD;
-									camera_main.camup = cc.mat.yvec();
-								}
+								easing_set(&camera_main.camvec, chara[cc.death_id].pos + chara[cc.death_id].pos_HMD - chara[cc.death_id].rec_HMD, 0.9f);
+								auto rad = atan2f((camera_main.camvec - camera_main.campos).x(), (camera_main.camvec - camera_main.campos).z());
+								easing_set(&camera_main.campos, cc.pos + cc.pos_HMD - cc.rec_HMD + VGet(-5.f*sin(rad), 2.f, -5.f*cos(rad)), 0.9f);
+								camera_main.camup = VGet(0, 1.f, 0);
 								mapparts->map_col_nearest(camera_main.camvec, &camera_main.campos);
 							}
 						}
@@ -1341,7 +1321,7 @@ public:
 									for (auto& c : this->chara) { c.Draw_chara(); }
 									for (auto& g : this->item) { g.Draw_item(); }
 								},
-									VGet(5.f, 2.5f, 5.f),
+									VGet(2.f, 2.5f, 2.f),
 									VGet(5.f, 2.5f, 5.f)
 									);
 								//書き込み
@@ -1435,7 +1415,7 @@ public:
 									for (auto& c : this->chara) { c.Draw_chara(); }
 									for (auto& g : this->item) { g.Draw_item(); }
 								},
-									VGet(5.f, 2.5f, 5.f),
+									VGet(2.f, 2.5f, 2.f),
 									VGet(5.f, 2.5f, 5.f)
 									);
 								//書き込み
@@ -1498,6 +1478,10 @@ public:
 					c.Delete_chara();
 				}
 				chara.clear();
+				for (auto& c : item) {
+					c.Delete_item();
+				}
+				item.clear();
 				mapparts->Delete_map();
 				Drawparts->Delete_Shadow();
 			}
