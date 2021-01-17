@@ -326,8 +326,7 @@ public:
 		loadmasks = true;
 	}
 
-	template<class Y, class D>
-	void set(std::vector<Chara>&chara, Mainclass::Chara& cc,std::unique_ptr<Y, D>& mapparts) {
+	void set(std::vector<Chara>&chara, Mainclass::Chara& cc,std::unique_ptr<Mapclass, std::default_delete<Mapclass>>& mapparts) {
 		UI_minimap.SetDraw_Screen(true);
 		{
 			DrawBox(0, 0, x_size, y_size, GetColor(0, 128, 0), TRUE);
@@ -335,7 +334,7 @@ public:
 			int yp = y_size / 2;
 			float radp = 0.f;
 			{
-				easing_set(&xcam, 1.f + (cc.add_pos_buf2.size() / ((cc.running ? 6.f : ((cc.ads.first ? 2.f : 4.f)*(cc.squat.first ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
+				easing_set(&xcam, 1.f + (cc.add_vec_real.size() / ((cc.running ? 6.f : ((cc.ads.first ? 2.f : 4.f)*(cc.squat.first ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
 
 				auto t = cc.body.GetMatrix().pos();
 				VECTOR_ref vec_z = cc.body.GetFrameLocalWorldMatrix(cc.frame_s.head_f.first).zvec()*-1.f;

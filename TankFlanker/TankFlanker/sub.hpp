@@ -1,6 +1,4 @@
 #pragma once
-
-
 #define FRAME_RATE 90.f
 //
 enum Effect {
@@ -167,6 +165,10 @@ public:
 	private:
 	public:
 		bool hit{ false };
+		float hit_count = 0.f;
+		float hit_r = 0.f;
+		int hit_x = 0, hit_y = 0;
+
 		bool flug{ false };
 		float cnt = 0.f;
 		unsigned int color = 0;
@@ -199,6 +201,7 @@ public:
 					auto p = mapparts->map_col_line(this->repos, this->pos);
 					if (p.HitFlag) {
 						this->pos = p.HitPosition;
+						this->hit = true;
 					}
 					//*
 					for (auto& tgt : *chara) {
@@ -490,7 +493,6 @@ public:
 			this->mod.set();
 		}
 	};
-	/**/
 public:
 	//player
 	class Chara {
@@ -502,9 +504,9 @@ public:
 			size_t ammo_in = 0;
 		};
 		struct gun_state {//銃のデータ
-			size_t ammo_cnt = 0;		//装弾数カウント
-			size_t ammo_total = 0;		//所持弾数
-			std::vector<size_t> mag_in;	//マガジン内
+			size_t ammo_cnt = 0;		//現在の装弾数カウント
+			size_t ammo_total = 0;		//総所持弾数
+			std::vector<size_t> mag_in;	//マガジン内データ
 			uint8_t select = 0;			//セレクター
 
 			void init() {
@@ -520,7 +522,6 @@ public:
 			//マガジンを1つ追加(装填あり)
 			void mag_insert(Mags* magazine) {
 				mag_plus(magazine);
-
 				if (this->mag_in.size() >= 1) {
 					this->ammo_cnt = this->mag_in.front();//改良
 				}
@@ -549,7 +550,7 @@ public:
 					this->mag_in.front()--;
 				}
 			}
-			//スライドを引いて1発装填
+			//スライドを引いて装填
 			void mag_slide() {
 				if (this->ammo_cnt <= 1) {
 					this->ammo_cnt += this->mag_in.front();
@@ -718,15 +719,32 @@ public:
 		/*確保する弾*/
 		std::array<Ammos, 64> bullet;
 		size_t use_bullet = 0;
-		//所持弾数などのデータ
-		std::vector<gun_state> gun_stat;
-		/*武器ポインタ*/
+		/*武器データ*/
+		std::vector<gun_state> gun_stat;		//所持弾数などのデータ
 		Guns* gun_ptr = nullptr;				//現在使用中の武装
-		/*モデル、音声*/
+		/*音声*/
 		Audios audio;
+		/*モデル*/
 		MV1 obj_gun, obj_mag;
 		MV1 body, col;
-		/**/
+		/*anime*/
+		//脚
+		MV1::ani* anime_walk;
+		MV1::ani* anime_swalk;
+		MV1::ani* anime_run;
+		//脚ポーズ
+		MV1::ani* anime_sit;
+		//死
+		MV1::ani* anime_die_1;
+		//リロード
+		MV1::ani* anime_reload;
+		//腕
+		MV1::ani* anime_arm_run;
+		//手
+		MV1::ani* anime_hand_nomal;//基本手
+		MV1::ani* anime_hand_trigger;//引き金
+		MV1::ani* anime_hand_trigger_pull;//引き金引く
+		/*プレイヤー操作*/
 		float reload_cnt = 0.f;//リロード開始までのカウント
 		switchs trigger;//トリガー
 		bool gunf = false;//射撃フラグ
@@ -740,9 +758,9 @@ public:
 		MATRIX_ref mat;				//位置
 		VECTOR_ref spawn_pos;		//spawn
 		MATRIX_ref spawn_mat;		//spawn
-		VECTOR_ref add_pos;			//移動
-		VECTOR_ref add_pos_buf;		//移動
-		VECTOR_ref add_pos_buf2;	//移動
+		VECTOR_ref add_vec;			//移動ベクトル
+		VECTOR_ref add_vec_buf;		//移動ベクトルバッファ
+		VECTOR_ref add_vec_real;	//実際の移動ベクトル
 		float xrad_p = 0.f;			//マウスエイム用変数確保
 		switchs ads, squat;
 		bool wkey = false;
@@ -843,6 +861,23 @@ public:
 			this->gun_ptr = &gun_data[itr];
 			//身体
 			body_.DuplicateonAnime(&this->body);
+			//
+			anime_walk = &body.get_anime(1);
+			anime_swalk = &body.get_anime(8);
+			anime_run = &body.get_anime(2);
+			//
+			anime_sit = &body.get_anime(7);
+			//
+			anime_die_1 = &body.get_anime(4);
+			//
+			anime_reload = &body.get_anime(3);
+			//
+			anime_arm_run = &body.get_anime(6);
+			//
+			anime_hand_nomal = &body.get_anime(0);
+			anime_hand_trigger = &body.get_anime(9);
+			anime_hand_trigger_pull = &body.get_anime(5);
+			//
 			frame_s.get_frame(this->body, &this->head_hight);
 			col_.DuplicateonAnime(&this->col);
 			colframe_.get_frame(this->col,&this->head_hight2);
@@ -856,9 +891,7 @@ public:
 
 			//マガジン
 			this->gun_stat.resize(gun_data.size());
-			for (auto& s : this->gun_stat) {
-				s.init();
-			}
+			std::for_each(this->gun_stat.begin(), this->gun_stat.end(), [](gun_state& i) {i.init(); });
 
 			this->gunf = false;
 			this->vecadd_RIGHTHAND = VGet(0, 0, 1.f);
@@ -867,7 +900,7 @@ public:
 			this->down_mag = true;
 			this->selkey.ready(false);
 			for (auto& a : this->obj_gun.get_anime()) {
-				a.per = 0.f;
+				a.reset();
 			}
 			for (auto& a : this->bullet) {
 				a.ready();
@@ -891,9 +924,11 @@ public:
 			this->ai_time_e = 0.f;
 
 			this->xrad_p = 0;
+
 			this->spawn_pos = pos_;
-			this->pos = this->spawn_pos;
 			this->spawn_mat = mat_H;
+
+			this->pos = this->spawn_pos;
 			this->mat = this->spawn_mat;
 
 			this->ads.ready(false);
@@ -901,7 +936,7 @@ public:
 			this->squat.ready(false);
 
 			this->add_ypos = 0.f;
-			this->add_pos_buf.clear();
+			this->add_vec_buf.clear();
 			this->start_b = true;
 
 			this->HP = this->HP_full;
@@ -913,22 +948,20 @@ public:
 			this->kill_time = 0.f;
 
 			this->gun_stat[this->gun_ptr->id].init();
-			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
-			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
-			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1
+			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//マガジン+1(装填あり)
+			this->gun_stat[this->gun_ptr->id].mag_plus(this->gun_ptr->magazine);			//マガジン+1(装填無し)
+			this->gun_stat[this->gun_ptr->id].mag_plus(this->gun_ptr->magazine);			//マガジン+1(装填無し)
 
 			this->body_xrad = 0.f;//胴体角度
 			this->body_yrad = 0.f;//胴体角度
 			this->body_zrad = 0.f;//胴体角度
-			for (auto& w : this->wayp_pre) {
-				w = 0;
-			}
-			this->obj_gun.get_anime(0).per = 0.f;
-			this->obj_gun.get_anime(1).per = 0.f;
-			this->obj_gun.get_anime(2).per = 0.f;
-			this->obj_gun.get_anime(3).per = 0.f;
-			this->obj_gun.get_anime(4).per = 0.f;
-			this->obj_gun.get_anime(5).per = 0.f;
+			std::for_each(this->wayp_pre.begin(), this->wayp_pre.end(), [](int& i) {i = 0; });
+			this->obj_gun.get_anime(0).reset();
+			this->obj_gun.get_anime(1).reset();
+			this->obj_gun.get_anime(2).reset();
+			this->obj_gun.get_anime(3).reset();
+			this->obj_gun.get_anime(4).reset();
+			this->obj_gun.get_anime(5).reset();
 		}
 
 		void start() {
@@ -1003,8 +1036,6 @@ public:
 		}
 
 		void operation_2_1(const bool& cannotmove, int32_t x_m, int32_t y_m) {
-			const auto fps_ = GetFPS();
-
 			if (this->running) {
 				this->squat.first = false;
 			}
@@ -1034,9 +1065,9 @@ public:
 				this->mat *= MATRIX_ref::RotAxis(this->mat.zvec(), this->body_zrad);
 				//
 				this->mat = MATRIX_ref::RotX(-this->xrad_p)*this->mat;
-				this->xrad_p = std::clamp(this->xrad_p - deg2rad(std::clamp(y_m, -120, 120))*0.1f, deg2rad(-80), deg2rad(60));
-				this->mat *= MATRIX_ref::RotY(deg2rad(std::clamp(x_m, -120, 120))*0.1f);
-				this->mat = MATRIX_ref::RotX(this->xrad_p)*this->mat;
+				this->xrad_p = std::clamp(this->xrad_p - deg2rad(y_m)*0.1f, deg2rad(-80), deg2rad(60));
+				this->mat *= MATRIX_ref::RotY(deg2rad(x_m)*0.1f);//y軸回転
+				this->mat = MATRIX_ref::RotX(this->xrad_p)*this->mat;//x軸回転
 			}
 
 			if (cannotmove || this->HP == 0) {
@@ -1046,7 +1077,7 @@ public:
 				this->dkey = false;
 				this->shoot = false;
 				this->running = false;
-				this->squat.get_in(false);
+				this->squat.first = false;
 				this->qkey = false;
 				this->ekey = false;
 				this->aim = false;
@@ -1058,7 +1089,7 @@ public:
 				this->jamp = false;
 			}
 
-			this->speed = (this->running ? 6.f : ((this->ads.first ? 2.f : 4.f)*(this->squat.first ? 0.4f : 1.f))) / fps_;
+			this->speed = (this->running ? 6.f : ((this->ads.first ? 2.f : 4.f)*(this->squat.first ? 0.4f : 1.f))) / GetFPS();
 			VECTOR_ref zv_t = this->mat.zvec();
 			zv_t.y(0.f);
 			zv_t = zv_t.Norm();
@@ -1067,7 +1098,7 @@ public:
 			xv_t.y(0.f);
 			xv_t = xv_t.Norm();
 
-			easing_set(&this->add_pos_buf,
+			easing_set(&this->add_vec_buf,
 				VECTOR_ref(VGet(0, 0, 0))
 				+ (this->wkey ? (zv_t*-this->speed) : VGet(0, 0, 0))
 				+ (this->skey ? (zv_t*this->speed) : VGet(0, 0, 0))
@@ -1078,7 +1109,6 @@ public:
 
 
 		void operation_VR(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& Drawparts, const bool& cannotmove, bool* oldv_1_1) {
-			const auto fps_ = GetFPS();
 			//操作
 			{
 				this->aim = false;
@@ -1114,18 +1144,18 @@ public:
 							this->jamp = (ptr_.on[0] & BUTTON_SIDE) != 0;
 							//移動
 							if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
-								this->speed = (this->running ? 6.f : 4.f) / fps_;
+								this->speed = (this->running ? 6.f : 4.f) / GetFPS();
 
 								if (Drawparts->tracker_num.size() > 0) {
 									auto p = this->body.GetFrameLocalWorldMatrix(this->frame_s.bodyb_f.first);
-									easing_set(&this->add_pos_buf, (p.zvec()*-ptr_.touch.y() + p.xvec()*-ptr_.touch.x())*this->speed, 0.95f);
+									easing_set(&this->add_vec_buf, (p.zvec()*-ptr_.touch.y() + p.xvec()*-ptr_.touch.x())*this->speed, 0.95f);
 								}
 								else {
-									easing_set(&this->add_pos_buf, (this->mat.zvec()*ptr_.touch.y() + this->mat.xvec()*ptr_.touch.x())*this->speed, 0.95f);
+									easing_set(&this->add_vec_buf, (this->mat.zvec()*ptr_.touch.y() + this->mat.xvec()*ptr_.touch.x())*this->speed, 0.95f);
 								}
 							}
 							else {
-								easing_set(&this->add_pos_buf, VGet(0, 0, 0), 0.95f);
+								easing_set(&this->add_vec_buf, VGet(0, 0, 0), 0.95f);
 							}
 						}
 					}
@@ -1147,7 +1177,6 @@ public:
 
 
 		void operation(const bool& cannotmove) {
-			const auto fps_ = GetFPS();
 			//HMD_mat
 			int32_t x_m = 0, y_m = 0;
 			if (this->HP != 0) {
@@ -1176,6 +1205,8 @@ public:
 				SetMouseDispFlag(FALSE);
 			}
 			//
+			x_m = std::clamp(x_m, -120, 120);
+			y_m = std::clamp(y_m, -120, 120);
 			operation_2_1(cannotmove, x_m, y_m);
 		}
 		template<class Y3, class D3>
@@ -1246,7 +1277,7 @@ public:
 					if (this->reloadf) {
 						this->ai_phase = 2;
 					}
-					if ((ai_p_old == 1 && this->ai_phase != 1) || (this->add_pos_buf2.size() <= this->add_pos.size()*0.8f)) {
+					if ((ai_p_old == 1 && this->ai_phase != 1) || (this->add_vec_real.size() <= this->add_vec.size()*0.8f)) {
 						int now = -1;
 						auto poss = this->body.GetMatrix().pos();
 						auto tmp = VECTOR_ref(VGet(0, 100.f, 0));
@@ -1286,7 +1317,6 @@ public:
 						this->akey = false;
 						this->dkey = false;
 						this->squat.first = false;
-
 						this->qkey = false;
 						this->ekey = false;
 						this->ai_time_shoot = 0.f;
@@ -1447,7 +1477,6 @@ public:
 						this->dkey = false;
 						this->running = true;
 						this->squat.first = false;
-
 						this->qkey = false;
 						this->ekey = false;
 
@@ -1500,6 +1529,8 @@ public:
 					}
 				}
 			}
+			x_m = std::clamp(x_m, -120, 120);
+			y_m = std::clamp(y_m, -120, 120);
 			operation_2_1(cannotmove, x_m, y_m);
 		}
 		void operation_2() {
@@ -1509,10 +1540,10 @@ public:
 					if (this->jamp && this->HP != 0) {
 						this->add_ypos = 0.06f*FRAME_RATE / GetFPS();
 					}
-					this->add_pos = this->add_pos_buf;
+					this->add_vec = this->add_vec_buf;
 				}
 				else {
-					easing_set(&this->add_pos, VGet(0, 0, 0), 0.995f);
+					easing_set(&this->add_vec, VGet(0, 0, 0), 0.995f);
 				}
 			}
 			//操作

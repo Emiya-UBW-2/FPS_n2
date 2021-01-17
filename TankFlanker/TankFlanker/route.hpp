@@ -223,22 +223,19 @@ public:
 							for (auto& c : chara) {
 								easing_set(&c.HP_r, float(c.HP), 0.95f);
 								if (c.HP == 0) {
-									easing_set(&c.body.get_anime(0).per, 0.f, 0.9f);
-									easing_set(&c.body.get_anime(1).per, 0.f, 0.9f);
-									easing_set(&c.body.get_anime(2).per, 0.f, 0.9f);
-									easing_set(&c.body.get_anime(3).per, 0.f, 0.9f);
-									easing_set(&c.body.get_anime(5).per, 0.f, 0.9f);
-									easing_set(&c.body.get_anime(6).per, 0.f, 0.9f);
-									easing_set(&c.body.get_anime(7).per, 0.f, 0.9f);
-									easing_set(&c.body.get_anime(8).per, 0.f, 0.9f);
-									easing_set(&c.body.get_anime(9).per, 0.f, 0.9f);
+									easing_set(&c.anime_hand_nomal->per, 0.f, 0.9f);
+									easing_set(&c.anime_walk->per, 0.f, 0.9f);
+									easing_set(&c.anime_run->per, 0.f, 0.9f);
+									easing_set(&c.anime_reload->per, 0.f, 0.9f);
+									easing_set(&c.anime_hand_trigger_pull->per, 0.f, 0.9f);
+									easing_set(&c.anime_arm_run->per, 0.f, 0.9f);
+									easing_set(&c.anime_sit->per, 0.f, 0.9f);
+									easing_set(&c.anime_swalk->per, 0.f, 0.9f);
+									easing_set(&c.anime_hand_trigger->per, 0.f, 0.9f);
 
-									easing_set(&c.body.get_anime(4).per, 1.f, 0.9f);
+									easing_set(&c.anime_die_1->per, 1.f, 0.9f);
+									c.anime_die_1->update(false, 1.f);
 
-									c.body.get_anime(4).time += 30.f / fps_;
-									if (c.body.get_anime(4).time >= c.body.get_anime(4).alltime) {
-										c.body.get_anime(4).time = c.body.get_anime(4).alltime;
-									}
 									if (c.death_timer == 0.f) {
 										c.body.frame_reset(c.frame_s.bodyg_f.first);
 										c.body.frame_reset(c.frame_s.bodyb_f.first);
@@ -300,8 +297,7 @@ public:
 									c.death_timer += 1.f / fps_;
 									if (c.death_timer >= 5.f) {
 										c.death_timer = 0.f;
-										c.body.get_anime(4).per = 0.f;
-										c.body.get_anime(4).time = 0.f;
+										c.anime_die_1->reset();
 										c.spawn(c.spawn_pos, c.spawn_mat);
 										c.reset_waypoint(mapparts);
 									}
@@ -344,331 +340,57 @@ public:
 						}
 						//
 						for (auto& c : chara) {
-							//•Ç‚»‚Ì‘¼‚Ì”»’è
+							//”»’è
 							{
-								//VR—p
+								//•Ç‚»‚Ì‘¼‚Ì”»’è
 								{
-									VECTOR_ref pos_t2 = (c.pos + (VGet(c.pos_HMD_old.x(), 0.f, c.pos_HMD_old.z())) - c.rec_HMD);
-									VECTOR_ref pos_t = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
-									//•Ç
-									mapparts->map_col_wall(pos_t2, &pos_t);
-									c.pos = pos_t - (VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
-								}
-								//‹¤’Ê
-								{
-									VECTOR_ref pos_t2 = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
-									VECTOR_ref pos_t = pos_t2 + c.add_pos;
-									//•Ç
-									mapparts->map_col_wall(pos_t2, &pos_t);
-									//—Ž‰º
+									//VR—p
 									{
-										auto pp = mapparts->map_col_line(pos_t + VGet(0, 1.8f, 0), pos_t);
-										if (c.add_ypos <= 0.f && pp.HitFlag) {
-											pos_t = pp.HitPosition;
-											c.add_ypos = 0.f;
-										}
-										else {
-											pos_t.yadd(c.add_ypos);
-											c.add_ypos += M_GR / std::powf(fps_, 2.f);
-											//•œ‹A
-											if (pos_t.y() <= -5.f) {
-												pos_t = c.spawn_pos;
-												if (!Drawparts->use_vr && (&c == &mine)) {
-													c.xrad_p = 0;
+										VECTOR_ref pos_t2 = (c.pos + (VGet(c.pos_HMD_old.x(), 0.f, c.pos_HMD_old.z())) - c.rec_HMD);
+										VECTOR_ref pos_t = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
+										//•Ç
+										mapparts->map_col_wall(pos_t2, &pos_t);
+										c.pos = pos_t - (VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
+									}
+									//‹¤’Ê
+									{
+										VECTOR_ref pos_t2 = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
+										VECTOR_ref pos_t = pos_t2 + c.add_vec;
+										//•Ç
+										mapparts->map_col_wall(pos_t2, &pos_t);
+										//—Ž‰º
+										{
+											auto pp = mapparts->map_col_line(pos_t + VGet(0, 1.8f, 0), pos_t);
+											if (c.add_ypos <= 0.f && pp.HitFlag) {
+												pos_t = pp.HitPosition;
+												c.add_ypos = 0.f;
+											}
+											else {
+												pos_t.yadd(c.add_ypos);
+												c.add_ypos += M_GR / std::powf(fps_, 2.f);
+												//•œ‹A
+												if (pos_t.y() <= -5.f) {
+													pos_t = c.spawn_pos;
+													if (!Drawparts->use_vr && (&c == &mine)) {
+														c.xrad_p = 0;
+													}
+													c.spawn(pos_t, c.spawn_mat);
+													c.reset_waypoint(mapparts);
 												}
-												c.spawn(pos_t, c.spawn_mat);
-												c.reset_waypoint(mapparts);
 											}
 										}
-									}
-									//”½‰f
-									c.pos = pos_t - (VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
-									c.add_pos_buf2 = pos_t - pos_t2;
-								}
-							}
-							//pos
-							if (Drawparts->use_vr && (&c == &mine)) {
-								{
-									VECTOR_ref v_ = c.mat.zvec();
-									if (Drawparts->tracker_num.size() > 0) {
-										v_ = c.mat_WAIST.zvec();
-									}
-									float x_1 = -sinf(c.body_yrad);
-									float y_1 = cosf(c.body_yrad);
-									float x_2 = v_.x();
-									float y_2 = -v_.z();
-									float r_ = std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
-									c.body_yrad += r_ * FRAME_RATE / fps_ / 10.f;
-								}
-								//g‘Ì,“ª•”,˜
-								MATRIX_ref m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
-								{
-									c.body.SetMatrix(m_inv);
-									if (Drawparts->tracker_num.size() > 0) {
-										//˜
-										c.body.SetFrameLocalMatrix(c.frame_s.bodyb_f.first, (c.mat_WAIST*m_inv.Inverse())*MATRIX_ref::Mtrans(c.frame_s.bodyb_f.second));
-										//“ª•”
-										c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, (MATRIX_ref::Axis1(c.mat.xvec()*-1.f, c.mat.yvec(), c.mat.zvec()*-1.f) *m_inv.Inverse()*(c.mat_WAIST*m_inv.Inverse()).Inverse())
-											*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
-									}
-									else {
-										//“ª•”
-										c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, (MATRIX_ref::Axis1(c.mat.xvec()*-1.f, c.mat.yvec(), c.mat.zvec()*-1.f) *m_inv.Inverse())
-											*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
-									}
-									c.body.SetMatrix(m_inv *MATRIX_ref::Mtrans((c.pos + c.pos_HMD - c.rec_HMD) - (c.body.frame(c.frame_s.RIGHTeye_f.first) + (c.body.frame(c.frame_s.LEFTeye_f.first) - c.body.frame(c.frame_s.RIGHTeye_f.first))*0.5f)));
-								}
-								//‘«
-								{
-									//¶
-									if (Drawparts->tracker_num.size() > 1) {
-										auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[1]];
-										Drawparts->GetDevicePositionVR(Drawparts->tracker_num[1], &mine.pos_LEFTREG, &mine.mat_LEFTREG);
-										c.mat_LEFTREG = MATRIX_ref::Axis1(c.mat_LEFTREG.xvec()*-1.f, c.mat_LEFTREG.yvec(), c.mat_LEFTREG.zvec()*-1.f);
-										if ((mine.start_c || (ptr_.turn && ptr_.now) != oldv_2_1) && oldv_2_2) {
-											mine.mat_LEFTREG_rep = mine.mat_LEFTREG;
-											if (!mine.start_c) {
-												//oldv_2_2 = false;
-											}
-										}
-										oldv_2_1 = ptr_.turn && ptr_.now;
-										mine.mat_LEFTREG =
-											MATRIX_ref::RotY(deg2rad(90 + 60 - 10))*
-											mine.mat_LEFTREG_rep.Inverse()*mine.mat_LEFTREG;
-										mine.pos_LEFTREG = mine.pos_LEFTREG + (mine.pos - mine.rec_HMD);
-										{
-											//Šî€
-											VECTOR_ref tgt_pt = c.pos_LEFTREG;
-											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.LEFTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											//VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0‚Æ‚·‚é
-
-											VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
-
-											float cos_t = getcos_tri((c.body.frame(c.frame_s.LEFTreg_f.first) - c.body.frame(c.frame_s.LEFTfoot2_f.first)).size(), (c.body.frame(c.frame_s.LEFTfoot2_f.first) - c.body.frame(c.frame_s.LEFTfoot1_f.first)).size(), (c.body.frame(c.frame_s.LEFTfoot1_f.first) - tgt_pt).size());
-											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
-											//ã˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTfoot1_f.second));
-											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTfoot2_f.first) - c.body.frame(c.frame_s.LEFTfoot1_f.first), m_inv.Inverse()), vec_t);
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTfoot1_f.second));
-
-											//‰º˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTfoot2_f.second));
-											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTreg_f.first) - c.body.frame(c.frame_s.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTfoot2_f.second));
-											//Žè
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTreg_f.first, c.mat_LEFTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFTreg_f.second));
-										}
-
-										{
-											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_s.LEFTreg2_f.first) + VGet(0, 1.8f, 0), mine.body.frame(mine.frame_s.LEFTreg2_f.first));
-											if (pp.HitFlag) {
-												mine.pos_LEFTREG = VECTOR_ref(pp.HitPosition) - (mine.body.frame(mine.frame_s.LEFTreg2_f.first) - mine.body.frame(mine.frame_s.LEFTreg_f.first));
-											}
-										}
-
-										{
-											//Šî€
-											VECTOR_ref tgt_pt = c.pos_LEFTREG;
-											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.LEFTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											//VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0‚Æ‚·‚é
-
-											VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
-
-											float cos_t = getcos_tri((c.body.frame(c.frame_s.LEFTreg_f.first) - c.body.frame(c.frame_s.LEFTfoot2_f.first)).size(), (c.body.frame(c.frame_s.LEFTfoot2_f.first) - c.body.frame(c.frame_s.LEFTfoot1_f.first)).size(), (c.body.frame(c.frame_s.LEFTfoot1_f.first) - tgt_pt).size());
-											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
-											//ã˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTfoot1_f.second));
-											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTfoot2_f.first) - c.body.frame(c.frame_s.LEFTfoot1_f.first), m_inv.Inverse()), vec_t);
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTfoot1_f.second));
-
-											//‰º˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTfoot2_f.second));
-											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTreg_f.first) - c.body.frame(c.frame_s.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTfoot2_f.second));
-											//Žè
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTreg_f.first, c.mat_LEFTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFTreg_f.second));
-										}
-									}
-									//‰E
-									if (Drawparts->tracker_num.size() > 2) {
-										auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[2]];
-										Drawparts->GetDevicePositionVR(Drawparts->tracker_num[2], &mine.pos_RIGHTREG, &mine.mat_RIGHTREG);
-										c.mat_RIGHTREG = MATRIX_ref::Axis1(c.mat_RIGHTREG.xvec()*-1.f, c.mat_RIGHTREG.yvec(), c.mat_RIGHTREG.zvec()*-1.f);
-										if ((mine.start_c || (ptr_.turn && ptr_.now) != oldv_3_1) && oldv_3_2) {
-											mine.mat_RIGHTREG_rep = mine.mat_RIGHTREG;
-											if (!mine.start_c) {
-												//oldv_3_2 = false;
-											}
-										}
-										oldv_3_1 = ptr_.turn && ptr_.now;
-										mine.mat_RIGHTREG =
-											MATRIX_ref::RotY(deg2rad(180 - 22 - 10))*
-											mine.mat_RIGHTREG_rep.Inverse()*mine.mat_RIGHTREG;
-										mine.pos_RIGHTREG = mine.pos_RIGHTREG + (mine.pos - mine.rec_HMD);
-										{
-											//Šî€
-											VECTOR_ref tgt_pt = c.pos_RIGHTREG;
-											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											//VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0‚Æ‚·‚é
-
-
-											VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
-
-											float cos_t = getcos_tri((c.body.frame(c.frame_s.RIGHTreg_f.first) - c.body.frame(c.frame_s.RIGHTfoot2_f.first)).size(), (c.body.frame(c.frame_s.RIGHTfoot2_f.first) - c.body.frame(c.frame_s.RIGHTfoot1_f.first)).size(), (c.body.frame(c.frame_s.RIGHTfoot1_f.first) - tgt_pt).size());
-											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
-											//ã˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot1_f.second));
-											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTfoot2_f.first) - c.body.frame(c.frame_s.RIGHTfoot1_f.first), m_inv.Inverse()), vec_t);
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot1_f.second));
-											//‰º˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot2_f.second));
-											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTreg_f.first) - c.body.frame(c.frame_s.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot2_f.second));
-											//Žè
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTreg_f.first, c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHTreg_f.second));
-										}
-
-										{
-											auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_s.RIGHTreg2_f.first) + VGet(0, 1.8f, 0), mine.body.frame(mine.frame_s.RIGHTreg2_f.first));
-											if (pp.HitFlag) {
-												mine.pos_RIGHTREG = VECTOR_ref(pp.HitPosition) - (mine.body.frame(mine.frame_s.RIGHTreg2_f.first) - mine.body.frame(mine.frame_s.RIGHTreg_f.first));
-											}
-										}
-										{
-											//Šî€
-											VECTOR_ref tgt_pt = c.pos_RIGHTREG;
-											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											//VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0‚Æ‚·‚é
-
-											VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
-
-											float cos_t = getcos_tri((c.body.frame(c.frame_s.RIGHTreg_f.first) - c.body.frame(c.frame_s.RIGHTfoot2_f.first)).size(), (c.body.frame(c.frame_s.RIGHTfoot2_f.first) - c.body.frame(c.frame_s.RIGHTfoot1_f.first)).size(), (c.body.frame(c.frame_s.RIGHTfoot1_f.first) - tgt_pt).size());
-											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
-											//ã˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot1_f.second));
-											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTfoot2_f.first) - c.body.frame(c.frame_s.RIGHTfoot1_f.first), m_inv.Inverse()), vec_t);
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot1_f.second));
-											//‰º˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot2_f.second));
-											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTreg_f.first) - c.body.frame(c.frame_s.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot2_f.second));
-											//Žè
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTreg_f.first, c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHTreg_f.second));
-										}
-									}
-
-								}
-								//Žè
-								{
-									c.body.get_anime(3).per = 0.f;
-									c.body.get_anime(3).time = 0.f;
-									//‰EŽè
-									{
-										if (mine.HP == 0) {
-											c.mat_RIGHTHAND;//ƒŠƒRƒCƒ‹
-											c.pos_RIGHTHAND;
-										}
-										else {
-											Drawparts->GetDevicePositionVR(Drawparts->get_hand1_num(), &c.pos_RIGHTHAND, &c.mat_RIGHTHAND);
-											c.pos_RIGHTHAND = c.pos_RIGHTHAND + (c.pos - c.rec_HMD);
-											c.mat_RIGHTHAND = MATRIX_ref::Axis1(c.mat_RIGHTHAND.xvec()*-1.f, c.mat_RIGHTHAND.yvec(), c.mat_RIGHTHAND.zvec()*-1.f);
-											c.mat_RIGHTHAND = c.mat_RIGHTHAND*MATRIX_ref::RotAxis(c.mat_RIGHTHAND.xvec(), deg2rad(-60));
-											c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_RIGHTHAND;//ƒŠƒRƒCƒ‹
-										}
-										//eŠí
-										c.obj_gun.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
-										{
-											//Šî€
-											VECTOR_ref tgt_pt = c.obj_gun.frame(c.gun_ptr->frame_s.right_f.first);
-											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
-											float cos_t = getcos_tri((c.body.frame(c.frame_s.RIGHThand_f.first) - c.body.frame(c.frame_s.RIGHTarm2_f.first)).size(), (c.body.frame(c.frame_s.RIGHTarm2_f.first) - c.body.frame(c.frame_s.RIGHTarm1_f.first)).size(), (c.body.frame(c.frame_s.RIGHTarm1_f.first) - tgt_pt).size());
-											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
-											//ã˜r
-											if (Drawparts->tracker_num.size() > 0) {
-												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, (c.mat_WAIST*m_inv.Inverse()).Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
-											}
-											else {
-												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
-											}
-											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTarm2_f.first) - c.body.frame(c.frame_s.RIGHTarm1_f.first), m_inv.Inverse()), vec_t);
-											if (Drawparts->tracker_num.size() > 0) {
-												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, a1_inv*(c.mat_WAIST*m_inv.Inverse()).Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
-											}
-											else {
-												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
-											}
-											//‰º˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm2_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTarm2_f.second));
-											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHThand_f.first) - c.body.frame(c.frame_s.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm2_f.second));
-											//Žè
-											c.body.SetFrameLocalMatrix(c.frame_s.RIGHThand_f.first,
-												MATRIX_ref::RotY(deg2rad(-10))*
-												MATRIX_ref::RotZ(deg2rad(50))*
-												MATRIX_ref::RotX(deg2rad(90))*
-												c.mat_RIGHTHAND*
-												m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHThand_f.second));
-										}
-										//‰El·‚µŽw
-										c.body.get_anime(0).per = 1.f;
-										c.body.get_anime(5).per = c.obj_gun.get_anime(2).per;
-										c.body.get_anime(9).per = 1.f - c.body.get_anime(5).per;
-									}
-									//¶Žè
-									{
-										Drawparts->GetDevicePositionVR(Drawparts->get_hand2_num(), &c.pos_LEFTHAND, &c.mat_LEFTHAND);
-										c.pos_LEFTHAND = c.pos_LEFTHAND + (c.pos - c.rec_HMD);
-										c.mat_LEFTHAND = MATRIX_ref::Axis1(c.mat_LEFTHAND.xvec()*-1.f, c.mat_LEFTHAND.yvec(), c.mat_LEFTHAND.zvec()*-1.f);
-										c.mat_LEFTHAND = c.mat_LEFTHAND*MATRIX_ref::RotAxis(c.mat_LEFTHAND.xvec(), deg2rad(-60));
-
-										{
-											float dist_ = (c.pos_LEFTHAND - c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first)).size();
-											if (dist_ <= 0.1f && (!c.reloadf || !c.down_mag)) {
-												c.LEFT_hand = true;
-												c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first);
-											}
-											else {
-												c.LEFT_hand = false;
-											}
-										}
-										{
-											//Šî€
-											VECTOR_ref tgt_pt = c.pos_LEFTHAND;
-											VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.LEFTarm1_f.first)).Norm(), m_inv.Inverse());//Šî€
-											VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
-											float cos_t = getcos_tri((c.body.frame(c.frame_s.LEFThand_f.first) - c.body.frame(c.frame_s.LEFTarm2_f.first)).size(), (c.body.frame(c.frame_s.LEFTarm2_f.first) - c.body.frame(c.frame_s.LEFTarm1_f.first)).size(), (c.body.frame(c.frame_s.LEFTarm1_f.first) - tgt_pt).size());
-											VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
-											//ã˜r
-											if (Drawparts->tracker_num.size() > 0) {
-												c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, (c.mat_WAIST*m_inv.Inverse()).Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
-											}
-											else {
-												c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
-											}
-											MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTarm2_f.first) - c.body.frame(c.frame_s.LEFTarm1_f.first), m_inv.Inverse()), vec_t);
-											if (Drawparts->tracker_num.size() > 0) {
-												c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, a1_inv*(c.mat_WAIST*m_inv.Inverse()).Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
-											}
-											else {
-												c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
-											}
-
-											//‰º˜r
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm2_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTarm2_f.second));
-											MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFThand_f.first) - c.body.frame(c.frame_s.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTarm2_f.second));
-											//Žè
-											c.body.SetFrameLocalMatrix(c.frame_s.LEFThand_f.first, MATRIX_ref::RotZ(deg2rad(-60))* MATRIX_ref::RotX(deg2rad(80))* c.mat_LEFTHAND* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFThand_f.second));
-										}
-
+										//”½‰f
+										c.pos = pos_t - (VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
+										c.add_vec_real = pos_t - pos_t2;
 									}
 								}
-							}
-							else {
-								if (c.HP != 0) {
+								//pos
+								if (Drawparts->use_vr && (&c == &mine)) {
 									{
 										VECTOR_ref v_ = c.mat.zvec();
+										if (Drawparts->tracker_num.size() > 0) {
+											v_ = c.mat_WAIST.zvec();
+										}
 										float x_1 = -sinf(c.body_yrad);
 										float y_1 = cosf(c.body_yrad);
 										float x_2 = v_.x();
@@ -676,298 +398,556 @@ public:
 										float r_ = std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
 										c.body_yrad += r_ * FRAME_RATE / fps_ / 10.f;
 									}
+									//g‘Ì,“ª•”,˜
+									MATRIX_ref m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
 									{
-										VECTOR_ref v_ = c.mat.zvec();
-										float x_1 = sinf(c.body_xrad);
-										float y_1 = -cosf(c.body_xrad);
-										float x_2 = -v_.y();
-										float y_2 = -std::hypotf(v_.x(), v_.z());
-										c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
-									}
-								}
-								//g‘Ì
-								MATRIX_ref mg_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
-								MATRIX_ref mb_inv = MATRIX_ref::RotY(deg2rad(15))*MATRIX_ref::RotZ(c.body_zrad);
-								MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(30))*MATRIX_ref::RotZ(c.body_zrad)*MATRIX_ref::RotX(c.body_xrad)*mg_inv;
-								{
-									if (c.reloadf) {
-										mb_inv = MATRIX_ref::RotZ(c.body_zrad)*MGetIdent();
-										m_inv = MATRIX_ref::RotZ(c.body_zrad)* MATRIX_ref::RotX(c.body_xrad)*mg_inv;
-									}
-									//
-									if (c.HP != 0) {
-										c.body.SetMatrix(MATRIX_ref::Mtrans(c.pos - c.rec_HMD));
-										c.body.SetFrameLocalMatrix(c.frame_s.bodyg_f.first, mg_inv*MATRIX_ref::Mtrans(c.frame_s.bodyg_f.second));
-										c.body.SetFrameLocalMatrix(c.frame_s.bodyb_f.first, mb_inv*MATRIX_ref::Mtrans(c.frame_s.bodyb_f.second));
-										c.body.SetFrameLocalMatrix(c.frame_s.body_f.first, m_inv*(mb_inv*mg_inv).Inverse()*MATRIX_ref::Mtrans(c.frame_s.body_f.second));
-									}
-									else {
-										m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
-										c.body.SetMatrix(m_inv*MATRIX_ref::Mtrans(c.pos - c.rec_HMD));
-									}
-								}
-
-								//“ª•”
-								if (c.HP != 0) {
-									c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, c.mat*m_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
-									if (c.reloadf) {
-										c.body.frame_reset(c.frame_s.head_f.first);
-									}
-								}
-								//‘«
-								{
-									auto ratio_t = c.add_pos.size() / c.speed;
-									if (c.HP == 0) {
-									}
-									else {
-										if (c.running) {
-											easing_set(&c.body.get_anime(8).per, 0.f, 0.95f);
-											easing_set(&c.body.get_anime(7).per, 0.f, 0.95f);
-											easing_set(&c.body.get_anime(2).per, 1.f*ratio_t, 0.95f);
-											easing_set(&c.body.get_anime(1).per, 0.f, 0.95f);
-										}
-										else if (c.ads.first) {
-											easing_set(&c.body.get_anime(2).per, 0.f, 0.95f);
-											if (!c.squat.first) {
-												easing_set(&c.body.get_anime(1).per, 0.5f*ratio_t, 0.95f);
-												easing_set(&c.body.get_anime(8).per, 0.f, 0.9f);
-												easing_set(&c.body.get_anime(7).per, 0.f, 0.9f);
-											}
-											else {
-												easing_set(&c.body.get_anime(1).per, 0.f, 0.95f);
-												easing_set(&c.body.get_anime(8).per, 0.5f*ratio_t, 0.9f);
-												easing_set(&c.body.get_anime(7).per, 1.f - 1.f*ratio_t, 0.9f);
-											}
+										c.body.SetMatrix(m_inv);
+										if (Drawparts->tracker_num.size() > 0) {
+											//˜
+											c.body.SetFrameLocalMatrix(c.frame_s.bodyb_f.first, (c.mat_WAIST*m_inv.Inverse())*MATRIX_ref::Mtrans(c.frame_s.bodyb_f.second));
+											//“ª•”
+											c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, (MATRIX_ref::Axis1(c.mat.xvec()*-1.f, c.mat.yvec(), c.mat.zvec()*-1.f) *m_inv.Inverse()*(c.mat_WAIST*m_inv.Inverse()).Inverse())
+												*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
 										}
 										else {
-											easing_set(&c.body.get_anime(2).per, 0.f, 0.95f);
-											if (!c.squat.first) {
-												easing_set(&c.body.get_anime(1).per, 1.f*ratio_t, 0.95f);
-												easing_set(&c.body.get_anime(8).per, 0.f, 0.9f);
-												easing_set(&c.body.get_anime(7).per, 0.f, 0.9f);
-											}
-											else {
-												easing_set(&c.body.get_anime(1).per, 0.f, 0.95f);
-												easing_set(&c.body.get_anime(8).per, 1.f*ratio_t, 0.9f);
-												easing_set(&c.body.get_anime(7).per, 1.f - 1.f*ratio_t, 0.9f);
-											}
-											easing_set(&c.body.get_anime(0).per, 0.f, 0.95f);
+											//“ª•”
+											c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, (MATRIX_ref::Axis1(c.mat.xvec()*-1.f, c.mat.yvec(), c.mat.zvec()*-1.f) *m_inv.Inverse())
+												*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
 										}
-										c.body.get_anime(1).time += 30.f / fps_;
-										if (c.body.get_anime(1).time >= c.body.get_anime(1).alltime) {
-											c.body.get_anime(1).time = 0.f;
-										}
-										c.body.get_anime(2).time += 30.f / fps_;
-										if (c.body.get_anime(2).time >= c.body.get_anime(2).alltime) {
-											c.body.get_anime(2).time = 0.f;
-										}
-										c.body.get_anime(8).time += 30.f / fps_ * ((c.body.get_anime(8).alltime / 30.f) / c.gun_ptr->reload_time);
-										if (c.body.get_anime(8).time >= c.body.get_anime(8).alltime) {
-											c.body.get_anime(8).time = 0.f;
-										}
+										c.body.SetMatrix(m_inv *MATRIX_ref::Mtrans((c.pos + c.pos_HMD - c.rec_HMD) - (c.body.frame(c.frame_s.RIGHTeye_f.first) + (c.body.frame(c.frame_s.LEFTeye_f.first) - c.body.frame(c.frame_s.RIGHTeye_f.first))*0.5f)));
 									}
-								}
-								//Ž‹“_
-								{
-									VECTOR_ref pv = VGet(0, 0, 0);
-									if (c.gun_ptr->frame_s.site_f.first != INT_MAX) {
-										pv = c.gun_ptr->frame_s.site_f.second;
-									}
-									if (c.ads.first) {
-										easing_set(&c.gunpos, VGet(-0.f, 0.f - pv.y() + sin(DX_PI_F*2.f*(c.body.get_anime(1).time / c.body.get_anime(1).alltime))*0.001f*c.body.get_anime(1).per, -0.315f), 0.75f);
-									}
-									else {
-										if (c.running) {
-											easing_set(&c.gunpos, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f);
-										}
-										else {
-											easing_set(&c.gunpos, VGet(-0.1f, -0.05f - pv.y() + sin(DX_PI_F*2.f*(c.body.get_anime(1).time / c.body.get_anime(1).alltime))*0.002f*c.body.get_anime(1).per, -0.335f), 0.75f);
-										}
-									}
-								}
-								//Žè
-								{
-									c.body.frame_reset(c.frame_s.RIGHTarm1_f.first);
-									c.body.frame_reset(c.frame_s.RIGHTarm2_f.first);
-									c.body.frame_reset(c.frame_s.RIGHThand_f.first);
-									c.body.frame_reset(c.frame_s.LEFTarm1_f.first);
-									c.body.frame_reset(c.frame_s.LEFTarm2_f.first);
-									c.body.frame_reset(c.frame_s.LEFThand_f.first);
-
-									if (c.HP != 0) {
-										if (c.running) {
-											if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
-												c.body.get_anime(3).per = 1.f;
-												c.body.get_anime(3).time += 30.f / fps_ * ((c.body.get_anime(3).alltime / 30.f) / c.gun_ptr->reload_time);
-												if (c.body.get_anime(3).time >= c.body.get_anime(3).alltime) {
-													c.body.get_anime(3).time = 0.f;
-												}
-
-												c.body.get_anime(6).per = 0.f;
-												c.body.get_anime(6).time = 0.f;
-											}
-											else {
-												c.body.get_anime(3).per = 0.f;
-												c.body.get_anime(3).time = 0.f;
-
-												c.body.get_anime(6).per = 1.f;
-												c.body.get_anime(6).time += 30.f / fps_;
-												if (c.body.get_anime(6).time >= c.body.get_anime(6).alltime) {
-													c.body.get_anime(6).time = 0.f;
+									//‘«
+									{
+										//¶
+										if (Drawparts->tracker_num.size() > 1) {
+											auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[1]];
+											Drawparts->GetDevicePositionVR(Drawparts->tracker_num[1], &mine.pos_LEFTREG, &mine.mat_LEFTREG);
+											c.mat_LEFTREG = MATRIX_ref::Axis1(c.mat_LEFTREG.xvec()*-1.f, c.mat_LEFTREG.yvec(), c.mat_LEFTREG.zvec()*-1.f);
+											if ((mine.start_c || (ptr_.turn && ptr_.now) != oldv_2_1) && oldv_2_2) {
+												mine.mat_LEFTREG_rep = mine.mat_LEFTREG;
+												if (!mine.start_c) {
+													//oldv_2_2 = false;
 												}
 											}
-										}
-										else {
-											c.body.get_anime(6).per = 0.f;
-											c.body.get_anime(6).time = 0.f;
-											if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
-												c.body.get_anime(3).per = 1.f;
-												c.body.get_anime(3).time += 30.f / fps_ * ((c.body.get_anime(3).alltime / 30.f) / c.gun_ptr->reload_time);
-												if (c.body.get_anime(3).time >= c.body.get_anime(3).alltime) {
-													c.body.get_anime(3).time = 0.f;
+											oldv_2_1 = ptr_.turn && ptr_.now;
+											mine.mat_LEFTREG =
+												MATRIX_ref::RotY(deg2rad(90 + 60 - 10))*
+												mine.mat_LEFTREG_rep.Inverse()*mine.mat_LEFTREG;
+											mine.pos_LEFTREG = mine.pos_LEFTREG + (mine.pos - mine.rec_HMD);
+											{
+												//Šî€
+												VECTOR_ref tgt_pt = c.pos_LEFTREG;
+												VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.LEFTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
+												//VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0‚Æ‚·‚é
+
+												VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
+
+												float cos_t = getcos_tri((c.body.frame(c.frame_s.LEFTreg_f.first) - c.body.frame(c.frame_s.LEFTfoot2_f.first)).size(), (c.body.frame(c.frame_s.LEFTfoot2_f.first) - c.body.frame(c.frame_s.LEFTfoot1_f.first)).size(), (c.body.frame(c.frame_s.LEFTfoot1_f.first) - tgt_pt).size());
+												VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+												//ã˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTfoot1_f.second));
+												MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTfoot2_f.first) - c.body.frame(c.frame_s.LEFTfoot1_f.first), m_inv.Inverse()), vec_t);
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTfoot1_f.second));
+
+												//‰º˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTfoot2_f.second));
+												MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTreg_f.first) - c.body.frame(c.frame_s.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTfoot2_f.second));
+												//Žè
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTreg_f.first, c.mat_LEFTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFTreg_f.second));
+											}
+
+											{
+												auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_s.LEFTreg2_f.first) + VGet(0, 1.8f, 0), mine.body.frame(mine.frame_s.LEFTreg2_f.first));
+												if (pp.HitFlag) {
+													mine.pos_LEFTREG = VECTOR_ref(pp.HitPosition) - (mine.body.frame(mine.frame_s.LEFTreg2_f.first) - mine.body.frame(mine.frame_s.LEFTreg_f.first));
 												}
 											}
+
+											{
+												//Šî€
+												VECTOR_ref tgt_pt = c.pos_LEFTREG;
+												VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.LEFTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
+												//VECTOR_ref vec_a1L1 = (mine.mat_LEFTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0‚Æ‚·‚é
+
+												VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
+
+												float cos_t = getcos_tri((c.body.frame(c.frame_s.LEFTreg_f.first) - c.body.frame(c.frame_s.LEFTfoot2_f.first)).size(), (c.body.frame(c.frame_s.LEFTfoot2_f.first) - c.body.frame(c.frame_s.LEFTfoot1_f.first)).size(), (c.body.frame(c.frame_s.LEFTfoot1_f.first) - tgt_pt).size());
+												VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+												//ã˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTfoot1_f.second));
+												MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTfoot2_f.first) - c.body.frame(c.frame_s.LEFTfoot1_f.first), m_inv.Inverse()), vec_t);
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTfoot1_f.second));
+
+												//‰º˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTfoot2_f.second));
+												MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTreg_f.first) - c.body.frame(c.frame_s.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.LEFTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTfoot2_f.second));
+												//Žè
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTreg_f.first, c.mat_LEFTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFTreg_f.second));
+											}
+										}
+										//‰E
+										if (Drawparts->tracker_num.size() > 2) {
+											auto& ptr_ = (*Drawparts->get_device())[Drawparts->tracker_num[2]];
+											Drawparts->GetDevicePositionVR(Drawparts->tracker_num[2], &mine.pos_RIGHTREG, &mine.mat_RIGHTREG);
+											c.mat_RIGHTREG = MATRIX_ref::Axis1(c.mat_RIGHTREG.xvec()*-1.f, c.mat_RIGHTREG.yvec(), c.mat_RIGHTREG.zvec()*-1.f);
+											if ((mine.start_c || (ptr_.turn && ptr_.now) != oldv_3_1) && oldv_3_2) {
+												mine.mat_RIGHTREG_rep = mine.mat_RIGHTREG;
+												if (!mine.start_c) {
+													//oldv_3_2 = false;
+												}
+											}
+											oldv_3_1 = ptr_.turn && ptr_.now;
+											mine.mat_RIGHTREG =
+												MATRIX_ref::RotY(deg2rad(180 - 22 - 10))*
+												mine.mat_RIGHTREG_rep.Inverse()*mine.mat_RIGHTREG;
+											mine.pos_RIGHTREG = mine.pos_RIGHTREG + (mine.pos - mine.rec_HMD);
+											{
+												//Šî€
+												VECTOR_ref tgt_pt = c.pos_RIGHTREG;
+												VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
+												//VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0‚Æ‚·‚é
+
+
+												VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
+
+												float cos_t = getcos_tri((c.body.frame(c.frame_s.RIGHTreg_f.first) - c.body.frame(c.frame_s.RIGHTfoot2_f.first)).size(), (c.body.frame(c.frame_s.RIGHTfoot2_f.first) - c.body.frame(c.frame_s.RIGHTfoot1_f.first)).size(), (c.body.frame(c.frame_s.RIGHTfoot1_f.first) - tgt_pt).size());
+												VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+												//ã˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot1_f.second));
+												MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTfoot2_f.first) - c.body.frame(c.frame_s.RIGHTfoot1_f.first), m_inv.Inverse()), vec_t);
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot1_f.second));
+												//‰º˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot2_f.second));
+												MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTreg_f.first) - c.body.frame(c.frame_s.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot2_f.second));
+												//Žè
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTreg_f.first, c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHTreg_f.second));
+											}
+
+											{
+												auto pp = mapparts->map_col_line(mine.body.frame(mine.frame_s.RIGHTreg2_f.first) + VGet(0, 1.8f, 0), mine.body.frame(mine.frame_s.RIGHTreg2_f.first));
+												if (pp.HitFlag) {
+													mine.pos_RIGHTREG = VECTOR_ref(pp.HitPosition) - (mine.body.frame(mine.frame_s.RIGHTreg2_f.first) - mine.body.frame(mine.frame_s.RIGHTreg_f.first));
+												}
+											}
+											{
+												//Šî€
+												VECTOR_ref tgt_pt = c.pos_RIGHTREG;
+												VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.RIGHTfoot1_f.first)).Norm(), m_inv.Inverse());//Šî€
+												//VECTOR_ref vec_a1L1 = (mine.mat_RIGHTREG*mine.mat.Inverse()).zvec()*-1.f;//x=0‚Æ‚·‚é
+
+												VECTOR_ref vec_a1L1 = VGet(0, 0, -1.f);
+
+												float cos_t = getcos_tri((c.body.frame(c.frame_s.RIGHTreg_f.first) - c.body.frame(c.frame_s.RIGHTfoot2_f.first)).size(), (c.body.frame(c.frame_s.RIGHTfoot2_f.first) - c.body.frame(c.frame_s.RIGHTfoot1_f.first)).size(), (c.body.frame(c.frame_s.RIGHTfoot1_f.first) - tgt_pt).size());
+												VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+												//ã˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot1_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot1_f.second));
+												MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTfoot2_f.first) - c.body.frame(c.frame_s.RIGHTfoot1_f.first), m_inv.Inverse()), vec_t);
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot1_f.second));
+												//‰º˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot2_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot2_f.second));
+												MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTreg_f.first) - c.body.frame(c.frame_s.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.RIGHTfoot2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTfoot2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTfoot2_f.second));
+												//Žè
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTreg_f.first, c.mat_RIGHTREG* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHTreg_f.second));
+											}
+										}
+
+									}
+									//Žè
+									{
+										c.anime_reload->reset();
+										//‰EŽè
+										{
+											if (mine.HP == 0) {
+												c.mat_RIGHTHAND;//ƒŠƒRƒCƒ‹
+												c.pos_RIGHTHAND;
+											}
 											else {
-												c.body.get_anime(3).per = 0.f;
-												c.body.get_anime(3).time = 0.f;
-												//‰EŽè
-												{
-													//Ž‹“_‚ðˆêŽžŽæ“¾
-													c.pos_HMD = (c.body.frame(c.frame_s.RIGHTeye_f.first) + (c.body.frame(c.frame_s.LEFTeye_f.first) - c.body.frame(c.frame_s.RIGHTeye_f.first))*0.5f) - c.pos;
-													//eŠí
-													c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat;//ƒŠƒRƒCƒ‹
-													c.pos_RIGHTHAND = (c.pos + c.pos_HMD - c.rec_HMD) + (MATRIX_ref::Vtrans(c.gunpos, c.mat_RIGHTHAND) - c.rec_HMD);
-													c.obj_gun.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
-													//Šî€
-													VECTOR_ref tgt_pt = c.obj_gun.frame(c.gun_ptr->frame_s.right_f.first);
-													VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());
-													VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
-													float cos_t = getcos_tri((c.body.frame(c.frame_s.RIGHThand_f.first) - c.body.frame(c.frame_s.RIGHTarm2_f.first)).size(), (c.body.frame(c.frame_s.RIGHTarm2_f.first) - c.body.frame(c.frame_s.RIGHTarm1_f.first)).size(), (c.body.frame(c.frame_s.RIGHTarm1_f.first) - tgt_pt).size());
-													VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
-													//ã˜r
+												Drawparts->GetDevicePositionVR(Drawparts->get_hand1_num(), &c.pos_RIGHTHAND, &c.mat_RIGHTHAND);
+												c.pos_RIGHTHAND = c.pos_RIGHTHAND + (c.pos - c.rec_HMD);
+												c.mat_RIGHTHAND = MATRIX_ref::Axis1(c.mat_RIGHTHAND.xvec()*-1.f, c.mat_RIGHTHAND.yvec(), c.mat_RIGHTHAND.zvec()*-1.f);
+												c.mat_RIGHTHAND = c.mat_RIGHTHAND*MATRIX_ref::RotAxis(c.mat_RIGHTHAND.xvec(), deg2rad(-60));
+												c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat_RIGHTHAND;//ƒŠƒRƒCƒ‹
+											}
+											//eŠí
+											c.obj_gun.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
+											{
+												//Šî€
+												VECTOR_ref tgt_pt = c.obj_gun.frame(c.gun_ptr->frame_s.right_f.first);
+												VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());//Šî€
+												VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
+												float cos_t = getcos_tri((c.body.frame(c.frame_s.RIGHThand_f.first) - c.body.frame(c.frame_s.RIGHTarm2_f.first)).size(), (c.body.frame(c.frame_s.RIGHTarm2_f.first) - c.body.frame(c.frame_s.RIGHTarm1_f.first)).size(), (c.body.frame(c.frame_s.RIGHTarm1_f.first) - tgt_pt).size());
+												VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+												//ã˜r
+												if (Drawparts->tracker_num.size() > 0) {
+													c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, (c.mat_WAIST*m_inv.Inverse()).Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
+												}
+												else {
 													c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
-													MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTarm2_f.first) - c.body.frame(c.frame_s.RIGHTarm1_f.first), m_inv.Inverse()), vec_t);
-													c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
-													//‰º˜r
-													c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm2_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTarm2_f.second));
-													MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHThand_f.first) - c.body.frame(c.frame_s.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
-													c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm2_f.second));
-													//Žè
-													c.body.SetFrameLocalMatrix(c.frame_s.RIGHThand_f.first, MATRIX_ref::RotY(deg2rad(-10))* MATRIX_ref::RotZ(deg2rad(50))* MATRIX_ref::RotX(deg2rad(90))* c.mat_RIGHTHAND* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHThand_f.second));
 												}
-												//¶Žè
-												{
-													if (c.down_mag) {
-														c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.magazine_f.first) + c.mat_RIGHTHAND.yvec()*-0.05f;
-													}
-													else {
-														c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first);
-													}
-													if (!c.reloadf || !c.down_mag) {
-														c.LEFT_hand = true;
-														c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first);
-													}
-													else {
-														c.LEFT_hand = false;
-													}
-													c.mat_LEFTHAND = c.mat;
+												MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTarm2_f.first) - c.body.frame(c.frame_s.RIGHTarm1_f.first), m_inv.Inverse()), vec_t);
+												if (Drawparts->tracker_num.size() > 0) {
+													c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, a1_inv*(c.mat_WAIST*m_inv.Inverse()).Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
+												}
+												else {
+													c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
+												}
+												//‰º˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm2_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTarm2_f.second));
+												MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHThand_f.first) - c.body.frame(c.frame_s.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm2_f.second));
+												//Žè
+												c.body.SetFrameLocalMatrix(c.frame_s.RIGHThand_f.first,
+													MATRIX_ref::RotY(deg2rad(-10))*
+													MATRIX_ref::RotZ(deg2rad(50))*
+													MATRIX_ref::RotX(deg2rad(90))*
+													c.mat_RIGHTHAND*
+													m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHThand_f.second));
+											}
+											//‰El·‚µŽw
+											c.anime_hand_nomal->per = 1.f;
+											c.anime_hand_trigger_pull->per = c.obj_gun.get_anime(2).per;
+											c.anime_hand_trigger->per = 1.f - c.anime_hand_trigger_pull->per;
+										}
+										//¶Žè
+										{
+											Drawparts->GetDevicePositionVR(Drawparts->get_hand2_num(), &c.pos_LEFTHAND, &c.mat_LEFTHAND);
+											c.pos_LEFTHAND = c.pos_LEFTHAND + (c.pos - c.rec_HMD);
+											c.mat_LEFTHAND = MATRIX_ref::Axis1(c.mat_LEFTHAND.xvec()*-1.f, c.mat_LEFTHAND.yvec(), c.mat_LEFTHAND.zvec()*-1.f);
+											c.mat_LEFTHAND = c.mat_LEFTHAND*MATRIX_ref::RotAxis(c.mat_LEFTHAND.xvec(), deg2rad(-60));
 
+											{
+												float dist_ = (c.pos_LEFTHAND - c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first)).size();
+												if (dist_ <= 0.1f && (!c.reloadf || !c.down_mag)) {
+													c.LEFT_hand = true;
+													c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first);
+												}
+												else {
+													c.LEFT_hand = false;
+												}
+											}
+											{
+												//Šî€
+												VECTOR_ref tgt_pt = c.pos_LEFTHAND;
+												VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.LEFTarm1_f.first)).Norm(), m_inv.Inverse());//Šî€
+												VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
+												float cos_t = getcos_tri((c.body.frame(c.frame_s.LEFThand_f.first) - c.body.frame(c.frame_s.LEFTarm2_f.first)).size(), (c.body.frame(c.frame_s.LEFTarm2_f.first) - c.body.frame(c.frame_s.LEFTarm1_f.first)).size(), (c.body.frame(c.frame_s.LEFTarm1_f.first) - tgt_pt).size());
+												VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+												//ã˜r
+												if (Drawparts->tracker_num.size() > 0) {
+													c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, (c.mat_WAIST*m_inv.Inverse()).Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
+												}
+												else {
+													c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
+												}
+												MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTarm2_f.first) - c.body.frame(c.frame_s.LEFTarm1_f.first), m_inv.Inverse()), vec_t);
+												if (Drawparts->tracker_num.size() > 0) {
+													c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, a1_inv*(c.mat_WAIST*m_inv.Inverse()).Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
+												}
+												else {
+													c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
+												}
+
+												//‰º˜r
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm2_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTarm2_f.second));
+												MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFThand_f.first) - c.body.frame(c.frame_s.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTarm2_f.second));
+												//Žè
+												c.body.SetFrameLocalMatrix(c.frame_s.LEFThand_f.first, MATRIX_ref::RotZ(deg2rad(-60))* MATRIX_ref::RotX(deg2rad(80))* c.mat_LEFTHAND* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFThand_f.second));
+											}
+
+										}
+									}
+								}
+								else {
+									if (c.HP != 0) {
+										{
+											VECTOR_ref v_ = c.mat.zvec();
+											float x_1 = -sinf(c.body_yrad);
+											float y_1 = cosf(c.body_yrad);
+											float x_2 = v_.x();
+											float y_2 = -v_.z();
+											c.body_yrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / fps_ / 10.f;
+										}
+										{
+											VECTOR_ref v_ = c.mat.zvec();
+											float x_1 = sinf(c.body_xrad);
+											float y_1 = -cosf(c.body_xrad);
+											float x_2 = -v_.y();
+											float y_2 = -std::hypotf(v_.x(), v_.z());
+											c.body_xrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2);
+										}
+									}
+									//g‘Ì
+									MATRIX_ref mg_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+									MATRIX_ref mb_inv = MATRIX_ref::RotY(deg2rad(15))*MATRIX_ref::RotZ(c.body_zrad);
+									MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(30))*MATRIX_ref::RotZ(c.body_zrad)*MATRIX_ref::RotX(c.body_xrad)*mg_inv;
+									{
+										if (c.reloadf) {
+											mb_inv = MATRIX_ref::RotZ(c.body_zrad)*MGetIdent();
+											m_inv = MATRIX_ref::RotZ(c.body_zrad)* MATRIX_ref::RotX(c.body_xrad)*mg_inv;
+										}
+										//
+										if (c.HP != 0) {
+											c.body.SetMatrix(MATRIX_ref::Mtrans(c.pos - c.rec_HMD));
+											c.body.SetFrameLocalMatrix(c.frame_s.bodyg_f.first, mg_inv*MATRIX_ref::Mtrans(c.frame_s.bodyg_f.second));
+											c.body.SetFrameLocalMatrix(c.frame_s.bodyb_f.first, mb_inv*MATRIX_ref::Mtrans(c.frame_s.bodyb_f.second));
+											c.body.SetFrameLocalMatrix(c.frame_s.body_f.first, m_inv*(mb_inv*mg_inv).Inverse()*MATRIX_ref::Mtrans(c.frame_s.body_f.second));
+										}
+										else {
+											m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+											c.body.SetMatrix(m_inv*MATRIX_ref::Mtrans(c.pos - c.rec_HMD));
+										}
+									}
+
+									//“ª•”
+									if (c.HP != 0) {
+										c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, c.mat*m_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
+										if (c.reloadf) {
+											c.body.frame_reset(c.frame_s.head_f.first);
+										}
+									}
+									//‘«
+									{
+										auto ratio_t = c.add_vec.size() / c.speed;
+										if (c.HP != 0) {
+											float ani_hand = 0.f;//0
+											float ani_walk = 0.f;//1
+											float ani_run = 0.f;//2
+											float ani_sit = 0.f;//7
+											float ani_swalk = 0.f;//8
+											if (c.running) {
+												ani_run = 1.f*ratio_t;
+											}
+											else if (c.ads.first) {
+												if (!c.squat.first) {
+													ani_walk = 0.5f*ratio_t;
+												}
+												else {
+													ani_sit = 1.f - 1.f*ratio_t;
+													ani_swalk = 0.5f*ratio_t;
+												}
+											}
+											else {
+												easing_set(&c.anime_hand_nomal->per, 0.f, 0.95f);
+												if (!c.squat.first) {
+													ani_walk = 1.f*ratio_t;
+												}
+												else {
+													ani_sit = 1.f - 1.f*ratio_t;
+													ani_swalk = 1.f*ratio_t;
+												}
+											}
+											//‚µ‚á‚ª‚Ý
+											easing_set(&c.anime_sit->per, ani_sit, 0.95f);
+											//‘–‚è
+											easing_set(&c.anime_run->per, ani_run, 0.95f);
+											c.anime_run->update(true, 1.f);
+											//•à‚«
+											easing_set(&c.anime_walk->per, ani_walk, 0.95f);
+											c.anime_walk->update(true, 1.f);
+											//‚µ‚á‚ª‚Ý•à‚«
+											easing_set(&c.anime_swalk->per, ani_swalk, 0.95f);
+											c.anime_swalk->update(true, ((c.anime_swalk->alltime / 30.f) / c.gun_ptr->reload_time));
+										}
+									}
+									//Ž‹“_
+									{
+										VECTOR_ref pv = VGet(0, 0, 0);
+										if (c.gun_ptr->frame_s.site_f.first != INT_MAX) {
+											pv = c.gun_ptr->frame_s.site_f.second;
+										}
+										if (&c != &mine) {
+											if (c.ads.first) {
+												easing_set(&c.gunpos, VGet(-0.f, 0.f - pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*0.001f*c.anime_walk->per, -0.315f), 0.75f);
+											}
+											else {
+												if (c.running) {
+													easing_set(&c.gunpos, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f);
+												}
+												else {
+													easing_set(&c.gunpos, VGet(-0.1f, -0.05f - pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*0.002f*c.anime_walk->per, -0.335f), 0.75f);
+												}
+											}
+										}
+										else {
+											if (c.ads.first) {
+												easing_set(&c.gunpos, VGet(-0.f, 0.f - pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*0.001f*c.anime_walk->per, -0.245f), 0.75f);
+											}
+											else {
+												if (c.running) {
+													easing_set(&c.gunpos, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f);
+												}
+												else {
+													easing_set(&c.gunpos, VGet(-0.1f, -0.05f - pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*0.002f*c.anime_walk->per, -0.275f), 0.75f);
+												}
+											}
+										}
+									}
+									//Žè
+									{
+										c.body.frame_reset(c.frame_s.RIGHTarm1_f.first);
+										c.body.frame_reset(c.frame_s.RIGHTarm2_f.first);
+										c.body.frame_reset(c.frame_s.RIGHThand_f.first);
+										c.body.frame_reset(c.frame_s.LEFTarm1_f.first);
+										c.body.frame_reset(c.frame_s.LEFTarm2_f.first);
+										c.body.frame_reset(c.frame_s.LEFThand_f.first);
+
+										if (c.HP != 0) {
+											if (c.running) {
+												if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
+													c.anime_reload->per = 1.f;
+													c.anime_reload->update(true, ((c.anime_reload->alltime / 30.f) / c.gun_ptr->reload_time));
+
+													c.anime_arm_run->reset();
+												}
+												else {
+													c.anime_reload->reset();
+													c.anime_arm_run->per = 1.f;
+													c.anime_arm_run->update(true, 1.f);
+												}
+											}
+											else {
+												c.anime_arm_run->reset();
+												if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
+													c.anime_reload->per = 1.f;
+													c.anime_reload->update(true, ((c.anime_reload->alltime / 30.f) / c.gun_ptr->reload_time));
+												}
+												else {
+													c.anime_reload->reset();
+													//‰EŽè
 													{
-														VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((c.pos_LEFTHAND - c.body.frame(c.frame_s.LEFTarm1_f.first)).Norm(), m_inv.Inverse());//Šî€
+														//Ž‹“_‚ðˆêŽžŽæ“¾
+														c.pos_HMD = (c.body.frame(c.frame_s.RIGHTeye_f.first) + (c.body.frame(c.frame_s.LEFTeye_f.first) - c.body.frame(c.frame_s.RIGHTeye_f.first))*0.5f) - c.pos;
+														//eŠí
+														c.mat_RIGHTHAND = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat;//ƒŠƒRƒCƒ‹
+														c.pos_RIGHTHAND = (c.pos + c.pos_HMD - c.rec_HMD) + (MATRIX_ref::Vtrans(c.gunpos, c.mat_RIGHTHAND) - c.rec_HMD);
+														c.obj_gun.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
+														//Šî€
+														VECTOR_ref tgt_pt = c.obj_gun.frame(c.gun_ptr->frame_s.right_f.first);
+														VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((tgt_pt - c.body.frame(c.frame_s.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());
 														VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
-														float cos_t = getcos_tri((c.body.frame(c.frame_s.LEFThand_f.first) - c.body.frame(c.frame_s.LEFTarm2_f.first)).size(), (c.body.frame(c.frame_s.LEFTarm2_f.first) - c.body.frame(c.frame_s.LEFTarm1_f.first)).size(), (c.body.frame(c.frame_s.LEFTarm1_f.first) - (c.pos + c.pos_LEFTHAND - (c.pos - c.rec_HMD))).size());
+														float cos_t = getcos_tri((c.body.frame(c.frame_s.RIGHThand_f.first) - c.body.frame(c.frame_s.RIGHTarm2_f.first)).size(), (c.body.frame(c.frame_s.RIGHTarm2_f.first) - c.body.frame(c.frame_s.RIGHTarm1_f.first)).size(), (c.body.frame(c.frame_s.RIGHTarm1_f.first) - tgt_pt).size());
 														VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 														//ã˜r
-														c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
-														MATRIX_ref a1_inv = MATRIX_ref::RotVec2(
-															MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTarm2_f.first) - c.body.frame(c.frame_s.LEFTarm1_f.first), m_inv.Inverse()),
-															vec_t
-														);
-														c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
+														c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
+														MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHTarm2_f.first) - c.body.frame(c.frame_s.RIGHTarm1_f.first), m_inv.Inverse()), vec_t);
+														c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm1_f.second));
 														//‰º˜r
-														c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm2_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTarm2_f.second));
-														MATRIX_ref a2_inv = MATRIX_ref::RotVec2(
-															MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFThand_f.first) - c.body.frame(c.frame_s.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()),
-															MATRIX_ref::Vtrans(c.pos_LEFTHAND - c.body.frame(c.frame_s.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse())
-														);
-														c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTarm2_f.second));
+														c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm2_f.first, MATRIX_ref::Mtrans(c.frame_s.RIGHTarm2_f.second));
+														MATRIX_ref a2_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(c.body.frame(c.frame_s.RIGHThand_f.first) - c.body.frame(c.frame_s.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()), MATRIX_ref::Vtrans(tgt_pt - c.body.frame(c.frame_s.RIGHTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()));
+														c.body.SetFrameLocalMatrix(c.frame_s.RIGHTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.RIGHTarm2_f.second));
 														//Žè
-														c.body.SetFrameLocalMatrix(c.frame_s.LEFThand_f.first,
-															MATRIX_ref::RotZ(deg2rad(-60))*
-															MATRIX_ref::RotX(deg2rad(80))*
-															c.mat_LEFTHAND*
-															m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFThand_f.second));
+														c.body.SetFrameLocalMatrix(c.frame_s.RIGHThand_f.first, MATRIX_ref::RotY(deg2rad(-10))* MATRIX_ref::RotZ(deg2rad(50))* MATRIX_ref::RotX(deg2rad(90))* c.mat_RIGHTHAND* m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.RIGHThand_f.second));
+													}
+													//¶Žè
+													{
+														if (c.down_mag) {
+															c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.magazine_f.first) + c.mat_RIGHTHAND.yvec()*-0.05f;
+														}
+														else {
+															c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first);
+														}
+														if (!c.reloadf || !c.down_mag) {
+															c.LEFT_hand = true;
+															c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first);
+														}
+														else {
+															c.LEFT_hand = false;
+														}
+														c.mat_LEFTHAND = c.mat;
+
+														{
+															VECTOR_ref vec_a1 = MATRIX_ref::Vtrans((c.pos_LEFTHAND - c.body.frame(c.frame_s.LEFTarm1_f.first)).Norm(), m_inv.Inverse());//Šî€
+															VECTOR_ref vec_a1L1 = VECTOR_ref(VGet(0.f, -1.f, vec_a1.y() / vec_a1.z())).Norm();//x=0‚Æ‚·‚é
+															float cos_t = getcos_tri((c.body.frame(c.frame_s.LEFThand_f.first) - c.body.frame(c.frame_s.LEFTarm2_f.first)).size(), (c.body.frame(c.frame_s.LEFTarm2_f.first) - c.body.frame(c.frame_s.LEFTarm1_f.first)).size(), (c.body.frame(c.frame_s.LEFTarm1_f.first) - (c.pos + c.pos_LEFTHAND - (c.pos - c.rec_HMD))).size());
+															VECTOR_ref vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
+															//ã˜r
+															c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
+															MATRIX_ref a1_inv = MATRIX_ref::RotVec2(
+																MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFTarm2_f.first) - c.body.frame(c.frame_s.LEFTarm1_f.first), m_inv.Inverse()),
+																vec_t
+															);
+															c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm1_f.first, a1_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTarm1_f.second));
+															//‰º˜r
+															c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm2_f.first, MATRIX_ref::Mtrans(c.frame_s.LEFTarm2_f.second));
+															MATRIX_ref a2_inv = MATRIX_ref::RotVec2(
+																MATRIX_ref::Vtrans(c.body.frame(c.frame_s.LEFThand_f.first) - c.body.frame(c.frame_s.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse()),
+																MATRIX_ref::Vtrans(c.pos_LEFTHAND - c.body.frame(c.frame_s.LEFTarm2_f.first), m_inv.Inverse()*a1_inv.Inverse())
+															);
+															c.body.SetFrameLocalMatrix(c.frame_s.LEFTarm2_f.first, a2_inv*MATRIX_ref::Mtrans(c.frame_s.LEFTarm2_f.second));
+															//Žè
+															c.body.SetFrameLocalMatrix(c.frame_s.LEFThand_f.first,
+																MATRIX_ref::RotZ(deg2rad(-60))*
+																MATRIX_ref::RotX(deg2rad(80))*
+																c.mat_LEFTHAND*
+																m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.LEFThand_f.second));
+														}
 													}
 												}
 											}
+											//‰El·‚µŽw
+											{
+												c.anime_hand_nomal->per = 1.f;
+												c.anime_hand_trigger_pull->per = c.obj_gun.get_anime(2).per;
+												c.anime_hand_trigger->per = 1.f - c.anime_hand_trigger_pull->per;
+											}
+											c.add_RIGHTHAND = c.add_vec;
 										}
-										//‰El·‚µŽw
-										{
-											c.body.get_anime(0).per = 1.f;
-											c.body.get_anime(5).per = c.obj_gun.get_anime(2).per;
-											c.body.get_anime(9).per = 1.f - c.body.get_anime(5).per;
+										else {
+											//eŠí
+
+											c.pos_RIGHTHAND += c.add_RIGHTHAND;
+											c.add_RIGHTHAND.yadd(M_GR / std::powf(fps_, 2.f));
+
+											auto pp = mapparts->map_col_line(c.pos_RIGHTHAND + VGet(0, 1.f, 0), c.pos_RIGHTHAND - VGet(0, 0.05f, 0));
+											if (pp.HitFlag) {
+												c.pos_RIGHTHAND = VECTOR_ref(pp.HitPosition) + VGet(0, 0.05f, 0);
+												c.mat_RIGHTHAND *= MATRIX_ref::RotVec2(c.mat_RIGHTHAND.xvec(), VECTOR_ref(pp.Normal));
+												easing_set(&c.add_RIGHTHAND, VGet(0, 0, 0), 0.8f);
+											}
+
+											c.obj_gun.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
 										}
-										c.add_RIGHTHAND = c.add_pos;
 									}
-									else {
-										//eŠí
+								}
+								c.body.work_anime();
 
-										c.pos_RIGHTHAND += c.add_RIGHTHAND;
-										c.add_RIGHTHAND.yadd(M_GR / std::powf(fps_, 2.f));
+								//
 
-										auto pp = mapparts->map_col_line(c.pos_RIGHTHAND + VGet(0, 1.f, 0), c.pos_RIGHTHAND - VGet(0, 0.05f, 0));
-										if (pp.HitFlag) {
-											c.pos_RIGHTHAND = VECTOR_ref(pp.HitPosition) + VGet(0, 0.05f, 0);
-											c.mat_RIGHTHAND *= MATRIX_ref::RotVec2(c.mat_RIGHTHAND.xvec(), VECTOR_ref(pp.Normal));
-											easing_set(&c.add_RIGHTHAND, VGet(0, 0, 0), 0.8f);
+								c.frame_s.copy_frame(c.body, c.colframe_, &c.col);
+								c.col.work_anime();
+								c.col.RefreshCollInfo(-1, 0);
+								c.col.RefreshCollInfo(-1, 1);
+								c.col.RefreshCollInfo(-1, 2);
+								//
+								if (!(Drawparts->use_vr && (&c == &mine))) {
+									//Ž‹“_Žæ“¾
+									c.pos_HMD = (c.body.frame(c.frame_s.RIGHTeye_f.first) + (c.body.frame(c.frame_s.LEFTeye_f.first) - c.body.frame(c.frame_s.RIGHTeye_f.first))*0.5f) - c.pos;
+									//eŠí
+									if (c.HP != 0) {
+										if (c.running || (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1)) {
+											auto mat_T = MATRIX_ref::RotY(deg2rad(45))* MATRIX_ref::RotX(deg2rad(-90))* c.body.GetFrameLocalWorldMatrix(c.frame_s.RIGHThand2_f.first);
+											c.pos_RIGHTHAND = c.body.frame(c.frame_s.RIGHThand_f.first);
+											c.obj_gun.SetMatrix(mat_T*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
+											c.obj_gun.SetMatrix(mat_T*MATRIX_ref::Mtrans(c.pos_RIGHTHAND - c.obj_gun.frame(c.gun_ptr->frame_s.right_f.first) + c.pos_RIGHTHAND));
+											//
+											c.mat_LEFTHAND = MATRIX_ref::RotY(deg2rad(-90 + 45))* MATRIX_ref::RotX(deg2rad(-90))*  (c.body.GetFrameLocalWorldMatrix(c.frame_s.LEFThand2_f.first)*MATRIX_ref::Mtrans(c.body.frame(c.frame_s.LEFThand2_f.first)).Inverse());
+											c.pos_LEFTHAND = c.body.frame(c.frame_s.LEFThand_f.first) + c.mat_LEFTHAND.yvec()*0.1f;
 										}
-
-										c.obj_gun.SetMatrix(c.mat_RIGHTHAND*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
+										else {
+											auto mat_T = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat;//ƒŠƒRƒCƒ‹
+											c.pos_RIGHTHAND = c.pos + c.pos_HMD + MATRIX_ref::Vtrans(c.gunpos, mat_T);
+											c.obj_gun.SetMatrix(mat_T*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
+										}
 									}
 								}
 							}
-							c.body.work_anime();
-
-							//
-
-							c.frame_s.copy_frame(c.body, c.colframe_, &c.col);
-							c.col.work_anime();
-							c.col.RefreshCollInfo(-1, 0);
-							c.col.RefreshCollInfo(-1, 1);
-							c.col.RefreshCollInfo(-1, 2);
-							//
-							if (!(Drawparts->use_vr && (&c == &mine))) {
-								//Ž‹“_Žæ“¾
-								c.pos_HMD = (c.body.frame(c.frame_s.RIGHTeye_f.first) + (c.body.frame(c.frame_s.LEFTeye_f.first) - c.body.frame(c.frame_s.RIGHTeye_f.first))*0.5f) - c.pos;
-								//eŠí
-								if (c.HP != 0) {
-									if (c.running || (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1)) {
-										auto mat_T = MATRIX_ref::RotY(deg2rad(45))* MATRIX_ref::RotX(deg2rad(-90))* c.body.GetFrameLocalWorldMatrix(c.frame_s.RIGHThand2_f.first);
-										c.pos_RIGHTHAND = c.body.frame(c.frame_s.RIGHThand_f.first);
-										c.obj_gun.SetMatrix(mat_T*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
-										c.obj_gun.SetMatrix(mat_T*MATRIX_ref::Mtrans(c.pos_RIGHTHAND - c.obj_gun.frame(c.gun_ptr->frame_s.right_f.first) + c.pos_RIGHTHAND));
-										//
-										c.mat_LEFTHAND = MATRIX_ref::RotY(deg2rad(-90 + 45))* MATRIX_ref::RotX(deg2rad(-90))*  (c.body.GetFrameLocalWorldMatrix(c.frame_s.LEFThand2_f.first)*MATRIX_ref::Mtrans(c.body.frame(c.frame_s.LEFThand2_f.first)).Inverse());
-										c.pos_LEFTHAND = c.body.frame(c.frame_s.LEFThand_f.first) + c.mat_LEFTHAND.yvec()*0.1f;
-									}
-									else {
-										auto mat_T = MATRIX_ref::RotVec2(VGet(0, 0, 1.f), c.vecadd_RIGHTHAND)*c.mat;//ƒŠƒRƒCƒ‹
-										c.pos_RIGHTHAND = c.pos + c.pos_HMD + MATRIX_ref::Vtrans(c.gunpos, mat_T);
-										c.obj_gun.SetMatrix(mat_T*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
-									}
-								}
-							}
-							//e‹¤’Ê
-							{
-								if (c.obj_gun.get_anime(3).per == 1.f) {
-									c.audio.slide.play_3D(c.pos_RIGHTHAND, 15.f);
-								}
-								c.obj_gun.get_anime(3).per = std::max(c.obj_gun.get_anime(3).per - 12.f / fps_, 0.f);
-							}
-						}
-						//
-						for (auto& c : chara) {
 							//ŽËŒ‚ŠÖ˜A
+							{}
 							{
 								{
 									//•¡À
@@ -977,19 +957,17 @@ public:
 									if (c.gunf) {
 										if (c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) {
 											c.obj_gun.get_anime(0).per = 1.f;
-											c.obj_gun.get_anime(1).per = 0.f;
-											c.obj_gun.get_anime(0).time += 60.f / fps_;
-											if (c.obj_gun.get_anime(0).time >= c.obj_gun.get_anime(0).alltime) {
-												c.obj_gun.get_anime(0).time = 0.f;
+											c.obj_gun.get_anime(0).update(true, 2.f);
+											if (c.obj_gun.get_anime(0).time == 0.f) {
 												c.gunf = false;
 											}
+											c.obj_gun.get_anime(1).reset();
 										}
 										else {
+											c.obj_gun.get_anime(0).reset();
 											c.obj_gun.get_anime(1).per = 1.f;
-											c.obj_gun.get_anime(0).per = 0.f;
-											c.obj_gun.get_anime(1).time += 60.f / fps_;
-											if (c.obj_gun.get_anime(1).time >= c.obj_gun.get_anime(1).alltime) {
-												c.obj_gun.get_anime(1).time = c.obj_gun.get_anime(1).alltime;
+											c.obj_gun.get_anime(1).update(false, 2.f);
+											if (c.obj_gun.get_anime(1).time == c.obj_gun.get_anime(1).alltime) {
 												c.gunf = false;
 											}
 										}
@@ -1040,7 +1018,7 @@ public:
 											if (g.ptr_gun == nullptr && g.ptr_mag == nullptr && g.ptr_med == nullptr) {
 												tt = true;
 												g.Set_item(&this->meds_data[0], c.pos_mag, c.mat_mag);
-												g.add = (c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first-1) - c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first)).Norm()*-5.f / fps_;//”rä°ƒxƒNƒgƒ‹
+												g.add = (c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first - 1) - c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first)).Norm()*-5.f / fps_;//”rä°ƒxƒNƒgƒ‹
 												break;
 											}
 										}
@@ -1049,7 +1027,7 @@ public:
 											auto& g = this->item.back();
 											g.id = this->item.size() - 1;
 											g.Set_item(&this->meds_data[0], c.pos_mag, c.mat_mag);
-											g.add = (c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first-1) - c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first)).Norm()*-5.f / fps_;//”rä°ƒxƒNƒgƒ‹
+											g.add = (c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first - 1) - c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first)).Norm()*-5.f / fps_;//”rä°ƒxƒNƒgƒ‹
 										}
 									}
 									//ƒ}ƒKƒWƒ“‘}“ü
@@ -1060,9 +1038,8 @@ public:
 											}
 											if (c.down_mag) {
 												if ((c.obj_mag.frame(3) - c.obj_gun.frame(c.gun_ptr->frame_s.magazine_f.first)).size() <= 0.05f) {
-													c.obj_gun.get_anime(1).time = 0.f;
 													c.obj_gun.get_anime(0).per = 1.f;
-													c.obj_gun.get_anime(1).per = 0.f;
+													c.obj_gun.get_anime(1).reset();
 													if (c.gun_stat[c.gun_ptr->id].ammo_cnt == 0) {
 														c.obj_gun.get_anime(3).per = 1.f;
 													}
@@ -1077,9 +1054,8 @@ public:
 										else {
 											if (c.down_mag) {
 												if (c.reload_cnt > c.gun_ptr->reload_time) {
-													c.obj_gun.get_anime(1).time = 0.f;
 													c.obj_gun.get_anime(0).per = 1.f;
-													c.obj_gun.get_anime(1).per = 0.f;
+													c.obj_gun.get_anime(1).reset();
 													if (c.gun_stat[c.gun_ptr->id].ammo_cnt == 0) {
 														c.obj_gun.get_anime(3).per = 1.f;
 													}
@@ -1134,6 +1110,13 @@ public:
 											c.audio.slide.play_3D(c.pos_RIGHTHAND, 15.f);
 										}
 									}
+									//ƒXƒ‰ƒCƒh–ß‚·
+									{
+										if (c.obj_gun.get_anime(3).per == 1.f) {
+											c.audio.slide.play_3D(c.pos_RIGHTHAND, 15.f);
+										}
+										c.obj_gun.get_anime(3).per = std::max(c.obj_gun.get_anime(3).per - 12.f / fps_, 0.f);
+									}
 								}
 								c.obj_mag.SetMatrix(c.mat_mag* MATRIX_ref::Mtrans(c.pos_mag));
 								c.obj_gun.work_anime();
@@ -1151,6 +1134,7 @@ public:
 									t.put(Drawparts->get_effHandle(ef_gndsmoke));
 								}
 							}
+							{}
 							//ƒAƒCƒeƒ€ŠÖ˜A
 							{
 								//E‚¤
@@ -1191,36 +1175,36 @@ public:
 									}
 								}
 							}
-						}
-						//•¨—‰‰ŽZAƒAƒjƒ[ƒVƒ‡ƒ“
-						for (auto& c_ : chara) {
-							if (c_.start_c) {
-								c_.body.PhysicsResetState();
-								c_.start_c = false;
-							}
-							else {
-								if (c_.start_b) {
-									c_.body.PhysicsResetState();
-									c_.start_b = false;
+							//•¨—‰‰ŽZAƒAƒjƒ[ƒVƒ‡ƒ“
+							{
+								if (c.start_c) {
+									c.body.PhysicsResetState();
+									c.start_c = false;
 								}
 								else {
-									c_.body.PhysicsCalculation(1000.f / fps_);
+									if (c.start_b) {
+										c.body.PhysicsResetState();
+										c.start_b = false;
+									}
+									else {
+										c.body.PhysicsCalculation(1000.f / fps_);
+									}
 								}
 							}
 						}
 						//campos,camvec,camup‚ÌŽw’è
 						{
-							//auto& cc = chara[1];
-							auto& cc = mine;
-							if (cc.HP != 0) {
-								camera_main.campos = cc.pos + cc.pos_HMD - cc.rec_HMD;
-								camera_main.camvec = camera_main.campos + cc.mat.zvec()*(Drawparts->use_vr ? 1.f : -1.f);
-								camera_main.camup = cc.mat.yvec();
+							auto& ct = mine;
+							if (ct.HP != 0) {
+								camera_main.campos = ct.pos + ct.pos_HMD - ct.rec_HMD;
+								camera_main.camvec = camera_main.campos + ct.mat.zvec()*(Drawparts->use_vr ? 1.f : -1.f);
+								camera_main.camup = ct.mat.yvec();
 							}
 							else {
-								easing_set(&camera_main.camvec, chara[cc.death_id].pos + chara[cc.death_id].pos_HMD - chara[cc.death_id].rec_HMD, 0.9f);
+								//ƒfƒXƒJƒƒ‰
+								easing_set(&camera_main.camvec, chara[ct.death_id].pos + chara[ct.death_id].pos_HMD - chara[ct.death_id].rec_HMD, 0.9f);
 								auto rad = atan2f((camera_main.camvec - camera_main.campos).x(), (camera_main.camvec - camera_main.campos).z());
-								easing_set(&camera_main.campos, cc.pos + cc.pos_HMD - cc.rec_HMD + VGet(-5.f*sin(rad), 2.f, -5.f*cos(rad)), 0.9f);
+								easing_set(&camera_main.campos, ct.pos + ct.pos_HMD - ct.rec_HMD + VGet(-5.f*sin(rad), 2.f, -5.f*cos(rad)), 0.9f);
 								camera_main.camup = VGet(0, 1.f, 0);
 								mapparts->map_col_nearest(camera_main.camvec, &camera_main.campos);
 							}
@@ -1229,12 +1213,6 @@ public:
 						UpdateEffekseer3D();
 						//VR‹óŠÔ‚É“K—p
 						Drawparts->Move_Player();
-						//hitŽž‚É‰½‚©‚·‚é•”•ª
-						for (auto& a : mine.bullet) {
-							if (a.hit) {
-								a.hit = false;
-							}
-						}
 						//ƒ‹[ƒ‹•Û‘¶
 						UIparts->set_rule(ruleparts->getready(), ruleparts->gettimer());
 
@@ -1302,6 +1280,28 @@ public:
 										this->UI_Screen.DrawGraph(0, 0, TRUE);
 									}
 									//UI2
+									for (auto& c : chara) {
+										for (auto& a : c.bullet) {
+											if (a.hit) {
+												a.hit_r = 2.f;
+												a.hit_count = 0.5f;
+												VECTOR_ref p = ConvWorldPosToScreenPos((a.pos).get());
+												if (p.z() >= 0.f&&p.z() <= 1.f) {
+													a.hit_x = int(p.x());
+													a.hit_y = int(p.y());
+												}
+												a.hit = false;
+											}
+											if (a.hit_count != 0.f) {
+												easing_set(&a.hit_r, 1.f, 0.7f);
+											}
+											else {
+												easing_set(&a.hit_r, 0.f, 0.8f);
+											}
+
+											a.hit_count = std::clamp(a.hit_count - 1.f / GetFPS(), 0.f, 1.f);
+										}
+									}
 									UIparts->item_draw(chara, this->item, camera_main.campos, Drawparts->use_vr);
 								}
 							}, camera_main);
@@ -1342,6 +1342,28 @@ public:
 									//UI
 									this->UI_Screen2.DrawGraph(0, 0, true);
 									//UI2
+									for (auto& c : chara) {
+										for (auto& a : c.bullet) {
+											if (a.hit) {
+												a.hit_r = 2.f;
+												a.hit_count = 0.5f;
+												VECTOR_ref p = ConvWorldPosToScreenPos((a.pos).get());
+												if (p.z() >= 0.f&&p.z() <= 1.f) {
+													a.hit_x = int(p.x());
+													a.hit_y = int(p.y());
+												}
+												a.hit = false;
+											}
+											if (a.hit_count != 0.f) {
+												easing_set(&a.hit_r, 1.f, 0.7f);
+											}
+											else {
+												easing_set(&a.hit_r, 0.f, 0.8f);
+											}
+
+											a.hit_count = std::clamp(a.hit_count - 1.f / GetFPS(), 0.f, 1.f);
+										}
+									}
 									UIparts->item_draw(chara, this->item, camera_sub.campos, false);
 								}
 							}

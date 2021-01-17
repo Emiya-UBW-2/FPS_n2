@@ -25,6 +25,8 @@ private:
 	SoundHandle decision;
 	SoundHandle cancel;
 	SoundHandle cursor;
+	//
+	GraphHandle hit;
 
 	unsigned int red;
 	unsigned int green;
@@ -47,6 +49,7 @@ public:
 		UI_mag_set = GraphHandle::Load("data/UI/mag_set.bmp");
 		UI_get = GraphHandle::Load("data/UI/get.bmp");
 		SetTransColor(0, 0, 0);
+		hit = GraphHandle::Load("data/UI/battle_hit.bmp");
 
 		font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
 		font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
@@ -103,7 +106,7 @@ public:
 		DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, gray_2, FALSE);
 		DrawBox(xpos - xsize / 2 + size, ypos + size, xpos - xsize / 2 + size + (xsize - size * 2)*now / max, ypos + ysize - size, green, TRUE);
 		DrawBox(xpos - xsize / 2 + size + (xsize - size * 2)*now / max, ypos + size, xpos - xsize / 2 + size + (xsize - size * 2)*will / max, ypos + ysize - size, yellow, TRUE);
-		font24.DrawStringFormat_MID(xpos + size, ypos + size, write, "%d/%d", now, max);
+		font18.DrawStringFormat_MID(xpos + size, ypos + size, write, "%d/%d", now, max);
 	}
 
 	void set_rule(const float& ready_, const float& timer_) {
@@ -303,13 +306,13 @@ public:
 					xp = t_disp_x / 2 + t_disp_y / 12;
 					yp = t_disp_y / 2 + t_disp_y / 6;
 					xs = x_r(200);
-					ys = y_r(18) + y_r(8);
+					ys = y_r(18) + y_r(2);
 				}
 				else {
 					xp = t_disp_x / 2;
 					yp = t_disp_y - font_bighight * 2;
 					xs = x_r(600);
-					ys = y_r(18) + y_r(8);
+					ys = y_r(18) + y_r(2);
 				}
 				draw_HP(xp, yp, xs, ys, chara.HP, int(chara.HP_r), chara.HP_full);
 			}
@@ -387,16 +390,28 @@ public:
 		{
 			SetCameraNearFar(0.01f, 100.f);
 			for (auto& c : chara) {
-				if (abs(c.HP - int(c.HP_r)) >= 3) {
-					VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_s.head_f.first) + VGet(0, 0.3f, 0)).get());
+				//if (abs(c.HP - int(c.HP_r)) >= 3) {
+					float r_ = std::max((c.body.frame(c.frame_s.head_f.first) - pos).size(), 1.f);
+					VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_s.head_f.first) + VGet(0, 0.3f + 2.7f*r_ / 100.f, 0)).get());
 					if (p.z() >= 0.f&&p.z() <= 1.f) {
 						xp = int(p.x());
 						yp = int(p.y());
-						xs = x_r(200);
-						ys = y_r(18) + y_r(8);
+						xs = x_r(140);
+						ys = y_r(18) + y_r(2);
 
 						draw_HP(xp, yp, xs, ys, c.HP, int(c.HP_r), c.HP_full);
 					}
+				//}
+			}
+		}
+		//ƒqƒbƒg
+		{
+			SetCameraNearFar(0.01f, 100.f);
+			for (auto& c : chara) {
+				for (auto& a : c.bullet) {
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f*a.hit_r));
+					DrawRotaGraph(a.hit_x, a.hit_y, a.hit_r, 0.f, this->hit.get(), TRUE);
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
 			}
 		}
