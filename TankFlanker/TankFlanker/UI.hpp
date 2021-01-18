@@ -132,7 +132,8 @@ public:
 		int xs = 0, ys = 0, xp = 0, yp = 0;
 		int xp2 = 0, yp2 = 0, xs2 = 0, ys2 = 0;
 		{
-			//
+			//HP表示
+			{
 				if (use_vr) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - (float(chara.HP) / chara.HP_full)*0.5f)), 0, 255));
 					DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(192, 0, 0), TRUE);
@@ -141,7 +142,11 @@ public:
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - float(chara.HP) / chara.HP_full)), 0, 255));
 					dmg.DrawExtendGraph(0, 0, t_disp_x, t_disp_y, true);
 				}
+
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(float(int(chara.HP_r)- chara.HP) / 50.f)), 0, 255));
+				DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(192, 0, 0), TRUE);
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			}
 			//タイマー
 			if(ready>=0.f){
 				if (use_vr) {
