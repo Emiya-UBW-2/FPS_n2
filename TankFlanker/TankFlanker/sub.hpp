@@ -201,7 +201,6 @@ public:
 					auto p = mapparts->map_col_line(this->repos, this->pos);
 					if (p.HitFlag) {
 						this->pos = p.HitPosition;
-						this->hit = true;
 					}
 					//*
 					for (auto& tgt : *chara) {
@@ -1683,6 +1682,9 @@ public:
 				}
 			}
 			//ŒÂ•Ê
+			if (this->ptr_mag != nullptr && this->magazine.cap == 0) {
+				this->del_timer += 1.f / GetFPS();
+			}
 		}
 		void Draw_item() {
 			if (this->ptr_gun != nullptr) {

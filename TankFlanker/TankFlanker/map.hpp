@@ -345,7 +345,7 @@ public:
 				yp -= int(y_2*cos(radp) + x_2 * sin(radp));
 			}
 
-			DrawRotaGraph(xp, yp, xcam, radp, mapparts->get_minmap().get(), TRUE);
+			mapparts->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
 			for (auto& c : chara) {
 				auto t = (c.pos + c.pos_HMD - c.rec_HMD);
 				VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_s.head_f.first).zvec()*-1.f;
@@ -355,8 +355,7 @@ public:
 
 				int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
 				int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
-
-				DrawRotaGraph(xt, yt, xcam, rad + radp, UI_player.get(), TRUE);
+				UI_player.DrawRotaGraph(xt, yt, xcam, rad + radp, true);
 			}
 		}
 	}

@@ -390,7 +390,7 @@ public:
 		{
 			SetCameraNearFar(0.01f, 100.f);
 			for (auto& c : chara) {
-				//if (abs(c.HP - int(c.HP_r)) >= 3) {
+				if (abs(c.HP - int(c.HP_r)) >= 3) {
 					float r_ = std::max((c.body.frame(c.frame_s.head_f.first) - pos).size(), 1.f);
 					VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_s.head_f.first) + VGet(0, 0.3f + 2.7f*r_ / 100.f, 0)).get());
 					if (p.z() >= 0.f&&p.z() <= 1.f) {
@@ -401,7 +401,7 @@ public:
 
 						draw_HP(xp, yp, xs, ys, c.HP, int(c.HP_r), c.HP_full);
 					}
-				//}
+				}
 			}
 		}
 		//ƒqƒbƒg
@@ -410,7 +410,7 @@ public:
 			for (auto& c : chara) {
 				for (auto& a : c.bullet) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f*a.hit_r));
-					DrawRotaGraph(a.hit_x, a.hit_y, a.hit_r, 0.f, this->hit.get(), TRUE);
+					this->hit.DrawRotaGraph(a.hit_x, a.hit_y, a.hit_r, 0.f, true);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
 			}
