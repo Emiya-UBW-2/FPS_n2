@@ -359,12 +359,15 @@ public:
 	}
 	void item_draw(std::vector<Chara>&chara, Mainclass::Chara&ct , std::vector<Items>&item_data, const VECTOR_ref& pos, bool use_vr = true) {
 		int xs = 0, ys = 0, xp = 0, yp = 0;
-		FontHandle* font_big = &font24;
-		FontHandle* font = (use_vr) ? &font12 : &font18;
-		const int fonthight = (use_vr) ? y_r(12) : y_r(18);
+
+		FontHandle* font_large = (use_vr) ? &font72 : &font48;
+		FontHandle* font_big = (use_vr) ? &font36 : &font24;
+		FontHandle* font = (use_vr) ? &font24 : &font18;
+		const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
+		const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
+		const int fonthight = (use_vr) ? y_r(24) : y_r(18);
 		//’e–ò
 		{
-			int xs = 0, ys = 0, xp = 0, yp = 0;
 			{
 				//’e
 				{
@@ -379,7 +382,7 @@ public:
 								xp = int(p.x());
 								yp = int(p.y());
 							}
-							int per = 90 * ct.gun_stat[ct.gun_ptr->id].ammo_cnt / ct.gun_ptr->magazine->cap;
+							int per = 90 * int(ct.gun_stat[ct.gun_ptr->id].ammo_cnt) / int(ct.gun_ptr->magazine->cap);
 							float rad = deg2rad(90 - per);
 							int col_r = GetColor(std::clamp(int(255.f*sin(rad)*2.f), 0, 255), std::clamp(int(255.f*cos(rad)*2.f), 0, 255), 0);
 							float r_ = std::max((ct.obj_gun.GetMatrix().pos() - pos).size(), 1.f);
@@ -422,9 +425,20 @@ public:
 					if (p.z() >= 0.f&&p.z() <= 1.f) {
 						float r_ = std::max((g.pos - pos).size(), 1.f);
 						if (r_ <= 10.f) {
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
-							this->item.DrawRotaGraph(int(p.x()), int(p.y()), 3.f / r_, 0.f, true);
-							font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr_gun->mod.name, red);
+							xp = int(p.x());
+							yp = int(p.y());
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / std::max(r_ - 5.f, 1.f))), 0, 255));
+							this->item.DrawRotaGraph(xp, yp, 3.f / r_, 0.f, true);
+
+							xp = int(p.x()) + y_r(144.f / r_);
+							yp = int(p.y()) + y_r(144.f / r_) - font_bighight;
+
+							xs = font_big->GetDrawWidthFormat("%s", g.ptr_gun->mod.name.c_str());
+							DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, gray_1, 2);
+							DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, gray_1, 2);
+							DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, green, 2);
+							DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, green, 2);
+							font_big->DrawStringFormat(xp, yp, green, "%s", g.ptr_gun->mod.name.c_str());
 							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 						}
 					}
@@ -435,10 +449,20 @@ public:
 					if (p.z() >= 0.f&&p.z() <= 1.f) {
 						float r_ = std::max((g.pos - pos).size(), 1.f);
 						if (r_ <= 10.f) {
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
-							this->item.DrawRotaGraph(int(p.x()), int(p.y()), 3.f / r_, 0.f, true);
-							font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr_mag->mod.name, red);
-							font_big->DrawStringFormat(int(p.x()) + y_r(36), int(p.y()) + y_r(36) + y_r(18), red, "%d/%d", g.magazine.cap, g.ptr_mag->cap);
+							xp = int(p.x());
+							yp = int(p.y());
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / std::max(r_ - 5.f, 1.f))), 0, 255));
+							this->item.DrawRotaGraph(xp, yp, 3.f / r_, 0.f, true);
+
+							xp = int(p.x()) + y_r(144.f / r_);
+							yp = int(p.y()) + y_r(144.f / r_) - font_bighight;
+
+							xs = font_big->GetDrawWidthFormat("%s %d/%d", g.ptr_mag->mod.name.c_str(), g.magazine.cap, g.ptr_mag->cap);
+							DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, gray_1, 2);
+							DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, gray_1, 2);
+							DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, green, 2);
+							DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, green, 2);
+							font_big->DrawStringFormat(xp, yp, green, "%s %d/%d", g.ptr_mag->mod.name.c_str(), g.magazine.cap, g.ptr_mag->cap);
 							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 						}
 					}
@@ -449,9 +473,20 @@ public:
 					if (p.z() >= 0.f&&p.z() <= 1.f) {
 						float r_ = std::max((g.pos - pos).size(), 1.f);
 						if (r_ <= 10.f) {
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / r_)), 0, 255));
-							this->item.DrawRotaGraph(int(p.x()), int(p.y()), 3.f / r_, 0.f, true);
-							font_big->DrawString(int(p.x()) + y_r(36), int(p.y()) + y_r(36), g.ptr_med->mod.name, red);
+							xp = int(p.x());
+							yp = int(p.y());
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f / std::max(r_ - 5.f, 1.f))), 0, 255));
+							this->item.DrawRotaGraph(xp, yp, 3.f / r_, 0.f, true);
+
+							xp = int(p.x()) + y_r(144.f / r_);
+							yp = int(p.y()) + y_r(144.f / r_) - font_bighight;
+
+							xs = font_big->GetDrawWidthFormat("%s", g.ptr_med->mod.name.c_str());
+							DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, gray_1, 2);
+							DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, gray_1, 2);
+							DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, green, 2);
+							DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, green, 2);
+							font_big->DrawStringFormat(xp, yp, green, "%s", g.ptr_med->mod.name.c_str());
 							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 						}
 					}

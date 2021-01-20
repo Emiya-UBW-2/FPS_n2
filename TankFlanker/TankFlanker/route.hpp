@@ -25,7 +25,7 @@ class main_c : Mainclass {
 	//オブジェ
 	std::vector<Chara> chara;		//キャラ
 	std::vector<Items> item;		//アイテム
-	std::vector<Hit> hit_obj;					      /*弾痕*/
+	std::vector<Hit> hit_obj;		/*弾痕*/
 	size_t hit_buf = 0;
 	//仮
 	bool oldv_1_1 = false;
@@ -111,9 +111,7 @@ public:
 			//マップ読み込み
 			mapparts->Ready_map("data/map_new2");
 			UIparts->load_window("マップ");
-			mapparts->Set_map("data/maps/set.txt", this->item, this->gun_data, this->mag_data, this->meds_data
-				, "data/grassput.bmp", 20.f, 20.f, -20.f, -20.f
-			);
+			mapparts->Set_map("data/maps/set.txt", this->item, this->gun_data, this->mag_data, this->meds_data, "data/grassput.bmp");
 			//キャラ設定
 			size_t sel_g = 0;
 			chara.resize(mapparts->get_spawn_point().size());
@@ -207,26 +205,24 @@ public:
 				mapparts->Start_map();
 				//プレイヤー操作変数群
 				this->TPS.ready(false);
-				oldv_3_2 = true;
+				oldv_1_1 = true;
+				oldv_1_2 = true;
+				oldv_2_1 = true;
 				oldv_2_2 = true;
+				oldv_3_1 = true;
+				oldv_3_2 = true;
 				for (auto& c : chara) {
 					c.start();
 					c.reset_waypoint(mapparts);
 				}
 				SetMousePoint(deskx / 2, desky / 2);
 				//1P
-				camera_main.fov = deg2rad(Drawparts->use_vr ? 90 : fov_pc);	//
-				camera_main.near_ = 0.1f;
-				camera_main.far_ = 100.f;
+				camera_main.set_cam_info(deg2rad(Drawparts->use_vr ? 90 : fov_pc), 0.1f, 100.f);
 				//2P
-				camera_sub.fov = deg2rad(fov_pc);	//
-				camera_sub.near_ = 0.1f;
-				camera_sub.far_ = 100.f;
+				camera_sub.set_cam_info(deg2rad(fov_pc), 0.1f, 100.f);
 				//TPS
 				camera_TPS.campos = VGet(0, 1.8f, -10);
-				camera_TPS.fov = deg2rad(fov_pc);
-				camera_TPS.near_ = 0.1f;
-				camera_TPS.far_ = 100.f;
+				camera_TPS.set_cam_info(deg2rad(fov_pc), 0.1f, 100.f);
 				//ルール
 				ruleparts->set();
 				//
@@ -246,96 +242,7 @@ public:
 							mine.pos_WAIST = mine.pos_WAIST - mine.pos_WAIST_rep;
 						}
 						for (auto& c : chara) {
-							easing_set(&c.HP_r, float(c.HP), 0.95f);
-							if (c.HP == 0) {
-								easing_set(&c.anime_hand_nomal->per, 0.f, 0.9f);
-								easing_set(&c.anime_walk->per, 0.f, 0.9f);
-								easing_set(&c.anime_run->per, 0.f, 0.9f);
-								easing_set(&c.anime_reload->per, 0.f, 0.9f);
-								easing_set(&c.anime_hand_trigger_pull->per, 0.f, 0.9f);
-								easing_set(&c.anime_arm_run->per, 0.f, 0.9f);
-								easing_set(&c.anime_sit->per, 0.f, 0.9f);
-								easing_set(&c.anime_swalk->per, 0.f, 0.9f);
-								easing_set(&c.anime_hand_trigger->per, 0.f, 0.9f);
-
-								easing_set(&c.anime_die_1->per, 1.f, 0.9f);
-								c.anime_die_1->update(false, 1.f);
-
-								if (c.death_timer == 0.f) {
-									c.body.frame_reset(c.frame_s.bodyg_f.first);
-									c.body.frame_reset(c.frame_s.bodyb_f.first);
-									c.body.frame_reset(c.frame_s.body_f.first);
-									c.body.frame_reset(c.frame_s.head_f.first);
-									c.body.frame_reset(c.frame_s.RIGHTarm1_f.first);
-									c.body.frame_reset(c.frame_s.RIGHTarm1_f.first);
-									c.body.frame_reset(c.frame_s.RIGHTarm2_f.first);
-									c.body.frame_reset(c.frame_s.RIGHTarm2_f.first);
-									c.body.frame_reset(c.frame_s.RIGHThand_f.first);
-									c.body.frame_reset(c.frame_s.LEFTarm1_f.first);
-									c.body.frame_reset(c.frame_s.LEFTarm1_f.first);
-									c.body.frame_reset(c.frame_s.LEFTarm2_f.first);
-									c.body.frame_reset(c.frame_s.LEFTarm2_f.first);
-									c.body.frame_reset(c.frame_s.LEFThand_f.first);
-
-									//マガジン排出
-									if (c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
-										//音
-										c.audio.mag_down.play_3D(c.pos_RIGHTHAND, 15.f);
-										//弾数
-										auto dnm = (c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) ? c.gun_stat[c.gun_ptr->id].ammo_cnt - 1 : 0;
-										while (true) {
-											//マガジン排出
-											c.gun_stat[c.gun_ptr->id].mag_release();
-											//マガジン排出
-											bool tt = false;
-											for (auto& g : this->item) {
-												if (g.ptr_gun == nullptr && g.ptr_mag == nullptr && g.ptr_med == nullptr) {
-													tt = true;
-													g.Set_item(c.gun_ptr->magazine, c.pos_mag, c.mat_mag);
-													g.add = (c.obj_gun.frame(c.gun_ptr->frame_s.magazine2_f.first) - c.obj_gun.frame(c.gun_ptr->frame_s.magazine_f.first)).Norm()*-1.f / fps_;//排莢ベクトル
-													g.magazine.cap = dnm;
-													g.del_timer = 0.f;
-													break;
-												}
-											}
-											if (!tt) {
-												this->item.resize(this->item.size() + 1);
-												auto& g = this->item.back();
-												g.id = this->item.size() - 1;
-												g.Set_item(c.gun_ptr->magazine, c.pos_mag, c.mat_mag);
-												g.add = VECTOR_ref(VGet(
-													float(-10 + GetRand(10 * 2)) / 100.f,
-													-1.f,
-													float(-10 + GetRand(10 * 2)) / 100.f
-												))*1.f / fps_;//排莢ベクトル
-												g.magazine.cap = dnm;
-												g.del_timer = 0.f;
-											}
-											//
-											if (c.gun_stat[c.gun_ptr->id].mag_in.size() == 0) {
-												break;
-											}
-											dnm = c.gun_stat[c.gun_ptr->id].mag_in.front();
-										}
-									}
-								}
-								c.death_timer += 1.f / fps_;
-								if (c.death_timer >= 5.f) {
-									c.death_timer = 0.f;
-									c.anime_die_1->reset();
-									c.spawn(c.spawn_pos, c.spawn_mat);
-									c.reset_waypoint(mapparts);
-								}
-
-							}
-							if (c.kill_f) {
-								c.kill_time -= 1.f / fps_;
-								if (c.kill_time <= 0.f) {
-									c.kill_time = 0.f;
-									c.kill_streak = 0;
-									c.kill_f = false;
-								}
-							}
+							c.set_alive(this->item, mapparts);
 						}
 						//プレイヤー操作
 						{
@@ -374,8 +281,8 @@ public:
 								{
 									//VR用
 									{
-										VECTOR_ref pos_t2 = (c.pos + (VGet(c.pos_HMD_old.x(), 0.f, c.pos_HMD_old.z())) - c.rec_HMD);
-										VECTOR_ref pos_t = (c.pos + (VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
+										VECTOR_ref pos_t2 = c.pos + (VECTOR_ref(VGet(c.pos_HMD_old.x(), 0.f, c.pos_HMD_old.z())) - c.rec_HMD);
+										VECTOR_ref pos_t  = c.pos + (VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
 										mapparts->map_col_wall(pos_t2, &pos_t);//壁
 										c.pos = pos_t - (VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD);
 									}
@@ -749,7 +656,6 @@ public:
 									{
 										auto ratio_t = c.add_vec.size() / c.speed;
 										if (c.HP != 0) {
-											float ani_hand = 0.f;//0
 											float ani_walk = 0.f;//1
 											float ani_run = 0.f;//2
 											float ani_sit = 0.f;//7
@@ -791,7 +697,7 @@ public:
 									}
 									//視点
 									{
-										VECTOR_ref pv = VGet(0, 0, 0);
+										VECTOR_ref pv;
 										if (c.gun_ptr->frame_s.site_f.first != INT_MAX) {
 											pv = c.gun_ptr->frame_s.site_f.second;
 										}
@@ -1191,9 +1097,7 @@ public:
 						{
 							auto& ct = mine;
 							if (ct.HP != 0) {
-								camera_main.campos = ct.pos + ct.pos_HMD - ct.rec_HMD;
-								camera_main.camvec = camera_main.campos + ct.mat.zvec()*(Drawparts->use_vr ? 1.f : -1.f);
-								camera_main.camup = ct.mat.yvec();
+								camera_main.set_cam_pos(ct.pos + ct.pos_HMD - ct.rec_HMD, (ct.pos + ct.pos_HMD - ct.rec_HMD) + ct.mat.zvec()*(Drawparts->use_vr ? 1.f : -1.f), ct.mat.yvec());
 							}
 							else {
 								//デスカメラ
@@ -1210,7 +1114,7 @@ public:
 						Drawparts->Move_Player();
 						//ルール保存
 						UIparts->set_rule(ruleparts->getready(), ruleparts->gettimer());
-
+						ruleparts->update();
 						//1P描画
 						{
 							//影用意
@@ -1320,10 +1224,19 @@ public:
 							if (Drawparts->use_vr) {
 								auto& ct = chara[sel_cam];
 								//cam_s.cam
-								camera_sub.campos = ct.pos + ct.pos_HMD - ct.rec_HMD;
-								camera_sub.camvec = camera_sub.campos + ct.mat.zvec()*-1.f;
-								camera_sub.camup = ct.mat.yvec();
-
+								{
+									if (ct.HP != 0) {
+										camera_sub.set_cam_pos(ct.pos + ct.pos_HMD - ct.rec_HMD, (ct.pos + ct.pos_HMD - ct.rec_HMD) + ct.mat.zvec()*-1.f, ct.mat.yvec());
+									}
+									else {
+										//デスカメラ
+										easing_set(&camera_sub.camvec, chara[ct.death_id].pos + chara[ct.death_id].pos_HMD - chara[ct.death_id].rec_HMD, 0.9f);
+										auto rad = atan2f((camera_sub.camvec - camera_sub.campos).x(), (camera_sub.camvec - camera_sub.campos).z());
+										easing_set(&camera_sub.campos, ct.pos + ct.pos_HMD - ct.rec_HMD + VGet(-5.f*sin(rad), 2.f, -5.f*cos(rad)), 0.9f);
+										camera_sub.camup = VGet(0, 1.f, 0);
+										mapparts->map_col_nearest(camera_sub.camvec, &camera_sub.campos);
+									}
+								}
 								//影用意
 								Drawparts->Ready_Shadow(camera_sub.campos,
 									[&] {
@@ -1480,7 +1393,6 @@ public:
 							Debugparts->debug(10, 10, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 						}
 					}
-					ruleparts->update();
 					//画面の反映
 					Drawparts->Screen_Flip(waits);
 					//終了判定
@@ -1490,15 +1402,6 @@ public:
 					}
 					if (CheckHitKey(KEY_INPUT_O) != 0) {
 						break;
-					}
-					//
-					for (auto& c : chara) {
-						for (auto& t : c.effcs) {
-							t.put_end();
-						}
-						for (auto& t : c.effcs_gndhit) {
-							t.put_end();
-						}
 					}
 					//
 				}

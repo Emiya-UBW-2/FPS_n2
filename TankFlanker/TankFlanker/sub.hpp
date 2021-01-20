@@ -515,6 +515,7 @@ public:
 		}
 	};
 public:
+	class Items;
 	//player
 	class Chara {
 	private:
@@ -731,7 +732,6 @@ public:
 				}
 			}
 		};
-
 	public:
 		/*エフェクト*/
 		std::array<EffectS, effects> effcs;
@@ -1022,6 +1022,102 @@ public:
 			this->ai_phase = 0;
 		}
 
+		template<class Y2, class D2>
+		void set_alive(std::vector<Items>& item, std::unique_ptr<Y2, D2>& mapparts) {
+			const auto fps_ = GetFPS();
+			easing_set(&this->HP_r, float(this->HP), 0.95f);
+			if (this->HP == 0) {
+				easing_set(&this->anime_hand_nomal->per, 0.f, 0.9f);
+				easing_set(&this->anime_walk->per, 0.f, 0.9f);
+				easing_set(&this->anime_run->per, 0.f, 0.9f);
+				easing_set(&this->anime_reload->per, 0.f, 0.9f);
+				easing_set(&this->anime_hand_trigger_pull->per, 0.f, 0.9f);
+				easing_set(&this->anime_arm_run->per, 0.f, 0.9f);
+				easing_set(&this->anime_sit->per, 0.f, 0.9f);
+				easing_set(&this->anime_swalk->per, 0.f, 0.9f);
+				easing_set(&this->anime_hand_trigger->per, 0.f, 0.9f);
+
+				easing_set(&this->anime_die_1->per, 1.f, 0.9f);
+				this->anime_die_1->update(false, 1.f);
+
+				if (this->death_timer == 0.f) {
+					this->body.frame_reset(this->frame_s.bodyg_f.first);
+					this->body.frame_reset(this->frame_s.bodyb_f.first);
+					this->body.frame_reset(this->frame_s.body_f.first);
+					this->body.frame_reset(this->frame_s.head_f.first);
+					this->body.frame_reset(this->frame_s.RIGHTarm1_f.first);
+					this->body.frame_reset(this->frame_s.RIGHTarm1_f.first);
+					this->body.frame_reset(this->frame_s.RIGHTarm2_f.first);
+					this->body.frame_reset(this->frame_s.RIGHTarm2_f.first);
+					this->body.frame_reset(this->frame_s.RIGHThand_f.first);
+					this->body.frame_reset(this->frame_s.LEFTarm1_f.first);
+					this->body.frame_reset(this->frame_s.LEFTarm1_f.first);
+					this->body.frame_reset(this->frame_s.LEFTarm2_f.first);
+					this->body.frame_reset(this->frame_s.LEFTarm2_f.first);
+					this->body.frame_reset(this->frame_s.LEFThand_f.first);
+
+					//マガジン排出
+					if (this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1) {
+						//音
+						this->audio.mag_down.play_3D(this->pos_RIGHTHAND, 15.f);
+						//弾数
+						auto dnm = (this->gun_stat[this->gun_ptr->id].ammo_cnt >= 1) ? this->gun_stat[this->gun_ptr->id].ammo_cnt - 1 : 0;
+						while (true) {
+							//マガジン排出
+							this->gun_stat[this->gun_ptr->id].mag_release();
+							//マガジン排出
+							bool tt = false;
+							for (auto& g : item) {
+								if (g.ptr_gun == nullptr && g.ptr_mag == nullptr && g.ptr_med == nullptr) {
+									tt = true;
+									g.Set_item(this->gun_ptr->magazine, this->pos_mag, this->mat_mag);
+									g.add = (this->obj_gun.frame(this->gun_ptr->frame_s.magazine2_f.first) - this->obj_gun.frame(this->gun_ptr->frame_s.magazine_f.first)).Norm()*-1.f / fps_;//排莢ベクトル
+									g.magazine.cap = dnm;
+									g.del_timer = 0.f;
+									break;
+								}
+							}
+							if (!tt) {
+								item.resize(item.size() + 1);
+								auto& g = item.back();
+								g.id = item.size() - 1;
+								g.Set_item(this->gun_ptr->magazine, this->pos_mag, this->mat_mag);
+								g.add = VECTOR_ref(VGet(
+									float(-10 + GetRand(10 * 2)) / 100.f,
+									-1.f,
+									float(-10 + GetRand(10 * 2)) / 100.f
+								))*1.f / fps_;//排莢ベクトル
+								g.magazine.cap = dnm;
+								g.del_timer = 0.f;
+							}
+							//
+							if (this->gun_stat[this->gun_ptr->id].mag_in.size() == 0) {
+								break;
+							}
+							dnm = this->gun_stat[this->gun_ptr->id].mag_in.front();
+						}
+					}
+				}
+				this->death_timer += 1.f / fps_;
+				if (this->death_timer >= 5.f) {
+					this->death_timer = 0.f;
+					this->anime_die_1->reset();
+					this->spawn(this->spawn_pos, this->spawn_mat);
+					reset_waypoint(mapparts);
+				}
+
+			}
+			if (this->kill_f) {
+				this->kill_time -= 1.f / fps_;
+				if (this->kill_time <= 0.f) {
+					this->kill_time = 0.f;
+					this->kill_streak = 0;
+					this->kill_f = false;
+				}
+			}
+
+		}
+
 		void Draw_chara() {
 			this->body.DrawModel();
 			this->obj_gun.DrawModel();
@@ -1036,6 +1132,7 @@ public:
 				a.draw();
 			}
 		}
+
 		void Delete_chara() {
 			obj_gun.Dispose();
 			obj_mag.Dispose();
@@ -1152,8 +1249,6 @@ public:
 				this->mat_body = this->mat;
 			}
 		}
-
-
 		void operation_VR(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& Drawparts, const bool& cannotmove, bool* oldv_1_1) {
 			//操作
 			{
@@ -1220,8 +1315,6 @@ public:
 				*oldv_1_1 = ptr_.turn && ptr_.now;
 			}
 		}
-
-
 		void operation(const bool& cannotmove) {
 			//HMD_mat
 			int32_t x_m = 0, y_m = 0;

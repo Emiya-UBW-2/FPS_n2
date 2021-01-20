@@ -24,7 +24,7 @@ private:
 	int y_size = 0;
 
 	//雲
-	int grasss = 250;				/*grassの数*/
+	int grasss = 600;				/*grassの数*/
 	std::vector<VERTEX3D> grassver; /*grass*/
 	std::vector<DWORD> grassind;    /*grass*/
 	int VerBuf, IndexBuf;			/*grass*/
@@ -82,9 +82,7 @@ public:
 		std::vector<Guns>& gun_data,
 		std::vector<Mags>& mag_data,
 		std::vector<Meds>& med_data,
-
-		const char* buf, const float x_max = 10.f, const float z_max = 10.f, const float x_min = -10.f, const float z_min = -10.f
-		) {
+		const char* buf) {
 		//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 		VECTOR_ref size;
 		{
@@ -215,12 +213,18 @@ public:
 			int grass_pos = LoadSoftImage(buf);
 			int xs = 0, ys = 0;
 			GetSoftImageSize(grass_pos, &xs, &ys);
+
+			float x_max = map_col.mesh_maxpos(0).x();
+			float z_max = map_col.mesh_maxpos(0).z();
+			float x_min = map_col.mesh_minpos(0).x();
+			float z_min = map_col.mesh_minpos(0).z();
+
 			for (int i = 0; i < grasss; ++i) {
 
 				float x_t = (float)(GetRand(int((x_max - x_min)) * 100) - int(x_max - x_min) * 50) / 100.0f;
 				float z_t = (float)(GetRand(int((z_max - z_min)) * 100) - int(z_max - z_min) * 50) / 100.0f;
 				int _r_, _g_, _b_, _a_;
-				while (1) {
+				while (true) {
 					GetPixelSoftImage(grass_pos, int((x_t - x_min) / (x_max - x_min)*float(xs)), int((z_t - z_min) / (z_max - z_min)*float(ys)), &_r_, &_g_, &_b_, &_a_);
 					if (_r_ <= 128) {
 						break;
@@ -234,7 +238,7 @@ public:
 				VECTOR_ref tmpvect = VGet(x_t, 5.f, z_t);
 				map_col_nearest(tmpvect2, &tmpvect);
 				//
-				MV1SetMatrix(grass.get(), MMult(MMult(MGetRotY(deg2rad(GetRand(90))), MGetScale(VGet(1.f, 1.f, 1.f))), MGetTranslate(tmpvect.get())));
+				MV1SetMatrix(grass.get(), MMult(MMult(MGetRotY(deg2rad(GetRand(90))), MGetScale(VGet(1.f, float(100-50+GetRand(50*2))/100.f, 1.f))), MGetTranslate(tmpvect.get())));
 				//上省
 				MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
 				RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
