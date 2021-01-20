@@ -141,6 +141,14 @@ public:
 	public:
 	};
 public:
+	//
+	struct Hit {		      /**/
+		bool flug{ false };   /*弾痕フラグ*/
+		int use{ 0 };	      /*使用フレーム*/
+		MV1 pic;	      /*弾痕モデル*/
+		VECTOR_ref pos;	      /*座標*/
+		MATRIX_ref mat;	      /**/
+	};								      /**/
 	//弾データ
 	class Ammo_info {
 	private:
@@ -192,7 +200,7 @@ public:
 			this->vec = vec_t;
 		}
 		template<class Y, class D>
-		void update(Chara* c, std::vector<Chara>* chara, std::unique_ptr<Y, D>& mapparts) {
+		void update(Chara* c, std::vector<Chara>* chara, std::unique_ptr<Y, D>& mapparts, std::vector<Hit>& hit_obj,size_t& hitbuf) {
 			if (this->flug) {
 				this->repos = this->pos;
 				this->pos += this->vec * (this->spec->speed / GetFPS());
@@ -290,6 +298,20 @@ public:
 						this->flug = false;
 						c->effcs_gndhit[c->use_effcsgndhit].set(this->pos, p.Normal, 0.025f / 0.1f);
 						++c->use_effcsgndhit %= c->effcs_gndhit.size();
+
+						//弾痕のセット
+						{
+							float asize = this->spec->caliber*100.f*2.f;
+							VECTOR_ref y_vec = p.Normal;
+							VECTOR_ref z_vec = y_vec.cross(this->vec.Norm()).Norm();
+							VECTOR_ref scale = VGet(asize / std::abs(this->vec.Norm().dot(y_vec)), asize, asize);
+
+							hit_obj[hitbuf].use = 0;
+							hit_obj[hitbuf].mat = MATRIX_ref::Scale(scale)*  MATRIX_ref::Axis1(y_vec.cross(z_vec), y_vec, z_vec);
+							hit_obj[hitbuf].pos = this->pos + y_vec * 0.02f;
+							hit_obj[hitbuf].flug = true;
+							++hitbuf %= hit_obj.size();
+						}
 					}
 					//*/
 				}
@@ -709,6 +731,7 @@ public:
 				}
 			}
 		};
+
 	public:
 		/*エフェクト*/
 		std::array<EffectS, effects> effcs;
@@ -755,6 +778,7 @@ public:
 		float speed = 0.f;
 		VECTOR_ref pos;				//位置
 		MATRIX_ref mat;				//位置
+		MATRIX_ref mat_body;		//位置
 		VECTOR_ref spawn_pos;		//spawn
 		MATRIX_ref spawn_mat;		//spawn
 		VECTOR_ref add_vec;			//移動ベクトル
@@ -774,7 +798,6 @@ public:
 		bool select = false;
 		bool shoot = false;
 		bool reload = false;
-
 		bool get_ = false;
 		bool delete_ = false;
 		VECTOR_ref gunpos;											//マウスエイム用銃座標
@@ -1041,14 +1064,25 @@ public:
 			if (this->ads.first) {
 				this->running = false;
 			}
+			if (!this->wkey) {
+				this->running = false;
+			}
 			if (!this->wkey && !this->skey && !this->akey && !this->dkey) {
 				this->running = false;
 			}
+			if (this->skey) {
+				this->running = false;
+			}
+
 			if (this->running) {
 				this->skey = false;
-				this->akey = false;
-				this->dkey = false;
 			}
+
+			if (this->running) {
+				this->qkey = false;
+				this->ekey = false;
+			}
+
 
 			if (this->HP != 0) {
 				this->mat *= MATRIX_ref::RotAxis(this->mat.zvec(), this->body_zrad).Inverse();
@@ -1084,7 +1118,7 @@ public:
 				this->get_ = false;
 				this->delete_ = false;
 				this->select = false;
-				this->down_mag = false;
+				this->down_mag = true;
 				this->jamp = false;
 			}
 
@@ -1097,13 +1131,26 @@ public:
 			xv_t.y(0.f);
 			xv_t = xv_t.Norm();
 
-			easing_set(&this->add_vec_buf,
-				VECTOR_ref(VGet(0, 0, 0))
-				+ (this->wkey ? (zv_t*-this->speed) : VGet(0, 0, 0))
-				+ (this->skey ? (zv_t*this->speed) : VGet(0, 0, 0))
-				+ (this->akey ? (xv_t*this->speed) : VGet(0, 0, 0))
-				+ (this->dkey ? (xv_t*-this->speed) : VGet(0, 0, 0))
-				, 0.95f);
+			if (this->running) {
+				xv_t = xv_t.Norm()*0.5f;
+				easing_set(&this->add_vec_buf,
+					VECTOR_ref(VGet(0, 0, 0))
+					+ (this->wkey ? (zv_t*-this->speed) : VGet(0, 0, 0))
+					+ (this->akey ? (xv_t*this->speed) : VGet(0, 0, 0))
+					+ (this->dkey ? (xv_t*-this->speed) : VGet(0, 0, 0))
+					, 0.95f);
+				this->mat_body = MATRIX_ref::Axis1(this->mat.yvec().cross(this->add_vec_buf.Norm()*-1.f), this->mat.yvec(), this->add_vec_buf.Norm()*-1.f);
+			}
+			else {
+				easing_set(&this->add_vec_buf,
+					VECTOR_ref(VGet(0, 0, 0))
+					+ (this->wkey ? (zv_t*-this->speed) : VGet(0, 0, 0))
+					+ (this->skey ? (zv_t*this->speed) : VGet(0, 0, 0))
+					+ (this->akey ? (xv_t*this->speed) : VGet(0, 0, 0))
+					+ (this->dkey ? (xv_t*-this->speed) : VGet(0, 0, 0))
+					, 0.95f);
+				this->mat_body = this->mat;
+			}
 		}
 
 
@@ -1554,9 +1601,6 @@ public:
 				//セレクター(中ボタン)
 				this->selkey.get_in(this->select);
 				//マグキャッチ(Rキー)
-				if (this->HP == 0) {
-					this->reload = false;
-				}
 				easing_set(&this->obj_gun.get_anime(5).per, float(this->reload), 0.5f);
 				//銃取得
 				this->getmag.get_in(this->get_);

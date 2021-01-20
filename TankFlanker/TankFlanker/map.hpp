@@ -5,7 +5,7 @@
 #define PLAYER_HIT_WIDTH			0.15f	// 当たり判定カプセルの半径
 #define PLAYER_HIT_HEIGHT			1.8f	// 当たり判定カプセルの高さ
 #define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
-#define PLAYER_HIT_SLIDE_LENGTH		0.05f	// 一度の壁押し出し処理でスライドさせる距離
+#define PLAYER_HIT_SLIDE_LENGTH		0.015f	// 一度の壁押し出し処理でスライドさせる距離
 
 class Mapclass :Mainclass {
 private:
@@ -22,6 +22,17 @@ private:
 
 	int x_size = 0;
 	int y_size = 0;
+
+	//雲
+	int grasss = 250;				/*grassの数*/
+	std::vector<VERTEX3D> grassver; /*grass*/
+	std::vector<DWORD> grassind;    /*grass*/
+	int VerBuf, IndexBuf;			/*grass*/
+	MV1 grass;						/*grassモデル*/
+	GraphHandle grass_pic;				/*画像ハンドル*/
+	int IndexNum, VerNum;			/*grass*/
+	int vnum, pnum;					/*grass*/
+	MV1_REF_POLYGONLIST RefMesh;	/*grass*/
 public:
 
 
@@ -60,11 +71,19 @@ public:
 		envi = SoundHandle::Load(dir + "/envi.wav");
 		minmap = GraphHandle::Load(dir + "/minimap.png");
 		SetUseASyncLoadFlag(FALSE);
+
+		SetUseASyncLoadFlag(TRUE);
+		grass_pic = GraphHandle::Load("data/model/grass/grass.png");		 /*grass*/
+		SetUseASyncLoadFlag(FALSE);
+		MV1::Load("data/model/grass/model.mv1", &grass, true);		/*grass*/
 	}
-	void Set_map(const char* item_txt, std::vector<Items>& item_data, 
+	void Set_map(
+		const char* item_txt, std::vector<Items>& item_data, 
 		std::vector<Guns>& gun_data,
 		std::vector<Mags>& mag_data,
-		std::vector<Meds>& med_data
+		std::vector<Meds>& med_data,
+
+		const char* buf, const float x_max = 10.f, const float z_max = 10.f, const float x_min = -10.f, const float z_min = -10.f
 		) {
 		//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 		VECTOR_ref size;
@@ -179,6 +198,71 @@ public:
 		}
 
 		minmap.GetSize(&x_size, &y_size);
+
+
+		{
+			/*grass*/
+			MV1SetupReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの作成*/
+			RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
+			IndexNum = RefMesh.PolygonNum * 3 * grasss; /*インデックスの数を取得*/
+			VerNum = RefMesh.VertexNum * grasss;	/*頂点の数を取得*/
+			grassver.resize(VerNum);   /*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			grassind.resize(IndexNum); /*頂点データとインデックスデータを格納するメモリ領域の確保*/
+
+			vnum = 0;
+			pnum = 0;
+
+			int grass_pos = LoadSoftImage(buf);
+			int xs = 0, ys = 0;
+			GetSoftImageSize(grass_pos, &xs, &ys);
+			for (int i = 0; i < grasss; ++i) {
+
+				float x_t = (float)(GetRand(int((x_max - x_min)) * 100) - int(x_max - x_min) * 50) / 100.0f;
+				float z_t = (float)(GetRand(int((z_max - z_min)) * 100) - int(z_max - z_min) * 50) / 100.0f;
+				int _r_, _g_, _b_, _a_;
+				while (1) {
+					GetPixelSoftImage(grass_pos, int((x_t - x_min) / (x_max - x_min)*float(xs)), int((z_t - z_min) / (z_max - z_min)*float(ys)), &_r_, &_g_, &_b_, &_a_);
+					if (_r_ <= 128) {
+						break;
+					}
+					else {
+						x_t = (float)(GetRand(int((x_max - x_min)) * 100) - int(x_max - x_min) * 50) / 100.0f;
+						z_t = (float)(GetRand(int((z_max - z_min)) * 100) - int(z_max - z_min) * 50) / 100.0f;
+					}
+				}
+				VECTOR_ref tmpvect2 = VGet(x_t, -5.f, z_t);
+				VECTOR_ref tmpvect = VGet(x_t, 5.f, z_t);
+				map_col_nearest(tmpvect2, &tmpvect);
+				//
+				MV1SetMatrix(grass.get(), MMult(MMult(MGetRotY(deg2rad(GetRand(90))), MGetScale(VGet(1.f, 1.f, 1.f))), MGetTranslate(tmpvect.get())));
+				//上省
+				MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
+				RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
+				for (int j = 0; j < RefMesh.VertexNum; ++j) {
+					auto& g = grassver[j + vnum];
+					g.pos = RefMesh.Vertexs[j].Position;
+					g.norm = RefMesh.Vertexs[j].Normal;
+					g.dif = RefMesh.Vertexs[j].DiffuseColor;
+					g.spc = RefMesh.Vertexs[j].SpecularColor;
+					g.u = RefMesh.Vertexs[j].TexCoord[0].u;
+					g.v = RefMesh.Vertexs[j].TexCoord[0].v;
+					g.su = RefMesh.Vertexs[j].TexCoord[1].u;
+					g.sv = RefMesh.Vertexs[j].TexCoord[1].v;
+				}
+				for (size_t j = 0; j < size_t(RefMesh.PolygonNum); ++j) {
+					for (size_t k = 0; k < std::size(RefMesh.Polygons[j].VIndex); ++k)
+						grassind[j * 3 + k + pnum] = WORD(RefMesh.Polygons[j].VIndex[k] + vnum);
+				}
+				vnum += RefMesh.VertexNum;
+				pnum += RefMesh.PolygonNum * 3;
+			}
+			DeleteSoftImage(grass_pos);
+
+			VerBuf = CreateVertexBuffer(VerNum, DX_VERTEX_TYPE_NORMAL_3D);
+			IndexBuf = CreateIndexBuffer(IndexNum, DX_INDEX_TYPE_32BIT);
+			SetVertexBufferData(0, grassver.data(), VerNum, VerBuf);
+			SetIndexBufferData(0, grassind.data(), IndexNum, IndexBuf);
+		}
 	}
 	void Start_map() {
 		envi.play(DX_PLAYTYPE_LOOP, TRUE);
@@ -193,6 +277,11 @@ public:
 		lean_point_e.clear();
 		spawn_point.clear();
 		minmap.Dispose();
+
+		grass_pic.Dispose();
+		grass.Dispose();
+		grassver.clear();
+		grassind.clear();
 	}
 	auto& map_get() { return map; }
 	auto& map_col_get() { return map_col; }
@@ -300,6 +389,18 @@ public:
 			SetFogEnable(TRUE);
 		}
 		return;
+	}
+	void grass_draw(void) {
+		SetFogStartEnd(0.0f, 500.f);
+		SetFogColor(192, 192, 192);
+
+		SetDrawAlphaTest(DX_CMP_GREATER, 128);
+		SetUseLighting(FALSE);
+		{
+			DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, grass_pic.get(), TRUE);
+		}
+		SetUseLighting(TRUE);
+		SetDrawAlphaTest(-1, 0);
 	}
 
 };
