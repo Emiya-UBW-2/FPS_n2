@@ -800,6 +800,8 @@ public:
 		bool reload = false;
 		bool get_ = false;
 		bool delete_ = false;
+		bool sort_ = false;
+		switchs sortmag;
 		VECTOR_ref gunpos;											//ƒ}ƒEƒXƒGƒCƒ€—peÀ•W
 		switchs getmag;
 		switchs delete_item;
@@ -971,6 +973,9 @@ public:
 
 			this->gun_stat[this->gun_ptr->id].init();
 			this->gun_stat[this->gun_ptr->id].mag_insert(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1(‘•“U‚ ‚è)
+			this->gun_stat[this->gun_ptr->id].mag_plus(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1(‘•“U–³‚µ)
+			this->gun_stat[this->gun_ptr->id].mag_plus(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1(‘•“U–³‚µ)
+			this->gun_stat[this->gun_ptr->id].mag_plus(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1(‘•“U–³‚µ)
 			this->gun_stat[this->gun_ptr->id].mag_plus(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1(‘•“U–³‚µ)
 			this->gun_stat[this->gun_ptr->id].mag_plus(this->gun_ptr->magazine);			//ƒ}ƒKƒWƒ“+1(‘•“U–³‚µ)
 
@@ -1213,6 +1218,7 @@ public:
 				this->aim = false;
 				this->reload = false;
 				this->get_ = false;
+				this->sort_ = false;
 				this->delete_ = false;
 				this->select = false;
 				this->down_mag = true;
@@ -1255,6 +1261,7 @@ public:
 				this->aim = false;
 				this->reload = false;
 				this->get_ = false;
+				this->sort_ = false;
 				this->delete_ = false;
 				this->select = false;
 
@@ -1279,6 +1286,8 @@ public:
 							this->down_mag |= (((ptr_.on[0] & BUTTON_TRIGGER) != 0) && (this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1));
 							//ƒAƒCƒeƒ€æ“¾
 							this->get_ = (ptr_.on[0] & BUTTON_TOPBUTTON_B) != 0;
+							//
+							this->sort_ = false;
 							//running
 							this->running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
 							//jamp
@@ -1331,6 +1340,7 @@ public:
 				this->aim = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
 				this->reload = CheckHitKey(KEY_INPUT_R) != 0;
 				this->get_ = CheckHitKey(KEY_INPUT_F) != 0;
+				this->sort_ = CheckHitKey(KEY_INPUT_Z) != 0;
 				this->delete_ = CheckHitKey(KEY_INPUT_G) != 0;
 				this->select = (GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0;
 				this->down_mag = true;
@@ -1360,6 +1370,7 @@ public:
 				this->aim = false;
 				this->reload = false;
 				this->get_ = false;
+				this->sort_ = false;
 				this->delete_ = false;
 				this->select = false;
 				this->down_mag = true;
@@ -1698,6 +1709,8 @@ public:
 				//eæ“¾
 				this->getmag.get_in(this->get_);
 				//
+				this->sortmag.get_in(this->sort_);
+				//
 				this->delete_item.get_in(this->delete_);
 			}
 		}
@@ -1901,7 +1914,7 @@ public:
 		}
 
 		void set() {
-			ready = 5.f;
+			ready = 0.f;
 			timer = 180.f;
 		}
 

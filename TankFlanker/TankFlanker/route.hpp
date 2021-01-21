@@ -953,6 +953,26 @@ public:
 										g.add = (c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first - 1) - c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first)).Norm()*-5.f / fps_;//”rä°ƒxƒNƒgƒ‹
 									}
 								}
+								//ƒ}ƒKƒWƒ“®“Ú
+								if (c.sortmag.second == 1 && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 2) {
+									size_t siz_b = c.gun_stat[c.gun_ptr->id].mag_in.size() - 1;
+									size_t siz = siz_b - 1;
+									while (true) {
+										if (c.gun_stat[c.gun_ptr->id].mag_in[siz_b] > c.gun_stat[c.gun_ptr->id].mag_in[siz]) {
+											auto tmp = c.gun_stat[c.gun_ptr->id].mag_in[siz_b];
+											c.gun_stat[c.gun_ptr->id].mag_in[siz_b] = c.gun_stat[c.gun_ptr->id].mag_in[siz];
+											c.gun_stat[c.gun_ptr->id].mag_in[siz] = tmp;
+											siz_b = siz - 1;
+											siz = siz_b - 1;;
+										}
+										else {
+											break;
+										}
+										if (siz <= 0 || siz_b <= 0) {
+											break;
+										}
+									}
+								}
 								//ƒ}ƒKƒWƒ“‘}“ü
 								if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
 									if (Drawparts->use_vr && c.reload_cnt < c.gun_ptr->reload_time) {
