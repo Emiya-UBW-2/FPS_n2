@@ -956,20 +956,49 @@ public:
 								//ƒ}ƒKƒWƒ“®“Ú
 								if (c.sortmag.second == 1 && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 2) {
 									size_t siz_b = c.gun_stat[c.gun_ptr->id].mag_in.size() - 1;
-									size_t siz = siz_b - 1;
-									while (true) {
-										if (c.gun_stat[c.gun_ptr->id].mag_in[siz_b] > c.gun_stat[c.gun_ptr->id].mag_in[siz]) {
-											auto tmp = c.gun_stat[c.gun_ptr->id].mag_in[siz_b];
-											c.gun_stat[c.gun_ptr->id].mag_in[siz_b] = c.gun_stat[c.gun_ptr->id].mag_in[siz];
-											c.gun_stat[c.gun_ptr->id].mag_in[siz] = tmp;
-											siz_b = siz - 1;
-											siz = siz_b - 1;;
+									size_t siz = 0;
+									if (!c.sort_f) {
+										std::sort(c.gun_stat[c.gun_ptr->id].mag_in.begin() + 1, c.gun_stat[c.gun_ptr->id].mag_in.end(), [](size_t a, size_t b) {
+											return a > b;
+										});
+										c.sort_f = true;
+									}
+									else {
+										for (auto& m : c.gun_stat[c.gun_ptr->id].mag_in) {
+											if (m != c.gun_ptr->magazine->cap) {
+												siz = &m - &c.gun_stat[c.gun_ptr->id].mag_in[0];
+												break;
+											}
 										}
-										else {
-											break;
-										}
-										if (siz <= 0 || siz_b <= 0) {
-											break;
+										auto be_ = std::clamp<size_t>(c.gun_stat[c.gun_ptr->id].mag_in.back(), 0, c.gun_ptr->magazine->cap - c.gun_stat[c.gun_ptr->id].mag_in[siz]);
+										c.gun_stat[c.gun_ptr->id].mag_in.back() -= be_;
+										c.gun_stat[c.gun_ptr->id].mag_in[siz] += be_;
+
+										if (c.gun_stat[c.gun_ptr->id].mag_in.back() == 0) {
+											//ƒ}ƒKƒWƒ“”ro
+											c.gun_stat[c.gun_ptr->id].mag_release_end();
+											c.reload_cnt = 0.f;
+											//ƒ}ƒKƒWƒ“”ro
+											bool tt = false;
+											for (auto& g : this->item) {
+												if (g.ptr_gun == nullptr && g.ptr_mag == nullptr && g.ptr_med == nullptr) {
+													tt = true;
+													g.Set_item(c.gun_ptr->magazine, c.pos_mag, c.mat_mag);
+													g.add = (c.obj_gun.frame(c.gun_ptr->frame_s.magazine2_f.first) - c.obj_gun.frame(c.gun_ptr->frame_s.magazine_f.first)).Norm()*-1.f / fps_;//”rä°ƒxƒNƒgƒ‹
+													g.magazine.cap = 0;
+													g.del_timer = 0.f;
+													break;
+												}
+											}
+											if (!tt) {
+												this->item.resize(this->item.size() + 1);
+												auto& g = this->item.back();
+												g.id = this->item.size() - 1;
+												g.Set_item(c.gun_ptr->magazine, c.pos_mag, c.mat_mag);
+												g.add = (c.obj_gun.frame(c.gun_ptr->frame_s.magazine2_f.first) - c.obj_gun.frame(c.gun_ptr->frame_s.magazine_f.first)).Norm()*-1.f / fps_;//”rä°ƒxƒNƒgƒ‹
+												g.magazine.cap = 0;
+												g.del_timer = 0.f;
+											}
 										}
 									}
 								}

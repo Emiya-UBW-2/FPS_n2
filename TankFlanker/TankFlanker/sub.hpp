@@ -564,6 +564,10 @@ public:
 				this->ammo_total -= dnm;
 				this->mag_in.erase(this->mag_in.begin());
 			}
+			//マガジンを落とす
+			void mag_release_end() {
+				this->mag_in.pop_back();
+			}
 			//射撃する
 			void mag_shot(const bool& reloadf) {
 				this->ammo_cnt--;
@@ -801,6 +805,7 @@ public:
 		bool get_ = false;
 		bool delete_ = false;
 		bool sort_ = false;
+		bool sort_f = false;
 		switchs sortmag;
 		VECTOR_ref gunpos;											//マウスエイム用銃座標
 		switchs getmag;
@@ -1799,6 +1804,7 @@ public:
 						chara.canget_id = this->id;
 						chara.canget_mag = this->ptr_mag->mod.name;
 						if (chara.getmag.second == 1 && this->magazine.cap != 0) {
+							chara.sort_f = false;
 							chara.gun_stat[this->ptr_mag->id].mag_plus(&(this->magazine));
 							if (chara.gun_stat[this->ptr_mag->id].mag_in.size() == 1) {
 								chara.reloadf = true;
