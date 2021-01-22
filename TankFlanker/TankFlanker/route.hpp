@@ -742,18 +742,21 @@ public:
 												c.anime_arm_check->per = 1.f;
 												c.anime_arm_check->update(false, 1.f);
 												if (c.anime_arm_check->time == c.anime_arm_check->alltime) {
-													c.sort_ing = false;
+													if (!CheckSoundMem(c.audio.sort_.get()) && !CheckSoundMem(c.audio.load_.get())) {
+														c.sort_ing = false;
+													}
 												}
 											}
 											else {
-												c.anime_arm_check->update(false, -1.f);
 												if (c.anime_arm_check->time == 0) {
 													c.anime_arm_check->per = 0.f;
 												}
+												c.anime_arm_check->update(false, -1.f);
 											}
 											if (c.anime_arm_check->per == 1.f) {
 												c.anime_arm_run->reset();
 												c.anime_reload->reset();
+												c.mat_RIGHTHAND = c.obj_gun.GetMatrix()*MATRIX_ref::Mtrans(c.obj_gun.GetMatrix().pos()).Inverse();
 											}
 											else {
 												if (c.running) {
@@ -915,7 +918,7 @@ public:
 								easing_set(&c.vecadd_RIGHTHAND_p, VGet(0, 0, 1.f), 0.9f);
 								//リコイルアニメーション
 								if (c.gunf) {
-									bool pp = c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1;
+									bool pp = (c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1);
 									c.obj_gun.get_anime(1 - int(pp)).per = 1.f;
 									c.obj_gun.get_anime(1 - int(pp)).update(pp, 2.f);
 									if (c.obj_gun.get_anime(1 - int(pp)).time == 0.f) {
@@ -975,19 +978,18 @@ public:
 									}
 								}
 								//マガジン整頓
-								if (c.sortmag.second == 1 && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 2) {
+								if (!c.sort_ing && c.sortmag.second == 1 && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 2) {
 									c.sort_ing = true;
-									size_t siz_b = c.gun_stat[c.gun_ptr->id].mag_in.size() - 1;
-									size_t siz = 0;
 									if (!c.sort_f) {
-										std::sort(c.gun_stat[c.gun_ptr->id].mag_in.begin() + 1, c.gun_stat[c.gun_ptr->id].mag_in.end(), [](size_t a, size_t b) {
-											return a > b;
-										});
+										c.audio.sort_.play_3D(c.pos_RIGHTHAND, 15.f);
+										std::sort(c.gun_stat[c.gun_ptr->id].mag_in.begin() + 1, c.gun_stat[c.gun_ptr->id].mag_in.end(), [](size_t a, size_t b) { return a > b;										});
 										c.sort_f = true;
 									}
 									else {
+										c.audio.load_.play_3D(c.pos_RIGHTHAND, 15.f);
+										size_t siz = 0;
 										for (auto& m : c.gun_stat[c.gun_ptr->id].mag_in) {
-											if (m != c.gun_ptr->magazine->cap) {
+											if ((&m != &c.gun_stat[c.gun_ptr->id].mag_in[0]) && (m != c.gun_ptr->magazine->cap)) {
 												siz = &m - &c.gun_stat[c.gun_ptr->id].mag_in[0];
 												break;
 											}
@@ -995,7 +997,6 @@ public:
 										auto be_ = std::clamp<size_t>(c.gun_stat[c.gun_ptr->id].mag_in.back(), 0, c.gun_ptr->magazine->cap - c.gun_stat[c.gun_ptr->id].mag_in[siz]);
 										c.gun_stat[c.gun_ptr->id].mag_in.back() -= be_;
 										c.gun_stat[c.gun_ptr->id].mag_in[siz] += be_;
-
 										if (c.gun_stat[c.gun_ptr->id].mag_in.back() == 0) {
 											//マガジン排出
 											c.gun_stat[c.gun_ptr->id].mag_release_end();

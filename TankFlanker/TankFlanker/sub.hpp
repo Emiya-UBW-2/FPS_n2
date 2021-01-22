@@ -21,6 +21,9 @@ private:
 		SoundHandle mag_down;
 		SoundHandle mag_set;
 
+		SoundHandle load_;
+		SoundHandle sort_;
+
 		void set(int mdata) {
 			SetUseASyncLoadFlag(TRUE);
 			SetCreate3DSoundFlag(TRUE);
@@ -29,6 +32,8 @@ private:
 			trigger = SoundHandle::Load("data/audio/trigger_" + getparams::_str(mdata) + ".wav");
 			mag_down = SoundHandle::Load("data/audio/mag_down_" + getparams::_str(mdata) + ".wav");
 			mag_set = SoundHandle::Load("data/audio/mag_set_" + getparams::_str(mdata) + ".wav");
+			load_ = SoundHandle::Load("data/audio/load.wav");
+			sort_ = SoundHandle::Load("data/audio/sort.wav");
 			SetCreate3DSoundFlag(FALSE);
 			SetUseASyncLoadFlag(FALSE);
 
@@ -41,6 +46,8 @@ private:
 			this->trigger = tgt.trigger.Duplicate();
 			this->mag_down = tgt.mag_down.Duplicate();
 			this->mag_set = tgt.mag_set.Duplicate();
+			this->load_ = tgt.load_.Duplicate();
+			this->sort_ = tgt.sort_.Duplicate();
 			SetCreate3DSoundFlag(FALSE);
 		}
 
@@ -50,6 +57,8 @@ private:
 			this->trigger.Dispose();
 			this->mag_down.Dispose();
 			this->mag_set.Dispose();
+			this->load_.Dispose();
+			this->sort_.Dispose();
 		}
 	};
 	//銃、マガジン共通モデル
@@ -1924,7 +1933,7 @@ public:
 		}
 
 		void set() {
-			ready = 0.f;
+			ready = 0.1f;
 			timer = 180.f;
 		}
 

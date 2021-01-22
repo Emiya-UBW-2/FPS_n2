@@ -14,6 +14,8 @@ private:
 	GraphHandle UI_mag_fall;
 	GraphHandle UI_mag_set;
 	GraphHandle UI_get;
+
+	GraphHandle aim;
 	//font
 	FontHandle font72;
 	FontHandle font48;
@@ -54,6 +56,8 @@ public:
 		hit = GraphHandle::Load("data/UI/battle_hit.bmp");
 		dmg = GraphHandle::Load("data/UI/damage.png");
 		item = GraphHandle::Load("data/UI/battle_item.bmp");
+
+		aim = GraphHandle::Load("data/UI/battle_aim.bmp");
 
 		font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
 		font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
@@ -148,6 +152,12 @@ public:
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(float(int(chara.HP_r)- chara.HP) / 50.f)), 0, 255));
 				DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(128, 0, 0), TRUE);
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			}
+			//
+			{
+				int siz = int(64.f);
+				aim.DrawRotaGraph(int(t_disp_x / 2), int(t_disp_y / 2), y_r(siz) / 200.f, 0.f, true);
+
 			}
 			//タイマー
 			if(ready>=0.f){
