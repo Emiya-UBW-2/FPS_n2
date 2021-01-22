@@ -766,6 +766,7 @@ public:
 		MV1::ani* anime_reload;
 		//腕
 		MV1::ani* anime_arm_run;
+		MV1::ani* anime_arm_check;
 		//手
 		MV1::ani* anime_hand_nomal;//基本手
 		MV1::ani* anime_hand_trigger;//引き金
@@ -806,6 +807,7 @@ public:
 		bool delete_ = false;
 		bool sort_ = false;
 		bool sort_f = false;
+		bool sort_ing = false;										//走るか否か
 		switchs sortmag;
 		VECTOR_ref gunpos;											//マウスエイム用銃座標
 		switchs getmag;
@@ -902,6 +904,7 @@ public:
 			anime_reload = &body.get_anime(3);
 			//
 			anime_arm_run = &body.get_anime(6);
+			anime_arm_check = &body.get_anime(10);
 			//
 			anime_hand_nomal = &body.get_anime(0);
 			anime_hand_trigger = &body.get_anime(9);
@@ -1043,6 +1046,7 @@ public:
 				easing_set(&this->anime_reload->per, 0.f, 0.9f);
 				easing_set(&this->anime_hand_trigger_pull->per, 0.f, 0.9f);
 				easing_set(&this->anime_arm_run->per, 0.f, 0.9f);
+				easing_set(&this->anime_arm_check->per, 0.f, 0.9f);
 				easing_set(&this->anime_sit->per, 0.f, 0.9f);
 				easing_set(&this->anime_swalk->per, 0.f, 0.9f);
 				easing_set(&this->anime_hand_trigger->per, 0.f, 0.9f);

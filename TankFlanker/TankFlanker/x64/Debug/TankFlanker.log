@@ -21,10 +21,10 @@ z:\dxlib_vc\dx_vc\effekseer.h(3790): warning C4100: 'source': 引数は関数の
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-z:\fps_n22\tankflanker\tankflanker\sub.hpp(1263): warning C4100: 'cannotmove': 引数は関数の本体部で 1 度も参照されません。
+z:\fps_n22\tankflanker\tankflanker\sub.hpp(1267): warning C4100: 'cannotmove': 引数は関数の本体部で 1 度も参照されません。
 z:\fps_n22\tankflanker\tankflanker\ui.hpp(363): warning C4189: 'font_large': ローカル変数が初期化されましたが、参照されていません
 z:\fps_n22\tankflanker\tankflanker\map.hpp(82): warning C4100: 'gun_data': 引数は関数の本体部で 1 度も参照されません。
-z:\fps_n22\tankflanker\tankflanker\route.hpp(958): warning C4189: 'siz_b': ローカル変数が初期化されましたが、参照されていません
+z:\fps_n22\tankflanker\tankflanker\route.hpp(980): warning C4189: 'siz_b': ローカル変数が初期化されましたが、参照されていません
 z:\fps_n22\tankflanker\tankflanker\main.cpp(18): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 z:\fps_n22\tankflanker\tankflanker\main.cpp(18): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 z:\fps_n22\tankflanker\tankflanker\main.cpp(18): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
