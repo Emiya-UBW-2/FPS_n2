@@ -1709,7 +1709,7 @@ public:
 			{
 				if (this->add_ypos == 0.f) {
 					if (this->key_.jamp && this->HP != 0) {
-						this->add_ypos = 0.06f*FRAME_RATE / GetFPS();
+						this->add_ypos = 0.05f*FRAME_RATE / GetFPS();
 					}
 					this->add_vec = this->add_vec_buf;
 				}
@@ -1931,7 +1931,7 @@ public:
 		}
 
 		void set() {
-			ready = 0.1f;
+			ready = 3.0f;
 			timer = 180.f;
 		}
 
