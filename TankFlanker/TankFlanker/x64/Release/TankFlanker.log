@@ -21,7 +21,7 @@ z:\dxlib_vc\dx_vc\effekseer.h(3790): warning C4100: 'source': 引数は関数の
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 z:\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-z:\fps_n22\tankflanker\tankflanker\sub.hpp(1276): warning C4100: 'cannotmove': 引数は関数の本体部で 1 度も参照されません。
+z:\fps_n22\tankflanker\tankflanker\sub.hpp(1285): warning C4100: 'cannotmove': 引数は関数の本体部で 1 度も参照されません。
 z:\fps_n22\tankflanker\tankflanker\ui.hpp(373): warning C4189: 'font_large': ローカル変数が初期化されましたが、参照されていません
 z:\fps_n22\tankflanker\tankflanker\map.hpp(82): warning C4100: 'gun_data': 引数は関数の本体部で 1 度も参照されません。
 z:\fps_n22\tankflanker\tankflanker\main.cpp(18): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
@@ -30,9 +30,7 @@ z:\fps_n22\tankflanker\tankflanker\main.cpp(18): warning C4100: 'hPrevInstance':
 z:\fps_n22\tankflanker\tankflanker\main.cpp(18): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
 z:\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
   コード生成しています。
-  3 of 3323 functions (<0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    8 functions had inline decision re-evaluated but remain unchanged
+  All 3326 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   コード生成が終了しました。
 EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'Z:\FPS_n22\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   TankFlanker.vcxproj -> Z:\FPS_n22\TankFlanker\x64\Release\FPS_n2.exe

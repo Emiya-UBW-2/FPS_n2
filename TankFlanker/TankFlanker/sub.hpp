@@ -157,6 +157,14 @@ public:
 		MV1 pic;	      /*弾痕モデル*/
 		VECTOR_ref pos;	      /*座標*/
 		MATRIX_ref mat;	      /**/
+
+		void set(const MV1&hit_pic) {
+			this->flug = false;
+			this->pic = hit_pic.Duplicate();
+			this->use = 0;
+			this->mat.clear();
+			this->pos.clear();
+		}
 	};								      /**/
 	//弾データ
 	class Ammo_info {
@@ -319,6 +327,7 @@ public:
 							hit_obj[hitbuf].mat = MATRIX_ref::Scale(scale)*  MATRIX_ref::Axis1(y_vec.cross(z_vec), y_vec, z_vec);
 							hit_obj[hitbuf].pos = this->pos + y_vec * 0.02f;
 							hit_obj[hitbuf].flug = true;
+							hit_obj[hitbuf].pic.SetMatrix(hit_obj[hitbuf].mat*MATRIX_ref::Mtrans(hit_obj[hitbuf].pos));
 							++hitbuf %= hit_obj.size();
 						}
 					}

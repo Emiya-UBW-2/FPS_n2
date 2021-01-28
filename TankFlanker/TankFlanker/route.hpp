@@ -7,7 +7,7 @@ class main_c : Mainclass {
 	bool useVR_e = true;
 	float fov_pc = 45.f;
 	//カメラ
-	DXDraw::cam_info camera_main, camera_sub, camera_TPS;
+	cam_info camera_main, camera_sub, camera_TPS;
 	//描画スクリーン
 	GraphHandle outScreen2;
 	GraphHandle UI_Screen,UI_Screen2;			
@@ -61,29 +61,28 @@ public:
 		auto mapparts = std::make_unique<Mapclass>();																//MAP
 		auto minimapparts = std::make_unique<Minimapclass>();														//MINIMAP
 		auto ruleparts = std::make_unique<rule>();																	//ルール
+
+		/*
+		auto font = FontHandle::Create(18);
+		//*/
+
 		//model
 		MV1::Load("data/model/body/model.mv1", &this->body_obj, true);	//身体
 		MV1::Load("data/model/body/col.mv1", &this->body_col, true);	//身体col
 		MV1::Load("data/model/hit/model.mv1", &hit_pic, true);			//弾痕
 		//ミニマップ
 		minimapparts->load();
-		//auto font = FontHandle::Create(18);
 		//GUNデータ
-		{
-			this->gun_data.resize(1);
-			this->gun_data[0].mod.Ready("data/gun/", "GUN");
-		}
+		this->gun_data.resize(1);
+		this->gun_data[0].mod.Ready("data/gun/", "GUN");
 		//MAGデータ
-		{
-			this->mag_data.resize(1);
-			this->mag_data[0].mod.Ready("data/mag/", "GUN");
-		}
+		this->mag_data.resize(1);
+		this->mag_data[0].mod.Ready("data/mag/", "GUN");
 		//MEDデータ
-		{
-			this->meds_data.resize(1);
-			this->meds_data[0].mod.Ready("data/medkit/", "AIDkit");
-		}
-		UIparts->load_window("アイテムオブジェクト");	//ロード画面1
+		this->meds_data.resize(1);
+		this->meds_data[0].mod.Ready("data/medkit/", "AIDkit");
+		//ロード画面1
+		UIparts->load_window("アイテムオブジェクト");
 		//GUNデータ2
 		for (auto& g : this->gun_data) {
 			g.set_data(this->mag_data, &g - &this->gun_data[0]);
@@ -96,60 +95,42 @@ public:
 		for (auto& g : this->meds_data) {
 			g.set_data(&g - &this->meds_data[0]);
 		}
+		//弾痕
 		this->hit_obj.resize(24);
 		hit_buf = 0;
 		for (auto& h : this->hit_obj) {
-			h.flug = false;
-			h.pic = hit_pic.Duplicate();
-			h.use = 0;
-			h.mat = MGetIdent();
-			h.pos = VGet(0.f, 0.f, 0.f);
+			h.set(hit_pic);
 		}
-
-		UIparts->load_window("アイテムデータ");	//ロード画面2
+		//ロード画面2
+		UIparts->load_window("アイテムデータ");
+		//繰り返し
 		do {
 			//マップ読み込み
 			mapparts->Ready_map("data/map_new2");
 			UIparts->load_window("マップ");
 			mapparts->Set_map("data/maps/set.txt", this->item, this->gun_data, this->mag_data, this->meds_data, "data/grassput.bmp");
 			//キャラ設定
-			size_t sel_g = 0;
 			chara.resize(mapparts->get_spawn_point().size());
 			auto& mine = chara[0];
 			{
+				size_t sel_gun = 0;
 				//自機セット
-				mine.set(this->gun_data, sel_g, this->body_obj, this->body_col);
+				mine.set(this->gun_data, sel_gun, this->body_obj, this->body_col);
 				mine.spawn(mapparts->get_spawn_point()[0], MATRIX_ref::RotY(atan2f(mapparts->get_spawn_point()[0].x(), mapparts->get_spawn_point()[0].z())));
 				//その他
 				for (int i = 1; i < mapparts->get_spawn_point().size(); i++) {
-					chara[i].set(this->gun_data, sel_g, this->body_obj, this->body_col);
+					chara[i].set(this->gun_data, sel_gun, this->body_obj, this->body_col);
 					chara[i].spawn(mapparts->get_spawn_point()[i], MATRIX_ref::RotY(atan2f(mapparts->get_spawn_point()[i].x(), mapparts->get_spawn_point()[i].z())));
 				}
 			}
 			//ライティング
-			Drawparts->Set_Light_Shadow(mapparts->map_col_get().mesh_maxpos(0), mapparts->map_col_get().mesh_minpos(0), VGet(0.5f, -0.5f, 0.5f), [&] {
-				for (int i = 0; i < 3; i++) {
-					mapparts->map_get().DrawMesh(i);
-				}
-				mapparts->grass_draw();
-			});
+			Drawparts->Set_Light_Shadow(mapparts->map_col_get().mesh_maxpos(0), mapparts->map_col_get().mesh_minpos(0), VGet(0.5f, -0.5f, 0.5f), [&] { mapparts->shadow_draw(); });
 			//描画するものを指定する(仮)
 			auto draw_by_shadow = [&] {
 				Drawparts->Draw_by_Shadow(
 					[&] {
-					mapparts->map_get().DrawMesh(0);
-					mapparts->map_get().DrawMesh(1);
-					mapparts->map_get().DrawMesh(2);
-					SetFogEnable(FALSE);
-					mapparts->map_get().DrawMesh(3);
-					SetFogEnable(TRUE);
+					mapparts->main_draw();
 
-					mapparts->grass_draw();
-					/*
-					for (int i = 1; i < mapparts->map_get().mesh_num(); i++) {
-						mapparts->map_get().DrawMesh(i);
-					}
-					//*/
 					for (auto& h : this->hit_obj) {
 						if (h.flug) {
 							h.pic.SetMatrix(h.mat*MATRIX_ref::Mtrans(h.pos));

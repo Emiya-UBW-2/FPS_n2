@@ -407,6 +407,28 @@ public:
 		SetDrawAlphaTest(-1, 0);
 	}
 
+	void shadow_draw() {
+		for (int i = 0; i < 3; i++) {
+			map.DrawMesh(i);
+		}
+		grass_draw();
+	}
+
+	void main_draw() {
+		map.DrawMesh(0);
+		map.DrawMesh(1);
+		map.DrawMesh(2);
+		SetFogEnable(FALSE);
+		map.DrawMesh(3);
+		SetFogEnable(TRUE);
+
+		grass_draw();
+		/*
+		for (int i = 1; i < map.mesh_num(); i++) {
+			map.DrawMesh(i);
+		}
+		//*/
+	}
 };
 class Minimapclass :Mainclass {
 private:
