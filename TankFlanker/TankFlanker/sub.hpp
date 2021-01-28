@@ -754,6 +754,86 @@ public:
 				}
 			}
 		};
+		class opes {
+		public:
+			//
+			bool sort_ = false;
+			bool sort_f = false;
+			bool sort_ing = false;
+			switchs sortmag;
+			//
+			bool get_ = false;
+			switchs getmag;
+			//
+			bool delete_ = false;
+			switchs delete_item;
+			//
+			bool aim = false;
+			switchs ads;
+			//
+			switchs squat;
+			//セレクター
+			bool select = false;
+			switchs selkey;
+			//
+			bool wkey = false;
+			bool skey = false;
+			bool akey = false;
+			bool dkey = false;
+			bool qkey = false;
+			bool ekey = false;
+			//
+			bool running = false;										//走るか否か
+			bool jamp = false;
+			bool shoot = false;
+			bool reload = false;
+			bool down_mag = false;
+
+			void reset_() {
+				this->wkey = false;
+				this->skey = false;
+				this->akey = false;
+				this->dkey = false;
+				this->shoot = false;
+				this->running = false;
+				this->qkey = false;
+				this->ekey = false;
+				this->aim = false;
+				this->reload = false;
+				this->get_ = false;
+				this->sort_ = false;
+				this->delete_ = false;
+				this->select = false;
+				this->down_mag = true;
+				this->jamp = false;
+				this->ads.ready(false);
+				this->squat.ready(false);
+
+			}
+			void rule_() {
+				if ((this->skey) || (this->ads.on()) || (!this->wkey) || (!this->wkey && !this->skey && !this->akey && !this->dkey)) {
+					this->running = false;
+				}
+				if (this->running) {
+					this->squat.first = false;
+					this->skey = false;
+					this->qkey = false;
+					this->ekey = false;
+				}
+			}
+			void update() {
+				//ADS
+				this->ads.first = this->aim;
+				//セレクター(中ボタン)
+				this->selkey.get_in(this->select);
+				//銃取得
+				this->getmag.get_in(this->get_);
+				//
+				this->sortmag.get_in(this->sort_);
+				//
+				this->delete_item.get_in(this->delete_);
+			}
+		};
 	public:
 		/*エフェクト*/
 		std::array<EffectS, effects> effcs;
@@ -793,12 +873,10 @@ public:
 		float reload_cnt = 0.f;//リロード開始までのカウント
 		switchs trigger;//トリガー
 		bool gunf = false;//射撃フラグ
-		switchs selkey;//トリガー
 		bool LEFT_hand = false;//左手を添えているか
 		bool reloadf = false;
-		bool down_mag = false;
 		//プレイヤー座標系
-		float speed = 0.f;
+		float speed = 0.f;			//
 		VECTOR_ref pos;				//位置
 		MATRIX_ref mat;				//位置
 		MATRIX_ref mat_body;		//位置
@@ -808,28 +886,10 @@ public:
 		VECTOR_ref add_vec_buf;		//移動ベクトルバッファ
 		VECTOR_ref add_vec_real;	//実際の移動ベクトル
 		float xrad_p = 0.f;			//マウスエイム用変数確保
-		switchs ads, squat;
-		bool wkey = false;
-		bool skey = false;
-		bool akey = false;
-		bool dkey = false;
-		bool qkey = false;
-		bool ekey = false;
-		bool running = false;										//走るか否か
-		bool jamp = false;
-		bool aim = false;
-		bool select = false;
-		bool shoot = false;
-		bool reload = false;
-		bool get_ = false;
-		bool delete_ = false;
-		bool sort_ = false;
-		bool sort_f = false;
-		bool sort_ing = false;										//走るか否か
-		switchs sortmag;
-		VECTOR_ref gunpos;											//マウスエイム用銃座標
-		switchs getmag;
-		switchs delete_item;
+		opes key_;					//
+		bool sort_f = false;		//
+		bool sort_ing = false;		//走るか否か
+		VECTOR_ref gunpos;			//マウスエイム用銃座標
 		//AI用
 		float ai_time_a = 0.f;
 		float ai_time_d = 0.f;
@@ -838,17 +898,16 @@ public:
 		float ai_time_shoot = 0.f;
 		bool ai_reload = false;
 		int ai_phase = 0;
-
 		std::array<int, 6> wayp_pre;
 		//マガジン座標系
 		VECTOR_ref pos_mag;
 		MATRIX_ref mat_mag;
 		//頭部座標系
 		VECTOR_ref pos_HMD, pos_HMD_old, rec_HMD;
-		float add_ypos = 0.f;//垂直加速度
-		float body_xrad = 0.f;//胴体角度
-		float body_yrad = 0.f;//胴体角度
-		float body_zrad = 0.f;//胴体角度
+		float add_ypos = 0.f;		//垂直加速度
+		float body_xrad = 0.f;		//胴体角度
+		float body_yrad = 0.f;		//胴体角度
+		float body_zrad = 0.f;		//胴体角度
 		//フレーム
 		fs frame_s;
 		float head_hight = 0.f;
@@ -857,7 +916,7 @@ public:
 		VECTOR_ref pos_RIGHTHAND;
 		VECTOR_ref add_RIGHTHAND;
 		MATRIX_ref mat_RIGHTHAND;
-		VECTOR_ref vecadd_RIGHTHAND, vecadd_RIGHTHAND_p;//
+		VECTOR_ref vecadd_RIGHTHAND, vecadd_RIGHTHAND_p;
 		//左手座標系
 		VECTOR_ref pos_LEFTHAND;
 		MATRIX_ref mat_LEFTHAND;
@@ -947,8 +1006,6 @@ public:
 			this->vecadd_RIGHTHAND = VGet(0, 0, 1.f);
 			this->vecadd_RIGHTHAND_p = this->vecadd_RIGHTHAND;
 			this->reloadf = false;
-			this->down_mag = true;
-			this->selkey.ready(false);
 			for (auto& a : this->obj_gun.get_anime()) {
 				a.reset();
 			}
@@ -981,9 +1038,7 @@ public:
 			this->pos = this->spawn_pos;
 			this->mat = this->spawn_mat;
 
-			this->ads.ready(false);
-			this->running = false;
-			this->squat.ready(false);
+			this->key_.reset_();
 
 			this->add_ypos = 0.f;
 			this->add_vec_buf.clear();
@@ -1151,11 +1206,10 @@ public:
 		}
 
 		void Draw_chara() {
-			this->body.DrawModel();
+			//this->body.DrawModel();
 			this->obj_gun.DrawModel();
-			//this->col.DrawModel();
-
-			if ((!this->reloadf || this->down_mag) && this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1) {
+			this->col.DrawModel();
+			if ((!this->reloadf || this->key_.down_mag) && this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1) {
 				this->obj_mag.DrawModel();
 			}
 		}
@@ -1166,11 +1220,6 @@ public:
 		}
 
 		void Delete_chara() {
-			obj_gun.Dispose();
-			obj_mag.Dispose();
-			body.Dispose();
-			col.Dispose();
-
 			this->gun_ptr = nullptr;
 			this->body.Dispose();
 			this->col.Dispose();
@@ -1187,72 +1236,34 @@ public:
 		}
 
 		void operation_2_1(const bool& cannotmove, int32_t x_m, int32_t y_m) {
-			if (this->running) {
-				this->squat.first = false;
+			if (cannotmove || this->HP == 0) {
+				this->key_.reset_();
 			}
-			if (this->ads.first) {
-				this->running = false;
-			}
-			if (!this->wkey) {
-				this->running = false;
-			}
-			if (!this->wkey && !this->skey && !this->akey && !this->dkey) {
-				this->running = false;
-			}
-			if (this->skey) {
-				this->running = false;
-			}
-
-			if (this->running) {
-				this->skey = false;
-			}
-
-			if (this->running) {
-				this->qkey = false;
-				this->ekey = false;
-			}
-
+			this->key_.rule_();
 
 			if (this->HP != 0) {
+				//z軸回転(リーン)
 				this->mat *= MATRIX_ref::RotAxis(this->mat.zvec(), this->body_zrad).Inverse();
-				if (this->qkey) {
+				if (this->key_.qkey) {
 					easing_set(&this->body_zrad, deg2rad(-40), 0.9f);
 				}
-				else if (this->ekey) {
+				else if (this->key_.ekey) {
 					easing_set(&this->body_zrad, deg2rad(40), 0.9f);
 				}
 				else {
 					easing_set(&this->body_zrad, 0.f, 0.9f);
 				}
 				this->mat *= MATRIX_ref::RotAxis(this->mat.zvec(), this->body_zrad);
-				//
+				//y軸回転(旋回)
 				this->mat = MATRIX_ref::RotX(-this->xrad_p)*this->mat;
 				this->xrad_p = std::clamp(this->xrad_p - deg2rad(y_m)*0.1f, deg2rad(-80), deg2rad(60));
-				this->mat *= MATRIX_ref::RotY(deg2rad(x_m)*0.1f);//y軸回転
-				this->mat = MATRIX_ref::RotX(this->xrad_p)*this->mat;//x軸回転
+				this->mat *= MATRIX_ref::RotY(deg2rad(x_m)*0.1f);
+				//x軸回転(仰俯)
+				this->mat = MATRIX_ref::RotX(this->xrad_p)*this->mat;
 			}
 
-			if (cannotmove || this->HP == 0) {
-				this->wkey = false;
-				this->skey = false;
-				this->akey = false;
-				this->dkey = false;
-				this->shoot = false;
-				this->running = false;
-				this->squat.first = false;
-				this->qkey = false;
-				this->ekey = false;
-				this->aim = false;
-				this->reload = false;
-				this->get_ = false;
-				this->sort_ = false;
-				this->delete_ = false;
-				this->select = false;
-				this->down_mag = true;
-				this->jamp = false;
-			}
 
-			this->speed = (this->running ? 6.f : ((this->ads.first ? 2.f : 4.f)*(this->squat.first ? 0.4f : 1.f))) / GetFPS();
+			this->speed = (this->key_.running ? 6.f : ((this->key_.ads.on() ? 2.f : 4.f)*(this->key_.squat.on() ? 0.4f : 1.f))) / GetFPS();
 			VECTOR_ref zv_t = this->mat.zvec();
 			zv_t.y(0.f);
 			zv_t = zv_t.Norm();
@@ -1260,69 +1271,54 @@ public:
 			VECTOR_ref xv_t = this->mat.xvec();
 			xv_t.y(0.f);
 			xv_t = xv_t.Norm();
-
-			if (this->running) {
+			if (this->key_.running) {
 				xv_t = xv_t.Norm()*0.5f;
-				easing_set(&this->add_vec_buf,
-					VECTOR_ref(VGet(0, 0, 0))
-					+ (this->wkey ? (zv_t*-this->speed) : VGet(0, 0, 0))
-					+ (this->akey ? (xv_t*this->speed) : VGet(0, 0, 0))
-					+ (this->dkey ? (xv_t*-this->speed) : VGet(0, 0, 0))
-					, 0.95f);
-				this->mat_body = MATRIX_ref::Axis1(this->mat.yvec().cross(this->add_vec_buf.Norm()*-1.f), this->mat.yvec(), this->add_vec_buf.Norm()*-1.f);
 			}
-			else {
-				easing_set(&this->add_vec_buf,
-					VECTOR_ref(VGet(0, 0, 0))
-					+ (this->wkey ? (zv_t*-this->speed) : VGet(0, 0, 0))
-					+ (this->skey ? (zv_t*this->speed) : VGet(0, 0, 0))
-					+ (this->akey ? (xv_t*this->speed) : VGet(0, 0, 0))
-					+ (this->dkey ? (xv_t*-this->speed) : VGet(0, 0, 0))
-					, 0.95f);
-				this->mat_body = this->mat;
-			}
+			easing_set(&this->add_vec_buf,
+				VECTOR_ref(VGet(0, 0, 0))
+				+ (this->key_.wkey ? (zv_t*-this->speed) : VGet(0, 0, 0))
+				+ (this->key_.skey ? (zv_t*this->speed) : VGet(0, 0, 0))
+				+ (this->key_.akey ? (xv_t*this->speed) : VGet(0, 0, 0))
+				+ (this->key_.dkey ? (xv_t*-this->speed) : VGet(0, 0, 0))
+				, 0.95f);
+			this->mat_body = (this->key_.running) ? MATRIX_ref::Axis1(this->mat.yvec().cross(this->add_vec_buf.Norm()*-1.f), this->mat.yvec(), this->add_vec_buf.Norm()*-1.f) : this->mat;
 		}
 		void operation_VR(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& Drawparts, const bool& cannotmove, bool* oldv_1_1) {
 			//操作
 			{
-				this->aim = false;
-				this->reload = false;
-				this->get_ = false;
-				this->sort_ = false;
-				this->delete_ = false;
-				this->select = false;
+				this->key_.aim = false;		//エイム(使わない)
 
-				this->shoot = false;
-				this->jamp = false;
+				this->key_.shoot = false;	//射撃
+				this->key_.reload = false;	//マグキャッチ
+				this->key_.select = false;	//セレクター
+
+				this->key_.get_ = false;	//アイテム取得
+				this->key_.sort_ = false;	//
+				this->key_.delete_ = false;	//
+				this->key_.running = false;	//
+				this->key_.jamp = false;	//jamp
+				//
 				if (this->HP != 0) {
 					if (Drawparts->get_hand1_num() != -1) {
 						auto& ptr_ = (*Drawparts->get_device())[Drawparts->get_hand1_num()];
 						if (ptr_.turn && ptr_.now) {
-							//射撃
-							this->shoot = (ptr_.on[0] & BUTTON_TRIGGER) != 0;
-							//マグキャッチ
-							this->reload = (ptr_.on[0] & BUTTON_SIDE) != 0;
-							//セレクター
-							this->select = ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f && ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f);
+							this->key_.shoot = ((ptr_.on[0] & BUTTON_TRIGGER) != 0);																				//射撃
+							this->key_.reload = ((ptr_.on[0] & BUTTON_SIDE) != 0);																					//マグキャッチ
+							this->key_.select = ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f&&ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f);	//セレクター
 						}
 					}
 					if (Drawparts->get_hand2_num() != -1) {
 						auto& ptr_ = (*Drawparts->get_device())[Drawparts->get_hand2_num()];
 						if (ptr_.turn && ptr_.now) {
-							//マガジン持つ
-							this->down_mag |= (((ptr_.on[0] & BUTTON_TRIGGER) != 0) && (this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1));
-							//アイテム取得
-							this->get_ = (ptr_.on[0] & BUTTON_TOPBUTTON_B) != 0;
-							//
-							this->sort_ = false;
-							//running
-							this->running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;
-							//jamp
-							this->jamp = (ptr_.on[0] & BUTTON_SIDE) != 0;
+							this->key_.down_mag |= (((ptr_.on[0] & BUTTON_TRIGGER) != 0) && (this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1));	//マガジン持つ
+							this->key_.get_ = (ptr_.on[0] & BUTTON_TOPBUTTON_B) != 0;																	//アイテム取得
+							this->key_.sort_ = false;																									//
+							this->key_.delete_ = false;	//
+							this->key_.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;																	//running
+							this->key_.jamp = (ptr_.on[0] & BUTTON_SIDE) != 0;																			//jamp
 							//移動
 							if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
-								this->speed = (this->running ? 6.f : 4.f) / GetFPS();
-
+								this->speed = (this->key_.running ? 6.f : 4.f) / GetFPS();
 								if (Drawparts->tracker_num.size() > 0) {
 									auto p = this->body.GetFrameLocalWorldMatrix(this->frame_s.bodyb_f.first);
 									easing_set(&this->add_vec_buf, (p.zvec()*-ptr_.touch.y() + p.xvec()*-ptr_.touch.x())*this->speed, 0.95f);
@@ -1356,23 +1352,23 @@ public:
 			int32_t x_m = 0, y_m = 0;
 			if (this->HP != 0) {
 				//操作
-				this->wkey = (CheckHitKey(KEY_INPUT_W) != 0);
-				this->skey = (CheckHitKey(KEY_INPUT_S) != 0);
-				this->akey = (CheckHitKey(KEY_INPUT_A) != 0);
-				this->dkey = (CheckHitKey(KEY_INPUT_D) != 0);
-				this->running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
-				this->squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
-				this->qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
-				this->ekey = (CheckHitKey(KEY_INPUT_E) != 0);
-				this->aim = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
-				this->reload = CheckHitKey(KEY_INPUT_R) != 0;
-				this->get_ = CheckHitKey(KEY_INPUT_F) != 0;
-				this->sort_ = CheckHitKey(KEY_INPUT_Z) != 0;
-				this->delete_ = CheckHitKey(KEY_INPUT_G) != 0;
-				this->select = (GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0;
-				this->down_mag = true;
-				this->shoot = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
-				this->jamp = CheckHitKey(KEY_INPUT_SPACE) != 0;
+				this->key_.wkey = (CheckHitKey(KEY_INPUT_W) != 0);
+				this->key_.skey = (CheckHitKey(KEY_INPUT_S) != 0);
+				this->key_.akey = (CheckHitKey(KEY_INPUT_A) != 0);
+				this->key_.dkey = (CheckHitKey(KEY_INPUT_D) != 0);
+				this->key_.running = (CheckHitKey(KEY_INPUT_LSHIFT) != 0);
+				this->key_.squat.get_in(CheckHitKey(KEY_INPUT_C) != 0);
+				this->key_.qkey = (CheckHitKey(KEY_INPUT_Q) != 0);
+				this->key_.ekey = (CheckHitKey(KEY_INPUT_E) != 0);
+				this->key_.aim = ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
+				this->key_.reload = (CheckHitKey(KEY_INPUT_R) != 0);
+				this->key_.get_ = (CheckHitKey(KEY_INPUT_F) != 0);
+				this->key_.sort_ = (CheckHitKey(KEY_INPUT_Z) != 0);
+				this->key_.delete_ = (CheckHitKey(KEY_INPUT_G) != 0);
+				this->key_.select = ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0);
+				this->key_.down_mag = true;
+				this->key_.shoot = ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
+				this->key_.jamp = (CheckHitKey(KEY_INPUT_SPACE) != 0);
 				//
 				GetMousePoint(&x_m, &y_m);
 				x_m -= deskx / 2;
@@ -1394,15 +1390,15 @@ public:
 				bool pp = true;
 				bool is_player = false;
 				//操作
-				this->aim = false;
-				this->reload = false;
-				this->get_ = false;
-				this->sort_ = false;
-				this->delete_ = false;
-				this->select = false;
-				this->down_mag = true;
-				this->shoot = false;
-				this->jamp = false;
+				this->key_.aim = false;
+				this->key_.reload = false;
+				this->key_.get_ = false;
+				this->key_.sort_ = false;
+				this->key_.delete_ = false;
+				this->key_.select = false;
+				this->key_.down_mag = true;
+				this->key_.shoot = false;
+				this->key_.jamp = false;
 				//AI
 				VECTOR_ref vec_2 = chara[0].body.frame(chara[0].frame_s.bodyb_f.first) - this->obj_gun.frame(this->gun_ptr->frame_s.mazzule_f.first);
 				if (this->ai_time_shoot < 0.f) {
@@ -1487,15 +1483,16 @@ public:
 					switch (this->ai_phase) {
 					case 0://通常フェイズ
 					{
-						this->running = false;
+						this->key_.running = false;
+						this->key_.wkey = true;
+						this->key_.skey = false;
+						this->key_.akey = false;
+						this->key_.dkey = false;
+						this->key_.squat.first = false;
+						this->key_.qkey = false;
+						this->key_.ekey = false;
+
 						this->ai_reload = false;
-						this->wkey = true;
-						this->skey = false;
-						this->akey = false;
-						this->dkey = false;
-						this->squat.first = false;
-						this->qkey = false;
-						this->ekey = false;
 						this->ai_time_shoot = 0.f;
 
 						vec_2 = mapparts->get_waypoint()[this->wayp_pre[0]] - this->body.GetMatrix().pos();
@@ -1536,44 +1533,41 @@ public:
 					break;
 					case 1://戦闘フェイズ
 					{
-						this->running = false;
+						this->key_.running = false;
+						this->key_.wkey = false;
+						this->key_.skey = false;
+
 						this->ai_reload = false;
-						this->wkey = false;
-						this->skey = false;
-						if (this->ekey) {
+
+						auto poss = this->body.GetMatrix().pos();
+						if (this->key_.ekey) {
 							this->ai_time_e += 1.f / fps_;
 							if (this->ai_time_e >= 2) {
-								this->ekey = false;
+								this->key_.ekey = false;
 								this->ai_time_e = 0.f;
 							}
 						}
-						auto poss = this->body.GetMatrix().pos();
-
-						{
-							for (auto& w : mapparts->get_leanpoint_e()) {
-								if ((w - poss).size() <= 0.5f) {
-									this->ekey = true;
-									this->qkey = false;
-									this->ai_time_e = 0.f;
-									break;
-								}
+						for (auto& w : mapparts->get_leanpoint_e()) {
+							if ((w - poss).size() <= 0.5f) {
+								this->key_.ekey = true;
+								this->key_.qkey = false;
+								this->ai_time_e = 0.f;
+								break;
 							}
 						}
-						if (this->qkey) {
+						if (this->key_.qkey) {
 							this->ai_time_q += 1.f / fps_;
 							if (this->ai_time_q >= 2) {
-								this->qkey = false;
+								this->key_.qkey = false;
 								this->ai_time_q = 0.f;
 							}
 						}
-						{
-							for (auto& w : mapparts->get_leanpoint_q()) {
-								if ((w - poss).size() <= 0.5f) {
-									this->ekey = false;
-									this->qkey = true;
-									this->ai_time_q = 0.f;
-									break;
-								}
+						for (auto& w : mapparts->get_leanpoint_q()) {
+							if ((w - poss).size() <= 0.5f) {
+								this->key_.ekey = false;
+								this->key_.qkey = true;
+								this->ai_time_q = 0.f;
+								break;
 							}
 						}
 
@@ -1583,79 +1577,79 @@ public:
 
 						this->ai_time_shoot += 1.f / fps_;
 						if (this->ai_time_shoot < 0.f) {
-							this->akey = false;
-							this->dkey = false;
-							this->wkey = false;
-							this->skey = false;
+							this->key_.akey = false;
+							this->key_.dkey = false;
+							this->key_.wkey = false;
+							this->key_.skey = false;
 
 							if (this->ai_time_shoot >= -5) {
 								if (is_player) {
-									this->shoot = GetRand(100) <= 5;
+									this->key_.shoot = GetRand(100) <= 5;
 								}
 								else {
-									this->shoot = GetRand(100) <= 20;
+									this->key_.shoot = GetRand(100) <= 20;
 								}
-								this->aim = true;
-								this->squat.first = true;
+								this->key_.aim = true;
+								this->key_.squat.first = true;
 							}
 						}
 						else {
-							this->squat.first = false;
+							this->key_.squat.first = false;
 							if (is_player) {
-								this->shoot = GetRand(100) <= 10;
+								this->key_.shoot = GetRand(100) <= 10;
 							}
 							else {
-								this->shoot = GetRand(100) <= 30;
+								this->key_.shoot = GetRand(100) <= 30;
 							}
 
 							if (this->ai_time_shoot >= GetRand(20) + 5) {
 								this->ai_time_shoot = float(-8);
 							}
-							if (this->ekey && !this->akey) {
-								this->akey = true;
-								this->dkey = false;
+							if (this->key_.ekey && !this->key_.akey) {
+								this->key_.akey = true;
+								this->key_.dkey = false;
 								this->ai_time_d = 0.f;
 								this->ai_time_a = 0.f;
 							}
-							if (this->qkey && !this->dkey) {
-								this->dkey = true;
-								this->akey = false;
+							if (this->key_.qkey && !this->key_.dkey) {
+								this->key_.dkey = true;
+								this->key_.akey = false;
 								this->ai_time_d = 0.f;
 								this->ai_time_a = 0.f;
 							}
 
-							if (!this->akey) {
+							if (!this->key_.akey) {
 								this->ai_time_d += 1.f / fps_;
 								if (this->ai_time_d > GetRand(3) + 1) {
-									this->akey = true;
+									this->key_.akey = true;
 									this->ai_time_d = 0.f;
 								}
 							}
 							else {
 								this->ai_time_a += 1.f / fps_;
 								if (this->ai_time_a > GetRand(3) + 1) {
-									this->akey = false;
+									this->key_.akey = false;
 									this->ai_time_a = 0.f;
 								}
 							}
-							this->dkey = !this->akey;
+							this->key_.dkey = !this->key_.akey;
 						}
 						if (this->gun_stat[this->gun_ptr->id].ammo_cnt == 0 && !this->reloadf) {
-							this->reload = true;
+							this->key_.reload = true;
 							this->ai_reload = true;
 						}
 					}
 					break;
 					case 2://リロードフェイズ
 					{
-						this->wkey = true;
-						this->skey = false;
-						this->akey = false;
-						this->dkey = false;
-						this->running = true;
-						this->squat.first = false;
-						this->qkey = false;
-						this->ekey = false;
+						this->key_.wkey = true;
+						this->key_.skey = false;
+						this->key_.akey = false;
+						this->key_.dkey = false;
+						this->key_.running = true;
+						this->key_.squat.first = false;
+						this->key_.qkey = false;
+						this->key_.ekey = false;
 
 						if (this->ai_reload) {
 							auto ppp = this->wayp_pre[1];
@@ -1714,7 +1708,7 @@ public:
 			//ジャンプ
 			{
 				if (this->add_ypos == 0.f) {
-					if (this->jamp && this->HP != 0) {
+					if (this->key_.jamp && this->HP != 0) {
 						this->add_ypos = 0.06f*FRAME_RATE / GetFPS();
 					}
 					this->add_vec = this->add_vec_buf;
@@ -1725,20 +1719,15 @@ public:
 			}
 			//操作
 			{
+				if (this->reloadf) {
+					this->key_.aim = false;
+				}
 				//引き金(左クリック)
-				easing_set(&this->obj_gun.get_anime(2).per, float(this->shoot && !this->running), 0.5f);
-				//ADS
-				this->ads.first = this->aim && (!this->reloadf);
-				//セレクター(中ボタン)
-				this->selkey.get_in(this->select);
+				easing_set(&this->obj_gun.get_anime(2).per, float(this->key_.shoot && !this->key_.running), 0.5f);
 				//マグキャッチ(Rキー)
-				easing_set(&this->obj_gun.get_anime(5).per, float(this->reload), 0.5f);
-				//銃取得
-				this->getmag.get_in(this->get_);
-				//
-				this->sortmag.get_in(this->sort_);
-				//
-				this->delete_item.get_in(this->delete_);
+				easing_set(&this->obj_gun.get_anime(5).per, float(this->key_.reload), 0.5f);
+				//その他
+				this->key_.update();
 			}
 		}
 	};
@@ -1825,7 +1814,7 @@ public:
 					if (zz) {
 						chara.canget_id = this->id;
 						chara.canget_mag = this->ptr_mag->mod.name;
-						if (chara.getmag.second == 1 && this->magazine.cap != 0) {
+						if (chara.key_.getmag.push() && this->magazine.cap != 0) {
 							chara.sort_f = false;
 							chara.gun_stat[this->ptr_mag->id].mag_plus(&(this->magazine));
 							if (chara.gun_stat[this->ptr_mag->id].mag_in.size() == 1) {
@@ -1851,7 +1840,7 @@ public:
 					if (zz) {
 						chara.canget_id = this->id;
 						chara.canget_med = this->ptr_med->mod.name;
-						if (chara.getmag.second == 1) {
+						if (chara.key_.getmag.push()) {
 							chara.HP = std::clamp<int>(chara.HP + this->ptr_med->repair, 0, chara.HP_full);
 							//ITEM
 							this->Delete_item();

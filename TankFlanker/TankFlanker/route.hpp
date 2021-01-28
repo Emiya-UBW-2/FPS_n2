@@ -140,6 +140,7 @@ public:
 
 					for (auto& c : this->chara) {
 						c.Draw_chara();
+						//レーザー
 						{
 							VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first);
 							VECTOR_ref endpos = startpos - c.obj_gun.GetMatrix().zvec()*100.f;
@@ -535,7 +536,7 @@ public:
 
 											{
 												float dist_ = (c.pos_LEFTHAND - c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first)).size();
-												if (dist_ <= 0.1f && (!c.reloadf || !c.down_mag)) {
+												if (dist_ <= 0.1f && (!c.reloadf || !c.key_.down_mag)) {
 													c.LEFT_hand = true;
 													c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first);
 												}
@@ -607,7 +608,7 @@ public:
 											c.body.SetFrameLocalMatrix(c.frame_s.bodyb_f.first, mb_inv*MATRIX_ref::Mtrans(c.frame_s.bodyb_f.second));
 											c.body.SetFrameLocalMatrix(c.frame_s.body_f.first, m_inv*(mb_inv*mg_inv).Inverse()*MATRIX_ref::Mtrans(c.frame_s.body_f.second));
 
-											if (c.reloadf || c.running || c.anime_arm_check->per == 1.f) {
+											if (c.reloadf || c.key_.running || c.anime_arm_check->per == 1.f) {
 												mb_inv = MATRIX_ref::RotZ(c.body_zrad);
 												m_inv = MATRIX_ref::RotZ(c.body_zrad)* MATRIX_ref::RotX(c.body_xrad)*mg_inv;
 												c.body.frame_reset(c.frame_s.bodyg_f.first);
@@ -629,7 +630,7 @@ public:
 										//MATRIX_ref mmm = c.body.GetFrameLocalMatrix(c.frame_s.body_f.first)*MATRIX_ref::Mtrans(c.body.GetFrameLocalMatrix(c.frame_s.body_f.first).pos()).Inverse();
 
 										c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, c.mat*m_inv.Inverse()*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
-										if (c.reloadf || c.running || c.anime_arm_check->per == 1.f) {
+										if (c.reloadf || c.key_.running || c.anime_arm_check->per == 1.f) {
 											c.body.frame_reset(c.frame_s.head_f.first);
 										}
 									}
@@ -641,11 +642,11 @@ public:
 											float ani_run = 0.f;//2
 											float ani_sit = 0.f;//7
 											float ani_swalk = 0.f;//8
-											if (c.running) {
+											if (c.key_.running) {
 												ani_run = 1.f*ratio_t;
 											}
-											else if (c.ads.first) {
-												if (!c.squat.first) {
+											else if (c.key_.ads.on()) {
+												if (!c.key_.squat.on()) {
 													ani_walk = 0.5f*ratio_t;
 												}
 												else {
@@ -655,7 +656,7 @@ public:
 											}
 											else {
 												easing_set(&c.anime_hand_nomal->per, 0.f, 0.95f);
-												if (!c.squat.first) {
+												if (!c.key_.squat.on()) {
 													ani_walk = 1.f*ratio_t;
 												}
 												else {
@@ -678,35 +679,29 @@ public:
 									}
 									//視点
 									{
+										//エイム視点
 										VECTOR_ref pv;
 										if (c.gun_ptr->frame_s.site_f.first != INT_MAX) {
 											pv = c.gun_ptr->frame_s.site_f.second;
 										}
-										if (&c != &mine) {
-											if (c.ads.first) {
-												easing_set(&c.gunpos, VGet(-0.f, 0.f - pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*0.001f*c.anime_walk->per, -0.315f), 0.75f);
-											}
-											else {
-												if (c.running) {
-													easing_set(&c.gunpos, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f);
-												}
-												else {
-													easing_set(&c.gunpos, VGet(-0.1f, -0.05f - pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*0.002f*c.anime_walk->per, -0.335f), 0.75f);
-												}
-											}
+										//gunpos指定
+										if (c.key_.ads.on()) {
+											easing_set(&c.gunpos, VGet(
+												0.f,
+												-pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*c.anime_walk->per*0.001f,
+												(&c != &mine) ? -0.315f : -0.245f
+											), 0.75f);
+										}
+										else if (c.key_.running) {
+											easing_set(&c.gunpos, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f);
 										}
 										else {
-											if (c.ads.first) {
-												easing_set(&c.gunpos, VGet(-0.f, 0.f - pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*0.001f*c.anime_walk->per, -0.245f), 0.75f);
-											}
-											else {
-												if (c.running) {
-													easing_set(&c.gunpos, VGet(-0.1f, -0.1f - pv.y(), -0.25f), 0.9f);
-												}
-												else {
-													easing_set(&c.gunpos, VGet(-0.1f, -0.05f - pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*0.002f*c.anime_walk->per, -0.275f), 0.75f);
-												}
-											}
+											easing_set(&c.gunpos,
+												VGet(
+													-0.1f,
+													-0.05f - pv.y() + sin(DX_PI_F*2.f*(c.anime_walk->time / c.anime_walk->alltime))*c.anime_walk->per*0.001f*2.f,
+													(&c != &mine) ? -0.335f : -0.275f
+												), 0.75f);
 										}
 									}
 									//手
@@ -740,7 +735,7 @@ public:
 												c.mat_RIGHTHAND = c.obj_gun.GetMatrix()*MATRIX_ref::Mtrans(c.obj_gun.GetMatrix().pos()).Inverse();
 											}
 											else {
-												if (c.running) {
+												if (c.key_.running) {
 													if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
 														c.anime_reload->per = 1.f;
 														c.anime_reload->update(true, ((c.anime_reload->alltime / 30.f) / c.gun_ptr->reload_time));
@@ -791,13 +786,13 @@ public:
 														}
 														//左手
 														{
-															if (c.down_mag) {
+															if (c.key_.down_mag) {
 																c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.magazine_f.first) + c.mat_RIGHTHAND.yvec()*-0.05f;
 															}
 															else {
 																c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first);
 															}
-															if (!c.reloadf || !c.down_mag) {
+															if (!c.reloadf || !c.key_.down_mag) {
 																c.LEFT_hand = true;
 																c.pos_LEFTHAND = c.obj_gun.frame(c.gun_ptr->frame_s.left_f.first);
 															}
@@ -874,7 +869,7 @@ public:
 									c.pos_HMD = (c.body.frame(c.frame_s.RIGHTeye_f.first) + (c.body.frame(c.frame_s.LEFTeye_f.first) - c.body.frame(c.frame_s.RIGHTeye_f.first))*0.5f) - c.pos;
 									//銃器
 									if (c.HP != 0) {
-										if (c.running || (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) || c.anime_arm_check->per == 1.f) {
+										if (c.key_.running || (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) || c.anime_arm_check->per == 1.f) {
 											auto mat_T = MATRIX_ref::RotY(deg2rad(45))* MATRIX_ref::RotX(deg2rad(-90))* c.body.GetFrameLocalWorldMatrix(c.frame_s.RIGHThand2_f.first);
 											c.pos_RIGHTHAND = c.body.frame(c.frame_s.RIGHThand_f.first);
 											c.obj_gun.SetMatrix(mat_T*MATRIX_ref::Mtrans(c.pos_RIGHTHAND));
@@ -940,7 +935,7 @@ public:
 									}
 								}
 								//medkit生成
-								if (c.delete_item.second == 1) {
+								if (c.key_.delete_item.push()) {
 									bool tt = false;
 									for (auto& g : this->item) {
 										if (g.ptr_gun == nullptr && g.ptr_mag == nullptr && g.ptr_med == nullptr) {
@@ -959,7 +954,7 @@ public:
 									}
 								}
 								//マガジン整頓
-								if (!c.sort_ing && c.sortmag.second == 1 && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 2) {
+								if (!c.sort_ing && c.key_.sortmag.push() && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 2) {
 									c.sort_ing = true;
 									if (!c.sort_f) {
 										c.audio.sort_.play_3D(c.pos_RIGHTHAND, 15.f);
@@ -1009,9 +1004,9 @@ public:
 								//マガジン挿入
 								if (c.reloadf && c.gun_stat[c.gun_ptr->id].mag_in.size() >= 1) {
 									if (Drawparts->use_vr && c.reload_cnt < c.gun_ptr->reload_time) {
-										c.down_mag = false;
+										c.key_.down_mag = false;
 									}
-									if (c.down_mag) {
+									if (c.key_.down_mag) {
 										if (
 											(Drawparts->use_vr) ? 
 											((c.obj_mag.frame(3) - c.obj_gun.frame(c.gun_ptr->frame_s.magazine_f.first)).size() <= 0.05f) :
@@ -1037,13 +1032,13 @@ public:
 									c.reload_cnt += 1.f / fps_;//挿入までのカウント
 								}
 								else {
-									c.down_mag = false;
+									c.key_.down_mag = false;
 									c.pos_mag = c.obj_gun.frame(c.gun_ptr->frame_s.magazine2_f.first);
 									c.mat_mag = c.mat_RIGHTHAND;
 								}
 								//セレクター
 								easing_set(&c.obj_gun.get_anime(4).per, float(c.gun_stat[c.gun_ptr->id].select / std::max<size_t>(c.gun_ptr->select.size() - 1, 1)), 0.5f);
-								if (c.selkey.second == 1) {
+								if (c.key_.selkey.push()) {
 									++c.gun_stat[c.gun_ptr->id].select %= c.gun_ptr->select.size();
 								}
 								//セフティ
@@ -1055,7 +1050,7 @@ public:
 									}
 								}
 								c.trigger.get_in(c.obj_gun.get_anime(2).per >= 0.5f);
-								if (c.trigger.second == 1) {
+								if (c.trigger.push()) {
 									c.audio.trigger.play_3D(c.pos_RIGHTHAND, 5.f);
 									if (!c.gunf && c.gun_stat[c.gun_ptr->id].ammo_cnt >= 1) {
 										c.gunf = true;
@@ -1188,7 +1183,7 @@ public:
 								}
 							}
 							{
-								if (this->TPS.first) {
+								if (this->TPS.on()) {
 									GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), camera_TPS.campos, camera_TPS.camvec, camera_TPS.camup, camera_TPS.fov, camera_TPS.near_, camera_TPS.far_);
 								}
 								else {
@@ -1272,7 +1267,7 @@ public:
 								}
 							}, camera_main);
 						}
-						if (!this->TPS.first) {
+						if (!this->TPS.on()) {
 							//2P描画
 							if (Drawparts->use_vr) {
 								auto& ct = chara[sel_cam];
@@ -1348,7 +1343,7 @@ public:
 							//ミニマップ
 							{
 								auto* cc = &mine;
-								if (this->TPS.first) {
+								if (this->TPS.on()) {
 									cc = &chara[sel_cam];
 								}
 								else {
@@ -1363,7 +1358,7 @@ public:
 							}
 							//TPS視点
 							this->TPS.get_in(CheckHitKey(KEY_INPUT_LCONTROL) != 0);
-							if (this->TPS.first) {
+							if (this->TPS.on()) {
 								{
 									//cam
 									for (int i = 0; i < std::min<size_t>(chara.size(), 10); i++) {

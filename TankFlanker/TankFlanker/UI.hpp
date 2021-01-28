@@ -196,7 +196,7 @@ public:
 				}
 				if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 					//‹óŒx
-					if ((!use_vr && !chara.ads.first) || use_vr) {
+					if ((!use_vr && !chara.key_.ads.on()) || use_vr) {
 						if (chara.gun_stat[chara.gun_ptr->id].ammo_cnt == 0) {
 							font->DrawString_MID(xp, yp, "EMPTY", red); yp += fonthight;
 						}
@@ -250,7 +250,7 @@ public:
 			}
 			//’e–ò
 			{
-				if ((!use_vr && !chara.ads.first) || use_vr) {
+				if ((!use_vr && !chara.key_.ads.on()) || use_vr) {
 					if (use_vr) {
 						xs = x_r(200);
 						xp = t_disp_x / 2 - x_r(20) - xs;
@@ -381,7 +381,7 @@ public:
 			{
 				//’e
 				{
-					if ((!use_vr && ct.ads.first) || (use_vr)) {
+					if ((!use_vr && ct.key_.ads.on()) || (use_vr)) {
 						VECTOR_ref p = ConvWorldPosToScreenPos(ct.obj_gun.GetMatrix().pos().get());
 						if (p.z() >= 0.f&&p.z() <= 1.f) {
 							if (use_vr) {
