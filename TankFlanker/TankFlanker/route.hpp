@@ -137,45 +137,38 @@ public:
 							h.pic.DrawFrame(h.use);
 						}
 					}
-
+					std::for_each(chara.begin(), chara.end(), [&](Chara& c) { c.Draw_chara(); });
+					//ƒŒ[ƒU[
 					for (auto& c : this->chara) {
-						c.Draw_chara();
-						//ƒŒ[ƒU[
-						{
-							VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first);
-							VECTOR_ref endpos = startpos - c.obj_gun.GetMatrix().zvec()*100.f;
-							mapparts->map_col_nearest(startpos, &endpos);
+						VECTOR_ref startpos = c.obj_gun.frame(c.gun_ptr->frame_s.mazzule_f.first);
+						VECTOR_ref endpos = startpos - c.obj_gun.GetMatrix().zvec()*100.f;
+						mapparts->map_col_nearest(startpos, &endpos);
 
-							for (auto& tgt : this->chara) {
-								if (&tgt == &c) {
-									continue;
-								}
-								for (int i = 0; i < 3; i++) {
-									auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, i);
-									if (q.HitFlag) {
-										endpos = q.HitPosition;
-									}
+						for (auto& tgt : this->chara) {
+							if (&tgt == &c) {
+								continue;
+							}
+							for (int i = 0; i < 3; i++) {
+								auto q = tgt.col.CollCheck_Line(startpos, endpos, -1, i);
+								if (q.HitFlag) {
+									endpos = q.HitPosition;
 								}
 							}
-							SetUseLighting(FALSE);
-							SetFogEnable(FALSE);
-
-							DXDraw::Capsule3D(startpos, endpos, 0.001f, GetColor(255, 0, 0), GetColor(255, 255, 255));
-							DrawSphere3D(endpos.get(), std::clamp(powf((endpos - GetCameraPosition()).size() + 0.5f, 2)*0.002f, 0.001f, 0.05f), 6, GetColor(255, 0, 0), GetColor(255, 255, 255), TRUE);
-
-							SetUseLighting(TRUE);
-							SetFogEnable(TRUE);
 						}
+						SetUseLighting(FALSE);
+						SetFogEnable(FALSE);
+
+						DXDraw::Capsule3D(startpos, endpos, 0.001f, GetColor(255, 0, 0), GetColor(255, 255, 255));
+						DrawSphere3D(endpos.get(), std::clamp(powf((endpos - GetCameraPosition()).size() + 0.5f, 2)*0.002f, 0.001f, 0.05f), 6, GetColor(255, 0, 0), GetColor(255, 255, 255), TRUE);
+
+						SetUseLighting(TRUE);
+						SetFogEnable(TRUE);
 					}
-					for (auto& g : this->item) {
-						g.Draw_item(this->chara[0]);
-					}
+					std::for_each(item.begin(), item.end(), [&](Items& i) { i.Draw_item(chara[0]); });
 					//e’e
 					SetFogEnable(FALSE);
 					SetUseLighting(FALSE);
-					for (auto& c : this->chara) {
-						c.Draw_ammo();
-					}
+					std::for_each(chara.begin(), chara.end(), [&](Chara& c) { c.Draw_ammo(); });
 					SetUseLighting(TRUE);
 					SetFogEnable(TRUE);
 
@@ -1267,75 +1260,73 @@ public:
 								}
 							}, camera_main);
 						}
-						if (!this->TPS.on()) {
-							//2P•`‰æ
-							if (Drawparts->use_vr) {
-								auto& ct = chara[sel_cam];
-								//cam_s.cam
-								{
-									if (ct.HP != 0) {
-										camera_sub.set_cam_pos(ct.pos + ct.pos_HMD - ct.rec_HMD, (ct.pos + ct.pos_HMD - ct.rec_HMD) + ct.mat.zvec()*-1.f, ct.mat.yvec());
-									}
-									else {
-										//ƒfƒXƒJƒƒ‰
-										easing_set(&camera_sub.camvec, chara[ct.death_id].pos + chara[ct.death_id].pos_HMD - chara[ct.death_id].rec_HMD, 0.9f);
-										auto rad = atan2f((camera_sub.camvec - camera_sub.campos).x(), (camera_sub.camvec - camera_sub.campos).z());
-										easing_set(&camera_sub.campos, ct.pos + ct.pos_HMD - ct.rec_HMD + VGet(-5.f*sin(rad), 2.f, -5.f*cos(rad)), 0.9f);
-										camera_sub.camup = VGet(0, 1.f, 0);
-										mapparts->map_col_nearest(camera_sub.camvec, &camera_sub.campos);
-									}
+						//2P•`‰æ
+						if ((!this->TPS.on()) && Drawparts->use_vr) {
+							auto& ct = chara[sel_cam];
+							//cam_s.cam
+							{
+								if (ct.HP != 0) {
+									camera_sub.set_cam_pos(ct.pos + ct.pos_HMD - ct.rec_HMD, (ct.pos + ct.pos_HMD - ct.rec_HMD) + ct.mat.zvec()*-1.f, ct.mat.yvec());
 								}
-								//‰e—pˆÓ
-								Drawparts->Ready_Shadow(camera_sub.campos,
-									[&] {
-									for (auto& c : this->chara) { c.Draw_chara(); }
-									for (auto& g : this->item) { g.Draw_item(); }
-								},
-									VGet(2.f, 2.5f, 2.f),
-									VGet(5.f, 2.5f, 5.f)
-									);
-								//‘‚«ž‚Ý
-								{
-									this->UI_Screen2.SetDraw_Screen();
-									{
-										UIparts->set_draw(ct, false);
-									}
-									//”íŽÊ‘Ì[“x•`‰æ
-									Hostpass2parts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, camera_sub);
-									//ÅI•`‰æ
-									Hostpass2parts->MAIN_draw();
+								else {
+									//ƒfƒXƒJƒƒ‰
+									easing_set(&camera_sub.camvec, chara[ct.death_id].pos + chara[ct.death_id].pos_HMD - chara[ct.death_id].rec_HMD, 0.9f);
+									auto rad = atan2f((camera_sub.camvec - camera_sub.campos).x(), (camera_sub.camvec - camera_sub.campos).z());
+									easing_set(&camera_sub.campos, ct.pos + ct.pos_HMD - ct.rec_HMD + VGet(-5.f*sin(rad), 2.f, -5.f*cos(rad)), 0.9f);
+									camera_sub.camup = VGet(0, 1.f, 0);
+									mapparts->map_col_nearest(camera_sub.camvec, &camera_sub.campos);
 								}
-								//Screen2‚ÉˆÚ‚·
-								outScreen2.SetDraw_Screen(camera_sub.campos, camera_sub.camvec, camera_sub.camup, camera_sub.fov, camera_sub.near_, camera_sub.far_);
+							}
+							//‰e—pˆÓ
+							Drawparts->Ready_Shadow(camera_sub.campos,
+								[&] {
+								for (auto& c : this->chara) { c.Draw_chara(); }
+								for (auto& g : this->item) { g.Draw_item(); }
+							},
+								VGet(2.f, 2.5f, 2.f),
+								VGet(5.f, 2.5f, 5.f)
+								);
+							//‘‚«ž‚Ý
+							{
+								this->UI_Screen2.SetDraw_Screen();
 								{
-									Hostpass2parts->get_main().DrawGraph(0, 0, true);
-									//UI
-									this->UI_Screen2.DrawGraph(0, 0, true);
-									//UI2
-									for (auto& c : chara) {
-										for (auto& a : c.bullet) {
-											if (a.hit) {
-												a.hit_r = 2.f;
-												a.hit_count = 0.5f;
-												VECTOR_ref p = ConvWorldPosToScreenPos((a.pos).get());
-												if (p.z() >= 0.f&&p.z() <= 1.f) {
-													a.hit_x = int(p.x());
-													a.hit_y = int(p.y());
-												}
-												a.hit = false;
+									UIparts->set_draw(ct, false);
+								}
+								//”íŽÊ‘Ì[“x•`‰æ
+								Hostpass2parts->BUF_draw([&]() { mapparts->sky_draw(); }, draw_by_shadow, camera_sub);
+								//ÅI•`‰æ
+								Hostpass2parts->MAIN_draw();
+							}
+							//Screen2‚ÉˆÚ‚·
+							outScreen2.SetDraw_Screen(camera_sub.campos, camera_sub.camvec, camera_sub.camup, camera_sub.fov, camera_sub.near_, camera_sub.far_);
+							{
+								Hostpass2parts->get_main().DrawGraph(0, 0, true);
+								//UI
+								this->UI_Screen2.DrawGraph(0, 0, true);
+								//UI2
+								for (auto& c : chara) {
+									for (auto& a : c.bullet) {
+										if (a.hit) {
+											a.hit_r = 2.f;
+											a.hit_count = 0.5f;
+											VECTOR_ref p = ConvWorldPosToScreenPos((a.pos).get());
+											if (p.z() >= 0.f&&p.z() <= 1.f) {
+												a.hit_x = int(p.x());
+												a.hit_y = int(p.y());
 											}
-											if (a.hit_count != 0.f) {
-												easing_set(&a.hit_r, 1.f, 0.7f);
-											}
-											else {
-												easing_set(&a.hit_r, 0.f, 0.8f);
-											}
-
-											a.hit_count = std::clamp(a.hit_count - 1.f / GetFPS(), 0.f, 1.f);
+											a.hit = false;
 										}
+										if (a.hit_count != 0.f) {
+											easing_set(&a.hit_r, 1.f, 0.7f);
+										}
+										else {
+											easing_set(&a.hit_r, 0.f, 0.8f);
+										}
+
+										a.hit_count = std::clamp(a.hit_count - 1.f / GetFPS(), 0.f, 1.f);
 									}
-									UIparts->item_draw(chara,ct, this->item, camera_sub.campos, false);
 								}
+								UIparts->item_draw(chara, ct, this->item, camera_sub.campos, false);
 							}
 						}
 						//ƒfƒBƒXƒvƒŒƒC•`‰æ
@@ -1456,16 +1447,12 @@ public:
 			}
 			//‰ð•ú
 			{
-				for (auto& c : chara) {
-					c.Delete_chara();
-				}
-				chara.clear();
-				for (auto& c : item) {
-					c.Delete_item();
-				}
-				item.clear();
-				mapparts->Delete_map();
-				Drawparts->Delete_Shadow();
+			std::for_each(chara.begin(), chara.end(), [](Chara& c) {c.Delete_chara(); });
+			chara.clear();
+			std::for_each(item.begin(), item.end(), [](Items& i) {i.Delete_item(); });
+			item.clear();
+			mapparts->Delete_map();
+			Drawparts->Delete_Shadow();
 			}
 			//
 		} while (ProcessMessage() == 0 && this->ending);
