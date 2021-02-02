@@ -1323,7 +1323,7 @@ public:
 							}
 							else {
 								if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
-									this->speed = (this->running ? 8.f : 6.f) / GetFPS();
+									this->speed = (this->key_.running ? 8.f : 6.f) / GetFPS();
 
 									if (Drawparts->tracker_num.size() > 0) {
 										auto p = this->body.GetFrameLocalWorldMatrix(this->frame_s.bodyb_f.first);
@@ -1342,23 +1342,23 @@ public:
 				}
 
 				if (cannotmove || this->HP == 0) {
-					this->wkey = false;
-					this->skey = false;
-					this->akey = false;
-					this->dkey = false;
-					this->shoot = false;
-					this->running = false;
-					this->squat.first = false;
-					this->qkey = false;
-					this->ekey = false;
-					this->aim = false;
-					this->reload = false;
-					this->get_ = false;
-					this->sort_ = false;
-					this->delete_ = false;
-					this->select = false;
-					this->down_mag = true;
-					this->jamp = false;
+					this->key_.wkey = false;
+					this->key_.skey = false;
+					this->key_.akey = false;
+					this->key_.dkey = false;
+					this->key_.shoot = false;
+					this->key_.running = false;
+					this->key_.squat.first = false;
+					this->key_.qkey = false;
+					this->key_.ekey = false;
+					this->key_.aim = false;
+					this->key_.reload = false;
+					this->key_.get_ = false;
+					this->key_.sort_ = false;
+					this->key_.delete_ = false;
+					this->key_.select = false;
+					this->key_.down_mag = true;
+					this->key_.jamp = false;
 				}
 				//
 			}
