@@ -461,7 +461,7 @@ public:
 			int yp = y_size / 2;
 			float radp = 0.f;
 			{
-				easing_set(&xcam, 1.f + (cc.add_vec_real.size() / ((cc.running ? 6.f : ((cc.ads.first ? 2.f : 4.f)*(cc.squat.first ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
+				easing_set(&xcam, 1.f + (cc.add_vec_real.size() / ((cc.key_.running ? 6.f : ((cc.key_.ads.on() ? 2.f : 4.f)*(cc.key_.squat.on() ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
 
 				auto t = cc.body.GetMatrix().pos();
 				VECTOR_ref vec_z = cc.body.GetFrameLocalWorldMatrix(cc.frame_s.head_f.first).zvec()*-1.f;

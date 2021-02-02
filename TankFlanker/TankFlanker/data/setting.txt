@@ -1,5 +1,5 @@
 hostpass=false
 bloom=true
 shadow=true
-usevr=false
+usevr=true
 fov = 65.0
