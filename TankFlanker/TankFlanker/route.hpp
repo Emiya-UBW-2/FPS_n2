@@ -1157,7 +1157,6 @@ public:
 							}
 						}
 						Set3DSoundListenerPosAndFrontPosAndUpVec(camera_main.campos.get(), camera_main.camvec.get(), camera_main.camup.get());
-						UpdateEffekseer3D();
 						//VR‹óŠÔ‚É“K—p
 						Drawparts->Move_Player();
 						//ƒ‹[ƒ‹•Û‘¶
