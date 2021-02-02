@@ -224,6 +224,7 @@ public:
 							//chara
 							if (Drawparts->use_vr) {
 								mine.operation_VR(Drawparts, !ruleparts->getstart() || ruleparts->getend(), &oldv_1_1);
+								mine.operation_2();
 								//2P
 								/*
 								{
@@ -294,7 +295,7 @@ public:
 								}
 								//pos
 								if (Drawparts->use_vr && (&c == &mine)) {
-									{
+									if (c.HP != 0) {
 										VECTOR_ref v_ = c.mat.zvec();
 										if (Drawparts->tracker_num.size() > 0) {
 											v_ = c.mat_WAIST.zvec();
@@ -307,22 +308,28 @@ public:
 										c.body_yrad += r_ * FRAME_RATE / fps_ / 10.f;
 									}
 									//身体,頭部,腰
-									MATRIX_ref m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+									MATRIX_ref m_inv = MATRIX_ref::RotY((Drawparts->tracker_num.size() > 0) ? DX_PI_F : 0 + c.body_yrad);
 									{
-										c.body.SetMatrix(m_inv);
-										if (Drawparts->tracker_num.size() > 0) {
-											//腰
-											c.body.SetFrameLocalMatrix(c.frame_s.bodyb_f.first, (c.mat_WAIST*m_inv.Inverse())*MATRIX_ref::Mtrans(c.frame_s.bodyb_f.second));
-											//頭部
-											c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, (MATRIX_ref::Axis1(c.mat.xvec()*-1.f, c.mat.yvec(), c.mat.zvec()*-1.f) *m_inv.Inverse()*(c.mat_WAIST*m_inv.Inverse()).Inverse())
-												*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
+										if (c.HP != 0) {
+											c.body.SetMatrix(m_inv);
+											if (Drawparts->tracker_num.size() > 0) {
+												//腰
+												c.body.SetFrameLocalMatrix(c.frame_s.bodyb_f.first, (c.mat_WAIST*m_inv.Inverse())*MATRIX_ref::Mtrans(c.frame_s.bodyb_f.second));
+												//頭部
+												c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, (MATRIX_ref::Axis1(c.mat.xvec()*-1.f, c.mat.yvec(), c.mat.zvec()*-1.f) *m_inv.Inverse()*(c.mat_WAIST*m_inv.Inverse()).Inverse())
+													*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
+											}
+											else {
+												//頭部
+												c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, (MATRIX_ref::Axis1(c.mat.xvec()*-1.f, c.mat.yvec(), c.mat.zvec()*-1.f) *m_inv.Inverse())
+													*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
+											}
+											c.body.SetMatrix(m_inv *MATRIX_ref::Mtrans((c.pos + c.pos_HMD - c.rec_HMD) - (c.body.frame(c.frame_s.RIGHTeye_f.first) + (c.body.frame(c.frame_s.LEFTeye_f.first) - c.body.frame(c.frame_s.RIGHTeye_f.first))*0.5f)));
 										}
 										else {
-											//頭部
-											c.body.SetFrameLocalMatrix(c.frame_s.head_f.first, (MATRIX_ref::Axis1(c.mat.xvec()*-1.f, c.mat.yvec(), c.mat.zvec()*-1.f) *m_inv.Inverse())
-												*MATRIX_ref::Mtrans(c.frame_s.head_f.second));
+											m_inv = MATRIX_ref::RotY(DX_PI_F + c.body_yrad);
+											c.body.SetMatrix(m_inv*MATRIX_ref::Mtrans(c.pos + VECTOR_ref(VGet(c.pos_HMD.x(), 0.f, c.pos_HMD.z())) - c.rec_HMD));
 										}
-										c.body.SetMatrix(m_inv *MATRIX_ref::Mtrans((c.pos + c.pos_HMD - c.rec_HMD) - (c.body.frame(c.frame_s.RIGHTeye_f.first) + (c.body.frame(c.frame_s.LEFTeye_f.first) - c.body.frame(c.frame_s.RIGHTeye_f.first))*0.5f)));
 									}
 									//足
 									{
@@ -1123,15 +1130,15 @@ public:
 							}
 							//物理演算、アニメーション
 							if (c.start_c) {
-								c.body.PhysicsResetState();
+							//	c.body.PhysicsResetState();
 								c.start_c = false;
 							}
 							else  if (c.start_b) {
-								c.body.PhysicsResetState();
+								//c.body.PhysicsResetState();
 								c.start_b = false;
 							}
 							else {
-								c.body.PhysicsCalculation(1000.f / fps_);
+							//	c.body.PhysicsCalculation(1000.f / fps_);
 							}
 						}
 						//campos,camvec,camupの指定

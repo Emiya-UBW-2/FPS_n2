@@ -1113,6 +1113,7 @@ public:
 			const auto fps_ = GetFPS();
 			easing_set(&this->HP_r, float(this->HP), 0.95f);
 			if (this->HP == 0) {
+				this->pos_HMD.clear();
 				easing_set(&this->anime_hand_nomal->per, 0.f, 0.9f);
 				easing_set(&this->anime_walk->per, 0.f, 0.9f);
 				easing_set(&this->anime_run->per, 0.f, 0.9f);
