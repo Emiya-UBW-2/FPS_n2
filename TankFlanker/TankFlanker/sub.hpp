@@ -1320,22 +1320,47 @@ public:
 							//jamp
 							this->jamp = (ptr_.on[0] & BUTTON_SIDE) != 0;
 							//ˆÚ“®
-							if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
-								this->speed = (this->running ? 6.f : 4.f) / GetFPS();
-
-								if (Drawparts->tracker_num.size() > 0) {
-									auto p = this->body.GetFrameLocalWorldMatrix(this->frame_s.bodyb_f.first);
-									easing_set(&this->add_vec_buf, (p.zvec()*-ptr_.touch.y() + p.xvec()*-ptr_.touch.x())*this->speed, 0.95f);
-								}
-								else {
-									easing_set(&this->add_vec_buf, (this->mat.zvec()*ptr_.touch.y() + this->mat.xvec()*ptr_.touch.x())*this->speed, 0.95f);
-								}
+							if (cannotmove || this->HP == 0) {
+								easing_set(&this->add_vec_buf, VGet(0, 0, 0), 0.95f);
 							}
 							else {
-								easing_set(&this->add_vec_buf, VGet(0, 0, 0), 0.95f);
+								if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
+									this->speed = (this->running ? 8.f : 6.f) / GetFPS();
+
+									if (Drawparts->tracker_num.size() > 0) {
+										auto p = this->body.GetFrameLocalWorldMatrix(this->frame_s.bodyb_f.first);
+										easing_set(&this->add_vec_buf, (p.zvec()*-ptr_.touch.y() + p.xvec()*-ptr_.touch.x())*this->speed, 0.95f);
+									}
+									else {
+										easing_set(&this->add_vec_buf, (this->mat.zvec()*ptr_.touch.y() + this->mat.xvec()*ptr_.touch.x())*this->speed, 0.95f);
+									}
+								}
+								else {
+									easing_set(&this->add_vec_buf, VGet(0, 0, 0), 0.95f);
+								}
 							}
 						}
 					}
+				}
+
+				if (cannotmove || this->HP == 0) {
+					this->wkey = false;
+					this->skey = false;
+					this->akey = false;
+					this->dkey = false;
+					this->shoot = false;
+					this->running = false;
+					this->squat.first = false;
+					this->qkey = false;
+					this->ekey = false;
+					this->aim = false;
+					this->reload = false;
+					this->get_ = false;
+					this->sort_ = false;
+					this->delete_ = false;
+					this->select = false;
+					this->down_mag = true;
+					this->jamp = false;
 				}
 				//
 			}
