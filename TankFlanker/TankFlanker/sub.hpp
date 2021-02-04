@@ -1113,6 +1113,7 @@ public:
 			const auto fps_ = GetFPS();
 			easing_set(&this->HP_r, float(this->HP), 0.95f);
 			if (this->HP == 0) {
+				this->pos_HMD.clear();
 				easing_set(&this->anime_hand_nomal->per, 0.f, 0.9f);
 				easing_set(&this->anime_walk->per, 0.f, 0.9f);
 				easing_set(&this->anime_run->per, 0.f, 0.9f);
@@ -1317,21 +1318,47 @@ public:
 							this->key_.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;																	//running
 							this->key_.jamp = (ptr_.on[0] & BUTTON_SIDE) != 0;																			//jamp
 							//ˆÚ“®
-							if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
-								this->speed = (this->key_.running ? 6.f : 4.f) / GetFPS();
-								if (Drawparts->tracker_num.size() > 0) {
-									auto p = this->body.GetFrameLocalWorldMatrix(this->frame_s.bodyb_f.first);
-									easing_set(&this->add_vec_buf, (p.zvec()*-ptr_.touch.y() + p.xvec()*-ptr_.touch.x())*this->speed, 0.95f);
-								}
-								else {
-									easing_set(&this->add_vec_buf, (this->mat.zvec()*ptr_.touch.y() + this->mat.xvec()*ptr_.touch.x())*this->speed, 0.95f);
-								}
+							if (cannotmove || this->HP == 0) {
+								easing_set(&this->add_vec_buf, VGet(0, 0, 0), 0.95f);
 							}
 							else {
-								easing_set(&this->add_vec_buf, VGet(0, 0, 0), 0.95f);
+								if ((ptr_.on[1] & BUTTON_TOUCHPAD) != 0) {
+									this->speed = (this->key_.running ? 8.f : 6.f) / GetFPS();
+
+									if (Drawparts->tracker_num.size() > 0) {
+										auto p = this->body.GetFrameLocalWorldMatrix(this->frame_s.bodyb_f.first);
+										easing_set(&this->add_vec_buf, (p.zvec()*-ptr_.touch.y() + p.xvec()*-ptr_.touch.x())*this->speed, 0.95f);
+									}
+									else {
+										easing_set(&this->add_vec_buf, (this->mat.zvec()*ptr_.touch.y() + this->mat.xvec()*ptr_.touch.x())*this->speed, 0.95f);
+									}
+								}
+								else {
+									easing_set(&this->add_vec_buf, VGet(0, 0, 0), 0.95f);
+								}
 							}
 						}
 					}
+				}
+
+				if (cannotmove || this->HP == 0) {
+					this->key_.wkey = false;
+					this->key_.skey = false;
+					this->key_.akey = false;
+					this->key_.dkey = false;
+					this->key_.shoot = false;
+					this->key_.running = false;
+					this->key_.squat.first = false;
+					this->key_.qkey = false;
+					this->key_.ekey = false;
+					this->key_.aim = false;
+					this->key_.reload = false;
+					this->key_.get_ = false;
+					this->key_.sort_ = false;
+					this->key_.delete_ = false;
+					this->key_.select = false;
+					this->key_.down_mag = true;
+					this->key_.jamp = false;
 				}
 				//
 			}
