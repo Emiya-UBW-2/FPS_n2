@@ -350,6 +350,18 @@ public:
 	class Guns;
 	class Mags;
 	class Meds;
+	//パーツデータ
+	class gunparts {
+	private:
+	public:
+		size_t id = 0;
+		Models mod;
+		GraphHandle reticle;
+		void set_data(const size_t& id_) {
+			this->id = id_;
+			this->mod.model.SetMatrix(MGetIdent());
+		}
+	};
 	//銃データ
 	class Guns {
 	private:
@@ -412,6 +424,7 @@ public:
 		float ammo_damege = 10.f;//ダメージ
 		std::vector<Ammo_info> ammo;
 		Mags* magazine = nullptr;
+		gunparts mazzule;
 		/**/
 		void set_data(std::vector<Mags>& mag_data, const size_t& id_) {
 			this->id = id_;
@@ -849,6 +862,14 @@ public:
 		/*音声*/
 		Audios audio;
 		/*モデル*/
+		MV1 obj_mazzule;
+		MV1 obj_uperhandguard;
+		frames sight1_f;
+		MV1 obj_underhandguard;
+		MV1 obj_dustcover;
+		MV1 obj_sight1;
+		GraphHandle sight1_reticle;
+
 		MV1 obj_gun, obj_mag;
 		MV1 body, col;
 		/*anime*/
@@ -965,7 +986,13 @@ public:
 		float death_timer = 0.f;
 		//
 
-		void set(std::vector<Guns>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
+		void set(std::vector<Guns>& gun_data, const size_t& itr, 
+			gunparts& mazzuleptr,
+			gunparts& uperhandguardptr,
+			gunparts& underhandguardptr,
+			gunparts& dustcoverptr,
+			gunparts& sight1ptr,
+			MV1& body_, MV1& col_) {
 			this->gun_ptr = &gun_data[itr];
 			//身体
 			body_.DuplicateonAnime(&this->body);
@@ -993,7 +1020,22 @@ public:
 			for (int i = 0; i < col.mesh_num(); i++) {
 				col.SetupCollInfo(8, 8, 8, -1, i);
 			}
+			this->obj_mazzule = mazzuleptr.mod.model.Duplicate();
+			this->obj_uperhandguard = uperhandguardptr.mod.model.Duplicate();
 
+			this->sight1_f.first = -1;
+			for (int i = 0; i < int(this->obj_uperhandguard.frame_num()); i++) {
+				std::string p = this->obj_uperhandguard.frame_name(i);
+				if (p == std::string("rail")) {
+					this->sight1_f = { int(i),this->obj_uperhandguard.frame(i) };
+				}
+			}
+
+			this->obj_underhandguard = underhandguardptr.mod.model.Duplicate();
+			this->obj_dustcover = dustcoverptr.mod.model.Duplicate();
+			this->obj_sight1 = sight1ptr.mod.model.Duplicate();
+			this->obj_sight1.SetupCollInfo(1, 1, 1, 0, 1);
+			this->sight1_reticle = sight1ptr.reticle.Duplicate();
 			this->gun_ptr->mod.model.DuplicateonAnime(&this->obj_gun);
 			this->obj_mag = this->gun_ptr->magazine->mod.model.Duplicate();
 			this->LEFT_hand = false;
@@ -1207,9 +1249,18 @@ public:
 		}
 
 		void Draw_chara() {
-			//this->body.DrawModel();
+			//
+			this->body.DrawModel();
 			this->obj_gun.DrawModel();
-			this->col.DrawModel();
+			this->obj_mazzule.DrawModel();
+			this->obj_uperhandguard.DrawModel();
+			this->obj_underhandguard.DrawModel();
+			this->obj_dustcover.DrawModel();
+			if (this->sight1_f.first > 0) {
+				this->obj_sight1.DrawModel();
+			}
+			//
+			//this->col.DrawModel();
 			if ((!this->reloadf || this->key_.down_mag) && this->gun_stat[this->gun_ptr->id].mag_in.size() >= 1) {
 				this->obj_mag.DrawModel();
 			}
@@ -1225,6 +1276,11 @@ public:
 			this->body.Dispose();
 			this->col.Dispose();
 			this->obj_gun.Dispose();
+			this->obj_mazzule.Dispose();
+			this->obj_uperhandguard.Dispose();
+			this->obj_underhandguard.Dispose();
+			this->obj_dustcover.Dispose();
+			this->obj_sight1.Dispose();
 			this->obj_mag.Dispose();
 			this->audio.Dispose();
 			for (auto& t : this->effcs) {
@@ -1374,7 +1430,7 @@ public:
 				*oldv_1_1 = ptr_.turn && ptr_.now;
 			}
 		}
-		void operation(const bool& cannotmove) {
+		void operation(const bool& cannotmove, const float& fov_per) {
 			//HMD_mat
 			int32_t x_m = 0, y_m = 0;
 			if (this->HP != 0) {
@@ -1406,6 +1462,10 @@ public:
 			//
 			x_m = std::clamp(x_m, -120, 120);
 			y_m = std::clamp(y_m, -120, 120);
+
+			x_m = int(float(x_m)*fov_per);
+			y_m = int(float(y_m)*fov_per);
+
 			operation_2_1(cannotmove, x_m, y_m);
 		}
 		template<class Y3, class D3>
