@@ -197,7 +197,7 @@ public:
 				if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 					//ãÛåxçê
 					if ((!use_vr && !chara.key_.ads.on()) || use_vr) {
-						if (chara.gun_stat[chara.gun_ptr->id].ammo_cnt == 0) {
+						if (chara.gun_stat[chara.base.thisparts->id].ammo_cnt == 0) {
 							font->DrawString_MID(xp, yp, "EMPTY", red); yp += fonthight;
 						}
 					}
@@ -213,8 +213,8 @@ public:
 					xp = t_disp_x / 2 + t_disp_y / 4;
 					yp = t_disp_y / 2 + t_disp_y / 6;
 				}
-				if (chara.gun_ptr->select.size() >= 1) {
-					switch (chara.gun_ptr->select[std::clamp<size_t>(chara.gun_stat[chara.gun_ptr->id].select, 0, chara.gun_ptr->select.size() - 1)]) {
+				if (chara.base.thisparts->select.size() >= 1) {
+					switch (chara.base.thisparts->select[std::clamp<size_t>(chara.gun_stat[chara.base.thisparts->id].select, 0, chara.base.thisparts->select.size() - 1)]) {
 					case 1:
 						font_big->DrawString_MID(xp, yp, "SEMI AUTO", green);
 						break;
@@ -267,28 +267,44 @@ public:
 					{
 						if (use_vr) {
 							xs2 = y_r(120);
-							ys2 = xs2 * chara.gun_ptr->mod.ysize / chara.gun_ptr->mod.xsize;
+							ys2 = xs2 * chara.base.thisparts->mod.ysize / chara.base.thisparts->mod.xsize;
 							xp2 = xp;
 							yp2 = yp - ys2;
 						}
 						else {
 							xs2 = y_r(180);
-							ys2 = xs2 * chara.gun_ptr->mod.ysize / chara.gun_ptr->mod.xsize;
+							ys2 = xs2 * chara.base.thisparts->mod.ysize / chara.base.thisparts->mod.xsize;
 							xp2 = xp;
 							yp2 = yp - ys2;
 						}
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, 192);
-						chara.gun_ptr->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+						chara.base.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+						if (chara.stock.attach) {
+							chara.stock.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+						}
+						if (chara.grip.attach) {
+							chara.grip.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+						}
+						if (chara.dustcover.attach) {
+							chara.dustcover.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+						}
+						if (chara.underhandguard.attach) {
+							chara.underhandguard.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+						}
+						if (chara.uperhandguard.attach) {
+							chara.uperhandguard.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+						}
+
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 					//íe
 					{
-						font->DrawString(xp, yp, chara.gun_ptr->mod.name, write);
-						font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2), write, "%04d / %04d", chara.gun_stat[chara.gun_ptr->id].ammo_cnt, chara.gun_stat[chara.gun_ptr->id].ammo_total - chara.gun_stat[chara.gun_ptr->id].ammo_cnt);
+						font->DrawString(xp, yp, chara.base.thisparts->mod.name, write);
+						font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2), write, "%04d / %04d", chara.gun_stat[chara.base.thisparts->id].ammo_cnt, chara.gun_stat[chara.base.thisparts->id].ammo_total - chara.gun_stat[chara.base.thisparts->id].ammo_cnt);
 					}
 					//É}ÉKÉWÉìä÷òA(âº)
 					{
-						int size = int(chara.gun_stat[chara.gun_ptr->id].mag_in.size());
+						int size = int(chara.gun_stat[chara.base.thisparts->id].mag_in.size());
 						if (use_vr) {
 							xp = t_disp_x / 2 - x_r(140) + font_bighight * size;
 							yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20) - font_bighight * size;
@@ -298,10 +314,10 @@ public:
 							yp = t_disp_y - x_r(20) - font_bighight * size;
 						}
 						if (size > 0) {
-							DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat[chara.gun_ptr->id].mag_in.front(), chara.gun_ptr->magazine->cap), yp + font_bighight + 1, yellow, FALSE);
+							DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat[chara.base.thisparts->id].mag_in.front(), chara.magazine.thisparts->cap), yp + font_bighight + 1, yellow, FALSE);
 						}
-						for (auto& a : chara.gun_stat[chara.gun_ptr->id].mag_in) {
-							font_big->DrawStringFormat(xp, yp, red, "%d/%d", a, chara.gun_ptr->magazine->cap);
+						for (auto& a : chara.gun_stat[chara.base.thisparts->id].mag_in) {
+							font_big->DrawStringFormat(xp, yp, red, "%d/%d", a, chara.magazine.thisparts->cap);
 							xp -= font_bighight / 3;
 							yp += font_bighight;
 						}
@@ -365,6 +381,12 @@ public:
 				font_big->DrawStringFormat_RIGHT(xp, yp, red, "kill/death : %3.1f", float(chara.kill_count) / float(std::max(chara.death_count, 1))); yp += font_bighight;			//ÉLÉãÉfÉX
 			}
 			//èIÇÌÇË
+			{
+				xp = 0;
+				yp = t_disp_y / 2;
+				font_big->DrawStringFormat(xp, yp, red, "weigt  : %3.1f", chara.per.weight); yp += font_bighight;
+				font_big->DrawStringFormat(xp, yp, red, "recoil : %3.1f", chara.per.recoil); yp += font_bighight;
+			}
 		}
 	}
 	void item_draw(std::vector<Chara>&chara, Mainclass::Chara&ct , std::vector<Items>&item_data, const VECTOR_ref& pos, bool use_vr = true) {
@@ -382,7 +404,7 @@ public:
 				//íe
 				{
 					if ((!use_vr && ct.key_.ads.on()) || (use_vr)) {
-						VECTOR_ref p = ConvWorldPosToScreenPos(ct.obj_gun.GetMatrix().pos().get());
+						VECTOR_ref p = ConvWorldPosToScreenPos(ct.base.obj.GetMatrix().pos().get());
 						if (p.z() >= 0.f&&p.z() <= 1.f) {
 							if (use_vr) {
 								xp = int(p.x());
@@ -392,12 +414,12 @@ public:
 								xp = int(p.x());
 								yp = int(p.y());
 							}
-							int per = 90 * int(ct.gun_stat[ct.gun_ptr->id].ammo_cnt) / int(ct.gun_ptr->magazine->cap);
+							int per = 90 * int(ct.gun_stat[ct.base.thisparts->id].ammo_cnt) / int(ct.magazine.thisparts->cap);
 							float rad = deg2rad(90 - per);
 							int col_r = GetColor(std::clamp(int(255.f*sin(rad)*2.f), 0, 255), std::clamp(int(255.f*cos(rad)*2.f), 0, 255), 0);
-							float r_ = std::max((ct.obj_gun.GetMatrix().pos() - pos).size(), 1.f);
+							float r_ = std::max((ct.base.obj.GetMatrix().pos() - pos).size(), 1.f);
 							if (r_ <= 10.f) {
-								int siz = font->GetDrawWidthFormat("%04d", ct.gun_stat[ct.gun_ptr->id].ammo_cnt);
+								int siz = font->GetDrawWidthFormat("%04d", ct.gun_stat[ct.base.thisparts->id].ammo_cnt);
 								for (int i = 0; i < 4; i++) {
 									DrawBox(
 										xp - siz / 2 + siz * i / 4 + 2 + 1, yp - y_r(30) - i * 2 + 1,
@@ -410,14 +432,14 @@ public:
 										xp - siz / 2 + siz * (i + 1) / 4 - 2, yp - y_r(10),
 										col_r, TRUE);
 								}
-								if (ct.gun_stat[ct.gun_ptr->id].ammo_cnt == 0) {
+								if (ct.gun_stat[ct.base.thisparts->id].ammo_cnt == 0) {
 									//ãÛåxçê
 									if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 										font->DrawString_MID(xp, yp, "EMPTY", red); yp += fonthight;
 									}
 								}
 								else {
-									font->DrawStringFormat_MID(xp, yp, col_r, "%04d", ct.gun_stat[ct.gun_ptr->id].ammo_cnt);
+									font->DrawStringFormat_MID(xp, yp, col_r, "%04d", ct.gun_stat[ct.base.thisparts->id].ammo_cnt);
 								}
 							}
 						}

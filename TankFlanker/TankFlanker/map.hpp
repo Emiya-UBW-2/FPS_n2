@@ -27,11 +27,11 @@ private:
 	int grasss = 600;				/*grassの数*/
 	std::vector<VERTEX3D> grassver; /*grass*/
 	std::vector<DWORD> grassind;    /*grass*/
-	int VerBuf, IndexBuf;			/*grass*/
+	int VerBuf = -1, IndexBuf = -1;	/*grass*/
 	MV1 grass;						/*grassモデル*/
-	GraphHandle grass_pic;				/*画像ハンドル*/
-	int IndexNum, VerNum;			/*grass*/
-	int vnum, pnum;					/*grass*/
+	GraphHandle grass_pic;			/*画像ハンドル*/
+	int IndexNum = -1, VerNum = -1;	/*grass*/
+	int vnum = -1, pnum = -1;		/*grass*/
 	MV1_REF_POLYGONLIST RefMesh;	/*grass*/
 public:
 
@@ -79,8 +79,8 @@ public:
 	}
 	void Set_map(
 		const char* item_txt, std::vector<Items>& item_data, 
-		std::vector<Guns>& gun_data,
-		std::vector<Mags>& mag_data,
+		std::vector<gunparts>& gun_data,
+		std::vector<gunparts>& mag_data,
 		std::vector<Meds>& med_data,
 		const char* buf) {
 		//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
@@ -242,7 +242,7 @@ public:
 				//上省
 				MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
 				RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
-				for (int j = 0; j < RefMesh.VertexNum; ++j) {
+				for (size_t j = 0; j < size_t(RefMesh.VertexNum); ++j) {
 					auto& g = grassver[j + vnum];
 					g.pos = RefMesh.Vertexs[j].Position;
 					g.norm = RefMesh.Vertexs[j].Normal;
@@ -440,7 +440,7 @@ private:
 	GraphHandle UI_player;			//描画スクリーン
 	GraphHandle UI_minimap;			//描画スクリーン
 	float xcam = 1.f;
-	int MaskHandle;
+	int MaskHandle = -1;
 	bool loadmasks = true;
 public:
 	void load() {
