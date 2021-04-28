@@ -1,12 +1,4 @@
 #pragma once
-
-// プレイヤー関係の定義
-#define PLAYER_ENUM_DEFAULT_SIZE	1.8f	// 周囲のポリゴン検出に使用する球の初期サイズ
-#define PLAYER_HIT_WIDTH			0.15f	// 当たり判定カプセルの半径
-#define PLAYER_HIT_HEIGHT			1.8f	// 当たり判定カプセルの高さ
-#define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
-#define PLAYER_HIT_SLIDE_LENGTH		0.015f	// 一度の壁押し出し処理でスライドさせる距離
-
 class Mapclass :Mainclass {
 private:
 	MV1 map, map_col;	//地面
@@ -453,7 +445,7 @@ public:
 		loadmasks = true;
 	}
 
-	void set(std::vector<Chara>&chara, Mainclass::Chara& cc,std::unique_ptr<Mapclass, std::default_delete<Mapclass>>& mapparts) {
+	void set(std::vector<Chara>&chara, Mainclass::Chara& cc,std::unique_ptr<Mapclass, std::default_delete<Mapclass>>& MAPPTs) {
 		UI_minimap.SetDraw_Screen(true);
 		{
 			DrawBox(0, 0, x_size, y_size, GetColor(0, 128, 0), TRUE);
@@ -466,19 +458,19 @@ public:
 				auto t = cc.body.GetMatrix().pos();
 				VECTOR_ref vec_z = cc.body.GetFrameLocalWorldMatrix(cc.frame_s.head_f.first).zvec()*-1.f;
 				radp = -atan2f(vec_z.x(), vec_z.z());
-				auto x_2 = t.x() / mapparts->map_col_get().mesh_maxpos(0).x() *(mapparts->get_x_size() / 2)*xcam;
-				auto y_2 = -t.z() / mapparts->map_col_get().mesh_maxpos(0).z() *(mapparts->get_y_size() / 2)*xcam;
+				auto x_2 = t.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
+				auto y_2 = -t.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
 				xp -= int(x_2*cos(radp) - y_2 * sin(radp));
 				yp -= int(y_2*cos(radp) + x_2 * sin(radp));
 			}
 
-			mapparts->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
+			MAPPTs->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
 			for (auto& c : chara) {
 				auto t = (c.pos + c.pos_HMD - c.rec_HMD);
 				VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_s.head_f.first).zvec()*-1.f;
 				auto rad = atan2f(vec_z.x(), vec_z.z());
-				auto x_2 = t.x() / mapparts->map_col_get().mesh_maxpos(0).x() *(mapparts->get_x_size() / 2)*xcam;
-				auto y_2 = -t.z() / mapparts->map_col_get().mesh_maxpos(0).z() *(mapparts->get_y_size() / 2)*xcam;
+				auto x_2 = t.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
+				auto y_2 = -t.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
 
 				int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
 				int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
