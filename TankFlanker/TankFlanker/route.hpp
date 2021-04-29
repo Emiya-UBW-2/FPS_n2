@@ -1,23 +1,21 @@
 #pragma once
-class main_c : Mainclass {
+class main_c {
 	//終了処理フラグ
 	bool ending = true;
 	int sel_scene = 0;
-	//
-	GraphHandle UI_Screen;						//描画スクリーン
+	GraphHandle UI_Screen;
 	cam_info* cam_t=nullptr;
-	//
 public:
 	main_c() {
 		auto OPTPTs = std::make_unique<OPTION>();																			//設定読み込み
-		auto DrawPts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->shadow, OPTPTs->vsync);			//汎用
+		auto DrawPts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->shadow, OPTPTs->vsync);		//汎用
 		auto DebugPTs = std::make_unique<DeBuG>(FRAME_RATE);																//デバッグ
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->bloom, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
-		auto MAPPTs = std::make_unique<Mapclass>();																			//MAP
+		auto MAPPTs = std::make_unique<MAPclass::Map>();																	//MAP
 		UI_Screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);												//VR、フルスクリーン共用
 		//シーン
-		auto SELECTparts = std::make_unique<SELECT>();																		//設定読み込み
-		auto MAINLOOPparts = std::make_unique<MAINLOOP>(OPTPTs);															//設定読み込み
+		auto SELECTparts = std::make_unique<Sceneclass::SELECT>();
+		auto MAINLOOPparts = std::make_unique<Sceneclass::MAINLOOP>(OPTPTs);
 		//繰り返し
 		do {
 			bool selend = true;
@@ -25,17 +23,16 @@ public:
 			switch (sel_scene) {
 			case 0:
 				MAINLOOPparts->first(MAPPTs);
-				SELECTparts->set(MAPPTs, DrawPts, OPTPTs, MAINLOOPparts);
+				SELECTparts->Set(MAPPTs, DrawPts, OPTPTs, MAINLOOPparts);
 				break;
 			case 1:
-				MAINLOOPparts->set(MAPPTs, DrawPts, OPTPTs);
+				MAINLOOPparts->Set(MAPPTs, DrawPts, OPTPTs);
 				break;
 			default:
 				break;
 			}
 			//メイン
 			while (ProcessMessage() == 0) {
-				const auto fps_ = GetFPS();
 				const auto waits = GetNowHiPerformanceCount();
 				{
 					DebugPTs->put_way();
@@ -61,10 +58,10 @@ public:
 
 							switch (sel_scene) {
 							case 0:
-								SELECTparts->shadow_draw(MAINLOOPparts->get_mine());
+								SELECTparts->Shadow_Draw();
 								break;
 							case 1:
-								MAINLOOPparts->shadow_draw();
+								MAINLOOPparts->Shadow_Draw();
 								break;
 							default:
 								break;
@@ -78,7 +75,7 @@ public:
 						{
 							switch (sel_scene) {
 							case 0:
-								SELECTparts->UI_Draw(MAINLOOPparts->get_mine());
+								SELECTparts->UI_Draw(MAINLOOPparts);
 								break;
 							case 1:
 								MAINLOOPparts->UI_Draw(DrawPts);
@@ -111,7 +108,7 @@ public:
 								}, [&]() { DrawPts->Draw_by_Shadow([&] {
 									switch (sel_scene) {
 									case 0:
-										SELECTparts->Main_Draw(MAINLOOPparts->get_mine());
+										SELECTparts->Main_Draw();
 										break;
 									case 1:
 										MAINLOOPparts->Main_Draw(MAPPTs);
@@ -182,11 +179,10 @@ public:
 				//画面の反映
 				DrawPts->Screen_Flip();
 				//終了判定
-				if (CheckHitKey(KEY_INPUT_ESCAPE) != 0 && !selend) {
-					this->ending = false;
-					break;
-				}
 				if (!selend) {
+					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
+						this->ending = false;
+					}
 					break;
 				}
 				//
@@ -194,10 +190,10 @@ public:
 			//終了処理
 			switch (sel_scene) {
 			case 0:
-				SELECTparts->dispose(DrawPts);
+				SELECTparts->Dispose(DrawPts);
 				break;
 			case 1:
-				MAINLOOPparts->dispose(MAPPTs, DrawPts);//解放
+				MAINLOOPparts->Dispose(MAPPTs, DrawPts);//解放
 				break;
 			default:
 				break;
@@ -215,9 +211,13 @@ public:
 			}
 			//
 			if (!this->ending) {
-				std::for_each(MAINLOOPparts->get_chara().begin(), MAINLOOPparts->get_chara().end(), [](Chara& c) {c.Delete_chara(); });
+				for (auto& c : MAINLOOPparts->get_chara()) {
+					c.Delete_chara();
+				}
 				MAINLOOPparts->get_chara().clear();
-				std::for_each(MAINLOOPparts->get_item().begin(), MAINLOOPparts->get_item().end(), [](Items& i) {i.Delete_item(); });
+				for (auto& i : MAINLOOPparts->get_item()) {
+					i.Delete_item();
+				}
 				MAINLOOPparts->get_item().clear();
 				MAPPTs->Delete_map();
 				break;

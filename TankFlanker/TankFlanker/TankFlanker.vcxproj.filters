@@ -23,16 +23,16 @@
     <ClInclude Include="sub.hpp">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="UI.hpp">
+    <ClInclude Include="route.hpp">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="HostPass.hpp">
+    <ClInclude Include="scene.hpp">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="map.hpp">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="route.hpp">
+    <ClInclude Include="ui.hpp">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>

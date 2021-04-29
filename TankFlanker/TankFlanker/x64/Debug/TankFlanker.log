@@ -21,13 +21,12 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3727): warni
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(3987): warning C4100: 'gun_data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4801): warning C4189: 'font_large': ローカル変数が初期化されましたが、参照されていません
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(74): warning C4100: 'gun_data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(16): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(16): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(16): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(16): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\ui.hpp(393): warning C4189: 'font_large': ローカル変数が初期化されましたが、参照されていません
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(76): warning C4100: 'gun_data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(17): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(17): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(17): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(17): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
 Effekseer_vs2017_x64_d.lib(Effekseer.Color.obj) : warning LNK4099: PDB 'Effekseer.pdb' が 'Effekseer_vs2017_x64_d.lib(Effekseer.Color.obj)' で、または 'C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Debug\Effekseer.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
 Effekseer_vs2017_x64_d.lib(Effekseer.DefaultEffectLoader.obj) : warning LNK4099: PDB 'Effekseer.pdb' が 'Effekseer_vs2017_x64_d.lib(Effekseer.DefaultEffectLoader.obj)' で、または 'C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Debug\Effekseer.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
