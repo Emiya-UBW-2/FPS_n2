@@ -1,14 +1,5 @@
 #pragma once
 #define FRAME_RATE 90.f
-//リサイズ
-#define x_r(p1) (int(p1) * deskx / 1920)
-#define y_r(p1) (int(p1) * desky / 1080)
-// プレイヤー関係の定義
-#define PLAYER_ENUM_DEFAULT_SIZE	1.8f	// 周囲のポリゴン検出に使用する球の初期サイズ
-#define PLAYER_HIT_WIDTH			0.15f	// 当たり判定カプセルの半径
-#define PLAYER_HIT_HEIGHT			1.8f	// 当たり判定カプセルの高さ
-#define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
-#define PLAYER_HIT_SLIDE_LENGTH		0.015f	// 一度の壁押し出し処理でスライドさせる距離
 //
 enum Effect {
 	ef_fire, //発砲炎
@@ -174,27 +165,27 @@ protected:
 	class gunparts;
 	//命中根
 	struct Hit {			/**/
-		bool flug = false;	/*弾痕フラグ*/
+		bool Flag = false;	/*弾痕フラグ*/
 		int use = 0;		/*使用フレーム*/
 		MV1 pic;			/*弾痕モデル*/
 		VECTOR_ref pos;		/*座標*/
 		MATRIX_ref mat;		/**/
 		void Set(const MV1&hit_pic) {
-			this->flug = false;
+			this->Flag = false;
 			this->use = 0;
 			this->pic = hit_pic.Duplicate();
 			this->mat.clear();
 			this->pos.clear();
 		}
 		void Start(const VECTOR_ref& pos_t,const MATRIX_ref& mat_t) {
-			this->flug = true;
+			this->Flag = true;
 			this->use = 0;
 			this->pic.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
 			this->mat = mat_t;
 			this->pos = pos_t;
 		}
 		void Draw() {
-			if (this->flug) {
+			if (this->Flag) {
 				this->pic.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
 				this->pic.DrawFrame(this->use);
 			}
@@ -205,36 +196,40 @@ protected:
 	private:
 	public:
 		bool hit = false;
-		float hit_count = 0.f;
-		float hit_r = 0.f;
-		int hit_x = 0, hit_y = 0;
-		bool flug = false;
+		float hit_cnt = 0.f;
+		float hit_alpha = 0.f;
+		int hit_window_x = 0;
+		int hit_window_y = 0;
+		bool Flag = false;
+		bool DrawFlag = false;
 		float cnt = 0.f;
-		unsigned int color = 0;
 		Ammo_info* spec = nullptr;
 		float yadd = 0.f;
-		VECTOR_ref pos, repos;
-		VECTOR_ref vec;
+		VECTOR_ref pos;
+		MATRIX_ref mat;
+
+		VECTOR_ref repos;
 		void Ready() {
-			this->flug = false;
+			this->Flag = false;
+			this->DrawFlag = false;
 		}
-		void Set(Ammo_info* spec_t, const VECTOR_ref& pos_t, const VECTOR_ref& vec_t) {
+		void Set(Ammo_info* spec_t, const VECTOR_ref& pos_t, const MATRIX_ref& mat_t) {
 			this->hit = false;
-			this->flug = true;
+			this->Flag = true;
+			this->DrawFlag = true;
 			this->cnt = 0.f;
-			this->color = GetColor(255, 255, 172);
 			this->spec = spec_t;
 			this->yadd = 0.f;
 
 			this->pos = pos_t;
 			this->repos = this->pos;
-			this->vec = vec_t;
+			this->mat = mat_t;
 		}
 		template<class Y, class D>
 		void update(Chara* c, std::vector<Chara>* chara, std::unique_ptr<Y, D>& MAPPTs, std::vector<Hit>& hit_obj, size_t& hitbuf) {
-			if (this->flug) {
+			if (this->Flag) {
 				this->repos = this->pos;
-				this->pos += this->vec * (this->spec->speed / GetFPS());
+				this->pos += this->mat.zvec() * (this->spec->speed / GetFPS());
 				//判定
 				{
 					auto p = MAPPTs->map_col_line(this->repos, this->pos);
@@ -254,7 +249,7 @@ protected:
 								c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
 								//
 								this->hit = true;
-								this->flug = false;
+								this->Flag = false;
 								tgt.HP = std::clamp(tgt.HP - this->spec->damage * 3 / 5, 0, tgt.HP_full);
 								if (tgt.HP == 0) {
 									c->kill_f = true;
@@ -266,8 +261,8 @@ protected:
 									}
 									c->kill_time = 7.f;
 									c->score += 50;
-									c->kill_count++;
-									tgt.death_count++;
+									c->kill_cnt++;
+									tgt.death_cnt++;
 								}
 								break;
 							}
@@ -280,7 +275,7 @@ protected:
 								c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
 								//
 								this->hit = true;
-								this->flug = false;
+								this->Flag = false;
 								tgt.HP = std::clamp(tgt.HP - this->spec->damage * 3, 0, tgt.HP_full);
 								if (tgt.HP == 0) {
 									c->kill_f = true;
@@ -292,8 +287,8 @@ protected:
 									}
 									c->kill_time = 7.f;
 									c->score += 70;
-									c->kill_count++;
-									tgt.death_count++;
+									c->kill_cnt++;
+									tgt.death_cnt++;
 								}
 								break;
 							}
@@ -306,7 +301,7 @@ protected:
 								c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
 								//
 								this->hit = true;
-								this->flug = false;
+								this->Flag = false;
 								tgt.HP = std::clamp(tgt.HP - this->spec->damage, 0, tgt.HP_full);
 								if (tgt.HP == 0) {
 									c->kill_f = true;
@@ -318,15 +313,15 @@ protected:
 									}
 									c->kill_time = 7.f;
 									c->score += 100;
-									c->kill_count++;
-									tgt.death_count++;
+									c->kill_cnt++;
+									tgt.death_cnt++;
 								}
 								break;
 							}
 						}
 					}
-					if (p.HitFlag && this->flug) {
-						this->flug = false;
+					if (p.HitFlag && this->Flag) {
+						this->Flag = false;
 						c->effcs_gndhit[c->use_effcsgndhit].set(this->pos, p.Normal, 0.025f / 0.1f);
 						++c->use_effcsgndhit %= c->effcs_gndhit.size();
 
@@ -334,8 +329,8 @@ protected:
 						{
 							float asize = this->spec->caliber*100.f*2.f;
 							VECTOR_ref y_vec = p.Normal;
-							VECTOR_ref z_vec = y_vec.cross(this->vec.Norm()).Norm();
-							VECTOR_ref scale = VGet(asize / std::abs(this->vec.Norm().dot(y_vec)), asize, asize);
+							VECTOR_ref z_vec = y_vec.cross(this->mat.zvec()).Norm();
+							VECTOR_ref scale = VGet(asize / std::abs(this->mat.zvec().dot(y_vec)), asize, asize);
 
 							hit_obj[hitbuf].Start(this->pos + y_vec * 0.02f, MATRIX_ref::Scale(scale)*  MATRIX_ref::Axis1(y_vec.cross(z_vec), y_vec, z_vec));
 							++hitbuf %= hit_obj.size();
@@ -345,33 +340,36 @@ protected:
 				}
 				//消す(3秒たった、スピードが0以下、貫通が0以下)
 				if (this->cnt >= 3.f || this->spec->speed < 0.f || this->spec->pene <= 0.f) {
-					this->flug = false;
+					this->Flag = false;
 				}
 				//
 			}
 		}
 		void Set_Draw() {
 			if (this->hit) {
-				this->hit_r = 2.f;
-				this->hit_count = 0.5f;
+				this->hit_alpha = 2.f;
+				this->hit_cnt = 0.5f;
 				VECTOR_ref p = ConvWorldPosToScreenPos((this->pos).get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
-					this->hit_x = int(p.x());
-					this->hit_y = int(p.y());
+					this->hit_window_x = int(p.x());
+					this->hit_window_y = int(p.y());
 				}
 				this->hit = false;
 			}
-			if (this->hit_count != 0.f) {
-				easing_set(&this->hit_r, 1.f, 0.7f);
+			if (this->hit_cnt != 0.f) {
+				easing_set(&this->hit_alpha, 1.f, 0.7f);
 			}
 			else {
-				easing_set(&this->hit_r, 0.f, 0.8f);
+				easing_set(&this->hit_alpha, 0.f, 0.8f);
 			}
-			this->hit_count = std::clamp(this->hit_count - 1.f / GetFPS(), 0.f, 1.f);
+			this->hit_cnt = std::clamp(this->hit_cnt - 1.f / GetFPS(), 0.f, 1.f);
 		}
 		void Draw() {
-			if (this->flug) {
-				DXDraw::Capsule3D(this->pos, this->repos, ((this->spec->caliber - 0.00762f) * 0.1f + 0.00762f), this->color, GetColor(255, 255, 255));
+			if (this->DrawFlag) {
+				DXDraw::Capsule3D(this->pos, this->repos, ((this->spec->caliber - 0.00762f) * 0.1f + 0.00762f), GetColor(255, 255, 172), GetColor(255, 255, 255));
+				if (!this->Flag) {
+					this->DrawFlag = false;
+				}
 			}
 		}
 	};
@@ -1407,9 +1405,9 @@ protected:
 		bool hit_f = false;
 		float hit_time = 0.f;
 		int score = 0;
-		int kill_count = 0;
+		int kill_cnt = 0;
 		size_t death_id = 0;
-		int death_count = 0;
+		int death_cnt = 0;
 		float death_timer = 0.f;
 		//
 		bool oldv_1_1 = false;
@@ -1437,9 +1435,9 @@ protected:
 				this->kill_streak = 0;
 				this->kill_time = 0.f;
 				this->score = 0;
-				this->kill_count = 0;
+				this->kill_cnt = 0;
 				this->death_id = 0;
-				this->death_count = 0;
+				this->death_cnt = 0;
 				this->per.recoil = 0.f;
 				this->per.weight = 0.f;
 				this->LightHandle = -1;
@@ -2678,7 +2676,7 @@ protected:
 		//
 		void calc_cart(const float& cart_rate_t) {
 			//弾
-			this->bullet[this->use_bullet].Set(&this->base.thisparts->ammo[0], this->base.obj.frame(this->base.thisparts->frame_s.mazzule_f.first), this->mat_gun.zvec()*-1.f);
+			this->bullet[this->use_bullet].Set(&this->base.thisparts->ammo[0], this->base.obj.frame(this->base.thisparts->frame_s.mazzule_f.first), MATRIX_ref::Axis1(this->mat_gun.xvec()*-1.f, this->mat_gun.yvec()*-1.f, this->mat_gun.zvec()*-1.f));
 			//薬莢
 			this->cart[this->use_bullet].Set(&this->base.thisparts->ammo[0], this->base.obj.frame(this->base.thisparts->frame_s.cate_f.first), (this->base.obj.frame(this->base.thisparts->frame_s.cate_f.first + 1) - this->base.obj.frame(this->base.thisparts->frame_s.cate_f.first)).Norm()*2.5f / GetFPS(), this->mat_gun, cart_rate_t);
 			//

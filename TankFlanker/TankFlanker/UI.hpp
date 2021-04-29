@@ -1,4 +1,8 @@
 #pragma once
+//リサイズ
+#define x_r(p1) (int(p1) * deskx / 1920)
+#define y_r(p1) (int(p1) * desky / 1080)
+//
 class UIclass : Mainclass {
 public:
 	class UI {
@@ -374,9 +378,9 @@ public:
 						yp = t_disp_y / 2 - t_disp_y / 12 + font_bighight;
 					}
 					font_big->DrawStringFormat_RIGHT(xp, yp, red, "score      : %d", chara.score); yp += font_bighight;			//スコア
-					font_big->DrawStringFormat_RIGHT(xp, yp, red, "kill       : %d", chara.kill_count); yp += font_bighight;			//キルデス
-					font_big->DrawStringFormat_RIGHT(xp, yp, red, "death      : %d", chara.death_count); yp += font_bighight;			//キルデス
-					font_big->DrawStringFormat_RIGHT(xp, yp, red, "kill/death : %3.1f", float(chara.kill_count) / float(std::max(chara.death_count, 1))); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, red, "kill       : %d", chara.kill_cnt); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, red, "death      : %d", chara.death_cnt); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, red, "kill/death : %3.1f", float(chara.kill_cnt) / float(std::max(chara.death_cnt, 1))); yp += font_bighight;			//キルデス
 				}
 				//終わり
 				{
@@ -547,8 +551,8 @@ public:
 				SetCameraNearFar(0.01f, 100.f);
 				for (auto& c : chara) {
 					for (auto& a : c.bullet) {
-						SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f*a.hit_r));
-						this->hit.DrawRotaGraph(a.hit_x, a.hit_y, a.hit_r*(&c == &ct ? 1.f : 0.5f), 0.f, true);
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f*a.hit_alpha));
+						this->hit.DrawRotaGraph(a.hit_window_x, a.hit_window_y, a.hit_alpha*(&c == &ct ? 1.f : 0.5f), 0.f, true);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
 				}
