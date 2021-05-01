@@ -6,27 +6,33 @@ class main_c {
 	GraphHandle UI_Screen;
 	cam_info* cam_t=nullptr;
 public:
-	main_c() {
+	main_c(void) {
 		auto OPTPTs = std::make_unique<OPTION>();																			//設定読み込み
-		auto DrawPts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->shadow, OPTPTs->vsync);		//汎用
+		auto DrawPts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->Shadow, OPTPTs->Vsync);		//汎用
 		auto DebugPTs = std::make_unique<DeBuG>(FRAME_RATE);																//デバッグ
-		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->bloom, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
+		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
 		auto MAPPTs = std::make_unique<MAPclass::Map>();																	//MAP
+		auto UI_LOADPTs = std::make_unique<UIclass::UI_Load>();																//UI_Load
 		UI_Screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);												//VR、フルスクリーン共用
 		//シーン
-		auto SELECTparts = std::make_unique<Sceneclass::SELECT>();
-		auto MAINLOOPparts = std::make_unique<Sceneclass::MAINLOOP>(OPTPTs);
+		auto SELECTscene = std::make_unique<Sceneclass::SELECT>();
+		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(DrawPts, OPTPTs, UI_LOADPTs);
 		//繰り返し
 		do {
 			bool selend = true;
 			//開始
 			switch (sel_scene) {
 			case 0:
-				MAINLOOPparts->first(MAPPTs);
-				SELECTparts->Set(MAPPTs, DrawPts, OPTPTs, MAINLOOPparts);
+				//マップ読み込み
+				MAPPTs->Ready_map("data/map_new2");
+				UI_LOADPTs->load_window("マップ");
+				MAPPTs->Set_map("data/maps/Set.txt", MAINLOOPscene->get_item(), MAINLOOPscene->get_gun_data(), MAINLOOPscene->get_mag_data(), MAINLOOPscene->get_meds_data(), "data/grassput.bmp");
+				//
+				MAINLOOPscene->first(MAPPTs);
+				SELECTscene->Set(MAPPTs, DrawPts, OPTPTs, MAINLOOPscene);
 				break;
 			case 1:
-				MAINLOOPparts->Set(MAPPTs, DrawPts, OPTPTs);
+				MAINLOOPscene->Set(MAPPTs, DrawPts, OPTPTs);
 				break;
 			default:
 				break;
@@ -38,12 +44,12 @@ public:
 					DebugPTs->put_way();
 					switch (sel_scene) {
 					case 0:
-						selend = SELECTparts->update(MAPPTs, DrawPts, MAINLOOPparts);
-						cam_t = &SELECTparts->get_camera();
+						selend = SELECTscene->UpDate(MAPPTs, DrawPts, MAINLOOPscene);
+						cam_t = &SELECTscene->get_camera();
 						break;
 					case 1:
-						selend = MAINLOOPparts->update(MAPPTs, DrawPts, OPTPTs);
-						cam_t = &MAINLOOPparts->get_camera();
+						selend = MAINLOOPscene->UpDate(MAPPTs, DrawPts);
+						cam_t = &MAINLOOPscene->get_camera();
 						break;
 					default:
 						break;
@@ -58,10 +64,10 @@ public:
 
 							switch (sel_scene) {
 							case 0:
-								SELECTparts->Shadow_Draw();
+								SELECTscene->Shadow_Draw();
 								break;
 							case 1:
-								MAINLOOPparts->Shadow_Draw();
+								MAINLOOPscene->Shadow_Draw();
 								break;
 							default:
 								break;
@@ -69,16 +75,16 @@ public:
 
 						}, VGet(2.f, 2.5f, 2.f), VGet(5.f, 2.5f, 5.f));
 						//↑nearはこれ
-						//	(MAINLOOPparts->get_mine().HP != 0) ? VGet(2.f, 2.5f, 2.f) : VGet(10.f, 2.5f, 10.f)
+						//	(MAINLOOPscene->get_mine().HP != 0) ? VGet(2.f, 2.5f, 2.f) : VGet(10.f, 2.5f, 10.f)
 						//書き込み
 						this->UI_Screen.SetDraw_Screen();
 						{
 							switch (sel_scene) {
 							case 0:
-								SELECTparts->UI_Draw(MAINLOOPparts);
+								SELECTscene->UI_Draw(MAINLOOPscene);
 								break;
 							case 1:
-								MAINLOOPparts->UI_Draw(DrawPts);
+								MAINLOOPscene->UI_Draw();
 								break;
 							default:
 								break;
@@ -93,25 +99,25 @@ public:
 							{
 								//被写体深度描画
 								HostpassPTs->BUF_draw(
-									[&]() {
+									[&](void) {
 									switch (sel_scene) {
 									case 0:
-										SELECTparts->BG_Draw();
+										SELECTscene->BG_Draw();
 										break;
 									case 1:
-										MAINLOOPparts->BG_Draw(MAPPTs);
+										MAINLOOPscene->BG_Draw(MAPPTs);
 										break;
 									default:
 										break;
 									}
 
-								}, [&]() { DrawPts->Draw_by_Shadow([&] {
+								}, [&](void) { DrawPts->Draw_by_Shadow([&] {
 									switch (sel_scene) {
 									case 0:
-										SELECTparts->Main_Draw();
+										SELECTscene->Main_Draw();
 										break;
 									case 1:
-										MAINLOOPparts->Main_Draw(MAPPTs);
+										MAINLOOPscene->Main_Draw(MAPPTs);
 										break;
 									default:
 										break;
@@ -143,7 +149,7 @@ public:
 
 									break;
 								case 1:
-									MAINLOOPparts->Item_Draw(DrawPts);
+									MAINLOOPscene->Item_Draw();
 									break;
 								default:
 									break;
@@ -166,7 +172,7 @@ public:
 						case 0:
 							break;
 						case 1:
-							MAINLOOPparts->LAST_Draw();
+							MAINLOOPscene->LAST_Draw();
 							break;
 						default:
 							break;
@@ -188,15 +194,18 @@ public:
 				//
 			}
 			//終了処理
-			switch (sel_scene) {
-			case 0:
-				SELECTparts->Dispose(DrawPts);
-				break;
-			case 1:
-				MAINLOOPparts->Dispose(MAPPTs, DrawPts);//解放
-				break;
-			default:
-				break;
+			{
+				switch (sel_scene) {
+				case 0:
+					SELECTscene->Dispose();
+					break;
+				case 1:
+					MAINLOOPscene->Dispose(MAPPTs);//解放
+					break;
+				default:
+					break;
+				}
+				DrawPts->Delete_Shadow();
 			}
 			//遷移
 			switch (sel_scene) {
@@ -211,15 +220,7 @@ public:
 			}
 			//
 			if (!this->ending) {
-				for (auto& c : MAINLOOPparts->get_chara()) {
-					c.Delete_chara();
-				}
-				MAINLOOPparts->get_chara().clear();
-				for (auto& i : MAINLOOPparts->get_item()) {
-					i.Delete_item();
-				}
-				MAINLOOPparts->get_item().clear();
-				MAPPTs->Delete_map();
+				MAINLOOPscene->Dispose(MAPPTs);//解放
 				break;
 			}
 			//

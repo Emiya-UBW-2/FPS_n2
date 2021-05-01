@@ -37,31 +37,17 @@ public:
 	public:
 
 
-		std::vector<VECTOR_ref>& get_waypoint() {
-			return way_point;
-		}
-		std::vector<VECTOR_ref>& get_leanpoint_q() {
-			return lean_point_q;
-		}
-		std::vector<VECTOR_ref>& get_leanpoint_e() {
-			return lean_point_e;
-		}
-		std::vector<VECTOR_ref>& get_spawn_point() {
-			return spawn_point;
-		}
-		GraphHandle& get_minmap() {
-			return minmap;
-		}
-		int& get_x_size() {
-			return x_size;
-		}
-		int& get_y_size() {
-			return y_size;
-		}
+		std::vector<VECTOR_ref>& get_waypoint(void) { return way_point; }
+		std::vector<VECTOR_ref>& get_leanpoint_q(void) { return lean_point_q; }
+		std::vector<VECTOR_ref>& get_leanpoint_e(void) { return lean_point_e; }
+		std::vector<VECTOR_ref>& get_spawn_point(void) { return spawn_point; }
+		GraphHandle& get_minmap(void) { return minmap; }
+		int& get_x_size(void) { return x_size; }
+		int& get_y_size(void) { return y_size; }
 
-		Map() {
+		Map(void) {
 		}
-		~Map() {
+		~Map(void) {
 
 		}
 		void Ready_map(std::string dir) {
@@ -80,8 +66,8 @@ public:
 		}
 		void Set_map(
 			const char* item_txt, std::vector<Items>& item_data,
-			std::vector<gunparts>& gun_data,
-			std::vector<gunparts>& mag_data,
+			std::vector<GUNPARTs>& gun_data,
+			std::vector<GUNPARTs>& mag_data,
 			std::vector<Meds>& med_data,
 			const char* buf) {
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
@@ -144,8 +130,8 @@ public:
 						size_t p1 = 0;
 						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
 						for (auto& g : mag_data) {
-							if (p.find(g.mod.name) != std::string::npos) {
-								p1 = g.id;
+							if (p.find(g.mod.get_name()) != std::string::npos) {
+								p1 = g.id_t;
 								break;
 							}
 						}
@@ -154,11 +140,7 @@ public:
 						p4 = getparams::_float(mdata);
 
 						item_data.resize(item_data.size() + 1);
-						item_data.back().id = item_data.size() - 1;
-						item_data.back().Set_item(&mag_data[p1], VGet(p2, p3, p4), MGetIdent());
-						if (item_data.back().ptr_mag != nullptr) {
-							item_data.back().magazine.cap = int(item_data.back().ptr_mag->cap);
-						}
+						item_data.back().Set_item_4(item_data.size() - 1, &mag_data[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -171,8 +153,8 @@ public:
 						size_t p1 = 0;
 						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
 						for (auto& g : med_data) {
-							if (p.find(g.mod.name) != std::string::npos) {
-								p1 = g.id;
+							if (p.find(g.mod.get_name()) != std::string::npos) {
+								p1 = g.id_t;
 								break;
 							}
 						}
@@ -181,11 +163,11 @@ public:
 						p4 = getparams::_float(mdata);
 
 						item_data.resize(item_data.size() + 1);
-						item_data.back().id = item_data.size() - 1;
-						item_data.back().Set_item(&med_data[p1], VGet(p2, p3, p4), MGetIdent());
+						item_data.back().get_id_t() = item_data.size() - 1;
+						item_data.back().Set_item_1(&med_data[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 						/*
-						if (item_data.back().ptr_mag != nullptr) {
-							item_data.back().magazine.cap = int(item_data.back().ptr_mag->cap);
+						if (item_data.back().get_ptr_mag() != nullptr) {
+							item_data.back().magazine.cap = int(item_data.back().get_ptr_mag()->cap);
 						}
 						*/
 					}
@@ -269,10 +251,10 @@ public:
 				SetIndexBufferData(0, grassind.data(), IndexNum, IndexBuf);
 			}
 		}
-		void Start_map() {
+		void Start_map(void) {
 			envi.play(DX_PLAYTYPE_LOOP, TRUE);
 		}
-		void Delete_map() {
+		void Delete_map(void) {
 			map.Dispose();		   //map
 			map_col.Dispose();		   //mapƒRƒŠƒWƒ‡ƒ“
 			sky.Dispose();	 //‹ó
@@ -288,8 +270,8 @@ public:
 			grassver.clear();
 			grassind.clear();
 		}
-		auto& map_get() { return map; }
-		auto& map_col_get() { return map_col; }
+		auto& map_get(void) { return map; }
+		auto& map_col_get(void) { return map_col; }
 		auto map_col_line(const VECTOR_ref& Startpos, const VECTOR_ref& endpos) {
 			return map_col.CollCheck_Line(Startpos, endpos, 0, 0);
 		}
@@ -408,14 +390,14 @@ public:
 			SetDrawAlphaTest(-1, 0);
 		}
 
-		void Shadow_Draw() {
+		void Shadow_Draw(void) {
 			for (int i = 0; i < 3; i++) {
 				map.DrawMesh(i);
 			}
 			grass_Draw();
 		}
 
-		void main_Draw() {
+		void main_Draw(void) {
 			map.DrawMesh(0);
 			map.DrawMesh(1);
 			map.DrawMesh(2);
@@ -444,7 +426,7 @@ public:
 		int MaskHandle = -1;
 		bool loadmasks = true;
 	public:
-		MiniMap() {
+		MiniMap(void) {
 			SetUseASyncLoadFlag(FALSE);
 			CreateMaskScreen();
 			MaskHandle = LoadMask("data/UI/testMask.bmp");
@@ -453,37 +435,37 @@ public:
 			UI_player = GraphHandle::Load("data/UI/player.bmp");
 			loadmasks = true;
 		}
+		void set_pos_chara(int* xp, int* yp, Mainclass::Chara& c,float& radp, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
+			auto t = c.get_pos();
+			auto x_2 = t.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
+			auto y_2 = -t.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
 
-		void Set(std::vector<Chara>&chara, Mainclass::Chara& cc, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
+			*xp = int(x_2*cos(radp) - y_2 * sin(radp));
+			*yp = int(y_2*cos(radp) + x_2 * sin(radp));
+		}
+		void Set(std::vector<Chara>&chara, Mainclass::Chara& mine, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
 			UI_minimap.SetDraw_Screen(true);
 			{
 				DrawBox(0, 0, x_size, y_size, GetColor(0, 128, 0), TRUE);
-				int xp = x_size / 2;
-				int yp = y_size / 2;
+				int xp = 0, yp = 0;
 				float radp = 0.f;
 				{
-					easing_set(&xcam, 1.f + (cc.add_vec_real.size() / ((cc.key_.running ? 6.f : ((cc.key_.ads.on() ? 2.f : 4.f)*(cc.key_.squat.on() ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
-
-					auto t = cc.body.GetMatrix().pos();
-					VECTOR_ref vec_z = cc.body.GetFrameLocalWorldMatrix(cc.frame_s.head_f.first).zvec()*-1.f;
-					radp = -atan2f(vec_z.x(), vec_z.z());
-					auto x_2 = t.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
-					auto y_2 = -t.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
-					xp -= int(x_2*cos(radp) - y_2 * sin(radp));
-					yp -= int(y_2*cos(radp) + x_2 * sin(radp));
+					easing_set(&xcam, 1.f + (mine.add_vec_real.size() / ((mine.key_.running ? 6.f : ((mine.key_.ads.on() ? 2.f : 4.f)*(mine.key_.squat.on() ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
+					radp = -mine.set_rad_chara();
+					int xpos = 0, ypos = 0;
+					set_pos_chara(&xpos, &ypos, mine, radp, MAPPTs);
+					xp = x_size / 2 - xpos;
+					yp = y_size / 2 - ypos;
 				}
 
 				MAPPTs->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
 				for (auto& c : chara) {
-					auto t = (c.pos + c.pos_HMD - c.rec_HMD);
-					VECTOR_ref vec_z = c.body.GetFrameLocalWorldMatrix(c.frame_s.head_f.first).zvec()*-1.f;
-					auto rad = atan2f(vec_z.x(), vec_z.z());
-					auto x_2 = t.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
-					auto y_2 = -t.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
+					int xpos = 0, ypos = 0;
+					set_pos_chara(&xpos, &ypos, c, radp, MAPPTs);
+					int xt = xp + xpos;
+					int yt = yp + ypos;
 
-					int xt = xp + int(x_2*cos(radp) - y_2 * sin(radp));
-					int yt = yp + int(y_2*cos(radp) + x_2 * sin(radp));
-					UI_player.DrawRotaGraph(xt, yt, xcam, rad + radp, true);
+					UI_player.DrawRotaGraph(xt, yt, xcam, radp + c.set_rad_chara(), true);
 				}
 			}
 		}

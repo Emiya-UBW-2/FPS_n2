@@ -6,14 +6,13 @@ slide_sound=1
 trigger_sound=1
 mag_down_sound=1
 mag_set_sound=1
-ammo_1=7.62x39
-ammo_end=end
-mag=AK_55_Magazine
 recoil_xadd(deg)=3.6
 recoil_xmnus(deg)=-1.6
 recoil_yadd(deg)=7.5
 recoil_ymnus(deg)=-0.0
 reload_time(sec)=1.5f
+ammo_1=7.62x39
+ammo_end=end
 recoil=-0.0
 weight=0.14
 AK_Dovetail_Mount

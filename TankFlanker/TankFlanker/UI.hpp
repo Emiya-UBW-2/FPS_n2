@@ -42,7 +42,7 @@ public:
 		float Ready = 0.f;
 		float timer = 0.f;
 	public:
-		UI() {
+		UI(void) {
 			SetUseASyncLoadFlag(TRUE);
 
 			SetTransColor(0, 255, 0);
@@ -80,35 +80,8 @@ public:
 			gray_1 = GetColor(64, 64, 64);
 			gray_2 = GetColor(128, 128, 128);
 		}
-		~UI() {
+		~UI(void) {
 		}
-		void load_window(const char* mes) {
-			SetUseASyncLoadFlag(FALSE);
-			float bar = 0.f;
-			auto all = GetASyncLoadNum();
-			while (ProcessMessage() == 0) {
-				int t_disp_x = 1920;
-				int t_disp_y = 1080;
-				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
-				int tmp = all - GetASyncLoadNum();
-
-				GraphHandle::SetDraw_Screen((int32_t)DX_SCREEN_BACK);
-				{
-					font18.DrawStringFormat(0, t_disp_y - y_r(70), green, " loading... : %04d/%04d  ", tmp, all);
-					font18.DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), green, "%s ì«Ç›çûÇ›íÜ ", mes);
-					DrawBox(0, t_disp_y - y_r(50), int(float(t_disp_x) * bar / float(all)), t_disp_y - y_r(40), green, TRUE);
-				}
-				ScreenFlip();
-
-				if (int(bar * 100) >= (all * 100 - 1)) {
-					break;
-				}
-				easing_set(&bar, float(tmp), 0.95f);
-			}
-			GraphHandle::SetDraw_Screen((int32_t)DX_SCREEN_BACK);
-			ScreenFlip();
-		}
-
 		void Draw_HP(int xpos, int ypos, int xsize, int ysize, int now, int will, int max) {
 			auto size = y_r(2);
 			DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, gray_1, TRUE);
@@ -198,7 +171,7 @@ public:
 					if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 						//ãÛåxçê
 						if ((!use_vr && !chara.key_.ads.on()) || use_vr) {
-							if (chara.gun_stat[chara.base.thisparts->id].ammo_cnt == 0) {
+							if (chara.gun_stat_now->ammo_cnt == 0) {
 								font->DrawString_MID(xp, yp, "EMPTY", red); yp += fonthight;
 							}
 						}
@@ -215,7 +188,7 @@ public:
 						yp = t_disp_y / 2 + t_disp_y / 6;
 					}
 					if (chara.base.thisparts->select.size() >= 1) {
-						switch (chara.base.thisparts->select[std::clamp<size_t>(chara.gun_stat[chara.base.thisparts->id].select, 0, chara.base.thisparts->select.size() - 1)]) {
+						switch (chara.base.thisparts->select[std::clamp<size_t>(chara.gun_stat_now->select, 0, chara.base.thisparts->select.size() - 1)]) {
 						case 1:
 							font_big->DrawString_MID(xp, yp, "SEMI AUTO", green);
 							break;
@@ -301,12 +274,12 @@ public:
 						}
 						//íe
 						{
-							font->DrawString(xp, yp, chara.base.thisparts->mod.name, write);
-							font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2), write, "%04d / %04d", chara.gun_stat[chara.base.thisparts->id].ammo_cnt, chara.gun_stat[chara.base.thisparts->id].ammo_total - chara.gun_stat[chara.base.thisparts->id].ammo_cnt);
+							font->DrawString(xp, yp, chara.base.thisparts->mod.get_name(), write);
+							font->DrawStringFormat_RIGHT(xp + xs, yp + ys + y_r(2), write, "%04d / %04d", chara.gun_stat_now->ammo_cnt, chara.gun_stat_now->ammo_total - chara.gun_stat_now->ammo_cnt);
 						}
 						//É}ÉKÉWÉìä÷òA(âº)
 						{
-							int size = int(chara.gun_stat[chara.base.thisparts->id].mag_in.size());
+							int size = int(chara.gun_stat_now->mag_in.size());
 							if (use_vr) {
 								xp = t_disp_x / 2 - x_r(140) + font_bighight * size;
 								yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20) - font_bighight * size;
@@ -316,9 +289,9 @@ public:
 								yp = t_disp_y - x_r(20) - font_bighight * size;
 							}
 							if (size > 0) {
-								DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat[chara.base.thisparts->id].mag_in.front(), chara.magazine.thisparts->cap), yp + font_bighight + 1, yellow, FALSE);
+								DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat_now->mag_in.front(), chara.magazine.thisparts->cap), yp + font_bighight + 1, yellow, FALSE);
 							}
-							for (auto& a : chara.gun_stat[chara.base.thisparts->id].mag_in) {
+							for (auto& a : chara.gun_stat_now->mag_in) {
 								font_big->DrawStringFormat(xp, yp, red, "%d/%d", a, chara.magazine.thisparts->cap);
 								xp -= font_bighight / 3;
 								yp += font_bighight;
@@ -383,12 +356,6 @@ public:
 					font_big->DrawStringFormat_RIGHT(xp, yp, red, "kill/death : %3.1f", float(chara.kill_cnt) / float(std::max(chara.death_cnt, 1))); yp += font_bighight;			//ÉLÉãÉfÉX
 				}
 				//èIÇÌÇË
-				{
-					xp = 0;
-					yp = t_disp_y / 2;
-					font_big->DrawStringFormat(xp, yp, red, "weigt  : %3.1f", chara.per.weight); yp += font_bighight;
-					font_big->DrawStringFormat(xp, yp, red, "recoil : %3.1f", chara.per.recoil); yp += font_bighight;
-				}
 			}
 		}
 		void item_Draw(std::vector<Chara>&chara, Mainclass::Chara&ct, std::vector<Items>&item_data, const VECTOR_ref& pos, bool use_vr = true) {
@@ -416,12 +383,12 @@ public:
 									xp = int(p.x());
 									yp = int(p.y());
 								}
-								int per = 90 * int(ct.gun_stat[ct.base.thisparts->id].ammo_cnt) / int(ct.magazine.thisparts->cap);
+								int per = 90 * int(ct.gun_stat_now->ammo_cnt) / int(ct.magazine.thisparts->cap);
 								float rad = deg2rad(90 - per);
 								int col_r = GetColor(std::clamp(int(255.f*sin(rad)*2.f), 0, 255), std::clamp(int(255.f*cos(rad)*2.f), 0, 255), 0);
 								float r_ = std::max((ct.base.obj.GetMatrix().pos() - pos).size(), 1.f);
 								if (r_ <= 10.f) {
-									int siz = font->GetDrawWidthFormat("%04d", ct.gun_stat[ct.base.thisparts->id].ammo_cnt);
+									int siz = font->GetDrawWidthFormat("%04d", ct.gun_stat_now->ammo_cnt);
 									for (int i = 0; i < 4; i++) {
 										DrawBox(
 											xp - siz / 2 + siz * i / 4 + 2 + 1, yp - y_r(30) - i * 2 + 1,
@@ -434,14 +401,14 @@ public:
 											xp - siz / 2 + siz * (i + 1) / 4 - 2, yp - y_r(10),
 											col_r, TRUE);
 									}
-									if (ct.gun_stat[ct.base.thisparts->id].ammo_cnt == 0) {
+									if (ct.gun_stat_now->ammo_cnt == 0) {
 										//ãÛåxçê
 										if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 											font->DrawString_MID(xp, yp, "EMPTY", red); yp += fonthight;
 										}
 									}
 									else {
-										font->DrawStringFormat_MID(xp, yp, col_r, "%04d", ct.gun_stat[ct.base.thisparts->id].ammo_cnt);
+										font->DrawStringFormat_MID(xp, yp, col_r, "%04d", ct.gun_stat_now->ammo_cnt);
 									}
 								}
 							}
@@ -454,10 +421,10 @@ public:
 				SetCameraNearFar(0.01f, 10.f);
 				for (auto& g : item_data) {
 					//gun
-					if (g.ptr_gun != nullptr) {
-						VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+					if (g.get_ptr_gun() != nullptr) {
+						VECTOR_ref p = ConvWorldPosToScreenPos(g.get_pos().get());
 						if (p.z() >= 0.f&&p.z() <= 1.f) {
-							float r_ = std::max((g.pos - pos).size(), 1.f);
+							float r_ = std::max((g.get_pos() - pos).size(), 1.f);
 							if (r_ <= 10.f) {
 								xp = int(p.x());
 								yp = int(p.y());
@@ -467,21 +434,21 @@ public:
 								xp = int(p.x()) + y_r(144.f / r_);
 								yp = int(p.y()) + y_r(144.f / r_) - font_bighight;
 
-								xs = font_big->GetDrawWidthFormat("%s", g.ptr_gun->mod.name.c_str());
+								xs = font_big->GetDrawWidthFormat("%s", g.get_ptr_gun()->mod.get_name().c_str());
 								DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, gray_1, 2);
 								DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, gray_1, 2);
 								DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, green, 2);
 								DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, green, 2);
-								font_big->DrawStringFormat(xp, yp, green, "%s", g.ptr_gun->mod.name.c_str());
+								font_big->DrawStringFormat(xp, yp, green, "%s", g.get_ptr_gun()->mod.get_name().c_str());
 								SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 							}
 						}
 					}
 					//mag
-					if (g.ptr_mag != nullptr) {
-						VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+					if (g.get_ptr_mag() != nullptr) {
+						VECTOR_ref p = ConvWorldPosToScreenPos(g.get_pos().get());
 						if (p.z() >= 0.f&&p.z() <= 1.f) {
-							float r_ = std::max((g.pos - pos).size(), 1.f);
+							float r_ = std::max((g.get_pos() - pos).size(), 1.f);
 							if (r_ <= 10.f) {
 								xp = int(p.x());
 								yp = int(p.y());
@@ -491,21 +458,21 @@ public:
 								xp = int(p.x()) + y_r(144.f / r_);
 								yp = int(p.y()) + y_r(144.f / r_) - font_bighight;
 
-								xs = font_big->GetDrawWidthFormat("%s %d/%d", g.ptr_mag->mod.name.c_str(), g.magazine.cap, g.ptr_mag->cap);
+								xs = font_big->GetDrawWidthFormat("%s %d/%d", g.get_ptr_mag()->mod.get_name().c_str(), g.get_magazine().cap, g.get_ptr_mag()->cap);
 								DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, gray_1, 2);
 								DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, gray_1, 2);
 								DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, green, 2);
 								DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, green, 2);
-								font_big->DrawStringFormat(xp, yp, green, "%s %d/%d", g.ptr_mag->mod.name.c_str(), g.magazine.cap, g.ptr_mag->cap);
+								font_big->DrawStringFormat(xp, yp, green, "%s %d/%d", g.get_ptr_mag()->mod.get_name().c_str(), g.get_magazine().cap, g.get_ptr_mag()->cap);
 								SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 							}
 						}
 					}
 					//med
-					if (g.ptr_med != nullptr) {
-						VECTOR_ref p = ConvWorldPosToScreenPos(g.pos.get());
+					if (g.get_ptr_med() != nullptr) {
+						VECTOR_ref p = ConvWorldPosToScreenPos(g.get_pos().get());
 						if (p.z() >= 0.f&&p.z() <= 1.f) {
-							float r_ = std::max((g.pos - pos).size(), 1.f);
+							float r_ = std::max((g.get_pos() - pos).size(), 1.f);
 							if (r_ <= 10.f) {
 								xp = int(p.x());
 								yp = int(p.y());
@@ -515,12 +482,12 @@ public:
 								xp = int(p.x()) + y_r(144.f / r_);
 								yp = int(p.y()) + y_r(144.f / r_) - font_bighight;
 
-								xs = font_big->GetDrawWidthFormat("%s", g.ptr_med->mod.name.c_str());
+								xs = font_big->GetDrawWidthFormat("%s", g.get_ptr_med()->mod.get_name().c_str());
 								DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, gray_1, 2);
 								DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, gray_1, 2);
 								DrawLine(xp, yp + font_bighight, xp + xs, yp + font_bighight, green, 2);
 								DrawLine(int(p.x()), int(p.y()), xp, yp + font_bighight, green, 2);
-								font_big->DrawStringFormat(xp, yp, green, "%s", g.ptr_med->mod.name.c_str());
+								font_big->DrawStringFormat(xp, yp, green, "%s", g.get_ptr_med()->mod.get_name().c_str());
 								SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 							}
 						}
@@ -533,8 +500,8 @@ public:
 				SetCameraNearFar(0.01f, 100.f);
 				for (auto& c : chara) {
 					if (abs(c.HP - int(c.HP_r)) >= 3) {
-						float r_ = std::max((c.body.frame(c.frame_s.head_f.first) - pos).size(), 1.f);
-						VECTOR_ref p = ConvWorldPosToScreenPos((c.body.frame(c.frame_s.head_f.first) + VGet(0, 0.3f + 2.7f*r_ / 100.f, 0)).get());
+						float r_ = std::max((c.get_head_frame() - pos).size(), 1.f);
+						VECTOR_ref p = ConvWorldPosToScreenPos((c.get_head_frame() + VGet(0, 0.3f + 2.7f*r_ / 100.f, 0)).get());
 						if (p.z() >= 0.f&&p.z() <= 1.f) {
 							xp = int(p.x());
 							yp = int(p.y());
@@ -550,15 +517,55 @@ public:
 			{
 				SetCameraNearFar(0.01f, 100.f);
 				for (auto& c : chara) {
-					for (auto& a : c.bullet) {
-						SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f*a.hit_alpha));
-						this->hit.DrawRotaGraph(a.hit_window_x, a.hit_window_y, a.hit_alpha*(&c == &ct ? 1.f : 0.5f), 0.f, true);
-						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-					}
+					c.Draw_bullet(hit, ct);
 				}
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 			//
 		}
 
+	};
+	class UI_Load {
+	private:
+		FontHandle font18;
+		unsigned int green;
+	public:
+		UI_Load(void) {
+			SetUseASyncLoadFlag(TRUE);
+
+			font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
+
+			SetUseASyncLoadFlag(FALSE);
+
+			green = GetColor(0, 255, 0);
+		}
+		~UI_Load(void) {
+		}
+		void load_window(const char* mes) {
+			SetUseASyncLoadFlag(FALSE);
+			float bar = 0.f;
+			auto all = GetASyncLoadNum();
+			while (ProcessMessage() == 0) {
+				int t_disp_x = 1920;
+				int t_disp_y = 1080;
+				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+				int tmp = all - GetASyncLoadNum();
+
+				GraphHandle::SetDraw_Screen((int32_t)DX_SCREEN_BACK);
+				{
+					font18.DrawStringFormat(0, t_disp_y - y_r(70), green, " loading... : %04d/%04d  ", tmp, all);
+					font18.DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), green, "%s ì«Ç›çûÇ›íÜ ", mes);
+					DrawBox(0, t_disp_y - y_r(50), int(float(t_disp_x) * bar / float(all)), t_disp_y - y_r(40), green, TRUE);
+				}
+				ScreenFlip();
+
+				if (int(bar * 100) >= (all * 100 - 1)) {
+					break;
+				}
+				easing_set(&bar, float(tmp), 0.95f);
+			}
+			GraphHandle::SetDraw_Screen((int32_t)DX_SCREEN_BACK);
+			ScreenFlip();
+		}
 	};
 };
