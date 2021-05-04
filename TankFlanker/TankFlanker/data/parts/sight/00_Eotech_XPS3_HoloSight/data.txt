@@ -1,0 +1,4 @@
+Eotech XPS3 HoloSight
+Eotech製ホログラフィックサイト。
+recoil=-0.1
+weight=0.26

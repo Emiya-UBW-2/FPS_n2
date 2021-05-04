@@ -1,0 +1,4 @@
+AIMPOINT T1 DotSight
+AimPoint製小型ドットサイト。
+recoil=-0.0
+weight=0.116

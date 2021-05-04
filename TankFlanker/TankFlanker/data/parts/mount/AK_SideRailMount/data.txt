@@ -1,4 +1,0 @@
-recoil=-0.0
-weight=0.14
-AIMPOINT_T1_DotSight
-Eotech_XPS3_HoloSight

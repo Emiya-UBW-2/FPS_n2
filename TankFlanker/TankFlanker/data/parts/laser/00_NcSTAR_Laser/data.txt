@@ -1,0 +1,4 @@
+NcSTAR Laser
+NcSTAR製レーザーサイト。
+recoil=-0.0
+weight=0.15

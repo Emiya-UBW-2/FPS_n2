@@ -1,41 +1,73 @@
 #pragma once
+enum scenes
+{
+	ITEM_LOAD,
+	MAP_LOAD,
+	SELECT,
+	MAIN_LOOP
+};
+
 class main_c {
 	//終了処理フラグ
 	bool ending = true;
-	int sel_scene = 0;
+	int sel_scene = scenes::ITEM_LOAD;
 	GraphHandle UI_Screen;
-	cam_info* cam_t=nullptr;
+	cam_info* cam_t = nullptr;
 public:
 	main_c(void) {
-		auto OPTPTs = std::make_unique<OPTION>();																			//設定読み込み
-		auto DrawPts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->Shadow, OPTPTs->Vsync);		//汎用
-		auto DebugPTs = std::make_unique<DeBuG>(FRAME_RATE);																//デバッグ
-		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
-		auto MAPPTs = std::make_unique<MAPclass::Map>();																	//MAP
-		auto UI_LOADPTs = std::make_unique<UIclass::UI_Load>();																//UI_Load
-		UI_Screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);												//VR、フルスクリーン共用
+		auto OPTPTs = std::make_unique<OPTION>();																						//設定読み込み
+		auto DrawPts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->Shadow, OPTPTs->Vsync);					//汎用
+		auto DebugPTs = std::make_unique<DeBuG>(FRAME_RATE);																			//デバッグ
+		if (DrawPts->use_vr) {
+			OPTPTs->DoF = false;
+			OPTPTs->Bloom = false;
+			OPTPTs->SSAO = false;//SSAOはVRでは使えない
+		}
+		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
+		auto MAPPTs = std::make_unique<MAPclass::Map>();																				//MAP
+		auto UI_LOADPTs = std::make_unique<UIclass::UI_Load>();																			//UI_Load
+		UI_Screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);															//VR、フルスクリーン共用
+		//キー読み込み
+		key_bind k_;
+		k_.load_keyg();
+		UI_LOADPTs->load_window("キーバインド");
 		//シーン
-		auto SELECTscene = std::make_unique<Sceneclass::SELECT>();
-		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(DrawPts, OPTPTs, UI_LOADPTs);
+		auto SELECTscene = std::make_unique<Sceneclass::SELECT>(DrawPts);
+		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(DrawPts, OPTPTs);
 		//繰り返し
 		do {
 			bool selend = true;
 			//開始
-			switch (sel_scene) {
-			case 0:
-				//マップ読み込み
-				MAPPTs->Ready_map("data/map_new2");
-				UI_LOADPTs->load_window("マップ");
-				MAPPTs->Set_map("data/maps/Set.txt", MAINLOOPscene->get_item(), MAINLOOPscene->get_gun_data(), MAINLOOPscene->get_mag_data(), MAINLOOPscene->get_meds_data(), "data/grassput.bmp");
+			{
+				//常時表示のリセット
+				k_.reset_isalways();
 				//
-				MAINLOOPscene->first(MAPPTs);
-				SELECTscene->Set(MAPPTs, DrawPts, OPTPTs, MAINLOOPscene);
-				break;
-			case 1:
-				MAINLOOPscene->Set(MAPPTs, DrawPts, OPTPTs);
-				break;
-			default:
-				break;
+				switch (sel_scene) {
+				case scenes::ITEM_LOAD:
+					//アイテム読み込み
+					UI_LOADPTs->Set("アイテムデータ");
+					break;
+				case scenes::MAP_LOAD:
+					//マップ読み込み
+					MAPPTs->Ready_map("data/map_new2");
+					UI_LOADPTs->Set("マップ");
+					break;
+				case scenes::SELECT:
+					//キャラ設定
+					MAINLOOPscene->set_Charaa(MAPPTs->get_spawn_point().size());
+					//
+					SELECTscene->Set(OPTPTs, MAINLOOPscene);
+					DrawPts->Set_Light_Shadow(SELECTscene->get_Shadow_maxpos(), SELECTscene->get_Shadow_minpos(), SELECTscene->get_Light_vec(), [&] {SELECTscene->Shadow_Draw_Far(); });
+					SetGlobalAmbientLight(SELECTscene->get_Light_color());
+					break;
+				case scenes::MAIN_LOOP:
+					MAINLOOPscene->Set(OPTPTs, MAPPTs);
+					DrawPts->Set_Light_Shadow(MAINLOOPscene->get_Shadow_maxpos(), MAINLOOPscene->get_Shadow_minpos(), MAINLOOPscene->get_Light_vec(), [&] {MAINLOOPscene->Shadow_Draw_Far(MAPPTs); });
+					SetGlobalAmbientLight(MAINLOOPscene->get_Light_color());
+					break;
+				default:
+					break;
+				}
 			}
 			//メイン
 			while (ProcessMessage() == 0) {
@@ -43,12 +75,36 @@ public:
 				{
 					DebugPTs->put_way();
 					switch (sel_scene) {
-					case 0:
-						selend = SELECTscene->UpDate(MAPPTs, DrawPts, MAINLOOPscene);
+					case scenes::ITEM_LOAD:
+						//MAINLOOPscene->get_mine().get_key_().Set(false, &k_);
+						selend = UI_LOADPTs->Update();
 						cam_t = &SELECTscene->get_camera();
 						break;
-					case 1:
-						selend = MAINLOOPscene->UpDate(MAPPTs, DrawPts);
+					case scenes::MAP_LOAD:
+						//MAINLOOPscene->get_mine().get_key_().Set(false, &k_);
+						selend = UI_LOADPTs->Update();
+						cam_t = &SELECTscene->get_camera();
+						break;
+					case scenes::SELECT:
+						//
+						if (DrawPts->use_vr) {
+							MAINLOOPscene->get_mine().get_key_().Set_VR(DrawPts);
+						}
+						else {
+							MAINLOOPscene->get_mine().get_key_().Set(false, &k_);
+						}
+						selend = SELECTscene->UpDate(MAPPTs, DrawPts, MAINLOOPscene, k_);
+						cam_t = &SELECTscene->get_camera();
+						break;
+					case scenes::MAIN_LOOP:
+						//
+						if (DrawPts->use_vr) {
+							MAINLOOPscene->get_mine().get_key_().Set_VR(DrawPts);
+						}
+						else {
+							MAINLOOPscene->get_mine().get_key_().Set(false, &k_);
+						}
+						selend = MAINLOOPscene->UpDate(MAPPTs, DrawPts, k_);
 						cam_t = &MAINLOOPscene->get_camera();
 						break;
 					default:
@@ -61,12 +117,15 @@ public:
 					{
 						//影用意
 						DrawPts->Ready_Shadow(cam_t->campos, [&] {
-
 							switch (sel_scene) {
-							case 0:
+							case scenes::ITEM_LOAD:
+								break;
+							case scenes::MAP_LOAD:
+								break;
+							case scenes::SELECT:
 								SELECTscene->Shadow_Draw();
 								break;
-							case 1:
+							case scenes::MAIN_LOOP:
 								MAINLOOPscene->Shadow_Draw();
 								break;
 							default:
@@ -75,15 +134,21 @@ public:
 
 						}, VGet(2.f, 2.5f, 2.f), VGet(5.f, 2.5f, 5.f));
 						//↑nearはこれ
-						//	(MAINLOOPscene->get_mine().HP != 0) ? VGet(2.f, 2.5f, 2.f) : VGet(10.f, 2.5f, 10.f)
+						//	(MAINLOOPscene->get_mine().get_alive()) ? VGet(2.f, 2.5f, 2.f) : VGet(10.f, 2.5f, 10.f)
 						//書き込み
 						this->UI_Screen.SetDraw_Screen();
 						{
 							switch (sel_scene) {
-							case 0:
+							case scenes::ITEM_LOAD:
+								UI_LOADPTs->UI_Draw();
+								break;
+							case scenes::MAP_LOAD:
+								UI_LOADPTs->UI_Draw();
+								break;
+							case scenes::SELECT:
 								SELECTscene->UI_Draw(MAINLOOPscene);
 								break;
-							case 1:
+							case scenes::MAIN_LOOP:
 								MAINLOOPscene->UI_Draw();
 								break;
 							default:
@@ -98,31 +163,20 @@ public:
 							tmp_cam.camvec = GetCameraTarget();
 							{
 								//被写体深度描画
-								HostpassPTs->BUF_draw(
-									[&](void) {
-									switch (sel_scene) {
-									case 0:
-										SELECTscene->BG_Draw();
-										break;
-									case 1:
-										MAINLOOPscene->BG_Draw(MAPPTs);
-										break;
-									default:
-										break;
-									}
-
-								}, [&](void) { DrawPts->Draw_by_Shadow([&] {
-									switch (sel_scene) {
-									case 0:
-										SELECTscene->Main_Draw();
-										break;
-									case 1:
-										MAINLOOPscene->Main_Draw(MAPPTs);
-										break;
-									default:
-										break;
-									}
-								}); }, tmp_cam);
+								switch (sel_scene) {
+								case scenes::ITEM_LOAD:
+									break;
+								case scenes::MAP_LOAD:
+									break;
+								case scenes::SELECT:
+									HostpassPTs->BUF_draw([&](void) { SELECTscene->BG_Draw(); }, [&](void) { DrawPts->Draw_by_Shadow([&] { SELECTscene->Main_Draw(); }); }, tmp_cam);
+									break;
+								case scenes::MAIN_LOOP:
+									HostpassPTs->BUF_draw([&](void) { MAINLOOPscene->BG_Draw(MAPPTs); }, [&](void) { DrawPts->Draw_by_Shadow([&] { MAINLOOPscene->Main_Draw(MAPPTs); }); }, tmp_cam);
+									break;
+								default:
+									break;
+								}
 								//最終描画
 								HostpassPTs->MAIN_draw();
 							}
@@ -145,10 +199,13 @@ public:
 								}
 								//UI2
 								switch (sel_scene) {
-								case 0:
-
+								case scenes::ITEM_LOAD:
 									break;
-								case 1:
+								case scenes::MAP_LOAD:
+									break;
+								case scenes::SELECT:
+									break;
+								case scenes::MAIN_LOOP:
 									MAINLOOPscene->Item_Draw();
 									break;
 								default:
@@ -169,24 +226,37 @@ public:
 						}
 						//TPS視点
 						switch (sel_scene) {
-						case 0:
+						case scenes::ITEM_LOAD:
 							break;
-						case 1:
+						case scenes::MAP_LOAD:
+							break;
+						case scenes::SELECT:
+							break;
+						case scenes::MAIN_LOOP:
 							MAINLOOPscene->LAST_Draw();
 							break;
 						default:
 							break;
 						}
+						//キー
+						k_.draw();
 						//デバッグ
 						DebugPTs->end_way();
-						DebugPTs->debug(10, 10, float(GetNowHiPerformanceCount() - waits) / 1000.f);
+						DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 					}
 				}
+				/*
+				while (true) {
+					if (float(GetNowHiPerformanceCount() - waits) / 1000.f > 33.34f) {
+						break;
+					}
+				}
+				//*/
 				//画面の反映
 				DrawPts->Screen_Flip();
 				//終了判定
 				if (!selend) {
-					if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
+					if (k_.key_use_ID[11].get_key(0)) {
 						this->ending = false;
 					}
 					break;
@@ -196,11 +266,20 @@ public:
 			//終了処理
 			{
 				switch (sel_scene) {
-				case 0:
+				case scenes::ITEM_LOAD:
+					UI_LOADPTs->Dispose();
+					MAINLOOPscene->first_after();
+					break;
+				case scenes::MAP_LOAD:
+					UI_LOADPTs->Dispose();
+					MAPPTs->Set_map(MAINLOOPscene);
+					break;
+				case scenes::SELECT:
 					SELECTscene->Dispose();
 					break;
-				case 1:
-					MAINLOOPscene->Dispose(MAPPTs);//解放
+				case scenes::MAIN_LOOP:
+					MAINLOOPscene->Dispose();//解放
+					MAPPTs->Delete_map();
 					break;
 				default:
 					break;
@@ -209,18 +288,25 @@ public:
 			}
 			//遷移
 			switch (sel_scene) {
-			case 0:
-				sel_scene = 1;
+			case scenes::ITEM_LOAD:
+				sel_scene = scenes::MAP_LOAD;
 				break;
-			case 1:
-				sel_scene = 0;
+			case scenes::MAP_LOAD:
+				sel_scene = scenes::SELECT;
+				break;
+			case scenes::SELECT:
+				sel_scene = scenes::MAIN_LOOP;
+				break;
+			case scenes::MAIN_LOOP:
+				sel_scene = scenes::MAP_LOAD;//ITEM_LOADへは飛ばない
 				break;
 			default:
 				break;
 			}
 			//
 			if (!this->ending) {
-				MAINLOOPscene->Dispose(MAPPTs);//解放
+				MAINLOOPscene->Dispose();//解放
+				MAPPTs->Delete_map();
 				break;
 			}
 			//

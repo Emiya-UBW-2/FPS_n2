@@ -1,5 +1,0 @@
-ammo_cap=30
-ammo_1=7.62x39
-ammo_end=end
-recoil=-0.0
-weight=0.14

@@ -1,0 +1,5 @@
+AK DovetailSidemount
+AK用ドープテイルサイドマウント。
+recoil=-0.0
+weight=0.15
+01_AK_SideRailMount

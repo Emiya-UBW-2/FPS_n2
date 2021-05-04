@@ -1,2 +1,0 @@
-recoil=-0.0
-weight=0.14

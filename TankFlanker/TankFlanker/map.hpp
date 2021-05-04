@@ -10,6 +10,7 @@ class MAPclass : Mainclass {
 public:
 	class Map {
 	private:
+		std::string path;
 		MV1 map, map_col;	//地面
 		MV1 sky;			//空
 		SoundHandle envi;	//
@@ -18,6 +19,8 @@ public:
 		std::vector<VECTOR_ref> lean_point_q;
 		std::vector<VECTOR_ref> lean_point_e;
 		std::vector<VECTOR_ref> spawn_point;
+
+		int grass_pos = -1;
 
 		GraphHandle minmap;
 
@@ -35,8 +38,6 @@ public:
 		int vnum = -1, pnum = -1;		/*grass*/
 		MV1_REF_POLYGONLIST RefMesh;	/*grass*/
 	public:
-
-
 		std::vector<VECTOR_ref>& get_waypoint(void) { return way_point; }
 		std::vector<VECTOR_ref>& get_leanpoint_q(void) { return lean_point_q; }
 		std::vector<VECTOR_ref>& get_leanpoint_e(void) { return lean_point_e; }
@@ -51,25 +52,23 @@ public:
 
 		}
 		void Ready_map(std::string dir) {
-			MV1::Load(dir + "/model.mv1", &map, true);		   //map
-			MV1::Load(dir + "/col.mv1", &map_col, true);		   //mapコリジョン
-			MV1::Load(dir + "/sky/model.mv1", &sky, true);	 //空
+			this->path = dir + "/";
+			MV1::Load(this->path + "model.mv1", &map, true);		   //map
+			MV1::Load(this->path + "col.mv1", &map_col, true);		   //mapコリジョン
+			MV1::Load(this->path + "sky/model.mv1", &sky, true);	 //空
 			SetUseASyncLoadFlag(TRUE);
-			envi = SoundHandle::Load(dir + "/envi.wav");
-			minmap = GraphHandle::Load(dir + "/minimap.png");
+			envi = SoundHandle::Load(this->path + "envi.wav");
+			minmap = GraphHandle::Load(this->path + "minimap.png");
 			SetUseASyncLoadFlag(FALSE);
 
 			SetUseASyncLoadFlag(TRUE);
 			grass_pic = GraphHandle::Load("data/model/grass/grass.png");		 /*grass*/
 			SetUseASyncLoadFlag(FALSE);
 			MV1::Load("data/model/grass/model.mv1", &grass, true);		/*grass*/
+			grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
 		}
-		void Set_map(
-			const char* item_txt, std::vector<Items>& item_data,
-			std::vector<GUNPARTs>& gun_data,
-			std::vector<GUNPARTs>& mag_data,
-			std::vector<Meds>& med_data,
-			const char* buf) {
+		template<class Y, class D>
+		void Set_map(std::unique_ptr<Y, D>& MAINLOOPscene) {
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			VECTOR_ref size;
 			{
@@ -85,7 +84,6 @@ public:
 				}
 			}
 			map_col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, 0);
-
 			{
 				MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
 				auto p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
@@ -116,20 +114,18 @@ public:
 					}
 				}
 			}
-
 			SetFogStartEnd(40.0f - 15.f, 40.f);
 			SetFogColor(12, 6, 0);
-
-			item_data.clear();
+			MAINLOOPscene->get_items().clear();
 			{
-				int mdata = FileRead_open(item_txt, FALSE);
+				int mdata = FileRead_open((this->path + "Set.txt").c_str(), FALSE);
 				//item_data magitem
 				while (true) {
 					auto p = getparams::_str(mdata);
 					if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
 						size_t p1 = 0;
 						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
-						for (auto& g : mag_data) {
+						for (auto& g : MAINLOOPscene->get_mag_data()) {
 							if (p.find(g.mod.get_name()) != std::string::npos) {
 								p1 = g.id_t;
 								break;
@@ -139,8 +135,8 @@ public:
 						p3 = getparams::_float(mdata);
 						p4 = getparams::_float(mdata);
 
-						item_data.resize(item_data.size() + 1);
-						item_data.back().Set_item_4(item_data.size() - 1, &mag_data[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						MAINLOOPscene->get_items().resize(MAINLOOPscene->get_items().size() + 1);
+						MAINLOOPscene->get_items().back().Set_item_4(MAINLOOPscene->get_items().size() - 1, &MAINLOOPscene->get_mag_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -152,7 +148,7 @@ public:
 					if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
 						size_t p1 = 0;
 						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
-						for (auto& g : med_data) {
+						for (auto& g : MAINLOOPscene->get_meds_data()) {
 							if (p.find(g.mod.get_name()) != std::string::npos) {
 								p1 = g.id_t;
 								break;
@@ -162,12 +158,12 @@ public:
 						p3 = getparams::_float(mdata);
 						p4 = getparams::_float(mdata);
 
-						item_data.resize(item_data.size() + 1);
-						item_data.back().get_id_t() = item_data.size() - 1;
-						item_data.back().Set_item_1(&med_data[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						MAINLOOPscene->get_items().resize(MAINLOOPscene->get_items().size() + 1);
+						MAINLOOPscene->get_items().back().get_id_t() = MAINLOOPscene->get_items().size() - 1;
+						MAINLOOPscene->get_items().back().Set_item_1(&MAINLOOPscene->get_meds_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 						/*
-						if (item_data.back().get_ptr_mag() != nullptr) {
-							item_data.back().magazine.cap = int(item_data.back().get_ptr_mag()->cap);
+						if (MAINLOOPscene->get_items().back().get_ptr_mag() != nullptr) {
+							MAINLOOPscene->get_items().back().magazine.cap = int(MAINLOOPscene->get_items().back().get_ptr_mag()->cap);
 						}
 						*/
 					}
@@ -177,12 +173,10 @@ public:
 				}
 				FileRead_close(mdata);
 			}
-
+			/*minimap*/
 			minmap.GetSize(&x_size, &y_size);
-
-
+			/*grass*/
 			{
-				/*grass*/
 				MV1SetupReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの作成*/
 				RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
 				IndexNum = RefMesh.PolygonNum * 3 * grasss; /*インデックスの数を取得*/
@@ -193,7 +187,6 @@ public:
 				vnum = 0;
 				pnum = 0;
 
-				int grass_pos = LoadSoftImage(buf);
 				int xs = 0, ys = 0;
 				GetSoftImageSize(grass_pos, &xs, &ys);
 
@@ -272,18 +265,17 @@ public:
 		}
 		auto& map_get(void) { return map; }
 		auto& map_col_get(void) { return map_col; }
-		auto map_col_line(const VECTOR_ref& Startpos, const VECTOR_ref& endpos) {
-			return map_col.CollCheck_Line(Startpos, endpos, 0, 0);
+		auto map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) {
+			return map_col.CollCheck_Line(StartPos, EndPos, 0, 0);
 		}
-
-		void map_col_nearest(const VECTOR_ref& Startpos, VECTOR_ref* endpos) {
+		void map_col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) {
 			while (true) {
-				auto p = this->map_col_line(Startpos, *endpos);
+				auto p = this->map_col_line(StartPos, *EndPos);
 				if (p.HitFlag) {
-					if (*endpos == p.HitPosition) {
+					if (*EndPos == p.HitPosition) {
 						break;
 					}
-					*endpos = p.HitPosition;
+					*EndPos = p.HitPosition;
 				}
 				else {
 					break;
@@ -365,7 +357,6 @@ public:
 			}
 			MV1CollResultPolyDimTerminate(HitDim);	// 検出したプレイヤーの周囲のポリゴン情報を開放する
 		}
-
 		//空描画
 		void sky_Draw(void) {
 			{
@@ -382,21 +373,19 @@ public:
 			SetFogColor(192, 192, 192);
 
 			SetDrawAlphaTest(DX_CMP_GREATER, 128);
-			SetUseLighting(FALSE);
+			//SetUseLighting(FALSE);
 			{
 				DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, grass_pic.get(), TRUE);
 			}
-			SetUseLighting(TRUE);
+			//SetUseLighting(TRUE);
 			SetDrawAlphaTest(-1, 0);
 		}
-
 		void Shadow_Draw(void) {
 			for (int i = 0; i < 3; i++) {
 				map.DrawMesh(i);
 			}
 			grass_Draw();
 		}
-
 		void main_Draw(void) {
 			map.DrawMesh(0);
 			map.DrawMesh(1);
@@ -435,7 +424,7 @@ public:
 			UI_player = GraphHandle::Load("data/UI/player.bmp");
 			loadmasks = true;
 		}
-		void set_pos_chara(int* xp, int* yp, Mainclass::Chara& c,float& radp, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
+		void set_pos_chara(int* xp, int* yp, Mainclass::Chara& c, float& radp, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
 			auto t = c.get_pos();
 			auto x_2 = t.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
 			auto y_2 = -t.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
@@ -450,7 +439,7 @@ public:
 				int xp = 0, yp = 0;
 				float radp = 0.f;
 				{
-					easing_set(&xcam, 1.f + (mine.add_vec_real.size() / ((mine.key_.running ? 6.f : ((mine.key_.ads.on() ? 2.f : 4.f)*(mine.key_.squat.on() ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
+					easing_set(&xcam, 1.f + (mine.get_add_vec_real().size() / ((mine.running() ? 6.f : ((mine.ads_on() ? 2.f : 4.f)*(mine.squat_on() ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
 					radp = -mine.set_rad_chara();
 					int xpos = 0, ypos = 0;
 					set_pos_chara(&xpos, &ypos, mine, radp, MAPPTs);

@@ -1,6 +1,0 @@
-recoil=-0.0
-weight=0.14
-Standard_Vertical_Foregrip
-Bipod_Vertical_Foregrip
-Tactical_Flashlight
-NcSTAR_Laser

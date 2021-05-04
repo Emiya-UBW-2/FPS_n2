@@ -1,0 +1,4 @@
+Tactical Flashlight
+フラッシュライト。
+recoil=-0.0
+weight=0.15
