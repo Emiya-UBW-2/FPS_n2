@@ -1,7 +1,7 @@
 #pragma once
 // プレイヤー関係の定義
 #define PLAYER_ENUM_DEFAULT_SIZE	1.8f	// 周囲のポリゴン検出に使用する球の初期サイズ
-#define PLAYER_HIT_WIDTH			0.15f	// 当たり判定カプセルの半径
+#define PLAYER_HIT_WIDTH			0.4f	// 当たり判定カプセルの半径
 #define PLAYER_HIT_HEIGHT			1.8f	// 当たり判定カプセルの高さ
 #define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
 #define PLAYER_HIT_SLIDE_LENGTH		0.015f	// 一度の壁押し出し処理でスライドさせる距離
@@ -26,9 +26,11 @@ public:
 
 		int x_size = 0;
 		int y_size = 0;
-
+		//太陽
+		GraphHandle sun_pic;			/*画像ハンドル*/
+		VECTOR_ref sun_pos;
 		//雲
-		int grasss = 600;				/*grassの数*/
+		int grasss = 2000;				/*grassの数*/
 		std::vector<VERTEX3D> grassver; /*grass*/
 		std::vector<DWORD> grassind;    /*grass*/
 		int VerBuf = -1, IndexBuf = -1;	/*grass*/
@@ -59,6 +61,8 @@ public:
 			SetUseASyncLoadFlag(TRUE);
 			envi = SoundHandle::Load(this->path + "envi.wav");
 			minmap = GraphHandle::Load(this->path + "minimap.png");
+
+			this->sun_pic = GraphHandle::Load("data/sun.png");					/*sun*/
 			SetUseASyncLoadFlag(FALSE);
 
 			SetUseASyncLoadFlag(TRUE);
@@ -68,7 +72,8 @@ public:
 			grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
 		}
 		template<class Y, class D>
-		void Set_map(std::unique_ptr<Y, D>& MAINLOOPscene) {
+		void Set_map(std::unique_ptr<Y, D>& MAINLOOPscene, const VECTOR_ref& ray) {
+			this->sun_pos = ray.Norm() * -1500.f;
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			VECTOR_ref size;
 			{
@@ -125,7 +130,7 @@ public:
 					if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
 						size_t p1 = 0;
 						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
-						for (auto& g : MAINLOOPscene->get_mag_data()) {
+						for (auto& g : MAINLOOPscene->get_magazine_data()) {
 							if (p.find(g.mod.get_name()) != std::string::npos) {
 								p1 = g.id_t;
 								break;
@@ -136,7 +141,7 @@ public:
 						p4 = getparams::_float(mdata);
 
 						MAINLOOPscene->get_items().resize(MAINLOOPscene->get_items().size() + 1);
-						MAINLOOPscene->get_items().back().Set_item_4(MAINLOOPscene->get_items().size() - 1, &MAINLOOPscene->get_mag_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						MAINLOOPscene->get_items().back().Set_item_4(MAINLOOPscene->get_items().size() - 1, &MAINLOOPscene->get_magazine_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -160,12 +165,7 @@ public:
 
 						MAINLOOPscene->get_items().resize(MAINLOOPscene->get_items().size() + 1);
 						MAINLOOPscene->get_items().back().get_id_t() = MAINLOOPscene->get_items().size() - 1;
-						MAINLOOPscene->get_items().back().Set_item_1(&MAINLOOPscene->get_meds_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
-						/*
-						if (MAINLOOPscene->get_items().back().get_ptr_mag() != nullptr) {
-							MAINLOOPscene->get_items().back().magazine.cap = int(MAINLOOPscene->get_items().back().get_ptr_mag()->cap);
-						}
-						*/
+						MAINLOOPscene->get_items().back().Set_item(&MAINLOOPscene->get_meds_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -214,7 +214,7 @@ public:
 					VECTOR_ref tmpvect = VGet(x_t, 5.f, z_t);
 					map_col_nearest(tmpvect2, &tmpvect);
 					//
-					MV1SetMatrix(grass.get(), MMult(MMult(MGetRotY(deg2rad(GetRand(90))), MGetScale(VGet(1.f, float(100 - 50 + GetRand(50 * 2)) / 100.f, 1.f))), MGetTranslate(tmpvect.get())));
+					MV1SetMatrix(grass.get(), MMult(MMult(MGetRotY(deg2rad(GetRand(90))), MGetScale(VGet(1.f, float(100 - 20 + GetRand(20 * 2)) / 100.f, 1.f))), MGetTranslate(tmpvect.get())));
 					//上省
 					MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
 					RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
@@ -257,7 +257,7 @@ public:
 			lean_point_e.clear();
 			spawn_point.clear();
 			minmap.Dispose();
-
+			this->sun_pic.Dispose();
 			grass_pic.Dispose();
 			grass.Dispose();
 			grassver.clear();
@@ -303,14 +303,14 @@ public:
 			if (kabe_.size() > 0) {
 				bool HitFlag = false;
 				for (auto& k_ : kabe_) {
-					if (Hit_Capsule_Tri(*NowPos, *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, k_->Position[0], k_->Position[1], k_->Position[2])) {				// ポリゴンとプレイヤーが当たっていなかったら次のカウントへ
+					if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, k_->Position[0], k_->Position[1], k_->Position[2])) {				// ポリゴンとプレイヤーが当たっていなかったら次のカウントへ
 						HitFlag = true;// ここにきたらポリゴンとプレイヤーが当たっているということなので、ポリゴンに当たったフラグを立てる
 						if (MoveVector.size() >= 0.0001f) {	// x軸かy軸方向に 0.0001f 以上移動した場合は移動したと判定
 							// 壁に当たったら壁に遮られない移動成分分だけ移動する
 							*NowPos = VECTOR_ref(k_->Normal).cross(MoveVector.cross(k_->Normal)) + OldPos;
 							bool j = false;
 							for (auto& b_ : kabe_) {
-								if (Hit_Capsule_Tri(*NowPos, *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {
+								if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {
 									j = true;
 									break;// 当たっていたらループから抜ける
 								}
@@ -332,11 +332,11 @@ public:
 					for (int k = 0; k < PLAYER_HIT_TRYNUM; k++) {			// 壁からの押し出し処理を試みる最大数だけ繰り返し
 						bool HitF = false;
 						for (auto& k_ : kabe_) {
-							if (Hit_Capsule_Tri(*NowPos, *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, k_->Position[0], k_->Position[1], k_->Position[2])) {// プレイヤーと当たっているかを判定
+							if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, 0.2f, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, k_->Position[0], k_->Position[1], k_->Position[2])) {// プレイヤーと当たっているかを判定
 								*NowPos += VECTOR_ref(k_->Normal) * PLAYER_HIT_SLIDE_LENGTH;					// 当たっていたら規定距離分プレイヤーを壁の法線方向に移動させる
 								bool j = false;
 								for (auto& b_ : kabe_) {
-									if (Hit_Capsule_Tri(*NowPos, *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {// 当たっていたらループを抜ける
+									if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, 0.2f, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {// 当たっていたらループを抜ける
 										j = true;
 										break;
 									}
@@ -362,7 +362,10 @@ public:
 			{
 				SetFogEnable(FALSE);
 				SetUseLighting(FALSE);
-				sky.DrawModel();
+				{
+					sky.DrawModel();
+					DrawBillboard3D(this->sun_pos.get(), 0.5f, 0.5f, 200.f, 0.f, this->sun_pic.get(), TRUE);
+				}
 				SetUseLighting(TRUE);
 				SetFogEnable(TRUE);
 			}
@@ -424,14 +427,15 @@ public:
 			UI_player = GraphHandle::Load("data/UI/player.bmp");
 			loadmasks = true;
 		}
-		void set_pos_chara(int* xp, int* yp, Mainclass::Chara& c, float& radp, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
-			auto t = c.get_pos();
-			auto x_2 = t.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
-			auto y_2 = -t.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
+	private:
+		void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
+			auto x_2 = chara_pos.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
+			auto y_2 = -chara_pos.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
 
 			*xp = int(x_2*cos(radp) - y_2 * sin(radp));
 			*yp = int(y_2*cos(radp) + x_2 * sin(radp));
 		}
+	public:
 		void Set(std::vector<Chara>&chara, Mainclass::Chara& mine, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
 			UI_minimap.SetDraw_Screen(true);
 			{
@@ -439,10 +443,10 @@ public:
 				int xp = 0, yp = 0;
 				float radp = 0.f;
 				{
-					easing_set(&xcam, 1.f + (mine.get_add_vec_real().size() / ((mine.running() ? 6.f : ((mine.ads_on() ? 2.f : 4.f)*(mine.squat_on() ? 0.4f : 1.f))) / GetFPS())) * 0.3f, 0.9f);
-					radp = -mine.set_rad_chara();
+					easing_set(&xcam, 1.f + (mine.get_add_vec_real().size() / mine.get_speed()) * 0.3f, 0.9f);
+					radp = -mine.Get_rad_chara();
 					int xpos = 0, ypos = 0;
-					set_pos_chara(&xpos, &ypos, mine, radp, MAPPTs);
+					Set_pos_chara(&xpos, &ypos, mine.get_pos(), radp, MAPPTs);
 					xp = x_size / 2 - xpos;
 					yp = y_size / 2 - ypos;
 				}
@@ -450,11 +454,11 @@ public:
 				MAPPTs->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
 				for (auto& c : chara) {
 					int xpos = 0, ypos = 0;
-					set_pos_chara(&xpos, &ypos, c, radp, MAPPTs);
+					Set_pos_chara(&xpos, &ypos, c.get_pos(), radp, MAPPTs);
 					int xt = xp + xpos;
 					int yt = yp + ypos;
 
-					UI_player.DrawRotaGraph(xt, yt, xcam, radp + c.set_rad_chara(), true);
+					UI_player.DrawRotaGraph(xt, yt, xcam, radp + c.Get_rad_chara(), true);
 				}
 			}
 		}

@@ -11,20 +11,6 @@ public:
 		FontHandle font24;
 		FontHandle font18;
 		FontHandle font12;
-	public:
-		UI_SELECT(void) {
-			SetUseASyncLoadFlag(TRUE);
-			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
-			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
-			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
-			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
-			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
-			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
-			SetUseASyncLoadFlag(FALSE);
-		}
-		~UI_SELECT(void) {
-		}
-	private:
 		void Draw_per_info(const int& xpos1, const int& ypos1, const int& xsize, const int& ysize, GUNPARTs* parts, float&change_per, bool use_vr = true) {
 			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
 			FontHandle* font_big = (use_vr) ? &font36 : &font24;
@@ -71,8 +57,20 @@ public:
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 		}
 	public:
+		UI_SELECT(void) {
+			SetUseASyncLoadFlag(TRUE);
+			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
+			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
+			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
+			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
+			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
+			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
+			SetUseASyncLoadFlag(FALSE);
+		}
+		~UI_SELECT(void) {
+		}
 		template<class Y, class D>
-		void Set_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, switchs &Rot, Chara* mine_ptr, GUNPARTs* parts_p, float& change_per, bool use_vr = true) {
+		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, switchs &Rot, Chara* mine_ptr, GUNPARTs* parts_p, float& change_per, bool use_vr = true) {
 			int t_disp_x = deskx;
 			int t_disp_y = desky;
 			if (use_vr) {
@@ -116,6 +114,12 @@ public:
 					{
 						parts_type = "MAZZULE";
 						parts_t = &MAINLOOPscene->get_mazzule_data();
+						break;
+					}
+					case EnumGunParts::PARTS_MAGAZINE:
+					{
+						parts_type = "MAGAZINE";
+						parts_t = &MAINLOOPscene->get_magazine_data();
 						break;
 					}
 					case EnumGunParts::PARTS_GRIP:
@@ -219,8 +223,8 @@ public:
 					}
 				}
 
-				font->DrawStringFormat(100, 700, GetColor(255, 0, 0), "weigt  : %5.2f", mine_ptr->get_per().weight);
-				font->DrawStringFormat(100, 725, GetColor(255, 0, 0), "recoil : %5.2f", mine_ptr->get_per().recoil);
+				font->DrawStringFormat(100, 700, GetColor(255, 0, 0), "weigt  : %5.2f", mine_ptr->get_per_all().weight);
+				font->DrawStringFormat(100, 725, GetColor(255, 0, 0), "recoil : %5.2f", mine_ptr->get_per_all().recoil);
 
 
 				font->DrawString(100, 575, "SPACE  :Go Battle", GetColor(255, 0, 0));
@@ -237,13 +241,15 @@ public:
 			//int fonthight = (use_vr) ? y_r(24) : y_r(18);
 			//
 		}
+		void Dispose() {
+		}
 	};
 	//
 	class UI_MAINLOOP {
 	private:
 		//pic
 		GraphHandle aim;
-		GraphHandle hit;
+		GraphHandle hit_Graph;
 		GraphHandle item;
 		GraphHandle dmg;
 		//font
@@ -256,27 +262,7 @@ public:
 		//
 		float Ready = 0.f;
 		float timer = 0.f;
-	public:
-		UI_MAINLOOP(void) {
-			SetUseASyncLoadFlag(TRUE);
-
-			this->hit = GraphHandle::Load("data/UI/battle_hit.bmp");
-			this->dmg = GraphHandle::Load("data/UI/damage.png");
-			this->item = GraphHandle::Load("data/UI/battle_item.bmp");
-			this->aim = GraphHandle::Load("data/UI/battle_aim.bmp");
-
-			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
-			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
-			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
-			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
-			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
-			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
-
-			SetUseASyncLoadFlag(FALSE);
-		}
-		~UI_MAINLOOP(void) {
-		}
-	private:
+		//
 		void Draw_HP(int xpos, int ypos, int xsize, int ysize, Mainclass::Chara& chara) {
 			int will = int(chara.HP_r);
 			auto size = y_r(2);
@@ -313,11 +299,30 @@ public:
 			}
 		}
 	public:
-		void Set_rule(std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>& RULEparts) {
-			this->Ready = RULEparts->getReady();
-			this->timer = RULEparts->gettimer();
+		UI_MAINLOOP(void) {
+			SetUseASyncLoadFlag(TRUE);
+
+			this->hit_Graph = GraphHandle::Load("data/UI/battle_hit.bmp");
+			this->dmg = GraphHandle::Load("data/UI/damage.png");
+			this->item = GraphHandle::Load("data/UI/battle_item.bmp");
+			this->aim = GraphHandle::Load("data/UI/battle_aim.bmp");
+
+			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
+			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
+			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
+			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
+			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
+			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
+
+			SetUseASyncLoadFlag(FALSE);
 		}
-		void Set_Draw(Mainclass::Chara& chara, bool use_vr = true) {
+		~UI_MAINLOOP(void) {
+		}
+		void Update(std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>& RULEparts) {
+			this->Ready = RULEparts->get_Ready();
+			this->timer = RULEparts->get_timer();
+		}
+		void UI_Draw(Mainclass::Chara& chara, bool use_vr = true) {
 			int t_disp_x = deskx;
 			int t_disp_y = desky;
 			if (use_vr) {
@@ -500,7 +505,7 @@ public:
 						}
 						//É}ÉKÉWÉìä÷òA(âº)
 						{
-							int size = int(chara.gun_stat_now->get_mag_in().size());
+							int size = int(chara.gun_stat_now->get_magazine_in().size());
 							if (use_vr) {
 								xp = t_disp_x / 2 - x_r(140) + font_bighight * size;
 								yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20) - font_bighight * size;
@@ -510,9 +515,9 @@ public:
 								yp = t_disp_y - x_r(20) - font_bighight * size;
 							}
 							if (size > 0) {
-								DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat_now->mag_in_flont(), chara.magazine.thisparts->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
+								DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat_now->magazine_in_flont(), chara.magazine.thisparts->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
 							}
-							for (auto& a : chara.gun_stat_now->get_mag_in()) {
+							for (auto& a : chara.gun_stat_now->get_magazine_in()) {
 								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a, chara.magazine.thisparts->cap);
 								xp -= font_bighight / 3;
 								yp += font_bighight;
@@ -622,18 +627,17 @@ public:
 			{
 				SetCameraNearFar(0.01f, 10.f);
 				for (auto& g : item_data) {
-					auto pos_item = g.get_pos();
 					//gun
 					if (g.get_ptr_gun() != nullptr) {
-						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), pos_item, cam_pos, "%s", g.get_ptr_gun()->per.name.c_str());
+						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s", g.get_ptr_gun()->per.name.c_str());
 					}
 					//mag
 					if (g.get_ptr_mag() != nullptr) {
-						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), pos_item, cam_pos, "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().cap, g.get_ptr_mag()->cap);
+						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().cap, g.get_ptr_mag()->cap);
 					}
 					//med
 					if (g.get_ptr_med() != nullptr) {
-						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), pos_item, cam_pos, "%s", g.get_ptr_med()->mod.get_name().c_str());
+						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s", g.get_ptr_med()->mod.get_name().c_str());
 					}
 					//
 				}
@@ -644,7 +648,7 @@ public:
 			{
 				SetCameraNearFar(0.01f, 100.f);
 				for (auto& c : chara) {
-					VECTOR_ref p = c.Set_HP_ui(cam_pos);
+					VECTOR_ref p = c.Set_HP_UI(cam_pos);
 					if (p.z() >= 0.f&&p.z() <= 1.f) {
 						this->Draw_HP(int(p.x()), int(p.y()), x_r(140), y_r(20), c);
 					}
@@ -654,7 +658,7 @@ public:
 			{
 				SetCameraNearFar(0.01f, 100.f);
 				for (auto& c : chara) {
-					c.Draw_bullet(hit, mine);
+					c.Draw_Hit_UI(hit_Graph, &c == &mine);
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
@@ -681,26 +685,6 @@ public:
 		}
 		~UI_Load(void) {
 		}
-		void load_window(const char* mes) {
-			bool selend = true;
-			Set(mes);
-			while (ProcessMessage() == 0) {
-				selend = Update();
-
-				GraphHandle::SetDraw_Screen((int32_t)DX_SCREEN_BACK);
-				{
-					UI_Draw();
-				}
-				ScreenFlip();
-
-				if (!selend) {
-					break;
-				}
-			}
-			GraphHandle::SetDraw_Screen((int32_t)DX_SCREEN_BACK);
-			ScreenFlip();
-		}
-
 		void Set(const char* mes) {
 			SetUseASyncLoadFlag(FALSE);
 			bar = 0.f;
@@ -708,7 +692,6 @@ public:
 			message = mes;
 		}
 		bool Update() {
-			GetScreenState(&t_disp_x, &t_disp_y, nullptr);
 			tmp = all - GetASyncLoadNum();
 			if (int(bar * 100) >= (all * 100 - 1)) {
 				return false;
@@ -716,14 +699,14 @@ public:
 			easing_set(&bar, float(tmp), 0.95f);
 			return true;
 		}
-		void Dispose() {
-
-		}
 		void UI_Draw() {
+			GetScreenState(&t_disp_x, &t_disp_y, nullptr);
 			DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(0, 0, 0), TRUE);
 			font18.DrawStringFormat(0, t_disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
 			font18.DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), GetColor(0, 255, 0), "%s ì«Ç›çûÇ›íÜ ", message.c_str());
 			DrawBox(0, t_disp_y - y_r(50), int(float(t_disp_x) * bar / float(all)), t_disp_y - y_r(40), GetColor(0, 255, 0), TRUE);
+		}
+		void Dispose() {
 		}
 	};
 };

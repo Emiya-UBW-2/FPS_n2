@@ -30,7 +30,6 @@ public:
 		//キー読み込み
 		key_bind k_;
 		k_.load_keyg();
-		UI_LOADPTs->load_window("キーバインド");
 		//シーン
 		auto SELECTscene = std::make_unique<Sceneclass::SELECT>(DrawPts);
 		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(DrawPts, OPTPTs);
@@ -40,7 +39,7 @@ public:
 			//開始
 			{
 				//常時表示のリセット
-				k_.reset_isalways();
+				k_.reSet_isalways();
 				//
 				switch (sel_scene) {
 				case scenes::ITEM_LOAD:
@@ -54,7 +53,7 @@ public:
 					break;
 				case scenes::SELECT:
 					//キャラ設定
-					MAINLOOPscene->set_Charaa(MAPPTs->get_spawn_point().size());
+					MAINLOOPscene->Set_Charaa(MAPPTs->get_spawn_point().size());
 					//
 					SELECTscene->Set(OPTPTs, MAINLOOPscene);
 					DrawPts->Set_Light_Shadow(SELECTscene->get_Shadow_maxpos(), SELECTscene->get_Shadow_minpos(), SELECTscene->get_Light_vec(), [&] {SELECTscene->Shadow_Draw_Far(); });
@@ -272,7 +271,7 @@ public:
 					break;
 				case scenes::MAP_LOAD:
 					UI_LOADPTs->Dispose();
-					MAPPTs->Set_map(MAINLOOPscene);
+					MAPPTs->Set_map(MAINLOOPscene, VGet(0.5f, -0.5f, 0.5f)/*MAINLOOPscene->get_Light_vec()*/);
 					break;
 				case scenes::SELECT:
 					SELECTscene->Dispose();
