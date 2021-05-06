@@ -1853,6 +1853,7 @@ protected:
 		};
 	private:
 		MV1 obj;
+		MV1 obj_lag;
 		//プレイヤー座標系
 		VECTOR_ref pos_tt;				//位置
 		MATRIX_ref mat;				//位置
@@ -1968,6 +1969,7 @@ protected:
 		bool Start_a = true;
 		bool Start_b = true;
 		bool Start_c = true;
+		bool Start_d = true;
 		bool hit_f = false;
 		float hit_time = 0.f;
 		size_t death_id = 0;
@@ -3393,11 +3395,14 @@ protected:
 						this->obj.SetFrameLocalMatrix(this->frame_s.bodyb_f.first, mb_inv*this->obj.GetFrameLocalMatrix(this->frame_s.bodyb_f.first));
 						this->obj.SetFrameLocalMatrix(this->frame_s.body_f.first, m_inv*(mb_inv*mg_inv).Inverse()*this->obj.GetFrameLocalMatrix(this->frame_s.body_f.first));
 					}
+					this->Start_d = true;
 				}
 				else {
 					m_inv = MATRIX_ref::RotY(DX_PI_F + this->body_yrad);
 					this->obj.SetMatrix(m_inv*MATRIX_ref::Mtrans(this->pos_tt - this->rec_HMD));
 				}
+
+				this->obj_lag.SetMatrix(this->obj.GetMatrix());
 			}
 			//頭部
 			if (this->get_alive()) {
@@ -3668,7 +3673,7 @@ protected:
 		//
 	public:
 		//
-		void Set(std::vector<GUNPARTs>& gun_data, const size_t& itr, MV1& body_, MV1& col_) {
+		void Set(std::vector<GUNPARTs>& gun_data, const size_t& itr, MV1& body_, MV1& bodylag_, MV1& col_) {
 			//変数
 			{
 				this->gunf = false;
@@ -3715,6 +3720,11 @@ protected:
 				this->anime_hand_trigger_pull = &this->obj.get_anime(5);
 				//
 				this->frame_s.get_frame(this->obj, &this->head_hight);
+
+				this->Start_d = true;
+			}
+			{
+				this->obj_lag = bodylag_.Duplicate();
 			}
 			//身体コリジョン
 			{
@@ -3971,6 +3981,7 @@ protected:
 			this->add_ypos = 0.f;
 			this->add_vec_buf.clear();
 			this->Start_b = true;
+			this->Start_d = true;
 
 			this->HP = this->HP_full;
 
@@ -4011,6 +4022,7 @@ protected:
 			this->oldv_3_2 = true;
 			this->ratio_r = 0.f;
 			this->Start_b = false;
+			this->Start_d = false;
 			this->Start_c = true;
 			this->ReSet_waypoint(MAPPTs);
 			this->gunanime_first->per = 1.f;
@@ -4089,8 +4101,14 @@ protected:
 		//
 		void Draw_chara(void) {
 			if (this->Start_a) {
-				this->obj.DrawModel();
-				//this->col.DrawModel();
+				if (this->get_alive()) {
+					//this->obj.DrawModel();
+				}
+				else {
+					this->obj_lag.DrawModel();
+				}
+				this->obj_lag.DrawModel();
+				this->col.DrawModel();
 				Draw_gun();
 			}
 		}
@@ -4205,6 +4223,7 @@ protected:
 			if (CheckCameraViewClip_Box((ttt + VGet(-0.3f, 0, -0.3f)).get(), (ttt + VGet(0.3f, 1.8f, 0.3f)).get())) {
 				this->Start_a = false;
 				this->Start_b = true;
+				this->Start_d = true;
 				return;
 			}
 		}
@@ -4215,12 +4234,14 @@ protected:
 			if (CheckCameraViewClip_Box((ttt + VGet(-0.3f, 0, -0.3f)).get(), (ttt + VGet(0.3f, 1.8f, 0.3f)).get())) {
 				this->Start_a = false;
 				this->Start_b = true;
+				this->Start_d = true;
 				return;
 			}
 			//*
 			if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VGet(0, 1.8f, 0)).HitFlag && MAPPTs->map_col_line(GetCameraPosition(), ttt + VGet(0, 0.f, 0)).HitFlag) {
 				this->Start_a = false;
 				this->Start_b = true;
+				this->Start_d = true;
 				return;
 			}
 			//*/
@@ -4229,6 +4250,7 @@ protected:
 			if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VGet(0, 1.2f, 0)).HitFlag && MAPPTs->map_col_line(GetCameraPosition(), ttt + VGet(0, 0.6f, 0)).HitFlag) {
 				this->Start_a = false;
 				this->Start_b = true;
+				this->Start_d = true;
 				return;
 			}
 			//*/
@@ -4384,6 +4406,14 @@ protected:
 					}
 					else {
 						this->obj.PhysicsCalculation(1000.f / GetFPS());
+					}
+
+					if (this->Start_d) {
+						this->obj_lag.PhysicsResetState();
+						this->Start_d = false;
+					}
+					else {
+						this->obj_lag.PhysicsCalculation(1000.f / GetFPS());
 					}
 				}
 				//
