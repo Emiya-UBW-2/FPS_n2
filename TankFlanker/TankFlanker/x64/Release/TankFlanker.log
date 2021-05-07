@@ -21,31 +21,20 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3727): warni
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4083): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4084): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4085): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4086): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4088): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4090): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4091): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4092): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4093): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4094): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4096): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4099): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(645): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(649): error C2039: 'Draw': 'Mainclass::Chara::g_parts' のメンバーではありません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1530): note: 'Mainclass::Chara::g_parts' の宣言を確認してください
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(3723): warning C4458: 'mat_t' を宣言すると、クラス メンバーが隠蔽されます
+  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1859): note: 'Mainclass::Chara::mat_t' の宣言を確認してください
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4222): warning C4100: 'ismine': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(284): warning C4189: 'cnt': ローカル変数が初期化されましたが、参照されていません
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(622): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(18): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(18): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(18): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(18): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(67): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
+  コード生成しています。
+  9 of 4681 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
+  コード生成が終了しました。
+EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+  TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\FPS_n2.exe

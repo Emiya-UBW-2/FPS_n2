@@ -12,7 +12,7 @@ recoil_xadd(deg)=7.2
 recoil_xmnus(deg)=-3.2
 recoil_yadd(deg)=15.0
 recoil_ymnus(deg)=-0.0
-reload_time(sec)=1.5
+reload_time(sec)=10.5
 ammo_1=7.62x39
 ammo_end=end
 recoil=100.0
@@ -21,10 +21,12 @@ weight=2.8
 00_AK_6P1_Under_Handguard
 01_AK_Original_Polymer_Under_Handguard
 02_AK_Zenit_B10M_Under_Handguard
+03_AK_6P20_Under_Handguard
 00_AK_6P1_Uper_Handguard
 01_AK_Original_Polymer_Uper_Handguard
-03_AK_Rail_Band
 02_AK_Steel_Uper_Handguard
+03_AK_Rail_Band
+04_AK_6P20_Uper_Handguard
 00_AK_6P1_Compensator
 01_sup
 00_AK_6P1_Wood_Grip
