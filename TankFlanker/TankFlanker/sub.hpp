@@ -4102,13 +4102,14 @@ protected:
 		void Draw_chara(void) {
 			if (this->Start_a) {
 				if (this->get_alive()) {
-					//this->obj.DrawModel();
+					this->obj.DrawModel();
 				}
 				else {
-					this->obj_lag.DrawModel();
+					//this->obj_lag.DrawModel();
 				}
-				this->obj_lag.DrawModel();
-				this->col.DrawModel();
+				this->obj.DrawModel();
+				//this->obj_lag.DrawModel();
+				//this->col.DrawModel();
 				Draw_gun();
 			}
 		}
