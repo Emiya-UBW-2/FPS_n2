@@ -21,9 +21,6 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3727): warni
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(4260): warning C4100: 'ismine': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(284): warning C4189: 'cnt': ローカル変数が初期化されましたが、参照されていません
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(622): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(18): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(18): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(18): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。

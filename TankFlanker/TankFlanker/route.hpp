@@ -3,6 +3,7 @@ enum scenes
 {
 	ITEM_LOAD,
 	MAP_LOAD,
+	LOAD,
 	SELECT,
 	MAIN_LOOP
 };
@@ -31,6 +32,7 @@ public:
 		key_bind k_;
 		k_.load_keyg();
 		//シーン
+		auto LOADscene = std::make_unique<Sceneclass::LOAD>(DrawPts);
 		auto SELECTscene = std::make_unique<Sceneclass::SELECT>(DrawPts);
 		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(DrawPts, OPTPTs);
 		//繰り返し
@@ -51,9 +53,12 @@ public:
 					MAPPTs->Ready_map("data/map_new2");
 					UI_LOADPTs->Set("マップ");
 					break;
-				case scenes::SELECT:
+				case scenes::LOAD:
 					//キャラ設定
 					MAINLOOPscene->Set_Charaa(MAPPTs->get_spawn_point().size());
+					LOADscene->Set(MAINLOOPscene);
+					break;
+				case scenes::SELECT:
 					//
 					SELECTscene->Set(OPTPTs, MAINLOOPscene);
 					DrawPts->Set_Light_Shadow(SELECTscene->get_Shadow_maxpos(), SELECTscene->get_Shadow_minpos(), SELECTscene->get_Light_vec(), [&] {SELECTscene->Shadow_Draw_Far(); });
@@ -82,6 +87,11 @@ public:
 					case scenes::MAP_LOAD:
 						//MAINLOOPscene->get_mine().get_key_().Set(false, &k_);
 						selend = UI_LOADPTs->Update();
+						cam_t = &SELECTscene->get_camera();
+						break;
+					case scenes::LOAD:
+						MAINLOOPscene->get_mine().get_key_().Set(false, &k_);
+						selend = LOADscene->UpDate(k_);
 						cam_t = &SELECTscene->get_camera();
 						break;
 					case scenes::SELECT:
@@ -121,6 +131,9 @@ public:
 								break;
 							case scenes::MAP_LOAD:
 								break;
+							case scenes::LOAD:
+								LOADscene->Shadow_Draw();
+								break;
 							case scenes::SELECT:
 								SELECTscene->Shadow_Draw();
 								break;
@@ -144,6 +157,9 @@ public:
 							case scenes::MAP_LOAD:
 								UI_LOADPTs->UI_Draw();
 								break;
+							case scenes::LOAD:
+								LOADscene->UI_Draw(MAINLOOPscene);
+								break;
 							case scenes::SELECT:
 								SELECTscene->UI_Draw(MAINLOOPscene);
 								break;
@@ -166,6 +182,9 @@ public:
 								case scenes::ITEM_LOAD:
 									break;
 								case scenes::MAP_LOAD:
+									break;
+								case scenes::LOAD:
+									HostpassPTs->BUF_draw([&](void) { LOADscene->BG_Draw(); }, [&](void) { DrawPts->Draw_by_Shadow([&] { LOADscene->Main_Draw(); }); }, tmp_cam);
 									break;
 								case scenes::SELECT:
 									HostpassPTs->BUF_draw([&](void) { SELECTscene->BG_Draw(); }, [&](void) { DrawPts->Draw_by_Shadow([&] { SELECTscene->Main_Draw(); }); }, tmp_cam);
@@ -202,6 +221,8 @@ public:
 									break;
 								case scenes::MAP_LOAD:
 									break;
+								case scenes::LOAD:
+									break;
 								case scenes::SELECT:
 									break;
 								case scenes::MAIN_LOOP:
@@ -228,6 +249,8 @@ public:
 						case scenes::ITEM_LOAD:
 							break;
 						case scenes::MAP_LOAD:
+							break;
+						case scenes::LOAD:
 							break;
 						case scenes::SELECT:
 							break;
@@ -273,6 +296,9 @@ public:
 					UI_LOADPTs->Dispose();
 					MAPPTs->Set_map(MAINLOOPscene, VGet(0.5f, -0.5f, 0.5f)/*MAINLOOPscene->get_Light_vec()*/);
 					break;
+				case scenes::LOAD:
+					LOADscene->Dispose();
+					break;
 				case scenes::SELECT:
 					SELECTscene->Dispose();
 					break;
@@ -291,6 +317,9 @@ public:
 				sel_scene = scenes::MAP_LOAD;
 				break;
 			case scenes::MAP_LOAD:
+				sel_scene = scenes::LOAD;
+				break;
+			case scenes::LOAD:
 				sel_scene = scenes::SELECT;
 				break;
 			case scenes::SELECT:

@@ -2,6 +2,200 @@
 //
 class UIclass : Mainclass {
 public:
+	class UI_LOAD {
+	private:
+		//font
+		FontHandle font72;
+		FontHandle font48;
+		FontHandle font36;
+		FontHandle font24;
+		FontHandle font18;
+		FontHandle font12;
+		//
+		int ypos = 0;
+		void Draw_per_info(const int& xpos1, const int& ypos1, const int& xsize, const int& ysize, GUNPARTs* parts, float&change_per, bool use_vr = true) {
+			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
+			FontHandle* font_big = (use_vr) ? &font36 : &font24;
+			FontHandle* font = (use_vr) ? &font24 : &font18;
+			//const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
+			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
+			const int fonthight = (use_vr) ? y_r(24) : y_r(18);
+
+			int back_siz = y_r(3);
+			int title_siz = y_r(6);
+			int main_siz = y_r(10);
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+			DrawBox(xpos1 + back_siz, ypos1 + back_siz, xpos1 + xsize - back_siz, ypos1 + int(float(ysize) * (1.f - change_per)) - back_siz, GetColor(0, 0, 0), TRUE);
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f*(1.f - change_per)));
+			{
+				{
+					float siz = float(font_big->GetDrawWidth((parts != nullptr) ? parts->per.name : "NONE"));
+					int base_siz = (xsize - title_siz * 2);
+					if (siz < base_siz) {
+						font_big->DrawString(xpos1 + title_siz, ypos1 + title_siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+					}
+					else {
+						font_big->DrawExtendString(xpos1 + title_siz, ypos1 + title_siz, base_siz / siz, base_siz / siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+					}
+				}
+				if (parts != nullptr) {
+					std::wstring msg = StringToWString(parts->per.info);
+					int i = 0, siz = (xsize - main_siz * 2) / fonthight - 1;
+					while (true) {
+						if ((title_siz * 2 + font_bighight + fonthight * (i + 1)) > ysize * (1.f - change_per)) {
+							break;
+						}
+						font->DrawString(xpos1 + main_siz, ypos1 + title_siz * 2 + font_bighight + fonthight * i, WStringToString(msg.substr(0, siz)), GetColor(0, 255, 0));
+						i++;
+						if (msg.length() < siz) {
+							break;
+						}
+						else {
+							msg = msg.substr(siz);
+						}
+					}
+				}
+			}
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+		}
+	public:
+		UI_LOAD(void) {
+			SetUseASyncLoadFlag(TRUE);
+			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
+			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
+			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
+			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
+			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
+			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
+			SetUseASyncLoadFlag(FALSE);
+		}
+		~UI_LOAD(void) {
+		}
+		template<class Y, class D>
+		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene,std::vector<save_c> save_parts, float& change_per, bool use_vr = true) {
+			int t_disp_x = deskx;
+			int t_disp_y = desky;
+			if (use_vr) {
+				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+			}
+
+			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
+			FontHandle* font_big = (use_vr) ? &font36 : &font24;
+			FontHandle* font = (use_vr) ? &font24 : &font18;
+			//const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
+			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
+			const int fonthight = (use_vr) ? y_r(24) : y_r(18);
+			int xs = 0, ys = 0, xp = 0, yp = 0;
+			{
+				int i = 0;
+				int cnt = 0;
+				xs = 500;
+				ys = 100;
+				ypos += GetMouseWheelRotVol()*10;
+				while (true) {
+					GUNPARTs* temp_p = nullptr;
+					std::string parts_type = "";
+
+					auto&tmp_save = save_parts[cnt];
+					cnt++;
+					cnt %= save_parts.size();
+
+					xp = t_disp_x - 600;
+					yp = 100 + ypos + (ys + 25) * i;
+					i++;
+					if (yp + ys < 0) {
+						continue;
+					}
+					if (yp > t_disp_y) {
+						break;
+					}
+					if (tmp_save.cang_ != SIZE_MAX) {
+						switch (tmp_save.type_) {
+						case EnumGunParts::PARTS_MAGAZINE:
+							parts_type = "MAGAZINE";
+							temp_p = &MAINLOOPscene->get_magazine_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_GRIP:
+							parts_type = "GRIP";
+							temp_p = &MAINLOOPscene->get_grip_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_UPER_HGUARD:
+							parts_type = "UPER HANDGUARD";
+							temp_p = &MAINLOOPscene->get_uperhandguard_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_UNDER_HGUARD:
+							parts_type = "UNDER HANDGUARD";
+							temp_p = &MAINLOOPscene->get_underhandguard_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_MAZZULE:
+							parts_type = "MAZZULE";
+							temp_p = &MAINLOOPscene->get_mazzule_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_DUSTCOVER:
+							parts_type = "DUSTCOVER";
+							temp_p = &MAINLOOPscene->get_dustcover_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_STOCK:
+							parts_type = "STOCK";
+							temp_p = &MAINLOOPscene->get_stock_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_LIGHT:
+							parts_type = "LIGHT";
+							temp_p = &MAINLOOPscene->get_light_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_LASER:
+							parts_type = "LASER";
+							temp_p = &MAINLOOPscene->get_laser_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_MOUNT:
+							parts_type = "MOUNT";
+							temp_p = &MAINLOOPscene->get_mount_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_SIGHT:
+							parts_type = "SIGHT";
+							temp_p = &MAINLOOPscene->get_sight_data()[tmp_save.cang_];
+							break;
+						case EnumGunParts::PARTS_FOREGRIP:
+							parts_type = "FOREGRIP";
+							temp_p = &MAINLOOPscene->get_foregrip_data()[tmp_save.cang_];
+							break;
+						default:
+							break;
+						}
+					}
+					{
+						font_big->DrawString(xp, yp, parts_type, GetColor(255, 0, 0));
+						int xs_1 = xs - 1;
+						if (temp_p != nullptr) {
+							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, change_per, use_vr);
+						}
+						else {
+							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, change_per, use_vr);
+						}
+					}
+				}
+				//
+				if ((GetNowHiPerformanceCount() / 100000) % 10 <= 5) {
+					font->DrawString(100 + fonthight, 550, "¨", GetColor(255, 0, 0));
+					font->DrawString_RIGHT(100 + fonthight, 550, "©", GetColor(255, 0, 0));
+				}
+				font->DrawString(100, 575, "SPACE  :GO EDIT", GetColor(255, 0, 0));
+			}
+
+		}
+		void item_Draw() {
+			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
+			//FontHandle* font_big = (use_vr) ? &font36 : &font24;
+			//FontHandle* font = (use_vr) ? &font24 : &font18;
+			//int font_largehight = (use_vr) ? y_r(72) : y_r(48);
+			//int font_bighight = (use_vr) ? y_r(36) : y_r(24);
+			//int fonthight = (use_vr) ? y_r(24) : y_r(18);
+			//
+		}
+		void Dispose() {
+		}
+	};
+
 	class UI_SELECT {
 	private:
 		//font
@@ -658,7 +852,7 @@ public:
 			{
 				SetCameraNearFar(0.01f, 100.f);
 				for (auto& c : chara) {
-					c.Draw_Hit_UI(hit_Graph, &c == &mine);
+					c.Draw_Hit_UI(hit_Graph/*, &c == &mine*/);
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}

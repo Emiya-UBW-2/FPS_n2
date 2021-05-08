@@ -443,7 +443,7 @@ public:
 				int xp = 0, yp = 0;
 				float radp = 0.f;
 				{
-					easing_set(&xcam, 1.f + (mine.get_add_vec_real().size() / mine.get_speed()) * 0.3f, 0.9f);
+					easing_set(&xcam, 1.f + mine.get_pseed_per() * 0.3f, 0.9f);
 					radp = -mine.Get_rad_chara();
 					int xpos = 0, ypos = 0;
 					Set_pos_chara(&xpos, &ypos, mine.get_pos(), radp, MAPPTs);
