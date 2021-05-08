@@ -13,13 +13,13 @@ public:
 		FontHandle font12;
 		//
 		int ypos = 0;
-		void Draw_per_info(const int& xpos1, const int& ypos1, const int& xsize, const int& ysize, GUNPARTs* parts, float&change_per, bool use_vr = true) {
+		void Draw_per_info(const int& xpos1, const int& ypos1, const int& xsize, const int& ysize, GUNPARTs* parts, const float&change_per, bool use_vr = true) {
 			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
 			FontHandle* font_big = (use_vr) ? &font36 : &font24;
 			FontHandle* font = (use_vr) ? &font24 : &font18;
 			//const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
 			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			const int fonthight = (use_vr) ? y_r(24) : y_r(18);
+			const int fonthight = (use_vr) ? y_r(24) : y_r(18+2);
 
 			int back_siz = y_r(3);
 			int title_siz = y_r(6);
@@ -72,7 +72,7 @@ public:
 		~UI_LOAD(void) {
 		}
 		template<class Y, class D>
-		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene,std::vector<save_c> save_parts, float& change_per, bool use_vr = true) {
+		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene,std::vector<save_c> save_parts,std::string& set_name, bool use_vr = true) {
 			int t_disp_x = deskx;
 			int t_disp_y = desky;
 			if (use_vr) {
@@ -89,24 +89,38 @@ public:
 			{
 				int i = 0;
 				int cnt = 0;
-				xs = 500;
-				ys = 100;
-				ypos += GetMouseWheelRotVol()*10;
+				xs = 800;
+				ys = 175;
+				ypos += GetMouseWheelRotVol() * 10;
+				//*
+				if (ypos >= 0) {
+					ypos = 0;
+				}
+				//*/
+
+				//*
+				if (ypos <= (t_disp_y - (100 + (ys + 25) * int(save_parts.size())))) {
+					ypos = t_disp_y - (100 + (ys + 25) * int(save_parts.size()));
+				}
+				//*/
+
 				while (true) {
 					GUNPARTs* temp_p = nullptr;
 					std::string parts_type = "";
 
-					auto&tmp_save = save_parts[cnt];
+					auto&tmp_save = save_parts[cnt%save_parts.size()];
 					cnt++;
-					cnt %= save_parts.size();
 
-					xp = t_disp_x - 600;
+					xp = t_disp_x - (xs+100);
 					yp = 100 + ypos + (ys + 25) * i;
 					i++;
 					if (yp + ys < 0) {
 						continue;
 					}
 					if (yp > t_disp_y) {
+						break;
+					}
+					if (i > save_parts.size()) {
 						break;
 					}
 					if (tmp_save.cang_ != SIZE_MAX) {
@@ -164,20 +178,22 @@ public:
 						}
 					}
 					{
-						font_big->DrawString(xp, yp, parts_type, GetColor(255, 0, 0));
+						font_big->DrawString(xp, yp, parts_type, GetColor(0, 255, 0));
 						int xs_1 = xs - 1;
 						if (temp_p != nullptr) {
-							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, change_per, use_vr);
+							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, 0.f, use_vr);
 						}
 						else {
-							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, change_per, use_vr);
+							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, 0.f, use_vr);
 						}
 					}
 				}
+				font_big->DrawString(xp, 25, set_name, GetColor(255, 0, 0));
+
 				//
 				if ((GetNowHiPerformanceCount() / 100000) % 10 <= 5) {
-					font->DrawString(100 + fonthight, 550, "¨", GetColor(255, 0, 0));
-					font->DrawString_RIGHT(100 + fonthight, 550, "©", GetColor(255, 0, 0));
+					font->DrawString(xp+xs, 50, "¨", GetColor(255, 0, 0));
+					font->DrawString_RIGHT(xp, 50, "©", GetColor(255, 0, 0));
 				}
 				font->DrawString(100, 575, "SPACE  :GO EDIT", GetColor(255, 0, 0));
 			}
@@ -205,13 +221,13 @@ public:
 		FontHandle font24;
 		FontHandle font18;
 		FontHandle font12;
-		void Draw_per_info(const int& xpos1, const int& ypos1, const int& xsize, const int& ysize, GUNPARTs* parts, float&change_per, bool use_vr = true) {
+		void Draw_per_info(const int& xpos1, const int& ypos1, const int& xsize, const int& ysize, GUNPARTs* parts, const float&change_per, bool use_vr = true) {
 			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
 			FontHandle* font_big = (use_vr) ? &font36 : &font24;
 			FontHandle* font = (use_vr) ? &font24 : &font18;
 			//const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
 			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			const int fonthight = (use_vr) ? y_r(24) : y_r(18);
+			const int fonthight = (use_vr) ? y_r(24) : y_r(18 + 2);
 
 			int back_siz = y_r(3);
 			int title_siz = y_r(6);
@@ -386,7 +402,7 @@ public:
 					xs = 500;
 					ys = 175;
 					{
-						font_big->DrawString(xp, yp, parts_type, GetColor(255, 0, 0));
+						font_big->DrawString(xp, yp, parts_type, GetColor(0 , 255, 0));
 						int xs_1 = 250;
 						i = 0;
 						for (auto& p : *parts_t) {

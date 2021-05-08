@@ -1935,8 +1935,6 @@ protected:
 		//脚ポーズ
 		MV1::ani* anime_sit = nullptr;
 		MV1::ani* anime_wake = nullptr;
-		//死
-		MV1::ani* anime_die_1 = nullptr;
 		//リロード
 		MV1::ani* anime_reload = nullptr;
 		//腕
@@ -1995,6 +1993,7 @@ protected:
 		float head_hight = 0.f;
 		float head_hight2 = 0.f;
 		frame_body frame_s;
+		frame_body lagframe_;
 		frame_body colframe_;
 		//右手座標系
 		Pos_VRJoint RIGHTHAND;
@@ -3136,7 +3135,6 @@ protected:
 					this->obj.SetFrameLocalMatrix(this->frame_s.bodyg_f.first, mg_inv*MATRIX_ref::Mtrans(this->frame_s.bodyg_f.second));
 					this->obj.SetFrameLocalMatrix(this->frame_s.bodyb_f.first, mb_inv*MATRIX_ref::Mtrans(this->frame_s.bodyb_f.second));
 					this->obj.SetFrameLocalMatrix(this->frame_s.body_f.first, m_inv*(mb_inv*mg_inv).Inverse()*MATRIX_ref::Mtrans(this->frame_s.body_f.second));
-
 					if (isReload() || this->running() || isCheck()) {
 						mb_inv = MATRIX_ref::RotZ(this->body_zrad);
 						m_inv = MATRIX_ref::RotZ(this->body_zrad)* MATRIX_ref::RotX(this->body_xrad)*mg_inv;
@@ -3150,11 +3148,9 @@ protected:
 					this->Start_d = true;
 				}
 				else {
-					m_inv = MATRIX_ref::RotY(DX_PI_F + this->body_yrad);
-					this->obj.SetMatrix(m_inv*MATRIX_ref::Mtrans(this->pos_tt - this->HMD.pos_rep));
+					//m_inv = MATRIX_ref::RotY(DX_PI_F + this->body_yrad);
+					//this->obj.SetMatrix(m_inv*MATRIX_ref::Mtrans(this->pos_tt - this->HMD.pos_rep));
 				}
-
-				this->obj_lag.SetMatrix(this->obj.GetMatrix());
 			}
 			//頭部
 			if (this->get_alive()) {
@@ -3764,8 +3760,6 @@ protected:
 				this->anime_sit = &this->obj.get_anime(7);
 				this->anime_wake = &this->obj.get_anime(11);
 				//
-				this->anime_die_1 = &this->obj.get_anime(4);
-				//
 				this->anime_reload = &this->obj.get_anime(3);
 				//
 				this->anime_arm_run = &this->obj.get_anime(6);
@@ -3776,11 +3770,11 @@ protected:
 				this->anime_hand_trigger_pull = &this->obj.get_anime(5);
 				//
 				this->frame_s.get_frame(this->obj, &this->head_hight);
-
-				this->Start_d = true;
 			}
 			{
-				this->obj_lag = bodylag_.Duplicate();
+				bodylag_.DuplicateonAnime(&this->obj_lag);
+				this->lagframe_.get_frame(this->obj_lag, &this->head_hight2);
+				this->Start_d = true;
 			}
 			//身体コリジョン
 			{
@@ -3894,9 +3888,6 @@ protected:
 						easing_set(&this->anime_swalk->per, 0.f, 0.9f);
 						easing_set(&this->anime_hand_trigger->per, 0.f, 0.9f);
 						//
-						easing_set(&this->anime_die_1->per, 1.f, 0.9f);
-						this->anime_die_1->update(false, 1.f);
-						//
 						if (this->death_timer == 0.f) {
 							this->obj.frame_reset(this->frame_s.bodyg_f.first);
 							this->obj.frame_reset(this->frame_s.bodyb_f.first);
@@ -3917,7 +3908,6 @@ protected:
 						this->death_timer += 1.f / fps_;
 						if (this->death_timer >= 3.f) {
 							this->death_timer = 0.f;
-							this->anime_die_1->reset();
 							this->spawn(this->spawn_pos, this->spawn_mat);
 							ReSet_waypoint(MAPPTs);
 							this->gunanime_shot->per = 1.f;
@@ -3969,6 +3959,10 @@ protected:
 						this->move_NOMAL(MAPPTs, mine);
 					}
 					this->obj.work_anime();
+				}
+				{
+					this->frame_s.copy_frame(this->obj, this->lagframe_, &this->obj_lag);
+					this->obj_lag.work_anime();
 				}
 				//col演算
 				{

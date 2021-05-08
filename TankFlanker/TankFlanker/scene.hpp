@@ -86,10 +86,9 @@ public:
 		//
 		int sel_p = 0;
 		int sel_max = 0;
-		float change_per = 1.f;
 		//
 		std::vector<save_c> save_parts;
-
+		std::vector<std::string> save_presets;
 		//
 		std::unique_ptr<UIclass::UI_LOAD, std::default_delete<UIclass::UI_LOAD>> UIparts;
 	public:
@@ -113,11 +112,27 @@ public:
 
 			SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
 			SetMousePoint(deskx / 2, desky / 2);											//
+			{
+				save_presets.clear();
+				WIN32_FIND_DATA win32fdt;
+				HANDLE hFind;
+				hFind = FindFirstFile("data/save/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						if ((win32fdt.cFileName[0] != '.')) {
+							save_presets.resize(save_presets.size() + 1);
+							save_presets.back() = win32fdt.cFileName;
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+				sel_max = save_presets.size();
+			}
 			/*パーツデータをロード*/
 			{
 				std::fstream file;
 				save_parts.clear();
-				file.open("data/save/1.dat", std::ios::binary | std::ios::in);
+				file.open(("data/save/" + save_presets[0]).c_str(), std::ios::binary | std::ios::in);
 				save_c savetmp;
 				while (true) {
 					file.read((char*)&savetmp, sizeof(savetmp));
@@ -128,9 +143,6 @@ public:
 					this->save_parts.back() = savetmp;
 				}
 				file.close();
-			}
-			//読み込み
-			{
 			}
 		}
 		bool UpDate(key_bind& k_) {
@@ -160,7 +172,23 @@ public:
 						if (sel_p > sel_max - 1) { sel_p = 0; }
 
 						if (changef) {
-							change_per = 1.f;
+							/*パーツデータをロード*/
+							{
+								std::fstream file;
+								save_parts.clear();
+								file.open(("data/save/" + save_presets[sel_p]).c_str(), std::ios::binary | std::ios::in);
+								save_c savetmp;
+								while (true) {
+									file.read((char*)&savetmp, sizeof(savetmp));
+									if (file.eof()) {
+										break;
+									}
+									this->save_parts.resize(this->save_parts.size() + 1);
+									this->save_parts.back() = savetmp;
+								}
+								file.close();
+							}
+							//
 						}
 					}
 					//
@@ -182,8 +210,7 @@ public:
 
 		}
 		void UI_Draw(std::unique_ptr<MAINLOOP, std::default_delete<MAINLOOP>>& MAINLOOPscene) {
-			UIparts->UI_Draw(MAINLOOPscene, save_parts, change_per, use_VR);
-			easing_set(&change_per, 0.f, 0.5f);
+			UIparts->UI_Draw(MAINLOOPscene, save_parts, save_presets[sel_p], use_VR);
 		}
 		void BG_Draw(void) {
 			DrawBox(0, 0, 1920, 1080, GetColor(192, 192, 192), TRUE);
