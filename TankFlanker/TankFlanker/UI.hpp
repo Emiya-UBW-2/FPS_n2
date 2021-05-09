@@ -13,20 +13,42 @@ public:
 		FontHandle font12;
 		//
 		int ypos = 0;
-		void Draw_per_info(const int& xpos1, const int& ypos1, const int& xsize, const int& ysize, GUNPARTs* parts, const float&change_per, bool use_vr = true) {
+		void Draw_per_info(const int& xpos1, const int& ypos1, const int& xsize, const int& ysize, GUNPARTs* parts, bool use_vr = true) {
+			int t_disp_x = deskx;
+			int t_disp_y = desky;
+			if (use_vr) {
+				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+			}
+
 			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
 			FontHandle* font_big = (use_vr) ? &font36 : &font24;
 			FontHandle* font = (use_vr) ? &font24 : &font18;
 			//const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
 			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			const int fonthight = (use_vr) ? y_r(24) : y_r(18+2);
+			const int fonthight = (use_vr) ? y_r(24) : y_r(18 + 2);
 
 			int back_siz = y_r(3);
 			int title_siz = y_r(6);
 			int main_siz = y_r(10);
-			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
-			DrawBox(xpos1 + back_siz, ypos1 + back_siz, xpos1 + xsize - back_siz, ypos1 + int(float(ysize) * (1.f - change_per)) - back_siz, GetColor(0, 0, 0), TRUE);
-			SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f*(1.f - change_per)));
+			if (ypos1 < 100) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(128 * (ypos1 - 50) / 50, 0, 255));
+			}
+			else if (ypos1 + ysize > t_disp_y - 100) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(128 * ((t_disp_y - (ypos1 + ysize)) + 50) / 50, 0, 128));
+			}
+			else {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+			}
+			DrawBox(xpos1 + back_siz, ypos1 + back_siz, xpos1 + xsize - back_siz, ypos1 + ysize - back_siz, GetColor(0, 0, 0), TRUE);
+			if (ypos1 < 100) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * (ypos1 - 50) / 50, 0, 255));
+			}
+			else if (ypos1 + ysize > t_disp_y - 100) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * ((t_disp_y - (ypos1 + ysize)) + 50) / 50, 0, 255));
+			}
+			else {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
+			}
 			{
 				{
 					float siz = float(font_big->GetDrawWidth((parts != nullptr) ? parts->per.name : "NONE"));
@@ -42,7 +64,7 @@ public:
 					std::wstring msg = StringToWString(parts->per.info);
 					int i = 0, siz = (xsize - main_siz * 2) / fonthight - 1;
 					while (true) {
-						if ((title_siz * 2 + font_bighight + fonthight * (i + 1)) > ysize * (1.f - change_per)) {
+						if ((title_siz * 2 + font_bighight + fonthight * (i + 1)) > ysize) {
 							break;
 						}
 						font->DrawString(xpos1 + main_siz, ypos1 + title_siz * 2 + font_bighight + fonthight * i, WStringToString(msg.substr(0, siz)), GetColor(0, 255, 0));
@@ -72,7 +94,7 @@ public:
 		~UI_LOAD(void) {
 		}
 		template<class Y, class D>
-		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene,std::vector<save_c> save_parts,std::string& set_name, bool use_vr = true) {
+		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, std::vector<save_c> save_parts, std::string& set_name, bool use_vr = true) {
 			int t_disp_x = deskx;
 			int t_disp_y = desky;
 			if (use_vr) {
@@ -111,7 +133,7 @@ public:
 					auto&tmp_save = save_parts[cnt%save_parts.size()];
 					cnt++;
 
-					xp = t_disp_x - (xs+100);
+					xp = t_disp_x - (xs + 100);
 					yp = 100 + ypos + (ys + 25) * i;
 					i++;
 					if (yp + ys < 0) {
@@ -178,21 +200,31 @@ public:
 						}
 					}
 					{
+						if (yp < 100) {
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * (yp - 50) / 50, 0, 255));
+						}
+						else if (yp + ys > t_disp_y - 100) {
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * ((t_disp_y - (yp + ys)) + 50) / 50, 0, 255));
+						}
+						else {
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
+						}
 						font_big->DrawString(xp, yp, parts_type, GetColor(0, 255, 0));
 						int xs_1 = xs - 1;
 						if (temp_p != nullptr) {
-							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, 0.f, use_vr);
+							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, use_vr);
 						}
 						else {
-							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, 0.f, use_vr);
+							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, use_vr);
 						}
 					}
 				}
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				font_big->DrawString(xp, 25, set_name, GetColor(255, 0, 0));
 
 				//
 				if ((GetNowHiPerformanceCount() / 100000) % 10 <= 5) {
-					font->DrawString(xp+xs, 50, "¨", GetColor(255, 0, 0));
+					font->DrawString(xp + xs, 50, "¨", GetColor(255, 0, 0));
 					font->DrawString_RIGHT(xp, 50, "©", GetColor(255, 0, 0));
 				}
 				font->DrawString(100, 575, "SPACE  :GO EDIT", GetColor(255, 0, 0));
@@ -402,7 +434,7 @@ public:
 					xs = 500;
 					ys = 175;
 					{
-						font_big->DrawString(xp, yp, parts_type, GetColor(0 , 255, 0));
+						font_big->DrawString(xp, yp, parts_type, GetColor(0, 255, 0));
 						int xs_1 = 250;
 						i = 0;
 						for (auto& p : *parts_t) {

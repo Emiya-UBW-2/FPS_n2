@@ -297,7 +297,7 @@ public:
 					MAPPTs->Set_map(MAINLOOPscene, VGet(0.5f, -0.5f, 0.5f)/*MAINLOOPscene->get_Light_vec()*/);
 					break;
 				case scenes::LOAD:
-					LOADscene->Dispose();
+					LOADscene->Dispose(&SELECTscene->preset);
 					break;
 				case scenes::SELECT:
 					SELECTscene->Dispose();

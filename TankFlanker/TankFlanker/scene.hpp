@@ -119,6 +119,7 @@ public:
 				hFind = FindFirstFile("data/save/*", &win32fdt);
 				if (hFind != INVALID_HANDLE_VALUE) {
 					do {
+						//if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {}
 						if ((win32fdt.cFileName[0] != '.')) {
 							save_presets.resize(save_presets.size() + 1);
 							save_presets.back() = win32fdt.cFileName;
@@ -206,8 +207,8 @@ public:
 			return true;
 			//
 		}
-		void Dispose(void) {
-
+		void Dispose(std::string* preset) {
+			*preset = save_presets[sel_p];
 		}
 		void UI_Draw(std::unique_ptr<MAINLOOP, std::default_delete<MAINLOOP>>& MAINLOOPscene) {
 			UIparts->UI_Draw(MAINLOOPscene, save_parts, save_presets[sel_p], use_VR);
@@ -273,9 +274,11 @@ public:
 		float change_per = 1.f;
 		//
 		std::vector<save_c> save_parts;
+		std::string save_tgt = "1";
 		//
 		std::unique_ptr<UIclass::UI_SELECT, std::default_delete<UIclass::UI_SELECT>> UIparts;
 	public:
+		std::string preset;
 	private:
 		//必須品
 		void Set_chang_haveto(std::vector<GUNPARTs>&data, const size_t& pts_cat, const size_t& pot_cat, int& chang_t) {
@@ -422,7 +425,7 @@ public:
 			{
 				std::fstream file;
 				save_parts.clear();
-				file.open("data/save/1.dat", std::ios::binary | std::ios::in);
+				file.open(("data/save/" + preset).c_str(), std::ios::binary | std::ios::in);
 				save_c savetmp;
 				while (true) {
 					file.read((char*)&savetmp, sizeof(savetmp));
@@ -973,7 +976,7 @@ public:
 					}
 					//
 					mine_ptr->Set_select();
-					mine_ptr->Set_shot_anime(rate,true);
+					mine_ptr->Set_shot_anime(rate, true);
 					mine_ptr->base.obj.work_anime();
 					//薬莢の処理
 					mine_ptr->update_cart(MAPPTs);
@@ -1043,7 +1046,7 @@ public:
 			//データセーブ
 			{
 				std::fstream file;
-				file.open("data/save/1.dat", std::ios::binary | std::ios::out);
+				file.open(("data/save/" + save_tgt + ".dat").c_str(), std::ios::binary | std::ios::out);
 				for (auto&tmp_save : save_parts) {
 					file.write((char*)&tmp_save, sizeof(tmp_save));
 				}
