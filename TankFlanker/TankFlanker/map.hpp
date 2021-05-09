@@ -40,6 +40,8 @@ public:
 		int vnum = -1, pnum = -1;		/*grass*/
 		MV1_REF_POLYGONLIST RefMesh;	/*grass*/
 	public:
+		std::vector<Items> item;					//アイテム
+	public:
 		std::vector<VECTOR_ref>& get_waypoint(void) { return way_point; }
 		std::vector<VECTOR_ref>& get_leanpoint_q(void) { return lean_point_q; }
 		std::vector<VECTOR_ref>& get_leanpoint_e(void) { return lean_point_e; }
@@ -72,7 +74,7 @@ public:
 			grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
 		}
 		template<class Y, class D>
-		void Set_map(std::unique_ptr<Y, D>& MAINLOOPscene, const VECTOR_ref& ray) {
+		void Start(std::unique_ptr<Y, D>& MAINLOOPscene, const VECTOR_ref& ray) {
 			this->sun_pos = ray.Norm() * -1500.f;
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			VECTOR_ref size;
@@ -121,7 +123,7 @@ public:
 			}
 			SetFogStartEnd(40.0f - 15.f, 40.f);
 			SetFogColor(12, 6, 0);
-			MAINLOOPscene->get_items().clear();
+			item.clear();
 			{
 				int mdata = FileRead_open((this->path + "Set.txt").c_str(), FALSE);
 				//item_data magitem
@@ -130,7 +132,7 @@ public:
 					if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
 						size_t p1 = 0;
 						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
-						for (auto& g : MAINLOOPscene->get_magazine_data()) {
+						for (auto& g : *MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_MAGAZINE)) {
 							if (p.find(g.mod.get_name()) != std::string::npos) {
 								p1 = g.id_t;
 								break;
@@ -140,8 +142,8 @@ public:
 						p3 = getparams::_float(mdata);
 						p4 = getparams::_float(mdata);
 
-						MAINLOOPscene->get_items().resize(MAINLOOPscene->get_items().size() + 1);
-						MAINLOOPscene->get_items().back().Set_item_4(MAINLOOPscene->get_items().size() - 1, &MAINLOOPscene->get_magazine_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						item.resize(item.size() + 1);
+						item.back().Set_item_4(item.size() - 1, &(*MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_MAGAZINE))[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -163,9 +165,9 @@ public:
 						p3 = getparams::_float(mdata);
 						p4 = getparams::_float(mdata);
 
-						MAINLOOPscene->get_items().resize(MAINLOOPscene->get_items().size() + 1);
-						MAINLOOPscene->get_items().back().get_id_t() = MAINLOOPscene->get_items().size() - 1;
-						MAINLOOPscene->get_items().back().Set_item(&MAINLOOPscene->get_meds_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						item.resize(item.size() + 1);
+						item.back().get_id_t() = item.size() - 1;
+						item.back().Set_item(&MAINLOOPscene->get_meds_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -244,10 +246,14 @@ public:
 				SetIndexBufferData(0, grassind.data(), IndexNum, IndexBuf);
 			}
 		}
-		void Start_map(void) {
+		void Set(void) {
 			envi.play(DX_PLAYTYPE_LOOP, TRUE);
 		}
-		void Delete_map(void) {
+		void Dispose(void) {
+			for (auto& i : item) {
+				i.Detach_item();
+			}
+			item.clear();
 			map.Dispose();		   //map
 			map_col.Dispose();		   //mapコリジョン
 			sky.Dispose();	 //空
@@ -302,12 +308,12 @@ public:
 			// 壁ポリゴンとの当たり判定処理
 			if (kabe_.size() > 0) {
 				bool HitFlag = false;
-				for (auto& k_ : kabe_) {
-					if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, k_->Position[0], k_->Position[1], k_->Position[2])) {				// ポリゴンとプレイヤーが当たっていなかったら次のカウントへ
+				for (auto& KeyBind : kabe_) {
+					if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {				// ポリゴンとプレイヤーが当たっていなかったら次のカウントへ
 						HitFlag = true;// ここにきたらポリゴンとプレイヤーが当たっているということなので、ポリゴンに当たったフラグを立てる
 						if (MoveVector.size() >= 0.0001f) {	// x軸かy軸方向に 0.0001f 以上移動した場合は移動したと判定
 							// 壁に当たったら壁に遮られない移動成分分だけ移動する
-							*NowPos = VECTOR_ref(k_->Normal).cross(MoveVector.cross(k_->Normal)) + OldPos;
+							*NowPos = VECTOR_ref(KeyBind->Normal).cross(MoveVector.cross(KeyBind->Normal)) + OldPos;
 							bool j = false;
 							for (auto& b_ : kabe_) {
 								if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {
@@ -331,9 +337,9 @@ public:
 					) {		// 壁に当たっていたら壁から押し出す処理を行う
 					for (int k = 0; k < PLAYER_HIT_TRYNUM; k++) {			// 壁からの押し出し処理を試みる最大数だけ繰り返し
 						bool HitF = false;
-						for (auto& k_ : kabe_) {
-							if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, 0.2f, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, k_->Position[0], k_->Position[1], k_->Position[2])) {// プレイヤーと当たっているかを判定
-								*NowPos += VECTOR_ref(k_->Normal) * PLAYER_HIT_SLIDE_LENGTH;					// 当たっていたら規定距離分プレイヤーを壁の法線方向に移動させる
+						for (auto& KeyBind : kabe_) {
+							if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, 0.2f, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {// プレイヤーと当たっているかを判定
+								*NowPos += VECTOR_ref(KeyBind->Normal) * PLAYER_HIT_SLIDE_LENGTH;					// 当たっていたら規定距離分プレイヤーを壁の法線方向に移動させる
 								bool j = false;
 								for (auto& b_ : kabe_) {
 									if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, 0.2f, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {// 当たっていたらループを抜ける
@@ -389,6 +395,9 @@ public:
 			}
 			grass_Draw();
 		}
+		void item_Draw(void) {
+			std::for_each(item.begin(), item.end(), [&](Items& i) { i.Draw_item(); });
+		}
 		void main_Draw(void) {
 			map.DrawMesh(0);
 			map.DrawMesh(1);
@@ -398,11 +407,7 @@ public:
 			SetFogEnable(TRUE);
 
 			grass_Draw();
-			/*
-			for (int i = 1; i < map.mesh_num(); i++) {
-				map.DrawMesh(i);
-			}
-			//*/
+			item_Draw();
 		}
 	};
 	class MiniMap {

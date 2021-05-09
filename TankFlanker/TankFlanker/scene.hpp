@@ -1,98 +1,32 @@
 #pragma once
 class Sceneclass : Mainclass {
 private:
-	//TPS操作
-	class TPS_parts {
-	public:
-		switchs key_TPS;
-		float xr_cam = 0.f;
-		float yr_cam = 0.f;
-		int sel_cam = 0;
-		//カメラ
-		cam_info camera_TPS;
-		void Set(float& fov_pc) {
-			this->key_TPS.ready(false);
-			this->camera_TPS.campos = VGet(0, 1.8f, -10);
-			this->camera_TPS.set_cam_info(deg2rad(fov_pc), 0.1f, 200.f);
-		}
-		void Set_info(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs, std::vector<Chara>&chara) {
-			if (this->key_TPS.on()) {
-				{
-					const auto fps_ = GetFPS();
-					//cam
-					for (int i = 0; i < std::min<size_t>(chara.size(), 10); i++) {
-						if (CheckHitKey(KEY_INPUT_1 + i) != 0) {
-							this->sel_cam = i;
-						}
-					}
-					//pos
-					{
-						if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
-							this->camera_TPS.campos.x(this->camera_TPS.campos.x() - 10.f / fps_ * cos(this->yr_cam));
-							this->camera_TPS.campos.z(this->camera_TPS.campos.z() + 10.f / fps_ * sin(this->yr_cam));
-						}
-						if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
-							this->camera_TPS.campos.x(this->camera_TPS.campos.x() + 10.f / fps_ * cos(this->yr_cam));
-							this->camera_TPS.campos.z(this->camera_TPS.campos.z() - 10.f / fps_ * sin(this->yr_cam));
-						}
-						if (CheckHitKey(KEY_INPUT_UP) != 0) {
-							this->camera_TPS.campos.z(this->camera_TPS.campos.z() + 10.f / fps_ * cos(this->yr_cam));
-							this->camera_TPS.campos.x(this->camera_TPS.campos.x() + 10.f / fps_ * sin(this->yr_cam));
-						}
-						if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
-							this->camera_TPS.campos.z(this->camera_TPS.campos.z() - 10.f / fps_ * cos(this->yr_cam));
-							this->camera_TPS.campos.x(this->camera_TPS.campos.x() - 10.f / fps_ * sin(this->yr_cam));
-						}
-						this->camera_TPS.campos.x(std::clamp(this->camera_TPS.campos.x(), MAPPTs->map_col_get().mesh_minpos(0).x(), MAPPTs->map_col_get().mesh_maxpos(0).x()));
-						this->camera_TPS.campos.z(std::clamp(this->camera_TPS.campos.z(), MAPPTs->map_col_get().mesh_minpos(0).z(), MAPPTs->map_col_get().mesh_maxpos(0).z()));
-					}
-					//rad
-					{
-						VECTOR_ref vec_2 = (chara[this->sel_cam].get_head_pos() - this->camera_TPS.campos).Norm();
-						VECTOR_ref vec_z = (this->camera_TPS.camvec - this->camera_TPS.campos).Norm();
-						VECTOR_ref vec_x = vec_z.cross(this->camera_TPS.camup);
-
-						this->xr_cam -= deg2rad(int(vec_z.cross(vec_2).dot(vec_x) * 50))*0.1f;
-						this->yr_cam -= deg2rad(int(vec_x.dot(vec_2) * 50))*0.1f;
-						this->xr_cam = std::clamp(this->xr_cam, deg2rad(-89), deg2rad(89));
-					}
-					//
-					this->camera_TPS.camvec = this->camera_TPS.campos + MATRIX_ref::Vtrans(VGet(0, 0, 1), MATRIX_ref::RotX(this->xr_cam)*MATRIX_ref::RotY(this->yr_cam));
-					this->camera_TPS.camup = VGet(0, 1.f, 0);
-				}
-			}
-		}
-	};
 public:
 	class LOAD;
 	class SELECT;
 	class MAINLOOP;
 	//
 	class LOAD {
+	private:
 		//
 		bool use_VR = false;
 		//sound
 		SoundHandle decision;
 		SoundHandle cancel;
 		SoundHandle cursor;
-		//データ
+		//キー
 		switchs left;
 		switchs right;
 		switchs Start;
-		//
+		//データ
 		GUNPARTs* temp_p = nullptr;
-		//
 		Chara* mine_ptr = nullptr;
-		//
 		int sel_p = 0;
 		int sel_max = 0;
-		//
 		std::vector<save_c> save_parts;
 		std::vector<std::string> save_presets;
 		//
 		std::unique_ptr<UIclass::UI_LOAD, std::default_delete<UIclass::UI_LOAD>> UIparts;
-	public:
-	private:
 	public:
 		//
 		LOAD(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& DrawPts) {
@@ -108,7 +42,7 @@ public:
 				right.ready(false);
 				Start.ready(false);
 			}
-			mine_ptr = &MAINLOOPscene->get_mine();
+			mine_ptr = &MAINLOOPscene->Get_Mine();
 
 			SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
 			SetMousePoint(deskx / 2, desky / 2);											//
@@ -127,7 +61,7 @@ public:
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
 				FindClose(hFind);
-				sel_max = save_presets.size();
+				sel_max = int(save_presets.size());
 			}
 			/*パーツデータをロード*/
 			{
@@ -146,7 +80,7 @@ public:
 				file.close();
 			}
 		}
-		bool UpDate(key_bind& k_) {
+		bool UpDate() {
 			{
 				bool changef = false;
 				//演算
@@ -154,13 +88,7 @@ public:
 					{
 						left.get_in(mine_ptr->get_akey());
 						right.get_in(mine_ptr->get_dkey());
-						Start.get_in(k_.key_use_ID[14].get_key(2));
-						{
-							k_.key_use_ID[2].isalways = true;
-							k_.key_use_ID[3].isalways = true;
-
-							k_.key_use_ID[14].isalways = true;
-						}
+						Start.get_in(mine_ptr->get_jamp());
 						if (left.push()) {
 							sel_p--;
 							changef = true;
@@ -197,10 +125,6 @@ public:
 				//campos,camvec,camupの指定
 				{}
 			}
-			//終了判定
-			if (k_.key_use_ID[11].get_key(0)) {
-				return false;
-			}
 			if (Start.push()) {
 				return false;
 			}
@@ -214,7 +138,6 @@ public:
 			UIparts->UI_Draw(MAINLOOPscene, save_parts, save_presets[sel_p], use_VR);
 		}
 		void BG_Draw(void) {
-			DrawBox(0, 0, 1920, 1080, GetColor(192, 192, 192), TRUE);
 		}
 		void Shadow_Draw(void) {
 		}
@@ -223,7 +146,7 @@ public:
 	};
 	//
 	class SELECT {
-		//
+	private:
 		bool use_VR = false;
 		//sound
 		SoundHandle assemble;
@@ -269,20 +192,20 @@ public:
 		VECTOR_ref Shadow_minpos;
 		VECTOR_ref Shadow_maxpos;
 		VECTOR_ref Light_vec;
-		COLOR_F Light_color;
+		COLOR_F Light_color = GetColorF(0, 0, 0, 0);
 		//
 		float change_per = 1.f;
 		//
 		std::vector<save_c> save_parts;
 		std::string save_tgt = "1";
 		//
-		std::unique_ptr<UIclass::UI_SELECT, std::default_delete<UIclass::UI_SELECT>> UIparts;
+		std::unique_ptr<UIclass::UI_CUSTOM, std::default_delete<UIclass::UI_CUSTOM>> UIparts;
 	public:
 		std::string preset;
 	private:
 		//必須品
 		void Set_chang_haveto(std::vector<GUNPARTs>&data, const size_t& pts_cat, const size_t& pot_cat, int& chang_t) {
-			mine_ptr->delete_parts(pts_cat);
+			mine_ptr->Detach_parts(pts_cat);
 
 			chang_max = (int)data.size();
 			chang_t = std::clamp(chang_t, 0, chang_max - 1);
@@ -303,7 +226,7 @@ public:
 			switch (sel) {
 			case 0:
 			{
-				mine_ptr->delete_parts(pts_cat);
+				mine_ptr->Detach_parts(pts_cat);
 				break;
 			}
 			default:
@@ -312,7 +235,7 @@ public:
 					sight_i.resize(sel);
 				}
 				if (sight_i[sel - 1] > 0) {
-					mine_ptr->delete_parts(pts_cat, sight_i[sel - 1] - 1);
+					mine_ptr->Detach_parts(pts_cat, sight_i[sel - 1] - 1);
 					if (sight_i[sel - 1] != 3) {
 						for (auto&s : sight_i) {
 							if (s > 1) {
@@ -341,13 +264,13 @@ public:
 				if (chang_t < data1.size() + 1) { parts_p = &data1[std::max(chang_t - 1, 0)]; }
 				else { parts_p = &data2[std::max(chang_t - 1, 0) - data1.size()]; }
 			}
-			mine_ptr->delete_parts(pts_cat);
+			mine_ptr->Detach_parts(pts_cat);
 			if (chang_t != 0) {
 				mine_ptr->add_parts(parts_p, pts_cat, port_ptr, pot_cat);
 			}
 			viewparts_buf = port_ptr->obj.frame(port_ptr->rail_f[pot_cat][0].first);
 		}
-		//
+		//サイトを乗せるかいなか
 		bool Set_sight_at(Chara::g_parts* ports_ptr, std::vector<GUNPARTs>&data) {
 			bool trm = false;
 			if (ports_ptr->get_attaching()) {
@@ -367,7 +290,7 @@ public:
 		auto& get_Shadow_maxpos() { return Shadow_maxpos; }
 		auto& get_Light_vec() { return Light_vec; }
 		auto& get_Light_color() { return Light_color; }
-		auto& get_camera(void) { return camera_main; }
+		auto& Get_Camera(void) { return camera_main; }
 		//
 		SELECT(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& DrawPts) {
 			use_VR = DrawPts->use_vr;
@@ -375,7 +298,7 @@ public:
 			this->decision = SoundHandle::Load("data/audio/shot_2.wav");//
 			this->cancel = SoundHandle::Load("data/audio/cancel.wav");
 			this->cursor = SoundHandle::Load("data/audio/cursor.wav");
-			UIparts = std::make_unique<UIclass::UI_SELECT>();
+			UIparts = std::make_unique<UIclass::UI_CUSTOM>();
 		}
 		void Set(std::unique_ptr<OPTION, std::default_delete<OPTION>>& OPTPTs, std::unique_ptr<MAINLOOP, std::default_delete<MAINLOOP>>& MAINLOOPscene) {
 			{
@@ -403,7 +326,7 @@ public:
 				rate = 0.1f;
 			}
 			{
-				mine_ptr = &MAINLOOPscene->get_mine();
+				mine_ptr = &MAINLOOPscene->Get_Mine();
 			}
 			{
 				SetCreateSoundTimeStretchRate(1.f / std::clamp(rate, 0.9f, 1.1f));
@@ -496,48 +419,10 @@ public:
 				for (auto&tmp_save : save_parts) {
 					GUNPARTs* temp_p = nullptr;
 					Chara::g_parts* temp_ptr = nullptr;
-					{
-						if (tmp_save.cang_ != SIZE_MAX) {
-							switch (tmp_save.type_) {
-							case EnumGunParts::PARTS_MAGAZINE:
-								temp_p = &MAINLOOPscene->get_magazine_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_GRIP:
-								temp_p = &MAINLOOPscene->get_grip_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_UPER_HGUARD:
-								temp_p = &MAINLOOPscene->get_uperhandguard_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_UNDER_HGUARD:
-								temp_p = &MAINLOOPscene->get_underhandguard_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_MAZZULE:
-								temp_p = &MAINLOOPscene->get_mazzule_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_DUSTCOVER:
-								temp_p = &MAINLOOPscene->get_dustcover_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_STOCK:
-								temp_p = &MAINLOOPscene->get_stock_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_LIGHT:
-								temp_p = &MAINLOOPscene->get_light_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_LASER:
-								temp_p = &MAINLOOPscene->get_laser_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_MOUNT:
-								temp_p = &MAINLOOPscene->get_mount_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_SIGHT:
-								temp_p = &MAINLOOPscene->get_sight_data()[tmp_save.cang_];
-								break;
-							case EnumGunParts::PARTS_FOREGRIP:
-								temp_p = &MAINLOOPscene->get_foregrip_data()[tmp_save.cang_];
-								break;
-							default:
-								break;
-							}
+					if (tmp_save.cang_ != SIZE_MAX) {
+						auto vec_data = MAINLOOPscene->get_parts_data(tmp_save.type_);
+						if (vec_data != nullptr) {
+							temp_p = &(*vec_data)[tmp_save.cang_];
 						}
 					}
 					{
@@ -555,7 +440,7 @@ public:
 							temp_ptr = &mine_ptr->dustcover;
 							break;
 						case EnumGunParts::PARTS_MOUNT:
-							if (tmp_save.pt_sel_ != SIZE_MAX) {
+							if (tmp_save.pt_sel_ != SIZE_MAX && tmp_save.pt_sel_< mine_ptr->mount_.size()) {
 								temp_ptr = &mine_ptr->mount_[tmp_save.pt_sel_];
 							}
 							break;
@@ -568,7 +453,7 @@ public:
 				//save_parts.clear();
 			}
 		}
-		bool UpDate(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs, std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& DrawPts, std::unique_ptr<MAINLOOP, std::default_delete<MAINLOOP>>& MAINLOOPscene, key_bind& k_) {
+		bool UpDate(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs, std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& DrawPts, std::unique_ptr<MAINLOOP, std::default_delete<MAINLOOP>>& MAINLOOPscene) {
 			{
 				bool changef = false;
 				//演算
@@ -584,19 +469,8 @@ public:
 						left.get_in(mine_ptr->get_akey());
 						right.get_in(mine_ptr->get_dkey());
 						shot.get_in(mine_ptr->get_shoot());
-						Start.get_in(k_.key_use_ID[14].get_key(2));
-						Rot.get_in(k_.mouse_use_ID[1].get_key(3));
-						{
-							k_.key_use_ID[0].isalways = true;
-							k_.key_use_ID[1].isalways = true;
-							k_.key_use_ID[2].isalways = true;
-							k_.key_use_ID[3].isalways = true;
-
-							k_.key_use_ID[14].isalways = true;
-
-							k_.mouse_use_ID[0].isalways = true;
-							k_.mouse_use_ID[1].isalways = true;
-						}
+						Start.get_in(mine_ptr->get_jamp());
+						Rot.get_in(mine_ptr->get_select());
 						if (Start_b) {
 							Start_b = false;
 							changef = true;
@@ -629,9 +503,6 @@ public:
 						if (chang < 0) { chang = chang_max - 1; }
 						if (chang > chang_max - 1) { chang = 0; }
 					}
-					{
-						sight_ptr.resize(5);
-					}
 					if (changef) {
 						Rot.first = false;
 						port_ptr = nullptr;
@@ -642,10 +513,10 @@ public:
 								port_ptr = &mine_ptr->base;
 								port_cat = EnumAttachPoint::MAGAZINE_BASE;
 								parts_cat = EnumGunParts::PARTS_MAGAZINE;
-								Set_chang_haveto(MAINLOOPscene->get_magazine_data(), parts_cat, port_cat, chang);
+								Set_chang_haveto(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang);
 								{
-									if (save_parts.size() < sel_max + 1) {
-										save_parts.resize(sel_max + 1);
+									if (save_parts.size() < size_t(sel_max) + 1) {
+										save_parts.resize(size_t(sel_max) + 1);
 									}
 									save_parts[sel_max].cang_ = chang;
 									save_parts[sel_max].type_ = parts_cat;
@@ -662,10 +533,10 @@ public:
 								port_ptr = &mine_ptr->base;
 								port_cat = EnumAttachPoint::GRIP_BASE;
 								parts_cat = EnumGunParts::PARTS_GRIP;
-								Set_chang_haveto(MAINLOOPscene->get_grip_data(), parts_cat, port_cat, chang);
+								Set_chang_haveto(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang);
 								{
-									if (save_parts.size() < sel_max + 1) {
-										save_parts.resize(sel_max + 1);
+									if (save_parts.size() < size_t(sel_max) + 1) {
+										save_parts.resize(size_t(sel_max) + 1);
 									}
 									save_parts[sel_max].cang_ = chang;
 									save_parts[sel_max].type_ = parts_cat;
@@ -682,15 +553,11 @@ public:
 								port_ptr = &mine_ptr->base;
 								port_cat = EnumAttachPoint::UPER_HANDGUARD;
 								parts_cat = EnumGunParts::PARTS_UPER_HGUARD;
-								Set_chang_haveto(MAINLOOPscene->get_uperhandguard_data(), parts_cat, port_cat, chang);
-								//
-								if (Set_sight_at(&mine_ptr->uperhandguard, MAINLOOPscene->get_sight_data())) {
-									sight_ptr[0] = &mine_ptr->uperhandguard;
-								}
+								Set_chang_haveto(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang);
 								//
 								{
-									if (save_parts.size() < sel_max + 1) {
-										save_parts.resize(sel_max + 1);
+									if (save_parts.size() < size_t(sel_max) + 1) {
+										save_parts.resize(size_t(sel_max) + 1);
 									}
 									save_parts[sel_max].cang_ = chang;
 									save_parts[sel_max].type_ = parts_cat;
@@ -707,10 +574,10 @@ public:
 								port_ptr = &mine_ptr->base;
 								port_cat = EnumAttachPoint::UNDER_HANDGUARD;
 								parts_cat = EnumGunParts::PARTS_UNDER_HGUARD;
-								Set_chang_haveto(MAINLOOPscene->get_underhandguard_data(), parts_cat, port_cat, chang);
+								Set_chang_haveto(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang);
 								{
-									if (save_parts.size() < sel_max + 1) {
-										save_parts.resize(sel_max + 1);
+									if (save_parts.size() < size_t(sel_max) + 1) {
+										save_parts.resize(size_t(sel_max) + 1);
 									}
 									save_parts[sel_max].cang_ = chang;
 									save_parts[sel_max].type_ = parts_cat;
@@ -728,12 +595,12 @@ public:
 							if (port_ptr->rail_f[port_cat][0].first > 0) {
 								if (sel_p == sel_max) {
 									parts_cat = EnumGunParts::PARTS_FOREGRIP;
-									Set_chang_needs(MAINLOOPscene->get_foregrip_data(), parts_cat, port_cat, chang, 0);
+									Set_chang_needs(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang, 0);
 									{
-										if (save_parts.size() < sel_max + 1) {
-											save_parts.resize(sel_max + 1);
+										if (save_parts.size() < size_t(sel_max) + 1) {
+											save_parts.resize(size_t(sel_max) + 1);
 										}
-										save_parts[sel_max].cang_ = chang - 1;
+										save_parts[sel_max].cang_ = size_t(chang) - 1;
 										save_parts[sel_max].type_ = parts_cat;
 										save_parts[sel_max].pt_cat_ = port_cat;
 										save_parts[sel_max].pt_type_ = EnumGunParts::PARTS_UNDER_HGUARD;
@@ -753,20 +620,20 @@ public:
 										parts_cat = EnumGunParts::PARTS_LIGHT;
 									}
 									else {
-										parts_cat = (chang < MAINLOOPscene->get_light_data().size() + 1) ? EnumGunParts::PARTS_LIGHT : EnumGunParts::PARTS_LASER;
+										parts_cat = (chang < MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_LIGHT)->size() + 1) ? EnumGunParts::PARTS_LIGHT : EnumGunParts::PARTS_LASER;
 									}
-									mine_ptr->delete_parts(EnumGunParts::PARTS_LIGHT);
-									mine_ptr->delete_parts(EnumGunParts::PARTS_LASER);
-									Set_chang_need3(MAINLOOPscene->get_light_data(), MAINLOOPscene->get_laser_data(), parts_cat, port_cat, chang);
+									mine_ptr->Detach_parts(EnumGunParts::PARTS_LIGHT);
+									mine_ptr->Detach_parts(EnumGunParts::PARTS_LASER);
+									Set_chang_need3(*MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_LIGHT), (*MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_LASER)), parts_cat, port_cat, chang);
 									{
 										auto chang_t = chang;
 										if (chang != 0) {
-											if (chang < MAINLOOPscene->get_light_data().size() + 1) { chang_t = std::max(chang - 1, 0); }
-											else { chang_t = int(std::max(chang - 1, 0) - MAINLOOPscene->get_light_data().size()); }
+											if (chang < MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_LIGHT)->size() + 1) { chang_t = std::max(chang - 1, 0); }
+											else { chang_t = int(std::max(chang - 1, 0) - MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_LIGHT)->size()); }
 										}
 
-										if (save_parts.size() < sel_max + 1) {
-											save_parts.resize(sel_max + 1);
+										if (save_parts.size() < size_t(sel_max) + 1) {
+											save_parts.resize(size_t(sel_max) + 1);
 										}
 										save_parts[sel_max].cang_ = chang_t;
 										save_parts[sel_max].type_ = parts_cat;
@@ -788,18 +655,18 @@ public:
 									chang_max = (int)1 + 1; //chang_max = (int)mount_data.size();
 									chang = std::clamp(chang, 0, chang_max - 1);
 									if (chang == 0) { parts_p = nullptr; }
-									else { parts_p = &MAINLOOPscene->get_mount_data()[std::max(chang - 1, 0)]; }
-									mine_ptr->delete_parts(parts_cat, 0);
+									else { parts_p = &(*MAINLOOPscene->get_parts_data(parts_cat))[std::max(chang - 1, 0)]; }
+									mine_ptr->Detach_parts(parts_cat, 0);
 									if (chang != 0) {
 										mine_ptr->add_parts(parts_p, parts_cat, port_ptr, port_cat);
 									}
 									viewparts_buf = port_ptr->obj.frame(port_ptr->rail_f[port_cat][0].first);
 								}
 								{
-									if (save_parts.size() < sel_max + 1) {
-										save_parts.resize(sel_max + 1);
+									if (save_parts.size() < size_t(sel_max) + 1) {
+										save_parts.resize(size_t(sel_max) + 1);
 									}
-									save_parts[sel_max].cang_ = chang - 1;
+									save_parts[sel_max].cang_ = size_t(chang) - 1;
 									save_parts[sel_max].type_ = parts_cat;
 									save_parts[sel_max].pt_cat_ = port_cat;
 									save_parts[sel_max].pt_type_ = EnumGunParts::PARTS_BASE;
@@ -820,9 +687,9 @@ public:
 											chang_max = (int)1 + 1;
 											chang = std::clamp(chang, 0, chang_max - 1);
 											if (chang == 0) { parts_p = nullptr; }
-											else { parts_p = &MAINLOOPscene->get_mount_data()[chang]; }
+											else { parts_p = &(*MAINLOOPscene->get_parts_data(parts_cat))[chang]; }
 											if (mine_ptr->mount_.size() == 2) {
-												mine_ptr->delete_parts(parts_cat, 1);
+												mine_ptr->Detach_parts(parts_cat, 1);
 											}
 											if (chang != 0) {
 												mine_ptr->add_parts(parts_p, parts_cat, port_ptr, port_cat);
@@ -830,15 +697,9 @@ public:
 											viewparts_buf = port_ptr->obj.frame(port_ptr->rail_f[port_cat][0].first);
 										}
 										//
-										if (mine_ptr->mount_.size() > 1) {
-											if (Set_sight_at(&mine_ptr->mount_[1], MAINLOOPscene->get_sight_data())) {
-												sight_ptr[1] = &mine_ptr->mount_[1];
-											}
-										}
-										//
 										{
-											if (save_parts.size() < sel_max + 1) {
-												save_parts.resize(sel_max + 1);
+											if (save_parts.size() < size_t(sel_max) + 1) {
+												save_parts.resize(size_t(sel_max) + 1);
 											}
 											save_parts[sel_max].cang_ = chang;
 											save_parts[sel_max].type_ = parts_cat;
@@ -857,12 +718,12 @@ public:
 								port_ptr = &mine_ptr->base;
 								port_cat = EnumAttachPoint::MAZZULE_BASE;
 								parts_cat = EnumGunParts::PARTS_MAZZULE;
-								Set_chang_needs(MAINLOOPscene->get_mazzule_data(), parts_cat, port_cat, chang, 0);
+								Set_chang_needs(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang, 0);
 								{
-									if (save_parts.size() < sel_max + 1) {
-										save_parts.resize(sel_max + 1);
+									if (save_parts.size() < size_t(sel_max) + 1) {
+										save_parts.resize(size_t(sel_max) + 1);
 									}
-									save_parts[sel_max].cang_ = chang - 1;
+									save_parts[sel_max].cang_ = size_t(chang) - 1;
 									save_parts[sel_max].type_ = parts_cat;
 									save_parts[sel_max].pt_cat_ = port_cat;
 									save_parts[sel_max].pt_type_ = EnumGunParts::PARTS_BASE;
@@ -877,17 +738,13 @@ public:
 								port_ptr = &mine_ptr->base;
 								port_cat = EnumAttachPoint::DUSTCOVER_BASE;
 								parts_cat = EnumGunParts::PARTS_DUSTCOVER;
-								Set_chang_needs(MAINLOOPscene->get_dustcover_data(), parts_cat, port_cat, chang, 0);
-								//
-								if (Set_sight_at(&mine_ptr->dustcover, MAINLOOPscene->get_sight_data())) {
-									sight_ptr[2] = &mine_ptr->dustcover;
-								}
+								Set_chang_needs(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang, 0);
 								//
 								{
-									if (save_parts.size() < sel_max + 1) {
-										save_parts.resize(sel_max + 1);
+									if (save_parts.size() < size_t(sel_max) + 1) {
+										save_parts.resize(size_t(sel_max) + 1);
 									}
-									save_parts[sel_max].cang_ = chang - 1;
+									save_parts[sel_max].cang_ = size_t(chang) - 1;
 									save_parts[sel_max].type_ = parts_cat;
 									save_parts[sel_max].pt_cat_ = port_cat;
 									save_parts[sel_max].pt_type_ = EnumGunParts::PARTS_BASE;
@@ -902,12 +759,12 @@ public:
 								port_ptr = &mine_ptr->base;
 								port_cat = EnumAttachPoint::STOCK_BASE;
 								parts_cat = EnumGunParts::PARTS_STOCK;
-								Set_chang_needs(MAINLOOPscene->get_stock_data(), parts_cat, port_cat, chang, 0);
+								Set_chang_needs(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang, 0);
 								{
-									if (save_parts.size() < sel_max + 1) {
-										save_parts.resize(sel_max + 1);
+									if (save_parts.size() < size_t(sel_max) + 1) {
+										save_parts.resize(size_t(sel_max) + 1);
 									}
-									save_parts[sel_max].cang_ = chang - 1;
+									save_parts[sel_max].cang_ = size_t(chang) - 1;
 									save_parts[sel_max].type_ = parts_cat;
 									save_parts[sel_max].pt_cat_ = port_cat;
 									save_parts[sel_max].pt_type_ = EnumGunParts::PARTS_BASE;
@@ -915,6 +772,24 @@ public:
 								}
 							}
 							sel_max++;
+						}
+						//サイト判定
+						{
+							sight_ptr.resize(5);
+							for (auto& s : sight_ptr) {
+								s = nullptr;
+							}
+							if (Set_sight_at(&mine_ptr->uperhandguard, *MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_SIGHT))) {
+								sight_ptr[0] = &mine_ptr->uperhandguard;
+							}
+							if (mine_ptr->mount_.size() > 1) {
+								if (Set_sight_at(&mine_ptr->mount_[1], *MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_SIGHT))) {
+									sight_ptr[1] = &mine_ptr->mount_[1];
+								}
+							}
+							if (Set_sight_at(&mine_ptr->dustcover, *MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_SIGHT))) {
+								sight_ptr[2] = &mine_ptr->dustcover;
+							}
 						}
 						//sight
 						{
@@ -926,12 +801,12 @@ public:
 										if (sel_p == sel_max) {
 											port_ptr = s;
 											parts_cat = EnumGunParts::PARTS_SIGHT;
-											Set_chang_needs(MAINLOOPscene->get_sight_data(), parts_cat, port_cat, chang, 1 + sel_max - ssp);
+											Set_chang_needs(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang, size_t(sel_max - ssp + 1));
 											{
-												if (save_parts.size() < sel_max + 1) {
-													save_parts.resize(sel_max + 1);
+												if (save_parts.size() < size_t(sel_max) + 1) {
+													save_parts.resize(size_t(sel_max) + 1);
 												}
-												save_parts[sel_max].cang_ = chang - 1;
+												save_parts[sel_max].cang_ = size_t(chang) - 1;
 												save_parts[sel_max].type_ = parts_cat;
 												save_parts[sel_max].pt_cat_ = port_cat;
 
@@ -1032,10 +907,6 @@ public:
 					camera_main.camup = VGet(0, 1.f, 0);
 				}
 			}
-			//終了判定
-			if (k_.key_use_ID[11].get_key(0)) {
-				return false;
-			}
 			if (Start.push()) {
 				return false;
 			}
@@ -1075,6 +946,10 @@ public:
 			mine_ptr->Draw_gun();
 			mine_ptr->magazine.Draw(2);
 		}
+		void Item_Draw(void) {
+		}
+		void LAST_Draw(void) {
+		}
 	};
 	//
 	class MAINLOOP {
@@ -1102,9 +977,71 @@ public:
 		std::vector<Meds> meds_data;				//GUNデータ
 		//オブジェ
 		std::vector<Chara> chara;					//キャラ
-		std::vector<Items> item;					//アイテム
+		//std::vector<Items> item;					//アイテム
 		std::vector<Hit> hit_obj;					//弾痕
 		size_t hit_buf = 0;							//
+		//TPS操作
+		class TPS_parts {
+		public:
+			switchs key_TPS;
+			float xr_cam = 0.f;
+			float yr_cam = 0.f;
+			int sel_cam = 0;
+			//カメラ
+			cam_info camera_TPS;
+			void Set(float& fov_pc) {
+				this->key_TPS.ready(false);
+				this->camera_TPS.campos = VGet(0, 1.8f, -10);
+				this->camera_TPS.set_cam_info(deg2rad(fov_pc), 0.1f, 200.f);
+			}
+			void Set_info(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs, std::vector<Chara>&chara) {
+				if (this->key_TPS.on()) {
+					{
+						const auto fps_ = GetFPS();
+						//cam
+						for (int i = 0; i < std::min<size_t>(chara.size(), 10); i++) {
+							if (CheckHitKey(KEY_INPUT_1 + i) != 0) {
+								this->sel_cam = i;
+							}
+						}
+						//pos
+						{
+							if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
+								this->camera_TPS.campos.x(this->camera_TPS.campos.x() - 10.f / fps_ * cos(this->yr_cam));
+								this->camera_TPS.campos.z(this->camera_TPS.campos.z() + 10.f / fps_ * sin(this->yr_cam));
+							}
+							if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
+								this->camera_TPS.campos.x(this->camera_TPS.campos.x() + 10.f / fps_ * cos(this->yr_cam));
+								this->camera_TPS.campos.z(this->camera_TPS.campos.z() - 10.f / fps_ * sin(this->yr_cam));
+							}
+							if (CheckHitKey(KEY_INPUT_UP) != 0) {
+								this->camera_TPS.campos.z(this->camera_TPS.campos.z() + 10.f / fps_ * cos(this->yr_cam));
+								this->camera_TPS.campos.x(this->camera_TPS.campos.x() + 10.f / fps_ * sin(this->yr_cam));
+							}
+							if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
+								this->camera_TPS.campos.z(this->camera_TPS.campos.z() - 10.f / fps_ * cos(this->yr_cam));
+								this->camera_TPS.campos.x(this->camera_TPS.campos.x() - 10.f / fps_ * sin(this->yr_cam));
+							}
+							this->camera_TPS.campos.x(std::clamp(this->camera_TPS.campos.x(), MAPPTs->map_col_get().mesh_minpos(0).x(), MAPPTs->map_col_get().mesh_maxpos(0).x()));
+							this->camera_TPS.campos.z(std::clamp(this->camera_TPS.campos.z(), MAPPTs->map_col_get().mesh_minpos(0).z(), MAPPTs->map_col_get().mesh_maxpos(0).z()));
+						}
+						//rad
+						{
+							VECTOR_ref vec_2 = (chara[this->sel_cam].get_head_pos() - this->camera_TPS.campos).Norm();
+							VECTOR_ref vec_z = (this->camera_TPS.camvec - this->camera_TPS.campos).Norm();
+							VECTOR_ref vec_x = vec_z.cross(this->camera_TPS.camup);
+
+							this->xr_cam -= deg2rad(int(vec_z.cross(vec_2).dot(vec_x) * 50))*0.1f;
+							this->yr_cam -= deg2rad(int(vec_x.dot(vec_2) * 50))*0.1f;
+							this->xr_cam = std::clamp(this->xr_cam, deg2rad(-89), deg2rad(89));
+						}
+						//
+						this->camera_TPS.camvec = this->camera_TPS.campos + MATRIX_ref::Vtrans(VGet(0, 0, 1), MATRIX_ref::RotX(this->xr_cam)*MATRIX_ref::RotY(this->yr_cam));
+						this->camera_TPS.camup = VGet(0, 1.f, 0);
+					}
+				}
+			}
+		};
 		//
 		std::unique_ptr<HostPassEffect, std::default_delete<HostPassEffect>> Hostpassparts_TPS;
 		std::unique_ptr<TPS_parts, std::default_delete<TPS_parts>> TPSparts;
@@ -1115,32 +1052,47 @@ public:
 		VECTOR_ref Shadow_minpos;
 		VECTOR_ref Shadow_maxpos;
 		VECTOR_ref Light_vec;
-		COLOR_F Light_color;
+		COLOR_F Light_color = GetColorF(0, 0, 0, 0);
 	public:
-		//
+		Chara& Get_Mine(void) { return this->chara[0]; }
+		std::vector<GUNPARTs>* get_parts_data(const size_t& type_sel) {
+			switch (type_sel) {
+			case EnumGunParts::PARTS_MAGAZINE:
+				return &this->magazine_data;
+			case EnumGunParts::PARTS_GRIP:
+				return &this->grip_data;
+			case EnumGunParts::PARTS_UPER_HGUARD:
+				return &this->uperhandguard_data;
+			case EnumGunParts::PARTS_UNDER_HGUARD:
+				return &this->underhandguard_data;
+			case EnumGunParts::PARTS_MAZZULE:
+				return &this->mazzule_data;
+			case EnumGunParts::PARTS_DUSTCOVER:
+				return &this->dustcover_data;
+			case EnumGunParts::PARTS_STOCK:
+				return &this->stock_data;
+			case EnumGunParts::PARTS_LIGHT:
+				return &this->light_data;
+			case EnumGunParts::PARTS_LASER:
+				return &this->laser_data;
+			case EnumGunParts::PARTS_MOUNT:
+				return &this->mount_data;
+			case EnumGunParts::PARTS_SIGHT:
+				return &this->sight_data;
+			case EnumGunParts::PARTS_FOREGRIP:
+				return &this->foregrip_data;
+			default:
+				break;
+			}
+			return nullptr;
+		}
+		std::vector<Meds>& get_meds_data(void) { return this->meds_data; }
+	public:
 		auto& get_Shadow_minpos() { return Shadow_minpos; }
 		auto& get_Shadow_maxpos() { return Shadow_maxpos; }
 		auto& get_Light_vec() { return Light_vec; }
 		auto& get_Light_color() { return Light_color; }
-		std::vector<Chara>& get_chara(void) { return this->chara; }
-		std::vector<Items>& get_items(void) { return this->item; }
-		Chara& get_mine(void) { return this->chara[0]; }
-		std::vector<GUNPARTs>& get_mazzule_data(void) { return this->mazzule_data; }
-		std::vector<GUNPARTs>& get_grip_data(void) { return this->grip_data; }
-		std::vector<GUNPARTs>& get_uperhandguard_data(void) { return this->uperhandguard_data; }
-		std::vector<GUNPARTs>& get_underhandguard_data(void) { return this->underhandguard_data; }
-		std::vector<GUNPARTs>& get_stock_data(void) { return this->stock_data; }
-		std::vector<GUNPARTs>& get_dustcover_data(void) { return this->dustcover_data; }
-		std::vector<GUNPARTs>& get_sight_data(void) { return this->sight_data; }
-		std::vector<GUNPARTs>& get_foregrip_data(void) { return this->foregrip_data; }
-		std::vector<GUNPARTs>& get_light_data(void) { return this->light_data; }
-		std::vector<GUNPARTs>& get_laser_data(void) { return this->laser_data; }
-		std::vector<GUNPARTs>& get_mount_data(void) { return this->mount_data; }
-		std::vector<GUNPARTs>& get_gun_data(void) { return this->gun_data; }
-		std::vector<GUNPARTs>& get_magazine_data(void) { return this->magazine_data; }
-		std::vector<Meds>& get_meds_data(void) { return this->meds_data; }
-		auto& get_camera(void) { return this->camera_main; }
-		//
+		auto& Get_Camera(void) { return this->camera_main; }
 		MAINLOOP(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& DrawPts, std::unique_ptr<OPTION, std::default_delete<OPTION>>& OPTPTs) {
 			//
 			use_VR = DrawPts->use_vr;
@@ -1207,7 +1159,7 @@ public:
 				this->meds_data[0].mod.Ready("data/medkit/", "AIDkit");
 			}
 		}
-		void first_after() {
+		void Start_After() {
 			//GUNデータ2
 			for (auto& g : this->mazzule_data) { g.Set_datas(&g - &this->mazzule_data[0], EnumGunParts::PARTS_MAZZULE); }
 			for (auto& g : this->grip_data) { g.Set_datas(&g - &this->grip_data[0], EnumGunParts::PARTS_NONE); }
@@ -1239,7 +1191,7 @@ public:
 		void Set(std::unique_ptr<OPTION, std::default_delete<OPTION>>& OPTPTs, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs) {
 			for (auto& c : this->chara) {
 				//カスタムattach
-				if (&c != &get_mine()) {
+				if (&c != &Get_Mine()) {
 					//magazine
 					c.add_parts(&magazine_data[1], EnumGunParts::PARTS_MAGAZINE, nullptr, 0);
 					//grip
@@ -1282,132 +1234,76 @@ public:
 			Light_vec = VGet(0.5f, -0.5f, 0.5f);
 			Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
 			//
-			MAPPTs->Start_map();															//環境
-			std::for_each(this->chara.begin(), this->chara.end(), [&](Chara& c) { c.Start(MAPPTs); });//プレイヤー操作変数群
-			SetMousePoint(deskx / 2, desky / 2);											//
+			MAPPTs->Set();																				//環境
+			std::for_each(this->chara.begin(), this->chara.end(), [&](Chara& c) { c.Start(MAPPTs); });	//プレイヤー操作変数群
+			SetMousePoint(deskx / 2, desky / 2);														//
 			fov_base = deg2rad(use_VR ? 120 : OPTPTs->Fov);
-			camera_main.set_cam_info(fov_base, 0.1f, 200.f);//1P
-			TPSparts->Set(OPTPTs->Fov);															//TPS
-			RULEparts->Set();																//ルール
+			camera_main.set_cam_info(fov_base, 0.1f, 200.f);											//1P
+			TPSparts->Set(OPTPTs->Fov);																	//TPS
+			RULEparts->Set();																			//ルール
 		}
-		bool UpDate(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs, std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& DrawPts, key_bind& k_) {
+		bool UpDate(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs, std::unique_ptr<DXDraw, std::default_delete<DXDraw>>& DrawPts) {
+			//共通演算
+			for (auto& c : this->chara) {
+				c.UpDate(MAPPTs, DrawPts, this->hit_obj, this->hit_buf, RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, MAPPTs->item, this->chara, this->Get_Mine(), use_VR);
+			}
+			//弾痕の更新
+			for (auto&s : hit_obj) { s.UpDate(); }
+			//campos,camvec,camupの指定
+			Get_Mine().Set_cam(MAPPTs, camera_main, this->chara, fov_base, use_VR);
+			//ルール保存
+			UIparts->Update(RULEparts);
+			RULEparts->UpDate();
+			//ミニマップ
+			minimapparts->Set(this->chara, (TPSparts->key_TPS.on()) ? this->chara[TPSparts->sel_cam] : Get_Mine(), MAPPTs);
+			//TPS描画
+			TPSparts->key_TPS.get_in(Get_Mine().get_key_().TPS);
+			TPSparts->Set_info(MAPPTs, this->chara);
+			if (TPSparts->key_TPS.on()) {
+				//影用意
+				DrawPts->Ready_Shadow(TPSparts->camera_TPS.campos, [&] {Shadow_Draw(MAPPTs); }, VGet(2.f, 2.5f, 2.f), VGet(5.f, 2.5f, 5.f));
+				//書き込み
+				Hostpassparts_TPS->BUF_draw([&](void) { BG_Draw(MAPPTs); }, [&] {DrawPts->Draw_by_Shadow([&] {Main_Draw(MAPPTs); }); }, TPSparts->camera_TPS);	//被写体深度描画
+				Hostpassparts_TPS->MAIN_draw();																													//最終描画
+			}
+			//表示の如何
 			{
-				//演算
+				cam_info* camp = TPSparts->key_TPS.on() ? &TPSparts->camera_TPS : &camera_main;
+				GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), camp->campos, camp->camvec, camp->camup, camp->fov, camp->near_, camp->far_);
 				{
-					//
-					if (use_VR) {
-					}
-					else {
-						k_.key_use_ID[0].isalways = true;
-						k_.key_use_ID[1].isalways = true;
-						k_.key_use_ID[2].isalways = true;
-						k_.key_use_ID[3].isalways = true;
-						k_.key_use_ID[4].isalways = true;
-						k_.key_use_ID[5].isalways = true;
-						k_.key_use_ID[6].isalways = true;
-						k_.key_use_ID[7].isalways = true;
-						k_.key_use_ID[8].isalways = true;
-						k_.key_use_ID[9].isalways = true;
-						k_.key_use_ID[10].isalways = true;
-						k_.key_use_ID[11].isalways = true;
-						k_.key_use_ID[12].isalways = true;
-						k_.key_use_ID[13].isalways = true;
-						k_.key_use_ID[14].isalways = true;
-						k_.key_use_ID[15].isalways = true;
-						k_.key_use_ID[16].isalways = true;
-
-						k_.mouse_use_ID[0].isalways = true;
-						k_.mouse_use_ID[1].isalways = true;
-						k_.mouse_use_ID[2].isalways = true;
-					}
-					//アイテム演算
-					for (auto& g : this->item) {
-						g.UpDate(this->item, MAPPTs);
-					}
-					//共通
 					for (auto& c : this->chara) {
-						c.UpDate(MAPPTs, DrawPts, this->hit_obj, this->hit_buf, RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->item, this->chara, this->get_mine(), use_VR);
-					}
-					//空マガジンを削除する
-					while (true) {
-						bool demagazine_flag = false;
-						for (auto& i : this->item) {
-							if (i.Delete_mag()) {
-								demagazine_flag = true;
-								this->item.erase(this->item.begin() + (&i - &this->item[0]));
-								break;
-							}
-						}
-						if (!demagazine_flag) {
-							break;
-						}
-					}
-					//弾痕の更新
-					for (auto&s : hit_obj) { s.UpDate(); }
-				}
-				{
-					//campos,camvec,camupの指定
-					get_mine().Set_cam(MAPPTs, camera_main, this->chara, fov_base, use_VR);
-				}
-				//ルール保存
-				UIparts->Update(RULEparts);
-				RULEparts->UpDate();
-				//TPS
-				TPSparts->key_TPS.get_in(k_.key_use_ID[15].get_key(0));
-				//ミニマップ
-				minimapparts->Set(this->chara, (TPSparts->key_TPS.on()) ? this->chara[TPSparts->sel_cam] : get_mine(), MAPPTs);
-				//TPS描画
-				TPSparts->Set_info(MAPPTs, this->chara);
-				if (TPSparts->key_TPS.on()) {
-					//影用意
-					DrawPts->Ready_Shadow(TPSparts->camera_TPS.campos, [&] {Shadow_Draw(); }, VGet(2.f, 2.5f, 2.f), VGet(5.f, 2.5f, 5.f));
-					//書き込み
-					Hostpassparts_TPS->BUF_draw([&](void) { BG_Draw(MAPPTs); }, [&] {DrawPts->Draw_by_Shadow([&] {Main_Draw(MAPPTs); }); }, TPSparts->camera_TPS);	//被写体深度描画
-					Hostpassparts_TPS->MAIN_draw();																													//最終描画
-				}
-				//
-				{
-					cam_info* camp = TPSparts->key_TPS.on() ? &TPSparts->camera_TPS : &camera_main;
-					GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), camp->campos, camp->camvec, camp->camup, camp->fov, camp->near_, camp->far_);
-					{
-						for (auto& c : this->chara) {
-							c.Check_CameraViewClip(/*MAPPTs*/);
-						}
+						c.Check_CameraViewClip(/*MAPPTs*/);
 					}
 				}
 			}
 			//終了判定
-			if (k_.key_use_ID[11].get_key(0)) {
-				return false;
-			}
-			if (k_.key_use_ID[10].get_key(0)) {
+			if (RULEparts->get_timer() <= -5.f) {
 				return false;
 			}
 			return true;
-			//
 		}
 		void Dispose() {
 			for (auto& c : this->chara) {
 				c.Dispose();
 			}
 			this->chara.clear();
-			for (auto& i : this->item) {
-				i.Delete_item();
-			}
-			this->item.clear();
 		}
 		void UI_Draw(void) {
-			UIparts->UI_Draw(get_mine(), use_VR);
+			UIparts->UI_Draw(Get_Mine(), use_VR);
 		}
 		void BG_Draw(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs) {
+			//map
 			MAPPTs->sky_Draw();
 		}
 		void Shadow_Draw_Far(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs) {
+			//map
 			MAPPTs->Shadow_Draw();
 		}
-		void Shadow_Draw(void) {
+		void Shadow_Draw(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs) {
+			//map
+			MAPPTs->item_Draw();
+			//キャラ
 			for (auto& c : this->chara) { c.Draw_chara(); }
-			for (auto& g : this->item) { g.Draw_item(); }
 		}
 		void Main_Draw(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>& MAPPTs) {
 			//map
@@ -1415,15 +1311,11 @@ public:
 			//命中痕
 			for (auto&s : hit_obj) { s.Draw(); }
 			//サイト
-			for (auto& s : get_mine().sight_) {
-				s.Draw_reticle();
-			}
+			for (auto& s : Get_Mine().sight_) { s.Draw_reticle(); }
 			//キャラ
 			std::for_each(this->chara.begin(), this->chara.end(), [&](Chara& c) { c.Draw_chara(); });
 			//レーザー
 			std::for_each(this->chara.begin(), this->chara.end(), [&](Chara& c) { c.Draw_laser(this->chara, MAPPTs, light); });
-			//アイテム
-			std::for_each(this->item.begin(), this->item.end(), [&](Items& i) { i.Draw_item(get_mine()); });
 			//銃弾
 			SetFogEnable(FALSE);
 			SetUseLighting(FALSE);
@@ -1432,13 +1324,14 @@ public:
 			SetFogEnable(TRUE);
 			//
 		}
-		void Item_Draw(void) {
+		void Item_Draw(std::vector<Items>& item) {
 			for (auto& c : this->chara) {
 				c.Set_Draw_bullet();
 			}
-			UIparts->item_Draw(this->chara, get_mine(), get_items(), camera_main.campos, use_VR);
+			UIparts->item_Draw(this->chara, Get_Mine(), item, camera_main.campos, use_VR);
 		}
 		void LAST_Draw(void) {
+			//TPS視点
 			if (TPSparts->key_TPS.on()) {
 				Hostpassparts_TPS->get_main().DrawGraph(0, 0, true);
 			}

@@ -2,8 +2,11 @@
 //
 class UIclass : Mainclass {
 public:
+	//ロードするセーブデータを指定する
 	class UI_LOAD {
 	private:
+		int t_disp_x = 1920;
+		int t_disp_y = 1080;
 		//font
 		FontHandle font72;
 		FontHandle font48;
@@ -13,13 +16,8 @@ public:
 		FontHandle font12;
 		//
 		int ypos = 0;
+		float ypos_real = 0.f;
 		void Draw_per_info(const int& xpos1, const int& ypos1, const int& xsize, const int& ysize, GUNPARTs* parts, bool use_vr = true) {
-			int t_disp_x = deskx;
-			int t_disp_y = desky;
-			if (use_vr) {
-				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
-			}
-
 			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
 			FontHandle* font_big = (use_vr) ? &font36 : &font24;
 			FontHandle* font = (use_vr) ? &font24 : &font18;
@@ -31,20 +29,20 @@ public:
 			int title_siz = y_r(6);
 			int main_siz = y_r(10);
 			if (ypos1 < 100) {
-				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(128 * (ypos1 - 50) / 50, 0, 255));
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(64 * (ypos1 - 50) / 50, 0, 64));
 			}
-			else if (ypos1 + ysize > t_disp_y - 100) {
-				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(128 * ((t_disp_y - (ypos1 + ysize)) + 50) / 50, 0, 128));
+			else if (t_disp_y - (ypos1 + ysize + 25) < 0) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(64 * ((t_disp_y - (ypos1 + ysize + 25)) + 100) / 50, 0, 64));
 			}
 			else {
-				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
 			}
 			DrawBox(xpos1 + back_siz, ypos1 + back_siz, xpos1 + xsize - back_siz, ypos1 + ysize - back_siz, GetColor(0, 0, 0), TRUE);
 			if (ypos1 < 100) {
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * (ypos1 - 50) / 50, 0, 255));
 			}
-			else if (ypos1 + ysize > t_disp_y - 100) {
-				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * ((t_disp_y - (ypos1 + ysize)) + 50) / 50, 0, 255));
+			else if (t_disp_y - (ypos1 + ysize + 25) < 0) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * ((t_disp_y - (ypos1 + ysize + 25)) + 100) / 50, 0, 255));
 			}
 			else {
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
@@ -95,11 +93,11 @@ public:
 		}
 		template<class Y, class D>
 		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, std::vector<save_c> save_parts, std::string& set_name, bool use_vr = true) {
-			int t_disp_x = deskx;
-			int t_disp_y = desky;
 			if (use_vr) {
 				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
 			}
+
+			DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(192, 192, 192), TRUE);
 
 			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
 			FontHandle* font_big = (use_vr) ? &font36 : &font24;
@@ -113,7 +111,7 @@ public:
 				int cnt = 0;
 				xs = 800;
 				ys = 175;
-				ypos += GetMouseWheelRotVol() * 10;
+				ypos += GetMouseWheelRotVol() * 30;
 				//*
 				if (ypos >= 0) {
 					ypos = 0;
@@ -126,6 +124,8 @@ public:
 				}
 				//*/
 
+				easing_set(&ypos_real, float(ypos), 0.8f);
+
 				while (true) {
 					GUNPARTs* temp_p = nullptr;
 					std::string parts_type = "";
@@ -134,7 +134,7 @@ public:
 					cnt++;
 
 					xp = t_disp_x - (xs + 100);
-					yp = 100 + ypos + (ys + 25) * i;
+					yp = 100 + int(ypos_real) + (ys + 25) * i;
 					i++;
 					if (yp + ys < 0) {
 						continue;
@@ -146,77 +146,23 @@ public:
 						break;
 					}
 					if (tmp_save.cang_ != SIZE_MAX) {
-						switch (tmp_save.type_) {
-						case EnumGunParts::PARTS_MAGAZINE:
-							parts_type = "MAGAZINE";
-							temp_p = &MAINLOOPscene->get_magazine_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_GRIP:
-							parts_type = "GRIP";
-							temp_p = &MAINLOOPscene->get_grip_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_UPER_HGUARD:
-							parts_type = "UPER HANDGUARD";
-							temp_p = &MAINLOOPscene->get_uperhandguard_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_UNDER_HGUARD:
-							parts_type = "UNDER HANDGUARD";
-							temp_p = &MAINLOOPscene->get_underhandguard_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_MAZZULE:
-							parts_type = "MAZZULE";
-							temp_p = &MAINLOOPscene->get_mazzule_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_DUSTCOVER:
-							parts_type = "DUSTCOVER";
-							temp_p = &MAINLOOPscene->get_dustcover_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_STOCK:
-							parts_type = "STOCK";
-							temp_p = &MAINLOOPscene->get_stock_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_LIGHT:
-							parts_type = "LIGHT";
-							temp_p = &MAINLOOPscene->get_light_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_LASER:
-							parts_type = "LASER";
-							temp_p = &MAINLOOPscene->get_laser_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_MOUNT:
-							parts_type = "MOUNT";
-							temp_p = &MAINLOOPscene->get_mount_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_SIGHT:
-							parts_type = "SIGHT";
-							temp_p = &MAINLOOPscene->get_sight_data()[tmp_save.cang_];
-							break;
-						case EnumGunParts::PARTS_FOREGRIP:
-							parts_type = "FOREGRIP";
-							temp_p = &MAINLOOPscene->get_foregrip_data()[tmp_save.cang_];
-							break;
-						default:
-							break;
+						auto vec_data = MAINLOOPscene->get_parts_data(tmp_save.type_);
+						if (vec_data != nullptr) {
+							temp_p = &(*vec_data)[tmp_save.cang_];
 						}
 					}
 					{
 						if (yp < 100) {
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * (yp - 50) / 50, 0, 255));
 						}
-						else if (yp + ys > t_disp_y - 100) {
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * ((t_disp_y - (yp + ys)) + 50) / 50, 0, 255));
+						else if (t_disp_y - (yp + ys + 25) < 0) {
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * ((t_disp_y - (yp + ys + 25)) + 100) / 50, 0, 255));
 						}
 						else {
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
 						}
 						font_big->DrawString(xp, yp, parts_type, GetColor(0, 255, 0));
-						int xs_1 = xs - 1;
-						if (temp_p != nullptr) {
-							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, use_vr);
-						}
-						else {
-							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, temp_p, use_vr);
-						}
+						Draw_per_info(xp, yp + font_bighight, xs, ys - font_bighight, temp_p, use_vr);
 					}
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
@@ -243,9 +189,11 @@ public:
 		void Dispose() {
 		}
 	};
-
-	class UI_SELECT {
+	//カスタム画面
+	class UI_CUSTOM {
 	private:
+		int t_disp_x = 1920;
+		int t_disp_y = 1080;
 		//font
 		FontHandle font72;
 		FontHandle font48;
@@ -299,7 +247,7 @@ public:
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 		}
 	public:
-		UI_SELECT(void) {
+		UI_CUSTOM(void) {
 			SetUseASyncLoadFlag(TRUE);
 			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
 			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
@@ -309,12 +257,10 @@ public:
 			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
 			SetUseASyncLoadFlag(FALSE);
 		}
-		~UI_SELECT(void) {
+		~UI_CUSTOM(void) {
 		}
 		template<class Y, class D>
 		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, switchs &Rot, Chara* mine_ptr, GUNPARTs* parts_p, float& change_per, bool use_vr = true) {
-			int t_disp_x = deskx;
-			int t_disp_y = desky;
 			if (use_vr) {
 				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
 			}
@@ -355,78 +301,67 @@ public:
 					case EnumGunParts::PARTS_MAZZULE:
 					{
 						parts_type = "MAZZULE";
-						parts_t = &MAINLOOPscene->get_mazzule_data();
 						break;
 					}
 					case EnumGunParts::PARTS_MAGAZINE:
 					{
 						parts_type = "MAGAZINE";
-						parts_t = &MAINLOOPscene->get_magazine_data();
 						break;
 					}
 					case EnumGunParts::PARTS_GRIP:
 					{
 						parts_type = "GRIP";
-						parts_t = &MAINLOOPscene->get_grip_data();
 						break;
 					}
 					case EnumGunParts::PARTS_UPER_HGUARD:
 					{
 						parts_type = "UPER HANDGUARD";
-						parts_t = &MAINLOOPscene->get_uperhandguard_data();
 						break;
 					}
 					case EnumGunParts::PARTS_UNDER_HGUARD:
 					{
 						parts_type = "UNDER HANDGUARD";
-						parts_t = &MAINLOOPscene->get_underhandguard_data();
 						break;
 					}
 					case EnumGunParts::PARTS_DUSTCOVER:
 					{
 						parts_type = "DUSTCOVER";
-						parts_t = &MAINLOOPscene->get_dustcover_data();
 						break;
 					}
 					case EnumGunParts::PARTS_STOCK:
 					{
 						parts_type = "STOCK";
-						parts_t = &MAINLOOPscene->get_stock_data();
 						break;
 					}
 					case EnumGunParts::PARTS_LASER:
 					{
 						parts_type = "LASER";
-						parts_t = &MAINLOOPscene->get_laser_data();
 						break;
 					}
 					case EnumGunParts::PARTS_LIGHT:
 					{
 						parts_type = "LIGHT";
-						parts_t = &MAINLOOPscene->get_light_data();
 						break;
 					}
 					case EnumGunParts::PARTS_FOREGRIP:
 					{
 						parts_type = "FOREGRIP";
-						parts_t = &MAINLOOPscene->get_foregrip_data();
 						break;
 					}
 					case EnumGunParts::PARTS_MOUNT:
 					{
 						parts_type = "MOUNT";
-						parts_t = &MAINLOOPscene->get_mount_data();
 						break;
 					}
 					case EnumGunParts::PARTS_SIGHT:
 					{
 						parts_type = "SIGHT";
-						parts_t = &MAINLOOPscene->get_sight_data();
 						break;
 					}
 					default:
 						break;
 					}
+					parts_t = MAINLOOPscene->get_parts_data(parts_cat);
 					//
 					xp = t_disp_x - 600;
 					yp = t_disp_y - 400;
@@ -486,9 +421,11 @@ public:
 		void Dispose() {
 		}
 	};
-	//
+	//メイン画面
 	class UI_MAINLOOP {
 	private:
+		int t_disp_x = 1920;
+		int t_disp_y = 1080;
 		//pic
 		GraphHandle aim;
 		GraphHandle hit_Graph;
@@ -562,11 +499,9 @@ public:
 		}
 		void Update(std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>& RULEparts) {
 			this->Ready = RULEparts->get_Ready();
-			this->timer = RULEparts->get_timer();
+			this->timer = std::max(RULEparts->get_timer(),0.f);
 		}
 		void UI_Draw(Mainclass::Chara& chara, bool use_vr = true) {
-			int t_disp_x = deskx;
-			int t_disp_y = desky;
 			if (use_vr) {
 				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
 			}
@@ -869,10 +804,6 @@ public:
 			{
 				SetCameraNearFar(0.01f, 10.f);
 				for (auto& g : item_data) {
-					//gun
-					if (g.get_ptr_gun() != nullptr) {
-						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s", g.get_ptr_gun()->per.name.c_str());
-					}
 					//mag
 					if (g.get_ptr_mag() != nullptr) {
 						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().cap, g.get_ptr_mag()->cap);
@@ -907,8 +838,8 @@ public:
 			//
 		}
 	};
-	//
-	class UI_Load {
+	//ローディング画面
+	class UI_LOADING {
 	private:
 		FontHandle font18;
 		float bar = 0.f;
@@ -918,14 +849,14 @@ public:
 		int t_disp_y = 1080;
 		std::string message;
 	public:
-		UI_Load(void) {
+		UI_LOADING(void) {
 			SetUseASyncLoadFlag(TRUE);
 
 			font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
 
 			SetUseASyncLoadFlag(FALSE);
 		}
-		~UI_Load(void) {
+		~UI_LOADING(void) {
 		}
 		void Set(const char* mes) {
 			SetUseASyncLoadFlag(FALSE);
