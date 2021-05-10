@@ -1543,8 +1543,8 @@ protected:
 			frames attach_frame;				//根元
 			frames source_frame;				//光源
 			frames sight_frame;					//サイト
-			std::array<frames, 2> LEFT_frame;	//左手座標
-			std::array<frames, 2> RIGHT_frame;	//右手座標
+			std::array<frames, 3> LEFT_frame;	//左手座標
+			std::array<frames, 3> RIGHT_frame;	//右手座標
 			std::array<frames, 2> magazine_f;	//マガジンフレーム
 			GraphHandle reticle;				//レティクル
 			int LightHandle = -1;				//ライト
@@ -1724,10 +1724,12 @@ protected:
 							if (p == std::string("LEFT")) {
 								this->LEFT_frame[0] = { int(i),this->obj.frame(i) };
 								this->LEFT_frame[1] = { int(i + 1),this->obj.GetFrameLocalMatrix(i + 1).pos() };
+								this->LEFT_frame[2] = { int(i + 2),this->obj.GetFrameLocalMatrix(i + 2).pos() };
 							}
 							if (p == std::string("RIGHT")) {
 								this->RIGHT_frame[0] = { int(i),this->obj.frame(i) };
 								this->RIGHT_frame[1] = { int(i + 1),this->obj.GetFrameLocalMatrix(i + 1).pos() };
+								this->RIGHT_frame[2] = { int(i + 2),this->obj.GetFrameLocalMatrix(i + 2).pos() };
 							}
 							if (p == std::string("source")) {
 								this->source_frame = { int(i),this->obj.frame(i) };
@@ -2307,8 +2309,35 @@ protected:
 				if (f2_ != VGet(0, 0, 0)) { ans2_ = f2_; }
 				f2_ = this->foregrip.LEFT_pos(1);
 				if (f2_ != VGet(0, 0, 0)) { ans2_ = f2_; }
-				MATRIX_ref a3_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(this->obj_body.frame(this->frame_s.LEFThand2_f.first) - this->obj_body.frame(this->frame_s.LEFThand_f.first), m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()), MATRIX_ref::Vtrans(ans2_ - ans_, m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()));
+				VECTOR_ref ans3_;
+				VECTOR_ref f3_ = this->underhandguard.LEFT_pos(2);
+				if (f3_ != VGet(0, 0, 0)) { ans3_ = f3_; }
+				f3_ = this->foregrip.LEFT_pos(2);
+				if (f3_ != VGet(0, 0, 0)) { ans3_ = f3_; }
+
+				MATRIX_ref a3_inv = MATRIX_ref::RotVec2(
+					MATRIX_ref::Vtrans(
+						this->obj_body.frame(this->frame_s.LEFThand2_f.first) - this->obj_body.frame(this->frame_s.LEFThand_f.first)
+						, m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()),
+					MATRIX_ref::Vtrans(
+						ans2_ - ans_
+						, m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()));
 				this->obj_body.SetFrameLocalMatrix(this->frame_s.LEFThand_f.first, a3_inv * MATRIX_ref::Mtrans(this->frame_s.LEFThand_f.second));
+
+
+				//MATRIX_ref a3_yvec = MATRIX_ref::RotY(deg2rad(25));//
+				MATRIX_ref a3_yvec = MATRIX_ref::RotVec2(
+					MATRIX_ref::Vtrans(
+						this->obj_body.GetFrameLocalWorldMatrix(this->frame_s.LEFThand_f.first).zvec()*-1.f
+						, m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*a3_inv.Inverse()),
+					MATRIX_ref::Vtrans(
+						ans3_ - ans_
+						, m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse()*a3_inv.Inverse()));
+
+
+				this->obj_body.SetFrameLocalMatrix(this->frame_s.LEFThand_f.first, a3_yvec * a3_inv * MATRIX_ref::Mtrans(this->frame_s.LEFThand_f.second));
+
+
 				this->mat_LEFTHAND_re = MATRIX_ref::RotX(deg2rad(90));//
 			}
 			//右
@@ -3084,7 +3113,7 @@ protected:
 					float y_1 = cosf(this->body_yrad);
 					float x_2 = v_.x();
 					float y_2 = -v_.z();
-					this->body_yrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / GetFPS() / 6.f;
+					this->body_yrad += std::atan2f(x_1*y_2 - x_2 * y_1, x_1*x_2 + y_1 * y_2) * FRAME_RATE / GetFPS() / 2.5f;
 				}
 				{
 					VECTOR_ref v_ = this->mat_body.zvec();
@@ -3097,8 +3126,8 @@ protected:
 			}
 			//身体
 			MATRIX_ref mg_inv = MATRIX_ref::RotY(DX_PI_F + this->body_yrad);
-			MATRIX_ref mb_inv = MATRIX_ref::RotY(deg2rad(15))*MATRIX_ref::RotZ(this->body_zrad);
-			MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(30))*MATRIX_ref::RotZ(this->body_zrad)*MATRIX_ref::RotX(this->body_xrad)*mg_inv;
+			MATRIX_ref mb_inv = MATRIX_ref::RotY(deg2rad(22))*MATRIX_ref::RotZ(this->body_zrad);
+			MATRIX_ref m_inv = MATRIX_ref::RotY(deg2rad(44))*MATRIX_ref::RotZ(this->body_zrad)*MATRIX_ref::RotX(this->body_xrad)*mg_inv;
 			{
 				//
 				if (this->get_alive()) {
@@ -3276,7 +3305,7 @@ protected:
 											VGet(
 												-0.035f - sight_vec.x(),//右目で見るため
 												-sight_vec.y() + sin(DX_PI_F*2.f*(this->anime_walk->time / this->anime_walk->alltime))*this->anime_walk->per*0.001f,
-												-0.165f
+												-0.15f
 											), std::min(0.75f + ((0.9f - 0.75f)*(this->per_all.weight - this->base.thisparts->per.weight) / 3.f), 0.935f));
 									}
 									else {
@@ -3284,7 +3313,7 @@ protected:
 											VGet(
 												-0.15f,
 												-0.07f - sight_vec.y() + sin(DX_PI_F*2.f*(this->anime_walk->time / this->anime_walk->alltime))*this->anime_walk->per*0.001f*2.f,
-												((this != &mine) ? -0.17f : -0.11f)
+												((this != &mine) ? -0.15f : -0.09f)
 											), 0.75f);
 									}
 								}
