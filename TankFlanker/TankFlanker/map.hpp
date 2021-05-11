@@ -80,17 +80,11 @@ public:
 			VECTOR_ref size;
 			{
 				VECTOR_ref sizetmp = map_col.mesh_maxpos(0) - map_col.mesh_minpos(0);
-				if (size.x() < sizetmp.x()) {
-					size.x(sizetmp.x());
-				}
-				if (size.y() < sizetmp.y()) {
-					size.y(sizetmp.y());
-				}
-				if (size.z() < sizetmp.z()) {
-					size.z(sizetmp.z());
-				}
+				if (size.x() < sizetmp.x()) { size.x(sizetmp.x()); }
+				if (size.y() < sizetmp.y()) { size.y(sizetmp.y()); }
+				if (size.z() < sizetmp.z()) { size.z(sizetmp.z()); }
 			}
-			map_col.SetupCollInfo(int(size.x() / 5.f), int(size.y() / 5.f), int(size.z() / 5.f), 0, 0);
+			map_col.SetupCollInfo(std::max(int(size.x() / 5.f), 1), std::max(int(size.y() / 5.f), 1), std::max(int(size.z() / 5.f), 1), 0, 0);
 			{
 				MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
 				auto p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
