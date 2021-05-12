@@ -2167,8 +2167,14 @@ protected:
 			}
 			this->ai_phase = 0;
 		}
-		void magrelease_tp(std::vector<Items>& item, const size_t& dnm) {
+		void magrelease_tp(std::vector<Items>& item, const size_t& dnm,const bool&isend) {
 			const auto fps_ = GetFPS();
+			if (isend) {
+				this->gun_stat_now->magazine_release_end();
+			}
+			else {
+				this->gun_stat_now->magazine_release();
+			}
 			bool tt = false;
 			auto add_vec_t = (VECTOR_ref(this->base.mag2f_pos()) - this->base.magf_pos()).Norm()*-1.f / fps_;
 			for (auto& g : item) {
@@ -2183,7 +2189,6 @@ protected:
 			}
 		}
 		void magrelease_t(std::vector<Items>& item, const size_t& test_) {
-			const auto fps_ = GetFPS();
 			if (this->gun_stat_now->not_mags_EMPTY()) {
 				//‰¹
 				this->audio.magazine_down.play_3D(this->pos_gun, 15.f);
@@ -2191,8 +2196,7 @@ protected:
 				auto dnm = this->gun_stat_now->getminus();
 				if (test_ == 0) {
 					while (true) {
-						this->gun_stat_now->magazine_release();
-						magrelease_tp(item, dnm);
+						magrelease_tp(item, dnm, false);
 						//
 						if (!this->gun_stat_now->not_mags_EMPTY()) {
 							break;
@@ -2202,16 +2206,14 @@ protected:
 					return;
 				}
 				if (test_ == 1) {
-					this->gun_stat_now->magazine_release();
-					magrelease_tp(item, dnm);
+					magrelease_tp(item, dnm, false);
 					this->reload_cnt = 0.f;
 					return;
 				}
 
 				if (test_ == 2) {
 					if (this->gun_stat_now->get_magazine_in().back() == 0) {
-						this->gun_stat_now->magazine_release_end();
-						magrelease_tp(item, 0);
+						magrelease_tp(item, 0, true);
 						this->reload_cnt = 0.f;
 						return;
 					}
