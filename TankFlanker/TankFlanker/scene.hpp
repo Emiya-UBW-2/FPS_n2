@@ -843,12 +843,14 @@ public:
 								slide_se.play(DX_PLAYTYPE_BACK, TRUE);
 								trigger_se.play(DX_PLAYTYPE_BACK, TRUE);
 								//薬莢
-								mine_ptr->calc_cart(rate);
+								mine_ptr->calc_cart();
 							}
 							//エフェクト
 							mine_ptr->calc_shot_effect();
 						}
 					}
+					//薬莢
+					mine_ptr->calc_cart_every(rate);
 					//
 					mine_ptr->Set_select();
 					mine_ptr->Set_shot_anime(rate, true);
@@ -886,7 +888,7 @@ public:
 								tmp = VECTOR_ref(mine_ptr->mazzule.mazzule_pos()) - tmp;
 							}
 							else {
-								tmp = mine_ptr->base.obj.frame(mine_ptr->base.thisparts->frame_s.mazzule_f.first) - tmp;
+								tmp = VECTOR_ref(mine_ptr->base.mazzule_pos()) - tmp;
 							}
 						}
 						else {
@@ -1193,7 +1195,7 @@ public:
 				//カスタムattach
 				if (&c != &Get_Mine()) {
 					//magazine
-					c.add_parts(&magazine_data[1], EnumGunParts::PARTS_MAGAZINE, nullptr, 0);
+					c.add_parts(&magazine_data[0], EnumGunParts::PARTS_MAGAZINE, nullptr, 0);
 					//grip
 					c.add_parts(&grip_data[0], EnumGunParts::PARTS_GRIP, &c.base, EnumAttachPoint::GRIP_BASE);
 					//uperhandguard

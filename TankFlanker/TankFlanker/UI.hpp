@@ -431,6 +431,7 @@ public:
 		GraphHandle hit_Graph;
 		GraphHandle item;
 		GraphHandle dmg;
+		GraphHandle hit_rad;
 		//font
 		FontHandle font72;
 		FontHandle font48;
@@ -480,7 +481,7 @@ public:
 	public:
 		UI_MAINLOOP(void) {
 			SetUseASyncLoadFlag(TRUE);
-
+			this->hit_rad = GraphHandle::Load("data/UI/enemyrad.png");
 			this->hit_Graph = GraphHandle::Load("data/UI/battle_hit.bmp");
 			this->dmg = GraphHandle::Load("data/UI/damage.png");
 			this->item = GraphHandle::Load("data/UI/battle_item.bmp");
@@ -724,6 +725,22 @@ public:
 						DrawBox(xp - int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp, xp + int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp + font_bighight + 2, GetColor(255, 255, 255), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((chara.kill_time * 2) / 7.f)), 0, 255));
 						font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", chara.kill_streak); yp += font_bighight;			//キルストリーク
+					}
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+				}
+				//被弾方向
+				{
+					if (use_vr) {
+						xp = t_disp_x / 2;
+						yp = t_disp_y / 2;
+					}
+					else {
+						xp = t_disp_x / 2;
+						yp = t_disp_y / 2;
+					}
+					for (auto& d : chara.got_damage_) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - d.alpfa, 5.f))), 0, 255));
+						this->hit_rad.DrawRotaGraph(xp, yp, float(y_r(100)) / 100.f*((1.f - 0.3f) + (d.alpfa*0.3f)), d.rad, true);
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
