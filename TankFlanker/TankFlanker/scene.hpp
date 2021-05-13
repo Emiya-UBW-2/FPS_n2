@@ -216,7 +216,7 @@ public:
 			viewparts_buf = port_ptr->obj.frame(port_ptr->rail_f[pot_cat][0].first);
 		}
 		//”ñ•K{•i
-		void Set_chang_needs(std::vector<GUNPARTs>&data, const size_t& pts_cat, const size_t& pot_cat, int& chang_t, const size_t& sel) {
+		void Set_chang_needs(std::vector<GUNPARTs>&data, const size_t& pts_cat, const size_t& pot_cat, int& chang_t, const int& sel) {
 			chang_max = (int)data.size() + 1;
 			chang_t = std::clamp(chang_t, 0, chang_max - 1);
 			if (chang_t == 0) { parts_p = nullptr; }
@@ -801,7 +801,7 @@ public:
 										if (sel_p == sel_max) {
 											port_ptr = s;
 											parts_cat = EnumGunParts::PARTS_SIGHT;
-											Set_chang_needs(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang, size_t(sel_max - ssp + 1));
+											Set_chang_needs(*MAINLOOPscene->get_parts_data(parts_cat), parts_cat, port_cat, chang, (sel_max - ssp + 1));
 											{
 												if (save_parts.size() < size_t(sel_max) + 1) {
 													save_parts.resize(size_t(sel_max) + 1);

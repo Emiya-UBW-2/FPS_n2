@@ -3683,13 +3683,13 @@ protected:
 			for (auto& a : this->cart) {
 				//‘Ò‹@’†‚ÌˆÚ“®
 				a.Put_second(this->base.cate_pos(), this->mat_gun);
-				if (((this->zpos_cart - zpos_buf)*1000.f) >= -0.1f) {
+				//if (((this->zpos_cart - zpos_buf)*1000.f) >= -0.1f) {
 					//‰ð•ú
 					a.Put_stay(this->base.cate_vec()*2.5f / GetFPS(), cart_rate_t);
-				}
+				//}
 			}
-			clsDx();
-			printfDx("%0.5f", ((this->zpos_cart - zpos_buf)*1000.f));
+			//clsDx();
+			//printfDx("%0.5f", ((this->zpos_cart - zpos_buf)*1000.f));
 
 			this->zpos_cart = zpos_buf;
 		}

@@ -740,7 +740,7 @@ public:
 					}
 					for (auto& d : chara.got_damage_) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - d.alpfa, 5.f))), 0, 255));
-						this->hit_rad.DrawRotaGraph(xp, yp, float(y_r(100)) / 100.f*((1.f - 0.3f) + (d.alpfa*0.3f)), d.rad, true);
+						this->hit_rad.DrawRotaGraph(xp, yp, float(y_r(100 * 2.f)) / 100.f*((1.f - 0.3f) + (d.alpfa*0.3f)), d.rad, true);
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
