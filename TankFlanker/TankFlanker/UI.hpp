@@ -260,7 +260,7 @@ public:
 		~UI_CUSTOM(void) {
 		}
 		template<class Y, class D>
-		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, switchs &Rot, Chara* mine_ptr, GUNPARTs* parts_p, float& change_per, bool use_vr = true) {
+		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, switchs &Rot, PLAYERclass::Chara* mine_ptr, GUNPARTs* parts_p, float& change_per, bool use_vr = true) {
 			if (use_vr) {
 				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
 			}
@@ -443,7 +443,7 @@ public:
 		float Ready = 0.f;
 		float timer = 0.f;
 		//
-		void Draw_HP(int xpos, int ypos, int xsize, int ysize, Mainclass::Chara& chara) {
+		void Draw_HP(int xpos, int ypos, int xsize, int ysize, PLAYERclass::Chara& chara) {
 			int will = int(chara.HP_r);
 			auto size = y_r(2);
 			DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, GetColor(64, 64, 64), TRUE);
@@ -502,7 +502,7 @@ public:
 			this->Ready = RULEparts->get_Ready();
 			this->timer = std::max(RULEparts->get_timer(),0.f);
 		}
-		void UI_Draw(Mainclass::Chara& chara, bool use_vr = true) {
+		void UI_Draw(PLAYERclass::Chara& chara, bool use_vr = true) {
 			if (use_vr) {
 				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
 			}
@@ -778,7 +778,7 @@ public:
 				//èIÇÌÇË
 			}
 		}
-		void item_Draw(std::vector<Chara>&chara, Mainclass::Chara&mine, std::vector<Items>&item_data, const VECTOR_ref& cam_pos, bool use_vr = true) {
+		void item_Draw(std::vector<PLAYERclass::Chara>&chara, PLAYERclass::Chara&mine, std::vector<Items>&item_data, const VECTOR_ref& cam_pos, bool use_vr = true) {
 			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
 			FontHandle* font_big = (use_vr) ? &font36 : &font24;
 			FontHandle* font = (use_vr) ? &font24 : &font18;

@@ -12,28 +12,26 @@ class main_c {
 	//終了処理フラグ
 	bool ending = true;
 	int sel_scene = scenes::ITEM_LOAD;
-	GraphHandle UI_Screen;
 	cam_info* cam_t = nullptr;
 public:
 	main_c(void) {
-		auto OPTPTs = std::make_unique<OPTION>();																						//設定読み込み
-		auto DrawPts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->Shadow, OPTPTs->Vsync);					//汎用
-		auto DebugPTs = std::make_unique<DeBuG>(FRAME_RATE);																			//デバッグ
+		auto OPTPTs = std::make_unique<OPTION>();																		//設定読み込み
+		auto DrawPts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->Shadow, OPTPTs->Vsync);	//汎用
+		auto DebugPTs = std::make_unique<DeBuG>(FRAME_RATE);															//デバッグ
 		if (DrawPts->use_vr) {
 			OPTPTs->DoF = false;
 			OPTPTs->Bloom = false;
 			OPTPTs->SSAO = false;//SSAOはVRでは使えない
 		}
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
-		auto MAPPTs = std::make_unique<MAPclass::Map>();																				//MAP
+		auto MAPPTs = std::make_unique<MAPclass::Map>();																					//MAP
 		auto UI_LOADPTs = std::make_unique<UIclass::UI_LOADING>();																			//UI_LOADING
-		UI_Screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);															//VR、フルスクリーン共用
 		//キー読み込み
 		auto KeyBind = std::make_unique<key_bind>();
 		//シーン
-		auto LOADscene = std::make_unique<Sceneclass::LOAD>(DrawPts);
-		auto SELECTscene = std::make_unique<Sceneclass::SELECT>(DrawPts);
-		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(DrawPts, OPTPTs);
+		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(&DrawPts, &MAPPTs, &OPTPTs);
+		auto LOADscene = std::make_unique<Sceneclass::LOAD>(DrawPts,&MAINLOOPscene);
+		auto SELECTscene = std::make_unique<Sceneclass::SELECT>(&DrawPts, &MAPPTs, &OPTPTs, &MAINLOOPscene);
 		//繰り返し
 		do {
 			bool selend = true;
@@ -56,7 +54,7 @@ public:
 					//キャラ設定
 					UI_LOADPTs->Set("マップ");
 					MAINLOOPscene->Set_Charaa(MAPPTs->get_spawn_point().size());
-					LOADscene->Set(MAINLOOPscene);
+					LOADscene->Set();
 					if (DrawPts->use_vr) {
 					}
 					else {
@@ -67,7 +65,7 @@ public:
 					break;
 				case scenes::SELECT:
 					//
-					SELECTscene->Set(OPTPTs, MAINLOOPscene);
+					SELECTscene->Set();
 					DrawPts->Set_Light_Shadow(SELECTscene->get_Shadow_maxpos(), SELECTscene->get_Shadow_minpos(), SELECTscene->get_Light_vec(), [&] {SELECTscene->Shadow_Draw_Far(); });
 					SetGlobalAmbientLight(SELECTscene->get_Light_color());
 					if (DrawPts->use_vr) {
@@ -83,8 +81,8 @@ public:
 					}
 					break;
 				case scenes::MAIN_LOOP:
-					MAINLOOPscene->Set(OPTPTs, MAPPTs);
-					DrawPts->Set_Light_Shadow(MAINLOOPscene->get_Shadow_maxpos(), MAINLOOPscene->get_Shadow_minpos(), MAINLOOPscene->get_Light_vec(), [&] {MAINLOOPscene->Shadow_Draw_Far(MAPPTs); });
+					MAINLOOPscene->Set();
+					DrawPts->Set_Light_Shadow(MAINLOOPscene->get_Shadow_maxpos(), MAINLOOPscene->get_Shadow_minpos(), MAINLOOPscene->get_Light_vec(), [&] {MAINLOOPscene->Shadow_Draw_Far(); });
 					SetGlobalAmbientLight(MAINLOOPscene->get_Light_color());
 					if (DrawPts->use_vr) {
 					}
@@ -222,7 +220,7 @@ public:
 							mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);
 							mine_k.have_magazine = true;
 						}
-						selend = SELECTscene->UpDate(MAPPTs, DrawPts, MAINLOOPscene);
+						selend = SELECTscene->UpDate();
 						cam_t = &SELECTscene->Get_Camera();
 						break;
 					case scenes::MAIN_LOOP:
@@ -292,7 +290,7 @@ public:
 							}
 						}
 						//
-						selend = MAINLOOPscene->UpDate(MAPPTs, DrawPts);
+						selend = MAINLOOPscene->UpDate();
 						cam_t = &MAINLOOPscene->Get_Camera();
 						if (KeyBind->key_use_ID[10].get_key(0)) {
 							selend = false;
@@ -309,8 +307,7 @@ public:
 					//描画
 					{
 						//UI書き込み
-						this->UI_Screen.SetDraw_Screen();
-						{
+						HostpassPTs->Set_UI_draw([&]() {
 							switch (sel_scene) {
 							case scenes::ITEM_LOAD:
 								UI_LOADPTs->UI_Draw();
@@ -319,10 +316,10 @@ public:
 								UI_LOADPTs->UI_Draw();
 								break;
 							case scenes::LOAD:
-								LOADscene->UI_Draw(MAINLOOPscene);
+								LOADscene->UI_Draw();
 								break;
 							case scenes::SELECT:
-								SELECTscene->UI_Draw(MAINLOOPscene);
+								SELECTscene->UI_Draw();
 								break;
 							case scenes::MAIN_LOOP:
 								MAINLOOPscene->UI_Draw();
@@ -330,7 +327,7 @@ public:
 							default:
 								break;
 							}
-						}
+						});
 						if (cam_t != nullptr) {
 							//影用意
 							DrawPts->Ready_Shadow(cam_t->campos, [&] {
@@ -345,7 +342,7 @@ public:
 									SELECTscene->Shadow_Draw();
 									break;
 								case scenes::MAIN_LOOP:
-									MAINLOOPscene->Shadow_Draw(MAPPTs);
+									MAINLOOPscene->Shadow_Draw();
 									break;
 								default:
 									break;
@@ -373,31 +370,17 @@ public:
 										HostpassPTs->BUF_draw([&](void) { SELECTscene->BG_Draw(); }, [&](void) { DrawPts->Draw_by_Shadow([&] { SELECTscene->Main_Draw(); }); }, tmp_cam);
 										break;
 									case scenes::MAIN_LOOP:
-										HostpassPTs->BUF_draw([&](void) { MAINLOOPscene->BG_Draw(MAPPTs); }, [&](void) { DrawPts->Draw_by_Shadow([&] { MAINLOOPscene->Main_Draw(MAPPTs); }); }, tmp_cam);
+										HostpassPTs->BUF_draw([&](void) { MAINLOOPscene->BG_Draw(); }, [&](void) { DrawPts->Draw_by_Shadow([&] { MAINLOOPscene->Main_Draw(); }); }, tmp_cam);
 										break;
 									default:
 										break;
 									}
 									//最終描画
-									HostpassPTs->MAIN_draw();
+									HostpassPTs->Set_MAIN_draw();
 								}
 								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_);
 								{
-									HostpassPTs->get_main().DrawGraph(0, 0, true);
-									//UI
-									if (DrawPts->use_vr) {
-										SetCameraNearFar(0.01f, 2.f);
-										SetUseZBuffer3D(FALSE);												//zbufuse
-										SetWriteZBuffer3D(FALSE);											//zbufwrite
-										{
-											DrawBillboard3D((cam_t->campos + (cam_t->camvec - cam_t->campos).Norm()*1.0f).get(), 0.5f, 0.5f, 1.8f, 0.f, this->UI_Screen.get(), TRUE);
-										}
-										SetUseZBuffer3D(TRUE);												//zbufuse
-										SetWriteZBuffer3D(TRUE);											//zbufwrite
-									}
-									else {
-										this->UI_Screen.DrawGraph(0, 0, TRUE);
-									}
+									HostpassPTs->Draw(cam_t, DrawPts->use_vr);
 									//UI2
 									switch (sel_scene) {
 									case scenes::ITEM_LOAD:
@@ -425,7 +408,7 @@ public:
 								auto tmp = GetDrawScreen();
 								GraphHandle::SetDraw_Screen(tmp);
 								{
-									this->UI_Screen.DrawGraph(0, 0, TRUE);
+									HostpassPTs->UI_draw();
 								}
 							}, tmp_cam);
 						}

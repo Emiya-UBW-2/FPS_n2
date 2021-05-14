@@ -9,8 +9,9 @@
 #include "DXLib_ref/DXLib_ref.h"
 
 #include "sub.hpp"
-#include "UI.hpp"
 #include "map.hpp"
+#include "chara.hpp"
+#include "UI.hpp"
 #include "scene.hpp"
 
 #include "route.hpp"

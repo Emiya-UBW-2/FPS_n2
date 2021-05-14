@@ -49,12 +49,8 @@ public:
 		GraphHandle& get_minmap(void) { return minmap; }
 		int& get_x_size(void) { return x_size; }
 		int& get_y_size(void) { return y_size; }
-
-		Map(void) {
-		}
-		~Map(void) {
-
-		}
+		Map(void) { }
+		~Map(void) { }
 		void Ready_map(std::string dir) {
 			this->path = dir + "/";
 			MV1::Load(this->path + "model.mv1", &map, true);		   //map
@@ -137,7 +133,7 @@ public:
 						p4 = getparams::_float(mdata);
 
 						item.resize(item.size() + 1);
-						item.back().Set_item_4(item.size() - 1, &(*MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_MAGAZINE))[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						item.back().Set_item_before(item.size() - 1, &(*MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_MAGAZINE))[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -160,8 +156,7 @@ public:
 						p4 = getparams::_float(mdata);
 
 						item.resize(item.size() + 1);
-						item.back().get_id_t() = item.size() - 1;
-						item.back().Set_item(&MAINLOOPscene->get_meds_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						item.back().Set_item_med_(item.size() - 1 ,&MAINLOOPscene->get_meds_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -416,8 +411,10 @@ public:
 		float xcam = 1.f;
 		int MaskHandle = -1;
 		bool loadmasks = true;
+		std::unique_ptr<Map, std::default_delete<Map>>* MAPPTs;
+
 	public:
-		MiniMap(void) {
+		MiniMap(std::unique_ptr<Map, std::default_delete<Map>>* MAPPTs_t) {
 			SetUseASyncLoadFlag(FALSE);
 			CreateMaskScreen();
 			MaskHandle = LoadMask("data/UI/testMask.bmp");
@@ -425,17 +422,19 @@ public:
 			UI_minimap = GraphHandle::Make(x_size, y_size, true);
 			UI_player = GraphHandle::Load("data/UI/player.bmp");
 			loadmasks = true;
+			MAPPTs = MAPPTs_t;
 		}
 	private:
-		void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
-			auto x_2 = chara_pos.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
-			auto y_2 = -chara_pos.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
+		void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp) {
+			auto x_2 = chara_pos.x() / (*MAPPTs)->map_col_get().mesh_maxpos(0).x() *((*MAPPTs)->get_x_size() / 2)*xcam;
+			auto y_2 = -chara_pos.z() / (*MAPPTs)->map_col_get().mesh_maxpos(0).z() *((*MAPPTs)->get_y_size() / 2)*xcam;
 
 			*xp = int(x_2*cos(radp) - y_2 * sin(radp));
 			*yp = int(y_2*cos(radp) + x_2 * sin(radp));
 		}
 	public:
-		void Set(std::vector<Chara>&chara, Mainclass::Chara& mine, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
+		template<class Chara>
+		void Set(std::vector<Chara>&chara, Chara& mine) {
 			UI_minimap.SetDraw_Screen(true);
 			{
 				DrawBox(0, 0, x_size, y_size, GetColor(0, 128, 0), TRUE);
@@ -443,21 +442,21 @@ public:
 				float radp = 0.f;
 				{
 					easing_set(&xcam, 1.f + mine.get_pseed_per() * 0.3f, 0.9f);
-					radp = -mine.Get_rad_chara();
+					radp = -mine.get_body_yrad();
 					int xpos = 0, ypos = 0;
-					Set_pos_chara(&xpos, &ypos, mine.get_pos(), radp, MAPPTs);
+					Set_pos_chara(&xpos, &ypos, mine.get_pos(), radp);
 					xp = x_size / 2 - xpos;
 					yp = y_size / 2 - ypos;
 				}
 
-				MAPPTs->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
+				(*MAPPTs)->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
 				for (auto& c : chara) {
 					int xpos = 0, ypos = 0;
-					Set_pos_chara(&xpos, &ypos, c.get_pos(), radp, MAPPTs);
+					Set_pos_chara(&xpos, &ypos, c.get_pos(), radp);
 					int xt = xp + xpos;
 					int yt = yp + ypos;
 
-					UI_player.DrawRotaGraph(xt, yt, xcam, radp + c.Get_rad_chara(), true);
+					UI_player.DrawRotaGraph(xt, yt, xcam, radp + c.get_body_yrad(), true);
 				}
 			}
 		}
