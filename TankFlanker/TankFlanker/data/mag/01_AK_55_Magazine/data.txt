@@ -1,7 +1,0 @@
-type55 AK magazine(10R)
-AK47用民間向け10発マガジン。
-ammo_cap=10
-ammo_1=7.62x39
-ammo_end=end
-recoil=0.0
-weight=0.2

@@ -1160,9 +1160,9 @@ public:
 				this->gun_data.resize(1);
 				this->gun_data[0].mod.Ready("data/gun/", "00_AKM");
 				//MAGデータ
-				this->magazine_data.resize(2);
+				this->magazine_data.resize(1);
 				this->magazine_data[0].mod.Ready("data/mag/", "00_AK_55_Magazine");
-				this->magazine_data[1].mod.Ready("data/mag/", "01_AK_55_Magazine");
+				//this->magazine_data[1].mod.Ready("data/mag/", "01_AK_55_Magazine");
 				//MEDデータ
 				this->meds_data.resize(1);
 				this->meds_data[0].mod.Ready("data/medkit/", "AIDkit");

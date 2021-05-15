@@ -113,6 +113,7 @@ public:
 				}
 			}
 			while (ProcessMessage() == 0) {
+				clsDx();
 				const auto waits = GetNowHiPerformanceCount();
 				DebugPTs->put_way();
 				{
@@ -139,7 +140,7 @@ public:
 							if (DrawPts->get_hand2_num() != -1) {
 								auto ptr_ = DrawPts->get_device_hand2();
 								if (ptr_->turn && ptr_->now) {
-									mine_k.have_magazine = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
+									mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
 									mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 									mine_k.sort_magazine = false;									//
 									mine_k.drop_ = false;											//
@@ -169,7 +170,7 @@ public:
 							mine_k.shoot = KeyBind->mouse_use_ID[0].get_key(3);
 							mine_k.select = KeyBind->mouse_use_ID[1].get_key(5);
 							mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);
-							mine_k.have_magazine = true;
+							mine_k.have_mag = true;
 						}
 						selend = LOADscene->UpDate();
 						break;
@@ -188,7 +189,7 @@ public:
 							if (DrawPts->get_hand2_num() != -1) {
 								auto ptr_ = DrawPts->get_device_hand2();
 								if (ptr_->turn && ptr_->now) {
-									mine_k.have_magazine = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
+									mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
 									mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 									mine_k.sort_magazine = false;									//
 									mine_k.drop_ = false;											//
@@ -218,7 +219,7 @@ public:
 							mine_k.shoot = KeyBind->mouse_use_ID[0].get_key(3);
 							mine_k.select = KeyBind->mouse_use_ID[1].get_key(5);
 							mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);
-							mine_k.have_magazine = true;
+							mine_k.have_mag = true;
 						}
 						selend = SELECTscene->UpDate();
 						cam_t = &SELECTscene->Get_Camera();
@@ -238,7 +239,7 @@ public:
 							if (DrawPts->get_hand2_num() != -1) {
 								auto ptr_ = DrawPts->get_device_hand2();
 								if (ptr_->turn && ptr_->now) {
-									mine_k.have_magazine = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
+									mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
 									mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 									mine_k.sort_magazine = false;									//
 									mine_k.drop_ = false;											//
@@ -264,12 +265,12 @@ public:
 							mine_k.squat = KeyBind->key_use_ID[9].get_key(1);
 							mine_k.sort_magazine = KeyBind->key_use_ID[12].get_key(2);
 							mine_k.running = KeyBind->key_use_ID[13].get_key(0);
-							mine_k.jamp = KeyBind->key_use_ID[14].get_key(2);
+							mine_k.jamp = KeyBind->key_use_ID[14].get_key(0);
 							mine_k.TPS = KeyBind->key_use_ID[15].get_key(0);
 							mine_k.shoot = KeyBind->mouse_use_ID[0].get_key(3);
 							mine_k.select = KeyBind->mouse_use_ID[1].get_key(5);
 							mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);
-							mine_k.have_magazine = true;
+							mine_k.have_mag = true;
 						}
 						//アイテム演算
 						{
