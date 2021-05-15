@@ -443,6 +443,9 @@ public:
 		float Ready = 0.f;
 		float timer = 0.f;
 		//
+		std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs;
+		std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>* RULEparts;
+		//
 		void Draw_HP(int xpos, int ypos, int xsize, int ysize, PLAYERclass::Chara& chara) {
 			int will = int(chara.HP_r);
 			auto size = y_r(2);
@@ -479,7 +482,9 @@ public:
 			}
 		}
 	public:
-		UI_MAINLOOP(void) {
+		UI_MAINLOOP(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t, std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>* RULEparts_t) {
+			MAPPTs = MAPPTs_t;
+			RULEparts = RULEparts_t;
 			SetUseASyncLoadFlag(TRUE);
 			this->hit_rad = GraphHandle::Load("data/UI/enemyrad.png");
 			this->hit_Graph = GraphHandle::Load("data/UI/battle_hit.bmp");
@@ -498,9 +503,9 @@ public:
 		}
 		~UI_MAINLOOP(void) {
 		}
-		void Update(std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>& RULEparts) {
-			this->Ready = RULEparts->get_Ready();
-			this->timer = std::max(RULEparts->get_timer(),0.f);
+		void Update() {
+			this->Ready = (*RULEparts)->get_Ready();
+			this->timer = std::max((*RULEparts)->get_timer(),0.f);
 		}
 		void UI_Draw(PLAYERclass::Chara& chara, bool use_vr = true) {
 			if (use_vr) {
@@ -658,20 +663,20 @@ public:
 							}
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, 192);
 							chara.base.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
-							if (chara.stock.attach) {
-								chara.stock.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+							if (chara.get_parts(EnumGunParts::PARTS_STOCK)->attach) {
+								chara.get_parts(EnumGunParts::PARTS_STOCK)->thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
 							}
-							if (chara.grip.attach) {
-								chara.grip.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+							if (chara.get_parts(EnumGunParts::PARTS_GRIP)->attach) {
+								chara.get_parts(EnumGunParts::PARTS_GRIP)->thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
 							}
-							if (chara.dustcover.attach) {
-								chara.dustcover.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+							if (chara.get_parts(EnumGunParts::PARTS_DUSTCOVER)->attach) {
+								chara.get_parts(EnumGunParts::PARTS_DUSTCOVER)->thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
 							}
-							if (chara.underhandguard.attach) {
-								chara.underhandguard.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+							if (chara.get_parts(EnumGunParts::PARTS_UNDER_HGUARD)->attach) {
+								chara.get_parts(EnumGunParts::PARTS_UNDER_HGUARD)->thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
 							}
-							if (chara.uperhandguard.attach) {
-								chara.uperhandguard.thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
+							if (chara.get_parts(EnumGunParts::PARTS_UPER_HGUARD)->attach) {
+								chara.get_parts(EnumGunParts::PARTS_UPER_HGUARD)->thisparts->mod.UIScreen.DrawExtendGraph(xp2, yp2, xp2 + xs2, yp2 + ys2, true);
 							}
 							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 							//*/
@@ -693,10 +698,10 @@ public:
 								yp = t_disp_y - x_r(20) - font_bighight * size;
 							}
 							if (size > 0) {
-								DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat_now->magazine_in_flont(), chara.magazine.thisparts->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
+								DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat_now->magazine_in_flont(), chara.get_parts(EnumGunParts::PARTS_MAGAZINE)->thisparts->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
 							}
 							for (auto& a : chara.gun_stat_now->get_magazine_in()) {
-								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a, chara.magazine.thisparts->cap);
+								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a, chara.get_parts(EnumGunParts::PARTS_MAGAZINE)->thisparts->cap);
 								xp -= font_bighight / 3;
 								yp += font_bighight;
 							}
@@ -778,7 +783,7 @@ public:
 				//終わり
 			}
 		}
-		void item_Draw(std::vector<PLAYERclass::Chara>&chara, PLAYERclass::Chara&mine, std::vector<Items>&item_data, const VECTOR_ref& cam_pos, bool use_vr = true) {
+		void item_Draw(std::vector<PLAYERclass::Chara>&chara, PLAYERclass::Chara&mine, const VECTOR_ref& cam_pos, bool use_vr = true) {
 			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
 			FontHandle* font_big = (use_vr) ? &font36 : &font24;
 			FontHandle* font = (use_vr) ? &font24 : &font18;
@@ -794,7 +799,7 @@ public:
 					xp = int(p.x());
 					yp = int(p.y());
 					int cnt = int(mine.gun_stat_now->get_ammo_cnt());
-					int per = 90 * cnt / int(mine.magazine.thisparts->cap);
+					int per = 90 * cnt / int(mine.get_parts(EnumGunParts::PARTS_MAGAZINE)->thisparts->cap);
 					float rad = deg2rad(90 - per);
 					int col_r = GetColor(std::clamp(int(255.f*sin(rad)*2.f), 0, 255), std::clamp(int(255.f*cos(rad)*2.f), 0, 255), 0);
 					if (std::max((pos_gun - cam_pos).size(), 1.f) <= 10.f) {
@@ -820,7 +825,7 @@ public:
 			//アイテム
 			{
 				SetCameraNearFar(0.01f, 10.f);
-				for (auto& g : item_data) {
+				for (auto& g : (*MAPPTs)->item) {
 					//mag
 					if (g.get_ptr_mag() != nullptr) {
 						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().cap, g.get_ptr_mag()->cap);

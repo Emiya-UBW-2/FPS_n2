@@ -14,16 +14,12 @@ public:
 		MV1 map, map_col;	//地面
 		MV1 sky;			//空
 		SoundHandle envi;	//
-
 		std::vector<VECTOR_ref> way_point;
 		std::vector<VECTOR_ref> lean_point_q;
 		std::vector<VECTOR_ref> lean_point_e;
 		std::vector<VECTOR_ref> spawn_point;
-
 		int grass_pos = -1;
-
 		GraphHandle minmap;
-
 		int x_size = 0;
 		int y_size = 0;
 		//太陽
@@ -69,8 +65,7 @@ public:
 			MV1::Load("data/model/grass/model.mv1", &grass, true);		/*grass*/
 			grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
 		}
-		template<class Y, class D>
-		void Start(std::unique_ptr<Y, D>& MAINLOOPscene, const VECTOR_ref& ray) {
+		void Start(std::vector<GUNPARTs>* get_parts_data, std::vector<Meds>* get_meds_data, const VECTOR_ref& ray) {
 			this->sun_pos = ray.Norm() * -1500.f;
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			VECTOR_ref size;
@@ -122,7 +117,7 @@ public:
 					if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
 						size_t p1 = 0;
 						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
-						for (auto& g : *MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_MAGAZINE)) {
+						for (auto& g : *get_parts_data) {
 							if (p.find(g.mod.get_name()) != std::string::npos) {
 								p1 = g.id_t;
 								break;
@@ -133,7 +128,7 @@ public:
 						p4 = getparams::_float(mdata);
 
 						item.resize(item.size() + 1);
-						item.back().Set_item_before(item.size() - 1, &(*MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_MAGAZINE))[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						item.back().Set_item_before(item.size() - 1, &(*get_parts_data)[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -145,7 +140,7 @@ public:
 					if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
 						size_t p1 = 0;
 						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
-						for (auto& g : MAINLOOPscene->get_meds_data()) {
+						for (auto& g : *get_meds_data) {
 							if (p.find(g.mod.get_name()) != std::string::npos) {
 								p1 = g.id_t;
 								break;
@@ -156,7 +151,7 @@ public:
 						p4 = getparams::_float(mdata);
 
 						item.resize(item.size() + 1);
-						item.back().Set_item_med_(item.size() - 1 ,&MAINLOOPscene->get_meds_data()[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						item.back().Set_item_med_(item.size() - 1 ,&(*get_meds_data)[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -398,6 +393,13 @@ public:
 			grass_Draw();
 			item_Draw();
 		}
+		//
+		template<class Chara>
+		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos,Chara& chara, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
+			for (auto& g : this->item) {
+				g.Get_item_2(StartPos, EndPos, chara, MAPPTs);
+			}
+		}
 	};
 	class MiniMap {
 	private:
@@ -405,14 +407,21 @@ public:
 		int y_size = 0;
 		int x_pos = 0;
 		int y_pos = 0;
-
 		GraphHandle UI_player;			//描画スクリーン
 		GraphHandle UI_minimap;			//描画スクリーン
 		float xcam = 1.f;
 		int MaskHandle = -1;
 		bool loadmasks = true;
+		//
 		std::unique_ptr<Map, std::default_delete<Map>>* MAPPTs;
+	private:
+		void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp) {
+			auto x_2 = chara_pos.x() / (*MAPPTs)->map_col_get().mesh_maxpos(0).x() *((*MAPPTs)->get_x_size() / 2)*xcam;
+			auto y_2 = -chara_pos.z() / (*MAPPTs)->map_col_get().mesh_maxpos(0).z() *((*MAPPTs)->get_y_size() / 2)*xcam;
 
+			*xp = int(x_2*cos(radp) - y_2 * sin(radp));
+			*yp = int(y_2*cos(radp) + x_2 * sin(radp));
+		}
 	public:
 		MiniMap(std::unique_ptr<Map, std::default_delete<Map>>* MAPPTs_t) {
 			SetUseASyncLoadFlag(FALSE);
@@ -424,15 +433,6 @@ public:
 			loadmasks = true;
 			MAPPTs = MAPPTs_t;
 		}
-	private:
-		void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp) {
-			auto x_2 = chara_pos.x() / (*MAPPTs)->map_col_get().mesh_maxpos(0).x() *((*MAPPTs)->get_x_size() / 2)*xcam;
-			auto y_2 = -chara_pos.z() / (*MAPPTs)->map_col_get().mesh_maxpos(0).z() *((*MAPPTs)->get_y_size() / 2)*xcam;
-
-			*xp = int(x_2*cos(radp) - y_2 * sin(radp));
-			*yp = int(y_2*cos(radp) + x_2 * sin(radp));
-		}
-	public:
 		template<class Chara>
 		void Set(std::vector<Chara>&chara, Chara& mine) {
 			UI_minimap.SetDraw_Screen(true);
@@ -460,7 +460,6 @@ public:
 				}
 			}
 		}
-
 		void Draw(const int& xpos, const int& ypos) {
 			if (x_pos != xpos || y_pos != ypos) {
 				loadmasks = true;

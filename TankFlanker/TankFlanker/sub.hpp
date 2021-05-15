@@ -684,6 +684,7 @@ protected:
 		//magazine
 		size_t cap = 1;
 		//
+		auto& get_type() { return type; }
 		void Set_datas(const size_t& id_, const int& type_t) {
 			this->id_t = id_;
 			this->type = type_t;

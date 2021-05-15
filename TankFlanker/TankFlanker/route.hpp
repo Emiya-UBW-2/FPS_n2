@@ -30,7 +30,7 @@ public:
 		auto KeyBind = std::make_unique<key_bind>();
 		//シーン
 		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(&DrawPts, &MAPPTs, &OPTPTs);
-		auto LOADscene = std::make_unique<Sceneclass::LOAD>(DrawPts,&MAINLOOPscene);
+		auto LOADscene = std::make_unique<Sceneclass::LOAD>(DrawPts->use_vr,&MAINLOOPscene);
 		auto SELECTscene = std::make_unique<Sceneclass::SELECT>(&DrawPts, &MAPPTs, &OPTPTs, &MAINLOOPscene);
 		//繰り返し
 		do {
@@ -129,22 +129,22 @@ public:
 						if (DrawPts->use_vr) {
 							auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
 							if (DrawPts->get_hand1_num() != -1) {
-								auto& ptr_ = (*DrawPts->get_device())[DrawPts->get_hand1_num()];
-								if (ptr_.turn && ptr_.now) {
-									mine_k.shoot = ((ptr_.on[0] & BUTTON_TRIGGER) != 0);																				//射撃
-									mine_k.reload = ((ptr_.on[0] & BUTTON_SIDE) != 0);																					//マグキャッチ
-									mine_k.select = ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f&&ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f);	//セレクター
+								auto ptr_ = DrawPts->get_device_hand1();
+								if (ptr_->turn && ptr_->now) {
+									mine_k.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																				//射撃
+									mine_k.reload = ((ptr_->on[0] & BUTTON_SIDE) != 0);																					//マグキャッチ
+									mine_k.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f&&ptr_->touch.y() < 0.5f&&ptr_->touch.y() > -0.5f);	//セレクター
 								}
 							}
 							if (DrawPts->get_hand2_num() != -1) {
-								auto& ptr_ = (*DrawPts->get_device())[DrawPts->get_hand2_num()];
-								if (ptr_.turn && ptr_.now) {
-									mine_k.have_magazine = ((ptr_.on[0] & BUTTON_TRIGGER) != 0);		//マガジン持つ
-									mine_k.have_item = (ptr_.on[0] & BUTTON_TOPBUTTON_B) != 0;	//アイテム取得
+								auto ptr_ = DrawPts->get_device_hand2();
+								if (ptr_->turn && ptr_->now) {
+									mine_k.have_magazine = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
+									mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 									mine_k.sort_magazine = false;									//
-									mine_k.drop_ = false;									//
-									mine_k.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;		//running
-									mine_k.jamp = (ptr_.on[0] & BUTTON_SIDE) != 0;			//jamp
+									mine_k.drop_ = false;											//
+									mine_k.running = (ptr_->on[0] & BUTTON_TOUCHPAD) != 0;			//running
+									mine_k.jamp = (ptr_->on[0] & BUTTON_SIDE) != 0;					//jamp
 								}
 							}
 						}
@@ -178,22 +178,22 @@ public:
 						if (DrawPts->use_vr) {
 							auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
 							if (DrawPts->get_hand1_num() != -1) {
-								auto& ptr_ = (*DrawPts->get_device())[DrawPts->get_hand1_num()];
-								if (ptr_.turn && ptr_.now) {
-									mine_k.shoot = ((ptr_.on[0] & BUTTON_TRIGGER) != 0);																				//射撃
-									mine_k.reload = ((ptr_.on[0] & BUTTON_SIDE) != 0);																					//マグキャッチ
-									mine_k.select = ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f&&ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f);	//セレクター
+								auto ptr_ = DrawPts->get_device_hand1();
+								if (ptr_->turn && ptr_->now) {
+									mine_k.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
+									mine_k.reload = ((ptr_->on[0] & BUTTON_SIDE) != 0);																						//マグキャッチ
+									mine_k.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f&&ptr_->touch.y() < 0.5f&&ptr_->touch.y() > -0.5f);	//セレクター
 								}
 							}
 							if (DrawPts->get_hand2_num() != -1) {
-								auto& ptr_ = (*DrawPts->get_device())[DrawPts->get_hand2_num()];
-								if (ptr_.turn && ptr_.now) {
-									mine_k.have_magazine = ((ptr_.on[0] & BUTTON_TRIGGER) != 0);		//マガジン持つ
-									mine_k.have_item = (ptr_.on[0] & BUTTON_TOPBUTTON_B) != 0;	//アイテム取得
+								auto ptr_ = DrawPts->get_device_hand2();
+								if (ptr_->turn && ptr_->now) {
+									mine_k.have_magazine = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
+									mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 									mine_k.sort_magazine = false;									//
-									mine_k.drop_ = false;									//
-									mine_k.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;		//running
-									mine_k.jamp = (ptr_.on[0] & BUTTON_SIDE) != 0;			//jamp
+									mine_k.drop_ = false;											//
+									mine_k.running = (ptr_->on[0] & BUTTON_TOUCHPAD) != 0;			//running
+									mine_k.jamp = (ptr_->on[0] & BUTTON_SIDE) != 0;					//jamp
 								}
 							}
 						}
@@ -228,22 +228,22 @@ public:
 						if (DrawPts->use_vr) {
 							auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
 							if (DrawPts->get_hand1_num() != -1) {
-								auto& ptr_ = (*DrawPts->get_device())[DrawPts->get_hand1_num()];
-								if (ptr_.turn && ptr_.now) {
-									mine_k.shoot = ((ptr_.on[0] & BUTTON_TRIGGER) != 0);																				//射撃
-									mine_k.reload = ((ptr_.on[0] & BUTTON_SIDE) != 0);																					//マグキャッチ
-									mine_k.select = ((ptr_.on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_.touch.x() > 0.5f&&ptr_.touch.y() < 0.5f&&ptr_.touch.y() > -0.5f);	//セレクター
+								auto ptr_ = DrawPts->get_device_hand1();
+								if (ptr_->turn && ptr_->now) {
+									mine_k.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
+									mine_k.reload = ((ptr_->on[0] & BUTTON_SIDE) != 0);																						//マグキャッチ
+									mine_k.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f&&ptr_->touch.y() < 0.5f&&ptr_->touch.y() > -0.5f);	//セレクター
 								}
 							}
 							if (DrawPts->get_hand2_num() != -1) {
-								auto& ptr_ = (*DrawPts->get_device())[DrawPts->get_hand2_num()];
-								if (ptr_.turn && ptr_.now) {
-									mine_k.have_magazine = ((ptr_.on[0] & BUTTON_TRIGGER) != 0);		//マガジン持つ
-									mine_k.have_item = (ptr_.on[0] & BUTTON_TOPBUTTON_B) != 0;	//アイテム取得
+								auto ptr_ = DrawPts->get_device_hand2();
+								if (ptr_->turn && ptr_->now) {
+									mine_k.have_magazine = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
+									mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 									mine_k.sort_magazine = false;									//
-									mine_k.drop_ = false;									//
-									mine_k.running = (ptr_.on[0] & BUTTON_TOUCHPAD) != 0;		//running
-									mine_k.jamp = (ptr_.on[0] & BUTTON_SIDE) != 0;			//jamp
+									mine_k.drop_ = false;											//
+									mine_k.running = (ptr_->on[0] & BUTTON_TOUCHPAD) != 0;			//running
+									mine_k.jamp = (ptr_->on[0] & BUTTON_SIDE) != 0;					//jamp
 								}
 							}
 						}
@@ -393,7 +393,7 @@ public:
 										SELECTscene->Item_Draw();
 										break;
 									case scenes::MAIN_LOOP:
-										MAINLOOPscene->Item_Draw(MAPPTs->item);
+										MAINLOOPscene->Item_Draw();
 										break;
 									default:
 										break;
@@ -468,7 +468,11 @@ public:
 					break;
 				case scenes::MAP_LOAD:
 					UI_LOADPTs->Dispose();
-					MAPPTs->Start(MAINLOOPscene, VGet(0.5f, -0.5f, 0.5f)/*MAINLOOPscene->get_Light_vec()*/);
+					MAPPTs->Start(
+						MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_MAGAZINE),
+						&MAINLOOPscene->get_meds_data(),
+						VGet(0.5f, -0.5f, 0.5f)/*MAINLOOPscene->get_Light_vec()*/
+					);
 					break;
 				case scenes::LOAD:
 					LOADscene->Dispose(&SELECTscene->preset);
