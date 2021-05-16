@@ -1114,11 +1114,12 @@ public:
 			{
 				//model
 				light = GraphHandle::Load("data/light.png");					//ライト
-				MV1::Load("data/model/body2/model.mv1", &this->body_obj, true);	//身体
-				MV1SetLoadModelPhysicsWorldGravity(-1.f);
-				MV1::Load("data/model/body_lag/model.mv1", &this->body_obj_lag, true);	//身体
-				MV1::Load("data/model/body2/col.mv1", &this->body_col, true);	//身体col
 				MV1::Load("data/model/hit/model.mv1", &this->hit_pic, true);	//弾痕
+
+				MV1::Load("data/model/body3/model.mv1", &this->body_obj, true);	//身体
+				MV1::Load("data/model/body3/col.mv1", &this->body_col, true);	//身体col
+				MV1SetLoadModelPhysicsWorldGravity(-1.f);
+				MV1::Load("data/model/body3/model_lag.mv1", &this->body_obj_lag, true);	//身体
 				//
 				this->mazzule_data.resize(2);
 				this->mazzule_data[0].mod.Ready("data/parts/mazzule/", "00_AK_6P1_Compensator");
@@ -1207,29 +1208,20 @@ public:
 					c.Attach_parts(&grip_data[0], EnumGunParts::PARTS_GRIP, &c.base, EnumAttachPoint::GRIP_BASE);
 					//uperhandguard
 					c.Attach_parts(&uperhandguard_data[0], EnumGunParts::PARTS_UPER_HGUARD, &c.base, EnumAttachPoint::UPER_HANDGUARD);
-					{
-						c.Attach_parts(&sight_data[0], EnumGunParts::PARTS_SIGHT, c.get_parts(EnumGunParts::PARTS_UPER_HGUARD), EnumAttachPoint::UPER_RAIL);
-					}
 					//underhandguard
 					c.Attach_parts(&underhandguard_data[0], EnumGunParts::PARTS_UNDER_HGUARD, &c.base, EnumAttachPoint::UNDER_HANDGUARD);
-					{
-						c.Attach_parts(&foregrip_data[0], EnumGunParts::PARTS_FOREGRIP, c.get_parts(EnumGunParts::PARTS_UNDER_HGUARD), EnumAttachPoint::UNDER_RAIL);
-						c.Attach_parts(&light_data[0], EnumGunParts::PARTS_LIGHT, c.get_parts(EnumGunParts::PARTS_UNDER_HGUARD), EnumAttachPoint::LEFTSIDE_RAIL);
-						c.Attach_parts(&laser_data[0], EnumGunParts::PARTS_LASER, c.get_parts(EnumGunParts::PARTS_UNDER_HGUARD), EnumAttachPoint::RIGHTSIDE_RAIL);
-					}
 					//sidemount
 					c.Attach_parts(&mount_data[0], EnumGunParts::PARTS_MOUNT, &c.base, EnumAttachPoint::SIDEMOUNT_BASE);
 					{
 						c.Attach_parts(&mount_data[1], EnumGunParts::PARTS_MOUNT, &c.mount_[0], EnumAttachPoint::SIDEMOUNT);
 						{
-							c.Attach_parts(&sight_data[1], EnumGunParts::PARTS_SIGHT, &c.mount_[1], EnumAttachPoint::UPER_RAIL);
+							c.Attach_parts(&sight_data[0], EnumGunParts::PARTS_SIGHT, &c.mount_[1], EnumAttachPoint::UPER_RAIL,1);
 						}
 					}
 					//optional
 					c.Attach_parts(&mazzule_data[0], EnumGunParts::PARTS_MAZZULE, &c.base, EnumAttachPoint::MAZZULE_BASE);
 					c.Attach_parts(&dustcover_data[0], EnumGunParts::PARTS_DUSTCOVER, &c.base, EnumAttachPoint::DUSTCOVER_BASE);
-					//c.Attach_parts(&stock_data[0], EnumGunParts::PARTS_STOCK, &c.base, EnumAttachPoint::STOCK_BASE);
-					//
+					c.Attach_parts(&stock_data[0], EnumGunParts::PARTS_STOCK, &c.base, EnumAttachPoint::STOCK_BASE);
 				}
 				//初回位置設定スポーン
 				{
