@@ -87,6 +87,10 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <DisableLanguageExtensions>false</DisableLanguageExtensions>
+      <SmallerTypeCheck>false</SmallerTypeCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

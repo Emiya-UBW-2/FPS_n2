@@ -467,7 +467,7 @@ public:
 							changef = true;
 							int pp = mine_ptr->base.thisparts->Select_Chose(1);
 							if (pp != -1) {
-								mine_ptr->gun_stat_now->get_select() = uint8_t(pp);
+								mine_ptr->gun_stat_now->selecter = uint8_t(pp);
 							}
 						}
 						if (left.push()) {
@@ -919,7 +919,7 @@ public:
 				}
 				file.close();
 			}
-			mine_ptr->gun_stat_now->get_select() = 0;
+			mine_ptr->gun_stat_now->selecter = 0;
 			shot_se.Dispose();
 			slide_se.Dispose();
 			trigger_se.Dispose();
@@ -959,7 +959,6 @@ public:
 			int sel_cam = 0;
 			//ÉJÉÅÉâ
 			cam_info camera_TPS;
-
 			TPS_parts(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t) {
 				MAPPTs = MAPPTs_t;
 			}

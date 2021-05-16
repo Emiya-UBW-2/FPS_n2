@@ -785,9 +785,9 @@ protected:
 			return -1;
 		}
 		//
-		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, const int& get_select) {
+		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, const int& selecting) {
 			for (auto& sel : this->select) {
-				easing_set(&gunanime_sel[&sel - &this->select[0]]->per, float(int(sel == this->select[get_select])), 0.5f);
+				easing_set(&gunanime_sel[&sel - &this->select[0]]->per, float(int(sel == this->select[selecting])), 0.5f);
 			}
 		}
 	};

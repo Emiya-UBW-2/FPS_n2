@@ -580,7 +580,7 @@ public:
 					if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 						//ãÛåxçê
 						if ((!use_vr && !chara.ads_on()) || use_vr) {
-							if (!chara.gun_stat_now->not_EMPTY()) {
+							if (!chara.gun_stat_now->not_chamber_EMPTY()) {
 								font->DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += fonthight;
 							}
 						}
@@ -597,7 +597,7 @@ public:
 						yp = t_disp_y / 2 + t_disp_y / 6;
 					}
 					if (chara.base.thisparts->select.size() >= 1) {
-						switch (chara.base.thisparts->select[chara.gun_stat_now->get_select()]) {
+						switch (chara.base.thisparts->select[chara.gun_stat_now->selecter]) {
 						case 1:
 							font_big->DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
 							break;
@@ -698,7 +698,7 @@ public:
 								yp = t_disp_y - x_r(20) - font_bighight * size;
 							}
 							if (size > 0) {
-								DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat_now->magazine_in_flont(), chara.get_parts(EnumGunParts::PARTS_MAGAZINE)->thisparts->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
+								DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", chara.gun_stat_now->get_magazine_in().front(), chara.get_parts(EnumGunParts::PARTS_MAGAZINE)->thisparts->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
 							}
 							for (auto& a : chara.gun_stat_now->get_magazine_in()) {
 								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a, chara.get_parts(EnumGunParts::PARTS_MAGAZINE)->thisparts->cap);
@@ -745,7 +745,7 @@ public:
 					}
 					for (auto& d : chara.got_damage_) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - d.alpfa, 5.f))), 0, 255));
-						this->hit_rad.DrawRotaGraph(xp, yp, float(y_r(100 * 2.f)) / 100.f*((1.f - 0.3f) + (d.alpfa*0.3f)), d.rad, true);
+						this->hit_rad.DrawRotaGraph(xp, yp, float(y_r(100 * 1.25f)) / 100.f*((1.f - 0.3f) + (d.alpfa*0.3f)), d.rad, true);
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
@@ -810,7 +810,7 @@ public:
 						for (int i = 0; i < std::clamp(int(4 * per / 90) + int(per != 0), 0, 4); i++) {
 							DrawBox(xp - siz / 2 + siz * i / 4 + 2, yp - y_r(30) - i * 2, xp - siz / 2 + siz * (i + 1) / 4 - 2, yp - y_r(10), col_r, TRUE);
 						}
-						if (!mine.gun_stat_now->not_EMPTY()) {
+						if (!mine.gun_stat_now->not_chamber_EMPTY()) {
 							//ãÛåxçê
 							if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 								font->DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += fonthight;

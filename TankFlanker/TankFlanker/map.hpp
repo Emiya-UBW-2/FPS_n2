@@ -396,6 +396,8 @@ public:
 		//
 		template<class Chara>
 		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos,Chara& chara, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
+			chara.get_canget_magitem() = false;
+			chara.get_canget_meditem() = false;
 			for (auto& g : this->item) {
 				g.Get_item_2(StartPos, EndPos, chara, MAPPTs);
 			}
@@ -441,7 +443,7 @@ public:
 				int xp = 0, yp = 0;
 				float radp = 0.f;
 				{
-					easing_set(&xcam, 1.f + mine.get_pseed_per() * 0.3f, 0.9f);
+					easing_set(&xcam, 1.f + mine.get_pseed_per() * 0.2f, 0.9f);
 					radp = -mine.get_body_yrad();
 					int xpos = 0, ypos = 0;
 					Set_pos_chara(&xpos, &ypos, mine.get_pos(), radp);
