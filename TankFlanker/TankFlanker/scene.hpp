@@ -1092,85 +1092,87 @@ public:
 			return nullptr;
 		}
 		std::vector<Meds>& get_meds_data(void) { return this->meds_data; }
+		void set_parts_data_from_folder(std::vector<GUNPARTs>* data, std::string file_name) {
+			data->clear();
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			HANDLE hFind;
+			hFind = FindFirstFile((file_name + "*").c_str(), &win32fdt);
+			if (hFind != INVALID_HANDLE_VALUE) {
+				do {
+					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
+						data->resize(data->size() + 1);
+						data->back().mod.Ready(file_name, win32fdt.cFileName);
+					}
+				} while (FindNextFile(hFind, &win32fdt));
+			} //else{ return false; }
+			FindClose(hFind);
+		}
+		void set_mads_data_from_folder(std::vector<Meds>* data, std::string file_name) {
+			data->clear();
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			HANDLE hFind;
+			hFind = FindFirstFile((file_name + "*").c_str(), &win32fdt);
+			if (hFind != INVALID_HANDLE_VALUE) {
+				do {
+					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
+						data->resize(data->size() + 1);
+						data->back().mod.Ready(file_name, win32fdt.cFileName);
+					}
+				} while (FindNextFile(hFind, &win32fdt));
+			} //else{ return false; }
+			FindClose(hFind);
+		}
 	public:
 		auto& get_Shadow_minpos() { return Shadow_minpos; }
 		auto& get_Shadow_maxpos() { return Shadow_maxpos; }
 		auto& get_Light_vec() { return Light_vec; }
 		auto& get_Light_color() { return Light_color; }
 		auto& Get_Camera(void) { return this->camera_main; }
+
 		MAINLOOP(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t, std::unique_ptr<OPTION, std::default_delete<OPTION>>* OPTPTs_t) {
 			//
 			DrawPts = DrawPts_t;
 			MAPPTs = MAPPTs_t;
 			OPTPTs = OPTPTs_t;
-
-			use_VR = (*DrawPts)->use_vr;
-			//
 			UIparts = std::make_unique<UIclass::UI_MAINLOOP>(MAPPTs, &RULEparts);
 			TPSparts = std::make_unique<TPS_parts>(MAPPTs);
 			RULEparts = std::make_unique<RULE_parts>();
 			Hostpassparts_TPS = std::make_unique<HostPassEffect>((*OPTPTs)->DoF, (*OPTPTs)->Bloom, (*OPTPTs)->SSAO, deskx, desky);	//ホストパスエフェクト(フルスクリーン向け、TPS用)
 			minimapparts = std::make_unique<MAPclass::MiniMap>(MAPPTs);															//ミニマップ
-			{
-				//model
-				light = GraphHandle::Load("data/light.png");					//ライト
-				MV1::Load("data/model/hit/model.mv1", &this->hit_pic, true);	//弾痕
-
-				MV1::Load("data/model/body3/model.mv1", &this->body_obj, true);	//身体
-				MV1::Load("data/model/body3/col.mv1", &this->body_col, true);	//身体col
-				MV1SetLoadModelPhysicsWorldGravity(-1.f);
-				MV1::Load("data/model/body3/model_lag.mv1", &this->body_obj_lag, true);	//身体
-				//
-				this->mazzule_data.resize(2);
-				this->mazzule_data[0].mod.Ready("data/parts/mazzule/", "00_AK_6P1_Compensator");
-				this->mazzule_data[1].mod.Ready("data/parts/mazzule/", "01_sup");
-				this->grip_data.resize(3);
-				this->grip_data[0].mod.Ready("data/parts/grip/", "00_AK_6P1_Wood_Grip");
-				this->grip_data[1].mod.Ready("data/parts/grip/", "01_AK_original_Grip");
-				this->grip_data[2].mod.Ready("data/parts/grip/", "02_AK_Zenit_RK3_Grip");
-				this->uperhandguard_data.resize(5);
-				this->uperhandguard_data[0].mod.Ready("data/parts/uper_handguard/", "00_AK_6P1_Uper_Handguard");
-				this->uperhandguard_data[1].mod.Ready("data/parts/uper_handguard/", "01_AK_Original_Polymer_Uper_Handguard");
-				this->uperhandguard_data[2].mod.Ready("data/parts/uper_handguard/", "02_AK_Steel_Uper_Handguard");
-				this->uperhandguard_data[3].mod.Ready("data/parts/uper_handguard/", "03_AK_Rail_Band");
-				this->uperhandguard_data[4].mod.Ready("data/parts/uper_handguard/", "04_AK_6P20_Uper_Handguard");
-				this->underhandguard_data.resize(4);
-				this->underhandguard_data[0].mod.Ready("data/parts/under_handguard/", "00_AK_6P1_Under_Handguard");
-				this->underhandguard_data[1].mod.Ready("data/parts/under_handguard/", "01_AK_Original_Polymer_Under_Handguard");
-				this->underhandguard_data[2].mod.Ready("data/parts/under_handguard/", "02_AK_Zenit_B10M_Under_Handguard");
-				this->underhandguard_data[3].mod.Ready("data/parts/under_handguard/", "03_AK_6P20_Under_Handguard");
-				this->mount_data.resize(2);
-				this->mount_data[0].mod.Ready("data/parts/mount/", "00_AK_Dovetail_Mount");
-				this->mount_data[1].mod.Ready("data/parts/mount/", "01_AK_SideRailMount");
-				this->stock_data.resize(2);
-				this->stock_data[0].mod.Ready("data/parts/stock/", "00_AK_6P1_Stock");
-				this->stock_data[1].mod.Ready("data/parts/stock/", "00_AK_6P20_Stock");
-				this->dustcover_data.resize(2);
-				this->dustcover_data[0].mod.Ready("data/parts/dustcover/", "00_AK_6P1_Dustcover");
-				this->dustcover_data[1].mod.Ready("data/parts/dustcover/", "01_AK_DogLegRail_Gen3_dustcover");
-				this->sight_data.resize(2);
-				this->sight_data[0].mod.Ready("data/parts/sight/", "00_Eotech_XPS3_HoloSight");
-				this->sight_data[1].mod.Ready("data/parts/sight/", "01_AIMPOINT_T1_DotSight");
-				this->foregrip_data.resize(2);
-				this->foregrip_data[0].mod.Ready("data/parts/foregrip/", "00_Standard_Vertical_Foregrip");
-				this->foregrip_data[1].mod.Ready("data/parts/foregrip/", "01_Bipod_Vertical_Foregrip");
-				this->light_data.resize(1);
-				this->light_data[0].mod.Ready("data/parts/light/", "00_Tactical_Flashlight");
-				this->laser_data.resize(1);
-				this->laser_data[0].mod.Ready("data/parts/laser/", "00_NcSTAR_Laser");
-				this->gun_data.resize(1);
-				this->gun_data[0].mod.Ready("data/gun/", "00_AKM");
-				//MAGデータ
-				this->magazine_data.resize(1);
-				this->magazine_data[0].mod.Ready("data/mag/", "00_AK_55_Magazine");
-				//this->magazine_data[1].mod.Ready("data/mag/", "01_AK_55_Magazine");
-				//MEDデータ
-				this->meds_data.resize(1);
-				this->meds_data[0].mod.Ready("data/medkit/", "AIDkit");
-			}
+			//
+			use_VR = (*DrawPts)->use_vr;
+			//model
+			light = GraphHandle::Load("data/light.png");							//ライト
+			MV1::Load("data/model/hit/model.mv1", &this->hit_pic, true);			//弾痕
+			//body
+			MV1::Load("data/model/body/model.mv1", &this->body_obj, true);			//身体
+			MV1::Load("data/model/body/col.mv1", &this->body_col, true);			//身体col
+			MV1SetLoadModelPhysicsWorldGravity(-1.f);
+			MV1::Load("data/model/body/model_lag.mv1", &this->body_obj_lag, true);	//身体
+			MV1SetLoadModelPhysicsWorldGravity(-9.8f);
+			//PARTSデータ
+			set_parts_data_from_folder(&this->mazzule_data, "data/parts/mazzule/");
+			set_parts_data_from_folder(&this->grip_data, "data/parts/grip/");
+			set_parts_data_from_folder(&this->uperhandguard_data, "data/parts/uper_handguard/");
+			set_parts_data_from_folder(&this->underhandguard_data, "data/parts/under_handguard/");
+			set_parts_data_from_folder(&this->mount_data, "data/parts/mount/");
+			set_parts_data_from_folder(&this->stock_data, "data/parts/stock/");
+			set_parts_data_from_folder(&this->dustcover_data, "data/parts/dustcover/");
+			set_parts_data_from_folder(&this->sight_data, "data/parts/sight/");
+			set_parts_data_from_folder(&this->foregrip_data, "data/parts/foregrip/");
+			set_parts_data_from_folder(&this->light_data, "data/parts/light/");
+			set_parts_data_from_folder(&this->laser_data, "data/parts/laser/");
+			//GUNデータ
+			set_parts_data_from_folder(&this->gun_data, "data/gun/");
+			//MAGデータ
+			set_parts_data_from_folder(&this->magazine_data, "data/mag/");
+			//MEDデータ
+			set_mads_data_from_folder(&this->meds_data, "data/medkit/");
 		}
 		void Start_After() {
-			//GUNデータ2
+			//PARTSデータ2
 			for (auto& g : this->mazzule_data) { g.Set_datas(&g - &this->mazzule_data[0], EnumGunParts::PARTS_MAZZULE); }
 			for (auto& g : this->grip_data) { g.Set_datas(&g - &this->grip_data[0], EnumGunParts::PARTS_NONE); }
 			for (auto& g : this->uperhandguard_data) { g.Set_datas(&g - &this->uperhandguard_data[0], EnumGunParts::PARTS_NONE); }
@@ -1182,8 +1184,10 @@ public:
 			for (auto& g : this->laser_data) { g.Set_datas(&g - &this->laser_data[0], EnumGunParts::PARTS_NONE); }
 			for (auto& g : this->foregrip_data) { g.Set_datas(&g - &this->foregrip_data[0], EnumGunParts::PARTS_NONE); }
 			for (auto& g : this->sight_data) { g.Set_datas(&g - &this->sight_data[0], EnumGunParts::PARTS_SIGHT); }
-			for (auto& g : this->magazine_data) { g.Set_datas(&g - &this->magazine_data[0], EnumGunParts::PARTS_MAGAZINE); }
+			//GUNデータ2
 			for (auto& g : this->gun_data) { g.Set_datas(&g - &this->gun_data[0], EnumGunParts::PARTS_BASE); }
+			//MAGデータ2
+			for (auto& g : this->magazine_data) { g.Set_datas(&g - &this->magazine_data[0], EnumGunParts::PARTS_MAGAZINE); }
 			//MEDデータ2
 			for (auto& g : this->meds_data) { g.Set_datas(&g - &this->meds_data[0]); }
 			//弾痕
@@ -1194,9 +1198,7 @@ public:
 		void Set_Charaa(const size_t &spawn_total) {
 			//キャラ設定
 			this->chara.resize(spawn_total);
-			for (auto& c : this->chara) {
-				c.Set(MAPPTs, DrawPts, gun_data, 0, body_obj, body_obj_lag, body_col);
-			}
+			for (auto& c : this->chara) { c.Set(MAPPTs, DrawPts, gun_data, 0, body_obj, body_obj_lag, body_col); }
 		}
 		void Set() {
 			for (auto& c : this->chara) {
@@ -1235,13 +1237,13 @@ public:
 			Light_vec = VGet(0.5f, -0.5f, 0.5f);
 			Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
 			//
-			(*MAPPTs)->Set();																				//環境
-			std::for_each(this->chara.begin(), this->chara.end(), [&](PLAYERclass::Chara& c) { c.Start(); });	//プレイヤー操作変数群
-			SetMousePoint(deskx / 2, desky / 2);														//
-			fov_base = deg2rad(use_VR ? 120 : (*OPTPTs)->Fov);
-			camera_main.set_cam_info(fov_base, 0.1f, 200.f);											//1P
-			TPSparts->Set((*OPTPTs)->Fov);																	//TPS
-			RULEparts->Set();																			//ルール
+			(*MAPPTs)->Set();									//環境
+			for (auto& c : this->chara) { c.Start(); }			//プレイヤー操作変数群
+			SetMousePoint(deskx / 2, desky / 2);				//mouse
+			fov_base = deg2rad(use_VR ? 120 : (*OPTPTs)->Fov);	//fov
+			camera_main.set_cam_info(fov_base, 0.1f, 200.f);	//1P
+			TPSparts->Set((*OPTPTs)->Fov);						//TPS
+			RULEparts->Set();									//ルール
 		}
 		bool UpDate() {
 			//共通演算
@@ -1318,13 +1320,13 @@ public:
 			//サイト
 			for (auto& s : Get_Mine().sight_) { s.Draw_reticle(); }
 			//キャラ
-			std::for_each(this->chara.begin(), this->chara.end(), [&](PLAYERclass::Chara& c) { c.Draw_chara(); });
+			for (auto& c : this->chara) { c.Draw_chara(); }
 			//レーザー
-			std::for_each(this->chara.begin(), this->chara.end(), [&](PLAYERclass::Chara& c) { c.Draw_laser(this->chara, light); });
+			for (auto& c : this->chara) { c.Draw_laser(this->chara, light); }
 			//銃弾
 			SetFogEnable(FALSE);
 			SetUseLighting(FALSE);
-			std::for_each(this->chara.begin(), this->chara.end(), [&](PLAYERclass::Chara& c) { c.Draw_ammo(); });
+			for (auto& c : this->chara) { c.Draw_ammo(); }
 			SetUseLighting(TRUE);
 			SetFogEnable(TRUE);
 			//

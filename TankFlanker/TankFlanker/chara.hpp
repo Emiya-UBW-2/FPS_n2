@@ -3161,7 +3161,7 @@ public:
 			this->body_xrad = 0.f;//“·‘ÌŠp“x
 			this->body_yrad = 0.f;//“·‘ÌŠp“x
 			this->body_zrad = 0.f;//“·‘ÌŠp“x
-			std::for_each(this->wayp_pre.begin(), this->wayp_pre.end(), [](int& i) {i = 0; });
+			for (auto& i : this->wayp_pre) { i = 0; }
 			this->gunf = false;
 			this->gunanime_shot->reset();
 			this->gunanime_shot_last->reset();
@@ -3652,10 +3652,10 @@ public:
 			if (this->flag_canlook_player) {
 				if (this->get_alive()) {
 					this->obj_body.DrawModel();
+					//this->col.DrawModel();
 				}
 				else {
 					this->obj_lag.DrawModel();
-					//this->col.DrawModel();
 				}
 				Draw_gun();
 			}

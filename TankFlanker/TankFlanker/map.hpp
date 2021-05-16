@@ -380,7 +380,7 @@ public:
 			grass_Draw();
 		}
 		void item_Draw(void) {
-			std::for_each(item.begin(), item.end(), [&](Items& i) { i.Draw_item(); });
+			for(auto& i : item){ i.Draw_item(); }
 		}
 		void main_Draw(void) {
 			map.DrawMesh(0);
