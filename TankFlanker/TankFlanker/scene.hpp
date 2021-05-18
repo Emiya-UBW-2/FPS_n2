@@ -465,7 +465,7 @@ public:
 						if (Start_b) {
 							Start_b = false;
 							changef = true;
-							int pp = mine_ptr->base.thisparts->Select_Chose(1);
+							int pp = mine_ptr->base.thisparts->Select_Chose(EnumSELECTER::SELECT_SEMI);
 							if (pp != -1) {
 								mine_ptr->gun_stat_now->selecter = uint8_t(pp);
 							}
@@ -1245,6 +1245,24 @@ public:
 			RULEparts->Set();									//ƒ‹[ƒ‹
 		}
 		bool UpDate() {
+			//ƒAƒCƒeƒ€‰‰ŽZ
+			{
+				for (auto& g : (*MAPPTs)->item) { g.UpDate((*MAPPTs)->item, (*MAPPTs)); }
+				//‹óƒ}ƒKƒWƒ“‚ðíœ‚·‚é
+				while (true) {
+					bool demagazine_flag = false;
+					for (auto& i : (*MAPPTs)->item) {
+						if (i.Detach_mag()) {
+							demagazine_flag = true;
+							(*MAPPTs)->item.erase((*MAPPTs)->item.begin() + (&i - &(*MAPPTs)->item[0]));
+							break;
+						}
+					}
+					if (!demagazine_flag) {
+						break;
+					}
+				}
+			}
 			//‹¤’Ê‰‰ŽZ
 			for (auto& c : this->chara) {
 				c.UpDate(

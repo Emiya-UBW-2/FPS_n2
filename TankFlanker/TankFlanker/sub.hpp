@@ -45,6 +45,13 @@ enum EnumAttachPoint {
 	GRIP_BASE,
 	NUM_,
 };
+enum EnumSELECTER {
+	SELECT_SEMI,
+	SELECT_FULL,
+	SELECT_3B,
+	SELECT_2B,
+	NUM__,
+};
 //option
 class OPTION {
 public:
@@ -547,7 +554,9 @@ protected:
 		//
 		SoundHandle voice_damage;
 		SoundHandle voice_death;
-
+		SoundHandle voice_breath;
+		SoundHandle voice_breath_run;
+		//
 		void Set(int mdata) {
 			SetUseASyncLoadFlag(TRUE);
 			SetCreate3DSoundFlag(TRUE);
@@ -565,6 +574,8 @@ protected:
 			foot_ = SoundHandle::Load("data/audio/foot_sand.wav");
 			voice_damage = SoundHandle::Load("data/audio/voice/damage.wav");
 			voice_death = SoundHandle::Load("data/audio/voice/death.wav");
+			voice_breath = SoundHandle::Load("data/audio/voice/breath.wav");
+			voice_breath_run = SoundHandle::Load("data/audio/voice/breath_run.wav");
 			SetCreate3DSoundFlag(FALSE);
 			SetUseASyncLoadFlag(FALSE);
 
@@ -584,6 +595,8 @@ protected:
 			this->foot_ = tgt.foot_.Duplicate();
 			this->voice_damage = tgt.voice_damage.Duplicate();
 			this->voice_death = tgt.voice_death.Duplicate();
+			this->voice_breath = tgt.voice_breath.Duplicate();
+			this->voice_breath_run = tgt.voice_breath_run.Duplicate();
 			SetCreate3DSoundFlag(FALSE);
 		}
 		void Dispose(void) {
@@ -600,6 +613,8 @@ protected:
 			this->foot_.Dispose();
 			this->voice_damage.Dispose();
 			this->voice_death.Dispose();
+			this->voice_breath.Dispose();
+			this->voice_breath_run.Dispose();
 		}
 	};
 	//弾データ
@@ -706,23 +721,23 @@ protected:
 					//セレクター設定
 					while (true) {
 						auto p = getparams::_str(this->mod.mdata);
-						if (getparams::getright(p.c_str()).find("end") != std::string::npos) {
+						if (getparams::getright(p.c_str()) == "end") {
 							break;
 						}
-						else if (getparams::getright(p.c_str()).find("semi") != std::string::npos) {
-							this->select.emplace_back(uint8_t(1));					//セミオート=1
+						else if (getparams::getright(p.c_str()) == "semi") {
+							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_SEMI));	//セミオート=1
 						}
-						else if (getparams::getright(p.c_str()).find("full") != std::string::npos) {
-							this->select.emplace_back(uint8_t(2));					//フルオート=2
+						else if (getparams::getright(p.c_str()) == "full") {
+							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_FULL));	//フルオート=2
 						}
-						else if (getparams::getright(p.c_str()).find("3b") != std::string::npos) {
-							this->select.emplace_back(uint8_t(3));					//3連バースト=3
+						else if (getparams::getright(p.c_str()) == "3b") {
+							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_3B));	//3連バースト=3
 						}
-						else if (getparams::getright(p.c_str()).find("2b") != std::string::npos) {
-							this->select.emplace_back(uint8_t(4));					//2連バースト=4
+						else if (getparams::getright(p.c_str()) == "2b") {
+							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_2B));	//2連バースト=4
 						}
 						else {
-							this->select.emplace_back(uint8_t(1));
+							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_SEMI));
 						}
 					}
 					this->audio.Set(this->mod.mdata);						//サウンド
@@ -744,8 +759,7 @@ protected:
 					{
 						can_attach.clear();
 						while (FileRead_eof(this->mod.mdata) == 0) {
-							can_attach.resize(can_attach.size() + 1);
-							can_attach.back() = getparams::get_str(this->mod.mdata);
+							can_attach.emplace_back(getparams::get_str(this->mod.mdata));
 						}
 					}
 				}
@@ -888,56 +902,37 @@ protected:
 			this->obj = this->ptr_med->mod.get_model().Duplicate();
 		}
 	public:
-		//mag
-		void Set_item_before(const size_t& id, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
-			this->id_t = id;
-			this->Set_item_1(magdata, pos_, add_, mat_);
+		void set_item_mag() {
 			if (this->ptr_mag != nullptr) {
-				this->magazine.cap = int(this->ptr_mag->cap);
 				if (this->magazine.ammo.size() < this->ptr_mag->ammo.size()) {
 					this->magazine.ammo.resize(this->ptr_mag->ammo.size());
 				}
 				this->magazine.ammo[0].get_name() = this->ptr_mag->ammo[0].get_name();
 			}
 		}
-		void Set_item_magrelease_(const size_t& dnm, const size_t& id, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+		//mag
+		void Set_item_magazine(const size_t& id, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_, const size_t& dnm = SIZE_MAX) {
 			this->id_t = id;
 			this->Set_item_1(magdata, pos_, add_, mat_);
-			this->magazine.cap = dnm;
-			if (this->ptr_mag != nullptr) {
-				if (this->magazine.ammo.size() < this->ptr_mag->ammo.size()) {
-					this->magazine.ammo.resize(this->ptr_mag->ammo.size());
+			if (dnm == SIZE_MAX) {
+				if (this->ptr_mag != nullptr) {
+					this->magazine.cap = int(this->ptr_mag->cap);
 				}
-				this->magazine.ammo[0].get_name() = this->ptr_mag->ammo[0].get_name();
-			}
-			if (this->magazine.cap == 0) {
-				this->del_timer = 5.f;
 			}
 			else {
-				this->del_timer = 20.f;
+				this->magazine.cap = dnm;
 			}
+			set_item_mag();
+			this->del_timer = (this->magazine.cap == 0) ? 5.f : 20.f;
 		}
 		bool Set_item_magrelease(const size_t& dnm, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr) {
-				this->Set_item_1(magdata, pos_, add_, mat_);
-				this->magazine.cap = dnm;
-				if (this->ptr_mag != nullptr) {
-					if (this->magazine.ammo.size() < this->ptr_mag->ammo.size()) {
-						this->magazine.ammo.resize(this->ptr_mag->ammo.size());
-					}
-					this->magazine.ammo[0].get_name() = this->ptr_mag->ammo[0].get_name();
-				}
-				if (this->magazine.cap == 0) {
-					this->del_timer = 5.f;
-				}
-				else {
-					this->del_timer = 20.f;
-				}
+				Set_item_magazine(id_t, magdata, pos_, add_, mat_, dnm);
 				return true;
 			}
 			return false;
 		}
-		//item
+		//med
 		void Set_item_med_(const size_t& id, Meds*meddata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
 			this->id_t = id;
 			this->Set_item(meddata, pos_, add_, mat_);

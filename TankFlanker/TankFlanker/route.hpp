@@ -113,7 +113,7 @@ public:
 				}
 			}
 			while (ProcessMessage() == 0) {
-				clsDx();
+				//clsDx();
 				const auto waits = GetNowHiPerformanceCount();
 				DebugPTs->put_way();
 				{
@@ -272,25 +272,6 @@ public:
 							mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);
 							mine_k.have_mag = true;
 						}
-						//アイテム演算
-						{
-							for (auto& g : MAPPTs->item) { g.UpDate(MAPPTs->item, MAPPTs); }
-							//空マガジンを削除する
-							while (true) {
-								bool demagazine_flag = false;
-								for (auto& i : MAPPTs->item) {
-									if (i.Detach_mag()) {
-										demagazine_flag = true;
-										MAPPTs->item.erase(MAPPTs->item.begin() + (&i - &MAPPTs->item[0]));
-										break;
-									}
-								}
-								if (!demagazine_flag) {
-									break;
-								}
-							}
-						}
-						//
 						selend = MAINLOOPscene->UpDate();
 						cam_t = &MAINLOOPscene->Get_Camera();
 						if (KeyBind->key_use_ID[10].get_key(0)) {
@@ -300,9 +281,6 @@ public:
 					default:
 						break;
 					}
-					if (cam_t != nullptr) {
-						Set3DSoundListenerPosAndFrontPosAndUpVec(cam_t->campos.get(), cam_t->camvec.get(), cam_t->camup.get());
-					}
 					//VR空間に適用
 					DrawPts->Move_Player();
 					//描画
@@ -311,10 +289,10 @@ public:
 						HostpassPTs->Set_UI_draw([&]() {
 							switch (sel_scene) {
 							case scenes::ITEM_LOAD:
-								UI_LOADPTs->UI_Draw();
+								UI_LOADPTs->UI_Draw(DrawPts->use_vr);
 								break;
 							case scenes::MAP_LOAD:
-								UI_LOADPTs->UI_Draw();
+								UI_LOADPTs->UI_Draw(DrawPts->use_vr);
 								break;
 							case scenes::LOAD:
 								LOADscene->UI_Draw();
@@ -330,6 +308,8 @@ public:
 							}
 						});
 						if (cam_t != nullptr) {
+							//音位置指定
+							Set3DSoundListenerPosAndFrontPosAndUpVec(cam_t->campos.get(), cam_t->camvec.get(), cam_t->camup.get());
 							//影用意
 							DrawPts->Ready_Shadow(cam_t->campos, [&] {
 								switch (sel_scene) {

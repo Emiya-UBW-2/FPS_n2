@@ -128,7 +128,7 @@ public:
 						p4 = getparams::_float(mdata);
 
 						item.resize(item.size() + 1);
-						item.back().Set_item_before(item.size() - 1, &(*get_parts_data)[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						item.back().Set_item_magazine(item.size() - 1, &(*get_parts_data)[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;

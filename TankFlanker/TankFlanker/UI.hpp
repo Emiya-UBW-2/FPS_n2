@@ -80,6 +80,10 @@ public:
 		}
 	public:
 		UI_LOAD(void) {
+
+			t_disp_x = deskx;
+			t_disp_y = desky;
+
 			SetUseASyncLoadFlag(TRUE);
 			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
 			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
@@ -248,6 +252,10 @@ public:
 		}
 	public:
 		UI_CUSTOM(void) {
+
+			t_disp_x = deskx;
+			t_disp_y = desky;
+
 			SetUseASyncLoadFlag(TRUE);
 			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
 			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
@@ -500,6 +508,9 @@ public:
 			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
 
 			SetUseASyncLoadFlag(FALSE);
+
+			t_disp_x = deskx;
+			t_disp_y = desky;
 		}
 		~UI_MAINLOOP(void) {
 		}
@@ -871,7 +882,10 @@ public:
 		int t_disp_y = 1080;
 		std::string message;
 	public:
-		UI_LOADING(void) {
+		UI_LOADING() {
+			t_disp_x = deskx;
+			t_disp_y = desky;
+
 			SetUseASyncLoadFlag(TRUE);
 
 			font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
@@ -894,8 +908,11 @@ public:
 			easing_set(&bar, float(tmp), 0.95f);
 			return true;
 		}
-		void UI_Draw() {
-			GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+		void UI_Draw(bool use_vr = true) {
+			if (use_vr) {
+				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+			}
+
 			DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(0, 0, 0), TRUE);
 			font18.DrawStringFormat(0, t_disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
 			font18.DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), GetColor(0, 255, 0), "%s ì«Ç›çûÇ›íÜ ", message.c_str());
