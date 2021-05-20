@@ -837,15 +837,17 @@ public:
 			{
 				SetCameraNearFar(0.01f, 10.f);
 				for (auto& g : (*MAPPTs)->item) {
-					//mag
-					if (g.get_ptr_mag() != nullptr) {
-						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().cap, g.get_ptr_mag()->cap);
+					if (g.flag_canlook_player) {
+						//mag
+						if (g.get_ptr_mag() != nullptr) {
+							Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().cap, g.get_ptr_mag()->cap);
+						}
+						//med
+						if (g.get_ptr_med() != nullptr) {
+							Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s", g.get_ptr_med()->mod.get_name().c_str());
+						}
+						//
 					}
-					//med
-					if (g.get_ptr_med() != nullptr) {
-						Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s", g.get_ptr_med()->mod.get_name().c_str());
-					}
-					//
 				}
 				//
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);

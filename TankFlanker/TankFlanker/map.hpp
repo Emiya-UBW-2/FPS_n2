@@ -45,7 +45,28 @@ public:
 		GraphHandle& get_minmap(void) { return minmap; }
 		int& get_x_size(void) { return x_size; }
 		int& get_y_size(void) { return y_size; }
-		Map(void) { }
+		Map(int grass_level) {
+			switch (grass_level) {
+			case 0:
+				grasss = 0;
+				break;
+			case 1:
+				grasss = 500;
+				break;
+			case 2:
+				grasss = 1000;
+				break;
+			case 3:
+				grasss = 2000;
+				break;
+			case 4:
+				grasss = 5000;
+				break;
+			default:
+				grasss = 0;
+				break;
+			}
+		}
 		~Map(void) { }
 		void Ready_map(std::string dir) {
 			this->path = dir + "/";
@@ -58,12 +79,13 @@ public:
 
 			this->sun_pic = GraphHandle::Load("data/sun.png");					/*sun*/
 			SetUseASyncLoadFlag(FALSE);
-
-			SetUseASyncLoadFlag(TRUE);
-			grass_pic = GraphHandle::Load("data/model/grass/grass.png");		 /*grass*/
-			SetUseASyncLoadFlag(FALSE);
-			MV1::Load("data/model/grass/model.mv1", &grass, true);		/*grass*/
-			grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
+			if (grasss != 0) {
+				SetUseASyncLoadFlag(TRUE);
+				grass_pic = GraphHandle::Load("data/model/grass/grass.png");		 /*grass*/
+				SetUseASyncLoadFlag(FALSE);
+				MV1::Load("data/model/grass/model.mv1", &grass, true);		/*grass*/
+				grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
+			}
 		}
 		void Start(std::vector<GUNPARTs>* get_parts_data, std::vector<Meds>* get_meds_data, const VECTOR_ref& ray) {
 			this->sun_pos = ray.Norm() * -1500.f;
@@ -162,7 +184,7 @@ public:
 			/*minimap*/
 			minmap.GetSize(&x_size, &y_size);
 			/*grass*/
-			{
+			if(grasss!=0) {
 				MV1SetupReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの作成*/
 				RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
 				IndexNum = RefMesh.PolygonNum * 3 * grasss; /*インデックスの数を取得*/
@@ -248,10 +270,12 @@ public:
 			spawn_point.clear();
 			minmap.Dispose();
 			this->sun_pic.Dispose();
-			grass_pic.Dispose();
-			grass.Dispose();
-			grassver.clear();
-			grassind.clear();
+			if (grasss != 0) {
+				grass_pic.Dispose();
+				grass.Dispose();
+				grassver.clear();
+				grassind.clear();
+			}
 		}
 		auto& map_get(void) { return map; }
 		auto& map_col_get(void) { return map_col; }
@@ -362,16 +386,18 @@ public:
 			return;
 		}
 		void grass_Draw(void) {
-			SetFogStartEnd(0.0f, 500.f);
-			SetFogColor(192, 192, 192);
+			if (grasss != 0) {
+				SetFogStartEnd(0.0f, 500.f);
+				SetFogColor(192, 192, 192);
 
-			SetDrawAlphaTest(DX_CMP_GREATER, 128);
-			//SetUseLighting(FALSE);
-			{
-				DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, grass_pic.get(), TRUE);
+				SetDrawAlphaTest(DX_CMP_GREATER, 128);
+				//SetUseLighting(FALSE);
+				{
+					DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, grass_pic.get(), TRUE);
+				}
+				//SetUseLighting(TRUE);
+				SetDrawAlphaTest(-1, 0);
 			}
-			//SetUseLighting(TRUE);
-			SetDrawAlphaTest(-1, 0);
 		}
 		void Shadow_Draw(void) {
 			for (int i = 0; i < 3; i++) {

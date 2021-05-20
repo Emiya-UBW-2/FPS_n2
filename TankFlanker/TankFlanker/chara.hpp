@@ -50,7 +50,7 @@ public:
 				this->repos = this->pos;
 				this->mat = mat_t;
 			}
-			void UpDate(Chara* c, std::vector<Chara>* chara, std::vector<Hit>& hit_obj, size_t& hitbuf) {
+			void UpDate(Chara* c, std::vector<Chara>* chara, Hit_p& hit_obj_p,bool ismine) {
 				if (this->Flag) {
 					this->repos = this->pos;
 					this->pos += this->mat.zvec() * (this->spec->get_speed() / GetFPS());
@@ -234,8 +234,9 @@ public:
 							c->effcs_gndhit[c->use_effcsgndhit].set(this->pos, p.Normal, 0.025f / 0.1f);
 							++c->use_effcsgndhit %= c->effcs_gndhit.size();
 							//弾痕のセット
-							hit_obj[hitbuf].Put_Hit(this->spec->get_caliber(), this->pos, p.Normal, this->mat.zvec());
-							++hitbuf %= hit_obj.size();
+							if (ismine) {
+								hit_obj_p.set(this->spec->get_caliber(), this->pos, p.Normal, this->mat.zvec());
+							}
 						}
 						//*/
 					}
@@ -457,6 +458,9 @@ public:
 			}
 			//
 			auto getminus(void) {
+				if (this->ammo_cnt <= 1) {
+					return size_t(0);
+				}
 				return std::max<size_t>(this->ammo_cnt - 1, 0);
 			}
 			//
@@ -1478,6 +1482,8 @@ public:
 		bool flag_calc_body = true;
 		bool flag_start_loop = true;
 		bool flag_calc_lag = true;
+		//
+		float distance_to_cam = -1.f;
 		//
 		bool hit_f = false;
 		float hit_time = 0.f;
@@ -3073,6 +3079,7 @@ public:
 			this->WAIST.Set(DrawPts);
 			this->LEFTREG.Set(DrawPts);
 			this->RIGHTREG.Set(DrawPts);
+			this->distance_to_cam = -1.f;
 			this->flag_calc_body = false;
 			this->flag_start_loop = true;
 			this->flag_calc_lag = true;
@@ -3184,6 +3191,7 @@ public:
 
 			this->add_ypos = 0.f;
 			this->add_vec_buf.clear();
+			this->distance_to_cam = -1.f;
 			this->flag_calc_body = true;
 			this->flag_calc_lag = true;
 
@@ -3218,7 +3226,7 @@ public:
 		}
 		/*更新*/
 		void UpDate(
-			std::vector<Hit>& hit_obj, size_t& hit_buf,
+			Hit_p& hit_obj_p,
 			const bool& playing, const float& fov_per,
 			std::vector <Meds>& meds_data,
 			std::vector<Chara>&chara, Chara&mine, const bool& use_vr) {
@@ -3564,7 +3572,7 @@ public:
 				this->base.obj.work_anime();
 				//弾の処理
 				for (auto& a : this->bullet) {
-					a.UpDate(this, &chara, hit_obj, hit_buf);
+					a.UpDate(this, &chara, hit_obj_p, (this == &mine));
 				}
 				//薬莢の処理
 				update_cart();
@@ -3628,9 +3636,12 @@ public:
 		void Check_CameraViewClip(void) {
 			this->flag_canlook_player = true;
 			auto ttt = this->obj_body.GetMatrix().pos();
+
+			this->distance_to_cam = (ttt - GetCameraPosition()).size();
 			if (CheckCameraViewClip_Box((ttt + VGet(-0.6f, 0, -0.6f)).get(), (ttt + VGet(0.6f, 1.8f, 0.6f)).get())) {
 				this->flag_canlook_player = false;
 				this->flag_calc_body = true;
+				this->distance_to_cam = -1.f;
 				return;
 			}
 		}
@@ -3641,6 +3652,7 @@ public:
 				(*MAPPTs)->map_col_line(GetCameraPosition(), ttt + VGet(0, 0.f, 0)).HitFlag) {
 				this->flag_canlook_player = false;
 				this->flag_calc_body = true;
+				this->distance_to_cam = -1.f;
 				return;
 			}
 		}
@@ -3686,7 +3698,7 @@ public:
 				else {
 					this->obj_lag.DrawModel();
 				}
-				Draw_gun();
+				Draw_gun_LoD();
 			}
 		}
 		void Draw_gun(void) {
@@ -3715,6 +3727,38 @@ public:
 				this->magazine.Draw(this->gun_stat_now->get_ammo_cnt());
 			}
 		}
+
+		void Draw_gun_LoD(void) {
+			//
+			this->base.obj.DrawModel();
+			if (this->distance_to_cam <= 5.f) {
+				for (auto& a : this->cart) {
+					a.Draw();
+				}
+			}
+			//
+			if (this->distance_to_cam <= 10.f) {
+				this->mazzule.Draw();
+				this->grip.Draw();
+				this->uperhandguard.Draw();
+				this->underhandguard.Draw();
+				for (auto&m : mount_) {
+					m.Draw();
+				}
+				this->dustcover.Draw();
+				this->stock.Draw();
+				this->foregrip.Draw();
+				this->light.Draw();
+				this->laser.Draw();
+				for (auto&s : sight_) {
+					s.Draw();
+				}
+			}
+			if ((!isReload() || this->have_magazine) && this->gun_stat_now->not_mags_EMPTY()) {//isReload()
+				this->magazine.Draw(this->gun_stat_now->get_ammo_cnt());
+			}
+		}
+
 		void Draw_ammo(void) {
 			for (auto& a : this->bullet) {
 				a.Draw();

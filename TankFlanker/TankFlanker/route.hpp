@@ -24,7 +24,7 @@ public:
 			OPTPTs->SSAO = false;//SSAOはVRでは使えない
 		}
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
-		auto MAPPTs = std::make_unique<MAPclass::Map>();																					//MAP
+		auto MAPPTs = std::make_unique<MAPclass::Map>(OPTPTs->grass_level);																	//MAP
 		auto UI_LOADPTs = std::make_unique<UIclass::UI_LOADING>();																			//UI_LOADING
 		//キー読み込み
 		auto KeyBind = std::make_unique<key_bind>();
@@ -113,7 +113,7 @@ public:
 				}
 			}
 			while (ProcessMessage() == 0) {
-				//clsDx();
+				clsDx();
 				const auto waits = GetNowHiPerformanceCount();
 				DebugPTs->put_way();
 				{
@@ -428,6 +428,8 @@ public:
 						DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 					}
 				}
+
+				printfDx("call :%d", GetDrawCallCount());
 				//画面の反映
 				DrawPts->Screen_Flip();
 				//終了判定

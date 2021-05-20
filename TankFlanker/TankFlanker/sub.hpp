@@ -55,6 +55,7 @@ enum EnumSELECTER {
 //option
 class OPTION {
 public:
+	int grass_level = 4;
 	bool DoF = false;
 	bool Bloom = false;
 	bool Shadow = false;
@@ -65,6 +66,7 @@ public:
 	OPTION(void) {
 		SetOutApplicationLogValidFlag(FALSE);
 		int mdata = FileRead_open("data/Setting.txt", FALSE);
+		grass_level = std::clamp<int>(getparams::_int(mdata), 0, 4);
 		DoF = getparams::_bool(mdata);
 		Bloom = getparams::_bool(mdata);
 		Shadow = getparams::_bool(mdata);
@@ -129,6 +131,8 @@ private:
 	std::vector<keyhandle> keyg2;
 
 	float F1_f = 0.0f;
+	float noF1_f = 0.0f;
+	GraphHandle keyboad;
 	GraphHandle mousehandle;
 public:
 	std::vector < key_pair > key_use_ID;
@@ -138,6 +142,9 @@ public:
 		SetUseASyncLoadFlag(FALSE);
 		font24 = FontHandle::Create(font24size, DX_FONTTYPE_EDGE);
 		mousehandle = GraphHandle::Load("data/key/mouse.png");
+		SetTransColor(0, 255, 0);
+		keyboad = GraphHandle::Load("data/key/keyboad.png");
+		SetTransColor(0, 0, 0);
 		//
 		{
 			key_pair tmp_k;
@@ -316,6 +323,177 @@ public:
 	void draw() {
 		auto tmp_f1 = this->key_use_ID[16].get_key(1);
 		easing_set(&F1_f, float(tmp_f1), 0.9f);
+		noF1_f = std::max(noF1_f - 1.f / GetFPS(), 0.f);
+		//インフォ
+		if (F1_f > 0.1f) {
+			int xp_t = 100, yp_t = 300;
+			int xp_sk = xp_t, yp_sk = yp_t, y_size_k = 48;
+			int xp_s = 1500, yp_s = 200, y_size = 32;
+			//背景
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f*F1_f));
+			DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
+			if (F1_f > 0.9f) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+				keyboad.DrawExtendGraph(0, 0, 1920, 1080, true);
+			}
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			//前面
+			if (F1_f > 0.9f) {
+				//キーボード＋マウス全部
+				{
+					for (auto& m : this->keyg) {
+						if (m.use_part != nullptr) {
+							xp_sk = xp_t + m.key.px;
+							yp_sk = yp_t + m.key.py;
+							if (m.use_part->get_key(0)) {//keyboad
+								m.onhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - 4) / 26.f, 0.f, false);
+							}
+							else {
+								m.offhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - 4) / 26.f, 0.f, false);
+							}
+						}
+					}
+					int yss = 0;
+					xp_sk = 1100;
+					yp_sk = 800;
+					for (auto& m : this->keyg2) {
+						if (m.use_part != nullptr) {
+							if (m.use_part->get_key(3)) {
+								m.onhandle.GetSize(nullptr, &yss);
+								m.onhandle.DrawRotaGraph(xp_sk, yp_sk, float(256) / yss, 0.f, true);
+							}
+							else {
+								m.offhandle.GetSize(nullptr, &yss);
+								m.offhandle.DrawRotaGraph(xp_sk, yp_sk, float(256) / yss, 0.f, true);
+							}
+						}
+					}
+				}
+				//詳細
+				{
+					int xss = 0, yss = 0;
+					for (auto& i : this->key_use_ID) {
+						if (i.isalways && i.use_handle != nullptr) {
+							if (i.get_key(0)) {
+								i.use_handle->onhandle.GetSize(&xss, &yss);
+								xss = int(float(xss)*float(y_size - 4) / 25.f);
+								yss = int(float(yss)*float(y_size - 4) / 25.f);
+								i.use_handle->onhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
+							}
+							else {
+								i.use_handle->offhandle.GetSize(&xss, &yss);
+								xss = int(float(xss)*float(y_size - 4) / 25.f);
+								yss = int(float(yss)*float(y_size - 4) / 25.f);
+								i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
+							}
+							font24.DrawString(xp_s, yp_s + (y_size - font24size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
+						}
+					}
+					for (auto& i : this->mouse_use_ID) {
+						if (i.isalways && i.use_handle != nullptr) {
+							{
+								mousehandle.GetSize(nullptr, &yss);
+								mousehandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
+							}
+							if (i.get_key(3)) {
+								i.use_handle->onhandle.GetSize(nullptr, &yss);
+								i.use_handle->onhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
+							}
+							else {
+								i.use_handle->offhandle.GetSize(nullptr, &yss);
+								i.use_handle->offhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
+							}
+							font24.DrawString(xp_s, yp_s + (y_size - font24size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
+						}
+					}
+				}
+			}
+		}
+		//常時表示
+		if (!tmp_f1) {
+			if(noF1_f>=0.1f) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f*std::clamp(noF1_f, 0.f, 1.f)));
+				int xp_s = 1920 - 700, yp_s = 1080 - 28, x_size = 26, y_size = 24;
+				int xss = 0, yss = 0;
+				for (auto& i : this->key_use_ID) {
+					if (i.isalways) {
+						for (auto& m : this->keyg) {
+							if (m.key.mac == i.first) {
+								if (i.get_key(0)) {
+									noF1_f = 3.f;
+									m.onhandle.GetSize(&xss, &yss);
+									xss = int(float(xss)*float(y_size - 4) / 25.f);
+									yss = int(float(yss)*float(y_size - 4) / 25.f);
+									m.onhandle.DrawRotaGraph(xp_s + (x_size - y_size + xss) / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
+								}
+								else {
+									m.offhandle.GetSize(&xss, &yss);
+									xss = int(float(xss)*float(y_size - 4) / 25.f);
+									yss = int(float(yss)*float(y_size - 4) / 25.f);
+									m.offhandle.DrawRotaGraph(xp_s + (x_size - y_size + xss) / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
+								}
+								xp_s += (x_size - y_size + xss);
+							}
+						}
+					}
+				}
+				for (auto& i : this->mouse_use_ID) {
+					if (i.isalways) {
+						for (auto& m : this->keyg2) {
+							if (m.key.mac == i.first) {
+								{
+									mousehandle.GetSize(&xss, &yss);
+									mousehandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
+								}
+								if (i.get_key(3)) {
+									noF1_f = 3.f;
+									m.onhandle.GetSize(&xss, &yss);
+									m.onhandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
+								}
+								else {
+									m.offhandle.GetSize(&xss, &yss);
+									m.offhandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
+								}
+								xp_s += x_size;
+							}
+						}
+					}
+				}
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			}
+			else {
+				for (auto& i : this->key_use_ID) {
+					if (i.isalways) {
+						for (auto& m : this->keyg) {
+							if (m.key.mac == i.first) {
+								if (i.get_key(0)) {
+									noF1_f = 3.f;
+								}
+							}
+						}
+					}
+				}
+				for (auto& i : this->mouse_use_ID) {
+					if (i.isalways) {
+						for (auto& m : this->keyg2) {
+							if (m.key.mac == i.first) {
+								if (i.get_key(3)) {
+									noF1_f = 3.f;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else {
+			noF1_f = 3.f;
+		}
+		//
+	}
+	void draw_botsu() {
+		auto tmp_f1 = this->key_use_ID[16].get_key(1);
+		easing_set(&F1_f, float(tmp_f1), 0.9f);
 		//インフォ
 		if (F1_f > 0.1f) {
 			int xp_t = 100, yp_t = 300;
@@ -420,55 +598,6 @@ public:
 			}
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 		}
-		//常時表示
-		if (!tmp_f1) {
-			int xp_s = 1920 - 700, yp_s = 1080 - 28, x_size = 26, y_size = 24;
-			int xss = 0, yss = 0;
-			for (auto& i : this->key_use_ID) {
-				if (i.isalways) {
-					for (auto& m : this->keyg) {
-						if (m.key.mac == i.first) {
-							if (i.get_key(0)) {
-								m.onhandle.GetSize(&xss, &yss);
-								xss = int(float(xss)*float(y_size - 4) / 25.f);
-								yss = int(float(yss)*float(y_size - 4) / 25.f);
-								m.onhandle.DrawRotaGraph(xp_s + (x_size - y_size + xss) / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
-							}
-							else {
-								m.offhandle.GetSize(&xss, &yss);
-								xss = int(float(xss)*float(y_size - 4) / 25.f);
-								yss = int(float(yss)*float(y_size - 4) / 25.f);
-								m.offhandle.DrawRotaGraph(xp_s + (x_size - y_size + xss) / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
-							}
-							xp_s += (x_size - y_size + xss);
-						}
-					}
-				}
-			}
-			for (auto& i : this->mouse_use_ID) {
-				if (i.isalways) {
-					for (auto& m : this->keyg2) {
-						if (m.key.mac == i.first) {
-							{
-								mousehandle.GetSize(&xss, &yss);
-								mousehandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
-							}
-							if (i.get_key(3)) {
-								m.onhandle.GetSize(&xss, &yss);
-								m.onhandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
-							}
-							else {
-								m.offhandle.GetSize(&xss, &yss);
-								m.offhandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
-							}
-							xp_s += x_size;
-						}
-					}
-				}
-			}
-			//
-		}
-		//
 	}
 	//
 };
@@ -822,41 +951,90 @@ protected:
 		}
 	};
 	//命中根
-	class Hit {
-	private:
-		bool Flag = false;	/*弾痕フラグ*/
-		int use = 0;		/*使用フレーム*/
-		MV1 pic;			/*弾痕モデル*/
-		VECTOR_ref pos;		/*座標*/
-		MATRIX_ref mat;		/*座標*/
-	public:
-		void Set(const MV1&hit_pic) {
-			this->Flag = false;
-			this->use = 0;
-			this->pic = hit_pic.Duplicate();
-			this->mat.clear();
-			this->pos.clear();
-		}
-		void Put_Hit(const float &caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
-			float asize = 200.f*caliber;
-			VECTOR_ref y_vec = Normal;
-			VECTOR_ref z_vec = y_vec.cross(Zvec).Norm();
-			VECTOR_ref scale = VGet(asize / std::abs(y_vec.dot(Zvec)), asize, asize);
+	class Hit_p {
+		//雲
+		int hitss = 0;					/*hitsの数*/
+		std::vector<VERTEX3D> hitsver;	/*hits*/
+		std::vector<DWORD> hitsind;	    /*hits*/
+		int VerBuf = -1, IndexBuf = -1;	/*hits*/
+		MV1 hits;						/*hitsモデル*/
+		GraphHandle hits_pic;			/*画像ハンドル*/
+		int IndexNum = -1, VerNum = -1;	/*hits*/
+		int vnum = -1, pnum = -1;		/*hits*/
+		MV1_REF_POLYGONLIST RefMesh;	/*hits*/
 
-			this->Flag = true;
-			this->use = 0;
-			this->pos = VECTOR_ref(Position) + y_vec * 0.02f;
-			this->mat = MATRIX_ref::Scale(scale)*  MATRIX_ref::Axis1_YZ(y_vec, z_vec);
+		bool isUPDate = true;
+	public:
+		//初期化
+		void init() {
+			SetUseASyncLoadFlag(FALSE);
+			hits_pic = GraphHandle::Load("data/model/hit/hit.png");		 /*grass*/
+			MV1::Load("data/model/hit/model.mv1", &hits, false);	//弾痕
+			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
 		}
-		void UpDate() {
-			if (this->Flag) {
-				this->pic.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
+		//毎回のリセット
+		void clear() {
+			hitss = 0;
+			vnum = 0;
+			pnum = 0;
+			hitsver.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			hitsind.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			hitsver.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			hitsind.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+		}
+
+		void set(const float &caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
+			hitss++;
+			IndexNum = RefMesh.PolygonNum * 3 * hitss;				/*インデックスの数を取得*/
+			VerNum = RefMesh.VertexNum * hitss;						/*頂点の数を取得*/
+			hitsver.resize(VerNum);									/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			hitsind.resize(IndexNum);								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			{
+				float asize = 200.f*caliber;
+				VECTOR_ref y_vec = Normal;
+				VECTOR_ref z_vec = y_vec.cross(Zvec).Norm();
+				VECTOR_ref scale = VGet(asize / std::abs(y_vec.dot(Zvec)), asize, asize);
+				VECTOR_ref pos = VECTOR_ref(Position) + y_vec * 0.02f;
+				MATRIX_ref mat = MATRIX_ref::Scale(scale)*  MATRIX_ref::Axis1_YZ(y_vec, z_vec);
+
+				hits.SetMatrix(mat*MATRIX_ref::Mtrans(pos));
+			}
+			MV1RefreshReferenceMesh(hits.get(), -1, TRUE);			/*参照用メッシュの更新*/
+			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
+			for (size_t j = 0; j < size_t(RefMesh.VertexNum); ++j) {
+				auto& g = hitsver[j + vnum];
+				g.pos = RefMesh.Vertexs[j].Position;
+				g.norm = RefMesh.Vertexs[j].Normal;
+				g.dif = RefMesh.Vertexs[j].DiffuseColor;
+				g.spc = RefMesh.Vertexs[j].SpecularColor;
+				g.u = RefMesh.Vertexs[j].TexCoord[0].u;
+				g.v = RefMesh.Vertexs[j].TexCoord[0].v;
+				g.su = RefMesh.Vertexs[j].TexCoord[1].u;
+				g.sv = RefMesh.Vertexs[j].TexCoord[1].v;
+			}
+			for (size_t j = 0; j < size_t(RefMesh.PolygonNum); ++j) {
+				for (size_t k = 0; k < std::size(RefMesh.Polygons[j].VIndex); ++k)
+					hitsind[j * 3 + k + pnum] = WORD(RefMesh.Polygons[j].VIndex[k] + vnum);
+			}
+			vnum += RefMesh.VertexNum;
+			pnum += RefMesh.PolygonNum * 3;
+			isUPDate = true;
+		}
+		void update() {
+			if(isUPDate){
+				isUPDate = false;
+				VerBuf = CreateVertexBuffer(VerNum, DX_VERTEX_TYPE_NORMAL_3D);
+				IndexBuf = CreateIndexBuffer(IndexNum, DX_INDEX_TYPE_32BIT);
+				SetVertexBufferData(0, hitsver.data(), VerNum, VerBuf);
+				SetIndexBufferData(0, hitsind.data(), IndexNum, IndexBuf);
 			}
 		}
-		void Draw(void) {
-			if (this->Flag) {
-				this->pic.DrawFrame(this->use);
+		void draw() {
+			//SetDrawAlphaTest(DX_CMP_GREATER, 128);
+			{
+				DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, hits_pic.get(), TRUE);
 			}
+			//SetDrawAlphaTest(-1, 0);
 		}
 	};
 	//アイテム
@@ -880,6 +1058,7 @@ protected:
 		Meds* ptr_med = nullptr;
 		Meds medkit;
 	public:
+		bool flag_canlook_player = true;
 		auto& get_ptr_mag() { return ptr_mag; }
 		auto& get_ptr_med() { return ptr_med; }
 		auto& get_magazine() { return magazine; }
@@ -979,49 +1158,69 @@ protected:
 		}
 		template<class Y, class D, class Chara>
 		void Get_item_2(VECTOR_ref StartPos, VECTOR_ref EndPos, Chara& chara, std::unique_ptr<Y, D>& MAPPTs) {
-			bool zz = false;
-			if (this->ptr_mag != nullptr || this->ptr_med != nullptr) {
-				auto p = MAPPTs->map_col_line(StartPos, EndPos);
-				if (p.HitFlag) {
-					EndPos = p.HitPosition;
+			if (this->flag_canlook_player) {
+				bool zz = false;
+				if (this->ptr_mag != nullptr || this->ptr_med != nullptr) {
+					auto p = MAPPTs->map_col_line(StartPos, EndPos);
+					if (p.HitFlag) {
+						EndPos = p.HitPosition;
+					}
+					zz = (Segment_Point_MinLength(StartPos.get(), EndPos.get(), this->pos.get()) <= 0.4f);
 				}
-				zz = (Segment_Point_MinLength(StartPos.get(), EndPos.get(), this->pos.get()) <= 0.4f);
-			}
-			//個別
-			if (this->ptr_mag != nullptr) {
-				chara.get_canget_magitem() |= zz;
-				if (zz) {
-					chara.get_canget_id() = this->id_t;
-					chara.get_canget_mag() = this->ptr_mag->mod.get_name();
-					if (chara.getmagazine_push() && this->magazine.cap != 0 && (this->ptr_mag->ammo[0].get_name() == this->magazine.ammo[0].get_name())) {
-						chara.sort_f = false;
-						chara.gun_stat_now->magazine_plus(&(this->magazine));
-						if (chara.gun_stat_now->get_magazine_in().size() == 1) {
-							chara.reloadf = true;
+				//個別
+				if (this->ptr_mag != nullptr) {
+					chara.get_canget_magitem() |= zz;
+					if (zz) {
+						chara.get_canget_id() = this->id_t;
+						chara.get_canget_mag() = this->ptr_mag->mod.get_name();
+						if (chara.getmagazine_push() && this->magazine.cap != 0 && (this->ptr_mag->ammo[0].get_name() == this->magazine.ammo[0].get_name())) {
+							chara.sort_f = false;
+							chara.gun_stat_now->magazine_plus(&(this->magazine));
+							if (chara.gun_stat_now->get_magazine_in().size() == 1) {
+								chara.reloadf = true;
+							}
+							this->Detach_item();
 						}
-						this->Detach_item();
 					}
 				}
-			}
-			//
-			if (this->ptr_med != nullptr) {
-				chara.get_canget_meditem() |= zz;
-				if (zz) {
-					chara.get_canget_id() = this->id_t;
-					chara.get_canget_med() = this->ptr_med->mod.get_name();
-					if (chara.getmagazine_push()) {
-						chara.HP = std::clamp<int>(chara.HP + this->ptr_med->repair, 0, chara.HP_full);
-						this->Detach_item();
+				//
+				if (this->ptr_med != nullptr) {
+					chara.get_canget_meditem() |= zz;
+					if (zz) {
+						chara.get_canget_id() = this->id_t;
+						chara.get_canget_med() = this->ptr_med->mod.get_name();
+						if (chara.getmagazine_push()) {
+							chara.HP = std::clamp<int>(chara.HP + this->ptr_med->repair, 0, chara.HP_full);
+							this->Detach_item();
+						}
 					}
 				}
 			}
 		}
-		void Draw_item(void) {
-			if (this->ptr_mag != nullptr) {
-				this->obj.DrawModel();
+		void Check_CameraViewClip(void) {
+			this->flag_canlook_player = true;
+			auto ttt = this->pos;
+			if (CheckCameraViewClip_Box((ttt + VGet(-0.3f, 0, -0.3f)).get(), (ttt + VGet(0.3f, 0.3f, 0.3f)).get())) {
+				this->flag_canlook_player = false;
+				return;
 			}
-			if (this->ptr_med != nullptr) {
-				this->obj.DrawModel();
+		}
+		template<class Y, class D>
+		void Check_CameraViewClip_MAPCOL(std::unique_ptr<Y, D>& MAPPTs) {
+			Check_CameraViewClip();
+			auto ttt = this->pos;
+			if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VGet(0, 0.3f, 0)).HitFlag &&
+				MAPPTs->map_col_line(GetCameraPosition(), ttt + VGet(0, 0.0f, 0)).HitFlag) {
+				this->flag_canlook_player = false;
+				return;
+			}
+		}
+
+		void Draw_item(void) {
+			if (this->flag_canlook_player) {
+				if (this->ptr_mag != nullptr || this->ptr_med != nullptr) {
+					this->obj.DrawModel();
+				}
 			}
 		}
 		void Detach_item(void) {

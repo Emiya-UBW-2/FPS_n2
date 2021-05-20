@@ -1040,8 +1040,7 @@ public:
 		//オブジェ
 		std::vector<PLAYERclass::Chara> chara;					//キャラ
 		//std::vector<Items> item;					//アイテム
-		std::vector<Hit> hit_obj;					//弾痕
-		size_t hit_buf = 0;							//
+		Hit_p hit_obj_p;							//静的弾痕
 		//そのまま
 		std::unique_ptr<HostPassEffect, std::default_delete<HostPassEffect>> Hostpassparts_TPS;
 		std::unique_ptr<TPS_parts, std::default_delete<TPS_parts>> TPSparts;
@@ -1169,6 +1168,8 @@ public:
 			set_parts_data_from_folder(&this->magazine_data, "data/mag/");
 			//MEDデータ
 			set_mads_data_from_folder(&this->meds_data, "data/medkit/");
+			//
+			this->hit_obj_p.init();
 		}
 		void Start_After() {
 			//PARTSデータ2
@@ -1190,9 +1191,7 @@ public:
 			//MEDデータ2
 			for (auto& g : this->meds_data) { g.Set_datas(&g - &this->meds_data[0]); }
 			//弾痕
-			this->hit_buf = 0;
-			this->hit_obj.resize(64);
-			for (auto& h : this->hit_obj) { h.Set(this->hit_pic); }
+			this->hit_obj_p.clear();
 		}
 		void Set_Charaa(const size_t &spawn_total) {
 			//キャラ設定
@@ -1265,14 +1264,10 @@ public:
 			}
 			//共通演算
 			for (auto& c : this->chara) {
-				c.UpDate(
-					this->hit_obj, this->hit_buf, 
-					RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data,
-					this->chara, this->Get_Mine(), use_VR
-				);
+				c.UpDate(this->hit_obj_p, RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->chara, this->Get_Mine(), use_VR);
 			}
 			//弾痕の更新
-			for (auto&s : hit_obj) { s.UpDate(); }
+			this->hit_obj_p.update();
 			//campos,camvec,camupの指定
 			Get_Mine().Set_cam(camera_main, this->chara, fov_base, use_VR);
 			//ルール保存
@@ -1296,7 +1291,12 @@ public:
 				GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), camp->campos, camp->camvec, camp->camup, camp->fov, camp->near_, camp->far_);
 				{
 					for (auto& c : this->chara) {
-						c.Check_CameraViewClip(/**MAPPTs*/);
+						//c.Check_CameraViewClip_MAPCOL();
+						c.Check_CameraViewClip();
+					}
+					for (auto& i : (*MAPPTs)->item) {
+						//i.Check_CameraViewClip_MAPCOL(*MAPPTs);
+						i.Check_CameraViewClip();
 					}
 				}
 			}
@@ -1333,7 +1333,7 @@ public:
 			//map
 			(*MAPPTs)->main_Draw();
 			//命中痕
-			for (auto&s : hit_obj) { s.Draw(); }
+			this->hit_obj_p.draw();
 			//サイト
 			for (auto& s : Get_Mine().sight_) { s.Draw_reticle(); }
 			//キャラ

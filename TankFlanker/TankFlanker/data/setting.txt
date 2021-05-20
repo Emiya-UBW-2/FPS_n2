@@ -1,3 +1,4 @@
+grass_level=4
 DoF=true
 bloom=true
 shadow=true
