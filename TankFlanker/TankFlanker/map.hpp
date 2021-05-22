@@ -36,16 +36,16 @@ public:
 		int vnum = -1, pnum = -1;		/*grass*/
 		MV1_REF_POLYGONLIST RefMesh;	/*grass*/
 	public:
-		std::vector<Items> item;					//アイテム
+		std::list<Items> item;					//アイテム
 	public:
-		std::vector<VECTOR_ref>& get_waypoint(void) { return way_point; }
-		std::vector<VECTOR_ref>& get_leanpoint_q(void) { return lean_point_q; }
-		std::vector<VECTOR_ref>& get_leanpoint_e(void) { return lean_point_e; }
-		std::vector<VECTOR_ref>& get_spawn_point(void) { return spawn_point; }
-		GraphHandle& get_minmap(void) { return minmap; }
-		int& get_x_size(void) { return x_size; }
-		int& get_y_size(void) { return y_size; }
-		Map(int grass_level) {
+		std::vector<VECTOR_ref>& get_waypoint(void) noexcept { return way_point; }
+		std::vector<VECTOR_ref>& get_leanpoint_q(void) noexcept { return lean_point_q; }
+		std::vector<VECTOR_ref>& get_leanpoint_e(void) noexcept { return lean_point_e; }
+		std::vector<VECTOR_ref>& get_spawn_point(void) noexcept { return spawn_point; }
+		GraphHandle& get_minmap(void) noexcept { return minmap; }
+		int& get_x_size(void) noexcept { return x_size; }
+		int& get_y_size(void) noexcept { return y_size; }
+		Map(int grass_level) noexcept {
 			switch (grass_level) {
 			case 0:
 				grasss = 0;
@@ -67,8 +67,8 @@ public:
 				break;
 			}
 		}
-		~Map(void) { }
-		void Ready_map(std::string dir) {
+		~Map(void) noexcept { }
+		void Ready_map(std::string dir) noexcept {
 			this->path = dir + "/";
 			MV1::Load(this->path + "model.mv1", &map, true);		   //map
 			MV1::Load(this->path + "col.mv1", &map_col, true);		   //mapコリジョン
@@ -87,12 +87,12 @@ public:
 				grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
 			}
 		}
-		void Start(std::vector<GUNPARTs>* get_parts_data, std::vector<Meds>* get_meds_data, const VECTOR_ref& ray) {
+		void Start(std::vector<GUNPARTs>* get_parts_data, std::vector<Meds>* get_meds_data, const VECTOR_ref& ray) noexcept {
 			this->sun_pos = ray.Norm() * -1500.f;
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			VECTOR_ref size;
 			{
-				VECTOR_ref sizetmp = map_col.mesh_maxpos(0) - map_col.mesh_minpos(0);
+				auto sizetmp = map_col.mesh_maxpos(0) - map_col.mesh_minpos(0);
 				if (size.x() < sizetmp.x()) { size.x(sizetmp.x()); }
 				if (size.y() < sizetmp.y()) { size.y(sizetmp.y()); }
 				if (size.z() < sizetmp.z()) { size.z(sizetmp.z()); }
@@ -101,30 +101,39 @@ public:
 			{
 				MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
 				auto p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
+				MV1_COLL_RESULT_POLY pt;
 				for (int i = 0; i < p.PolygonNum; i++) {
-					if (p.Polygons[i].MaterialIndex == 1) {
-						way_point.resize(way_point.size() + 1);
-						way_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
-						auto pt = map_col.CollCheck_Line(way_point.back() + VGet(0, 10.f, 0.f), way_point.back() + VGet(0, -10.f, 0.f), 0, 0);
+					switch (p.Polygons[i].MaterialIndex) {
+					case 1:
+					{
+						way_point.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
+						pt = map_col.CollCheck_Line(way_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), way_point.back() + VECTOR_ref::vget(0, -10.f, 0.f), 0, 0);
 						if (pt.HitFlag) { way_point.back() = pt.HitPosition; }
+						break;
 					}
-					else if (p.Polygons[i].MaterialIndex == 2) {
-						lean_point_e.resize(lean_point_e.size() + 1);
-						lean_point_e.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
-						auto pt = map_col.CollCheck_Line(lean_point_e.back() + VGet(0, 10.f, 0.f), lean_point_e.back() + VGet(0, -10.f, 0.f), 0, 0);
+					case 2:
+					{
+						lean_point_e.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
+						pt = map_col.CollCheck_Line(lean_point_e.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_e.back() + VECTOR_ref::vget(0, -10.f, 0.f), 0, 0);
 						if (pt.HitFlag) { lean_point_e.back() = pt.HitPosition; }
+						break;
 					}
-					else if (p.Polygons[i].MaterialIndex == 3) {
-						lean_point_q.resize(lean_point_q.size() + 1);
-						lean_point_q.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
-						auto pt = map_col.CollCheck_Line(lean_point_q.back() + VGet(0, 10.f, 0.f), lean_point_q.back() + VGet(0, -10.f, 0.f), 0, 0);
+					case 3:
+					{
+						lean_point_q.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
+						pt = map_col.CollCheck_Line(lean_point_q.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_q.back() + VECTOR_ref::vget(0, -10.f, 0.f), 0, 0);
 						if (pt.HitFlag) { lean_point_q.back() = pt.HitPosition; }
+						break;
 					}
-					else if (p.Polygons[i].MaterialIndex == 4) {
-						spawn_point.resize(spawn_point.size() + 1);
-						spawn_point.back() = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
-						auto pt = map_col.CollCheck_Line(spawn_point.back() + VGet(0, 10.f, 0.f), spawn_point.back() + VGet(0, -10.f, 0.f), 0, 0);
+					case 4:
+					{
+						spawn_point.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
+						pt = map_col.CollCheck_Line(spawn_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), spawn_point.back() + VECTOR_ref::vget(0, -10.f, 0.f), 0, 0);
 						if (pt.HitFlag) { spawn_point.back() = pt.HitPosition; }
+						break;
+					}
+					default:
+						break;
 					}
 				}
 			}
@@ -150,7 +159,7 @@ public:
 						p4 = getparams::_float(mdata);
 
 						item.resize(item.size() + 1);
-						item.back().Set_item_magazine(item.size() - 1, &(*get_parts_data)[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						item.back().Set_item_magazine(item.size() - 1, &(*get_parts_data)[p1], VECTOR_ref::vget(p2, p3, p4), VECTOR_ref::vget(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -173,7 +182,7 @@ public:
 						p4 = getparams::_float(mdata);
 
 						item.resize(item.size() + 1);
-						item.back().Set_item_med_(item.size() - 1 ,&(*get_meds_data)[p1], VGet(p2, p3, p4), VGet(0, 0, 0), MGetIdent());
+						item.back().Set_item_med_(item.size() - 1 ,&(*get_meds_data)[p1], VECTOR_ref::vget(p2, p3, p4), VECTOR_ref::vget(0, 0, 0), MGetIdent());
 					}
 					else {
 						break;
@@ -218,11 +227,14 @@ public:
 							z_t = (float)(GetRand(int((z_max - z_min)) * 100) - int(z_max - z_min) * 50) / 100.0f;
 						}
 					}
-					VECTOR_ref tmpvect2 = VGet(x_t, -5.f, z_t);
-					VECTOR_ref tmpvect = VGet(x_t, 5.f, z_t);
+					auto tmpvect2 = VECTOR_ref::vget(x_t, -5.f, z_t);
+					auto tmpvect = VECTOR_ref::vget(x_t, 5.f, z_t);
 					map_col_nearest(tmpvect2, &tmpvect);
 					//
-					MV1SetMatrix(grass.get(), MMult(MMult(MGetRotY(deg2rad(GetRand(90))), MGetScale(VGet(1.f, float(100 - 20 + GetRand(20 * 2)) / 100.f, 1.f))), MGetTranslate(tmpvect.get())));
+					grass.SetMatrix(
+						(MATRIX_ref::RotY(deg2rad(GetRand(90))) * MATRIX_ref::GetScale(VECTOR_ref::vget(1.f, float(100 - 20 + GetRand(20 * 2)) / 100.f, 1.f))) *
+						MATRIX_ref::Mtrans(tmpvect)
+					);
 					//上省
 					MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
 					RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
@@ -252,14 +264,15 @@ public:
 				SetIndexBufferData(0, grassind.data(), IndexNum, IndexBuf);
 			}
 		}
-		void Set(void) {
+		void Set(void) noexcept {
 			envi.play(DX_PLAYTYPE_LOOP, TRUE);
 		}
-		void Dispose(void) {
-			for (auto& i : item) {
-				i.Detach_item();
+		void Dispose(void) noexcept {
+			for (auto i = item.begin(); i != item.end();) {
+				i->Detach_item();
+				item.erase(i);
+				++i;
 			}
-			item.clear();
 			map.Dispose();		   //map
 			map_col.Dispose();		   //mapコリジョン
 			sky.Dispose();	 //空
@@ -277,12 +290,12 @@ public:
 				grassind.clear();
 			}
 		}
-		auto& map_get(void) { return map; }
-		auto& map_col_get(void) { return map_col; }
-		auto map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) {
+		auto& map_get(void) const noexcept { return map; }
+		auto& map_col_get(void) const noexcept { return map_col; }
+		auto map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) noexcept {
 			return map_col.CollCheck_Line(StartPos, EndPos, 0, 0);
 		}
-		void map_col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) {
+		void map_col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) noexcept {
 			while (true) {
 				auto p = this->map_col_line(StartPos, *EndPos);
 				if (p.HitFlag) {
@@ -296,7 +309,7 @@ public:
 				}
 			}
 		}
-		void map_col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos) {
+		void map_col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos) noexcept {
 			auto MoveVector = *NowPos - OldPos;
 			// プレイヤーの周囲にあるステージポリゴンを取得する( 検出する範囲は移動距離も考慮する )
 			auto HitDim = map_col.CollCheck_Sphere(OldPos, PLAYER_ENUM_DEFAULT_SIZE + MoveVector.size(), 0, 0);
@@ -317,14 +330,14 @@ public:
 			if (kabe_.size() > 0) {
 				bool HitFlag = false;
 				for (auto& KeyBind : kabe_) {
-					if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {				// ポリゴンとプレイヤーが当たっていなかったら次のカウントへ
+					if (Hit_Capsule_Tri(*NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {				// ポリゴンとプレイヤーが当たっていなかったら次のカウントへ
 						HitFlag = true;// ここにきたらポリゴンとプレイヤーが当たっているということなので、ポリゴンに当たったフラグを立てる
 						if (MoveVector.size() >= 0.0001f) {	// x軸かy軸方向に 0.0001f 以上移動した場合は移動したと判定
 							// 壁に当たったら壁に遮られない移動成分分だけ移動する
 							*NowPos = VECTOR_ref(KeyBind->Normal).cross(MoveVector.cross(KeyBind->Normal)) + OldPos;
 							bool j = false;
 							for (auto& b_ : kabe_) {
-								if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {
+								if (Hit_Capsule_Tri(*NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {
 									j = true;
 									break;// 当たっていたらループから抜ける
 								}
@@ -346,11 +359,11 @@ public:
 					for (int k = 0; k < PLAYER_HIT_TRYNUM; k++) {			// 壁からの押し出し処理を試みる最大数だけ繰り返し
 						bool HitF = false;
 						for (auto& KeyBind : kabe_) {
-							if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, 0.2f, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {// プレイヤーと当たっているかを判定
+							if (Hit_Capsule_Tri(*NowPos + VECTOR_ref::vget(0.0f, 0.2f, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {// プレイヤーと当たっているかを判定
 								*NowPos += VECTOR_ref(KeyBind->Normal) * PLAYER_HIT_SLIDE_LENGTH;					// 当たっていたら規定距離分プレイヤーを壁の法線方向に移動させる
 								bool j = false;
 								for (auto& b_ : kabe_) {
-									if (Hit_Capsule_Tri(*NowPos + VGet(0.0f, 0.2f, 0.0f), *NowPos + VGet(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {// 当たっていたらループを抜ける
+									if (Hit_Capsule_Tri(*NowPos + VECTOR_ref::vget(0.0f, 0.2f, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {// 当たっていたらループを抜ける
 										j = true;
 										break;
 									}
@@ -372,7 +385,7 @@ public:
 			MV1CollResultPolyDimTerminate(HitDim);	// 検出したプレイヤーの周囲のポリゴン情報を開放する
 		}
 		//空描画
-		void sky_Draw(void) {
+		void sky_Draw(void) noexcept {
 			{
 				SetFogEnable(FALSE);
 				SetUseLighting(FALSE);
@@ -385,7 +398,7 @@ public:
 			}
 			return;
 		}
-		void grass_Draw(void) {
+		void grass_Draw(void) noexcept {
 			if (grasss != 0) {
 				SetFogStartEnd(0.0f, 500.f);
 				SetFogColor(192, 192, 192);
@@ -399,16 +412,16 @@ public:
 				SetDrawAlphaTest(-1, 0);
 			}
 		}
-		void Shadow_Draw(void) {
+		void Shadow_Draw(void) noexcept {
 			for (int i = 0; i < 3; i++) {
 				map.DrawMesh(i);
 			}
 			grass_Draw();
 		}
-		void item_Draw(void) {
+		void item_Draw(void) noexcept {
 			for(auto& i : item){ i.Draw_item(); }
 		}
-		void main_Draw(void) {
+		void main_Draw(void) noexcept {
 			map.DrawMesh(0);
 			map.DrawMesh(1);
 			map.DrawMesh(2);
@@ -421,20 +434,18 @@ public:
 		}
 		//
 		template<class Chara>
-		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos,Chara& chara, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) {
+		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos,Chara& chara, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
 			chara.get_canget_magitem() = false;
 			chara.get_canget_meditem() = false;
-			for (auto& g : this->item) {
-				g.Get_item_2(StartPos, EndPos, chara, MAPPTs);
-			}
+			for (auto& g : this->item) { g.Get_item_2(StartPos, EndPos, chara, MAPPTs); }
 		}
 	};
 	class MiniMap {
 	private:
+		bool usemasks = false;
+
 		int x_size = 0;
 		int y_size = 0;
-		int x_pos = 0;
-		int y_pos = 0;
 		GraphHandle UI_player;			//描画スクリーン
 		GraphHandle UI_minimap;			//描画スクリーン
 		float xcam = 1.f;
@@ -443,7 +454,7 @@ public:
 		//
 		std::unique_ptr<Map, std::default_delete<Map>>* MAPPTs;
 	private:
-		void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp) {
+		void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp) noexcept {
 			auto x_2 = chara_pos.x() / (*MAPPTs)->map_col_get().mesh_maxpos(0).x() *((*MAPPTs)->get_x_size() / 2)*xcam;
 			auto y_2 = -chara_pos.z() / (*MAPPTs)->map_col_get().mesh_maxpos(0).z() *((*MAPPTs)->get_y_size() / 2)*xcam;
 
@@ -451,18 +462,25 @@ public:
 			*yp = int(y_2*cos(radp) + x_2 * sin(radp));
 		}
 	public:
-		MiniMap(std::unique_ptr<Map, std::default_delete<Map>>* MAPPTs_t) {
+		MiniMap(std::unique_ptr<Map, std::default_delete<Map>>* MAPPTs_t) noexcept {
 			SetUseASyncLoadFlag(FALSE);
-			CreateMaskScreen();
-			MaskHandle = LoadMask("data/UI/testMask.bmp");
-			GetMaskSize(&x_size, &y_size, MaskHandle);
+			if (usemasks) {
+				CreateMaskScreen();
+				MaskHandle = LoadMask("data/UI/testMask.bmp");
+				GetMaskSize(&x_size, &y_size, MaskHandle);
+				loadmasks = true;
+			}
+			else {
+				x_size = 300;
+				y_size = 300;
+				loadmasks = false;
+			}
 			UI_minimap = GraphHandle::Make(x_size, y_size, true);
 			UI_player = GraphHandle::Load("data/UI/player.bmp");
-			loadmasks = true;
 			MAPPTs = MAPPTs_t;
 		}
 		template<class Chara>
-		void Set(std::vector<Chara>&chara, Chara& mine) {
+		void UI_Draw(std::vector<Chara>&chara, Chara& mine) noexcept {
 			UI_minimap.SetDraw_Screen(true);
 			{
 				DrawBox(0, 0, x_size, y_size, GetColor(0, 128, 0), TRUE);
@@ -488,21 +506,24 @@ public:
 				}
 			}
 		}
-		void Draw(const int& xpos, const int& ypos) {
-			if (x_pos != xpos || y_pos != ypos) {
-				loadmasks = true;
-			}
-			if (loadmasks) {
-				FillMaskScreen(0);
-				DrawMask(xpos, ypos, MaskHandle, DX_MASKTRANS_BLACK);
-				loadmasks = false;
-			}
-			x_pos = xpos;
-			y_pos = ypos;
+		void Draw() noexcept {
+			int xpos = y_r(64);
+			int ypos = y_r(64);
+			int xpos2 = xpos + y_r(x_size);
+			int ypos2 = ypos + y_r(y_size);
 
-			SetUseMaskScreenFlag(TRUE);
-			UI_minimap.DrawGraph(xpos, ypos, true);
-			SetUseMaskScreenFlag(FALSE);
+			if (usemasks) {
+				if (loadmasks) {
+					FillMaskScreen(0);
+					DrawMask(xpos, ypos, MaskHandle, DX_MASKTRANS_BLACK);
+					loadmasks = false;
+				}
+				SetUseMaskScreenFlag(TRUE);
+			}
+			UI_minimap.DrawExtendGraph(xpos, ypos, xpos2, ypos2, true);
+			if (usemasks) {
+				SetUseMaskScreenFlag(FALSE);
+			}
 		}
 	};
 };

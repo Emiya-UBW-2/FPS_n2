@@ -13,8 +13,10 @@ class main_c {
 	bool ending = true;
 	int sel_scene = scenes::ITEM_LOAD;
 	cam_info* cam_t = nullptr;
+	bool update_effect = true;
+	LONGLONG update_effect_was = 0;
 public:
-	main_c(void) {
+	main_c(void) noexcept {
 		auto OPTPTs = std::make_unique<OPTION>();																		//設定読み込み
 		auto DrawPts = std::make_unique<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->Shadow, OPTPTs->Vsync);	//汎用
 		auto DebugPTs = std::make_unique<DeBuG>(FRAME_RATE);															//デバッグ
@@ -29,7 +31,7 @@ public:
 		//キー読み込み
 		auto KeyBind = std::make_unique<key_bind>();
 		//シーン
-		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(&DrawPts, &MAPPTs, &OPTPTs);
+		auto MAINLOOPscene = std::make_unique<Sceneclass::MAINLOOP>(&DrawPts, &MAPPTs, &OPTPTs,&DebugPTs);
 		auto LOADscene = std::make_unique<Sceneclass::LOAD>(DrawPts->use_vr,&MAINLOOPscene);
 		auto SELECTscene = std::make_unique<Sceneclass::SELECT>(&DrawPts, &MAPPTs, &OPTPTs, &MAINLOOPscene);
 		//繰り返し
@@ -53,7 +55,9 @@ public:
 				case scenes::LOAD:
 					//キャラ設定
 					UI_LOADPTs->Set("マップ");
-					MAINLOOPscene->Set_Charaa(MAPPTs->get_spawn_point().size());
+					MAINLOOPscene->Set_Charaa(
+						MAPPTs->get_spawn_point().size()
+					);
 					LOADscene->Set();
 					if (DrawPts->use_vr) {
 					}
@@ -111,10 +115,13 @@ public:
 				default:
 					break;
 				}
+				//
+				update_effect_was = GetNowHiPerformanceCount();
 			}
 			while (ProcessMessage() == 0) {
 				clsDx();
 				const auto waits = GetNowHiPerformanceCount();
+				FPS = GetFPS();
 				DebugPTs->put_way();
 				{
 					//更新
@@ -272,7 +279,7 @@ public:
 							mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);
 							mine_k.have_mag = true;
 						}
-						selend = MAINLOOPscene->UpDate();
+						selend = MAINLOOPscene->UpDate();//2~4ms
 						cam_t = &MAINLOOPscene->Get_Camera();
 						if (KeyBind->key_use_ID[10].get_key(0)) {
 							selend = false;
@@ -286,7 +293,7 @@ public:
 					//描画
 					{
 						//UI書き込み
-						HostpassPTs->Set_UI_draw([&]() {
+						HostpassPTs->Set_UI_draw([&](void) noexcept {
 							switch (sel_scene) {
 							case scenes::ITEM_LOAD:
 								UI_LOADPTs->UI_Draw(DrawPts->use_vr);
@@ -329,9 +336,19 @@ public:
 									break;
 								}
 
-							}, VGet(2.f, 2.5f, 2.f), VGet(5.f, 2.5f, 5.f));
+							}, VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(5.f, 2.5f, 5.f));
 							//↑nearはこれ
-							//	(MAINLOOPscene->Get_Mine().get_alive()) ? VGet(2.f, 2.5f, 2.f) : VGet(10.f, 2.5f, 10.f)
+							//	(MAINLOOPscene->Get_Mine().get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
+							//エフェクシアのアプデを60FPS相当に変更
+							{
+								if (float(GetNowHiPerformanceCount() - update_effect_was) / 1000.f >= 1000.f / 60.f) {
+									update_effect = true;
+									update_effect_was = GetNowHiPerformanceCount();
+								}
+								else {
+									update_effect = false;
+								}
+							}
 							//VRに移す
 							DrawPts->draw_VR([&] {
 								auto tmp = GetDrawScreen();
@@ -348,10 +365,10 @@ public:
 									case scenes::LOAD:
 										break;
 									case scenes::SELECT:
-										HostpassPTs->BUF_draw([&](void) { SELECTscene->BG_Draw(); }, [&](void) { DrawPts->Draw_by_Shadow([&] { SELECTscene->Main_Draw(); }); }, tmp_cam);
+										HostpassPTs->BUF_draw([&](void) noexcept { SELECTscene->BG_Draw(); }, [&](void) noexcept { DrawPts->Draw_by_Shadow([&] { SELECTscene->Main_Draw(); }); }, tmp_cam, update_effect);
 										break;
 									case scenes::MAIN_LOOP:
-										HostpassPTs->BUF_draw([&](void) { MAINLOOPscene->BG_Draw(); }, [&](void) { DrawPts->Draw_by_Shadow([&] { MAINLOOPscene->Main_Draw(); }); }, tmp_cam);
+										HostpassPTs->BUF_draw([&](void) noexcept { MAINLOOPscene->BG_Draw(); }, [&](void) noexcept { DrawPts->Draw_by_Shadow([&] { MAINLOOPscene->Main_Draw(); }); }, tmp_cam, update_effect);
 										break;
 									default:
 										break;
@@ -454,7 +471,7 @@ public:
 					MAPPTs->Start(
 						MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_MAGAZINE),
 						&MAINLOOPscene->get_meds_data(),
-						VGet(0.5f, -0.5f, 0.5f)/*MAINLOOPscene->get_Light_vec()*/
+						VECTOR_ref::vget(0.5f, -0.5f, 0.5f)/*MAINLOOPscene->get_Light_vec()*/
 					);
 					break;
 				case scenes::LOAD:

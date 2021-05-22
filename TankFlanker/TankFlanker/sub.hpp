@@ -22,8 +22,8 @@ enum EnumGunParts {
 	PARTS_UNDER_HGUARD,
 	PARTS_DUSTCOVER,
 	PARTS_STOCK,
-	PARTS_LIGHT,
-	PARTS_LASER,
+	PARTS_LAM,
+	PARTS_MOUNT_BASE,
 	PARTS_MOUNT,
 	PARTS_SIGHT,
 	PARTS_FOREGRIP,
@@ -52,6 +52,11 @@ enum EnumSELECTER {
 	SELECT_2B,
 	NUM__,
 };
+enum EnumSELECT_LAM {
+	SELECT_LASER,
+	SELECT_LIGHT,
+	NUM___,
+};
 //option
 class OPTION {
 public:
@@ -63,7 +68,7 @@ public:
 	bool SSAO = true;
 	float Fov = 45.f;
 	bool Vsync = false;
-	OPTION(void) {
+	OPTION(void)  noexcept {
 		SetOutApplicationLogValidFlag(FALSE);
 		int mdata = FileRead_open("data/Setting.txt", FALSE);
 		grass_level = std::clamp<int>(getparams::_int(mdata), 0, 4);
@@ -77,7 +82,7 @@ public:
 		FileRead_close(mdata);
 		SetOutApplicationLogValidFlag(TRUE);
 	}
-	~OPTION(void) {
+	~OPTION(void) noexcept {
 	}
 };
 //キーバインド
@@ -95,7 +100,7 @@ private:
 		bool isalways = false;
 		switchs on_off;
 		keyhandle* use_handle = nullptr;
-		bool get_key(const int& id) {
+		bool get_key(int id) {
 			switch (id) {
 				//キー
 			case 0:
@@ -138,7 +143,7 @@ public:
 	std::vector < key_pair > key_use_ID;
 	std::vector < key_pair > mouse_use_ID;
 	//
-	key_bind() {
+	key_bind(void) noexcept {
 		SetUseASyncLoadFlag(FALSE);
 		font24 = FontHandle::Create(font24size, DX_FONTTYPE_EDGE);
 		mousehandle = GraphHandle::Load("data/key/mouse.png");
@@ -307,9 +312,9 @@ public:
 		}
 	}
 	//
-	const auto Esc_key() { return this->key_use_ID[11].get_key(0); }
+	const auto Esc_key() noexcept { return this->key_use_ID[11].get_key(0); }
 	//
-	void reSet_isalways() {
+	void reSet_isalways() noexcept {
 		for (auto& i : this->key_use_ID) {
 			i.isalways = false;
 		}
@@ -320,10 +325,10 @@ public:
 		this->key_use_ID[16].isalways = true;
 	}
 	//
-	void draw() {
+	void draw() noexcept {
 		auto tmp_f1 = this->key_use_ID[16].get_key(1);
 		easing_set(&F1_f, float(tmp_f1), 0.9f);
-		noF1_f = std::max(noF1_f - 1.f / GetFPS(), 0.f);
+		noF1_f = std::max(noF1_f - 1.f / FPS, 0.f);
 		//インフォ
 		if (F1_f > 0.1f) {
 			int xp_t = 100, yp_t = 300;
@@ -491,7 +496,7 @@ public:
 		}
 		//
 	}
-	void draw_botsu() {
+	void draw_botsu() noexcept {
 		auto tmp_f1 = this->key_use_ID[16].get_key(1);
 		easing_set(&F1_f, float(tmp_f1), 0.9f);
 		//インフォ
@@ -607,21 +612,21 @@ private:
 	float Ready = 0.f;
 	float timer = 0.f;
 public:
-	float get_timer(void) { return timer; }
-	float get_Ready(void) { return Ready; }
-	bool get_Start(void) { return Ready <= 0.f; }
-	bool get_Playing(void) { return get_Start() && !get_end(); }
-	bool get_end(void) { return timer <= 0.f; }
-	void Set(void) {
+	float get_timer(void) const noexcept { return timer; }
+	float get_Ready(void) const noexcept { return Ready; }
+	bool get_Start(void) const noexcept { return Ready <= 0.f; }
+	bool get_Playing(void) const noexcept { return get_Start() && !get_end(); }
+	bool get_end(void) const noexcept { return timer <= 0.f; }
+	void Set(void) noexcept {
 		Ready = 3.0f;
 		timer = 180.f;
 	}
-	void UpDate(void) {
+	void UpDate(void) noexcept {
 		if (get_Start()) {
-			timer -= 1.f / GetFPS();
+			timer -= 1.f / FPS;
 		}
 		else {
-			Ready -= 1.f / GetFPS();
+			Ready -= 1.f / FPS;
 		}
 	}
 };
@@ -645,11 +650,11 @@ private:
 		MV1 model;
 		MV1 col;
 	public:
-		auto& get_name() { return name; }
-		auto& get_path() { return path; }
-		auto& get_model() { return model; }
+		auto& get_name() const noexcept { return name; }
+		auto& get_path() const noexcept { return path; }
+		auto& get_model() const noexcept { return model; }
 
-		void Ready(std::string path_, std::string named) {
+		void Ready(std::string path_, std::string named) noexcept {
 			this->name = named;
 			this->path = path_ + named;
 			MV1::Load(this->path + "/model.mv1", &this->model, true);
@@ -728,7 +733,7 @@ protected:
 			this->voice_breath_run = tgt.voice_breath_run.Duplicate();
 			SetCreate3DSoundFlag(FALSE);
 		}
-		void Dispose(void) {
+		void Dispose(void) noexcept {
 			this->shot_path = "";
 			this->slide_path = "";
 			this->trigger_path = "";
@@ -760,13 +765,13 @@ protected:
 		float pene = 10.f;//貫通
 		int damage = 10;//ダメージ
 	public:
-		auto& get_model() { return model; }//this->base.thisparts->ammo[0].get_model()
-		auto& get_model_full() { return model_full; }
-		auto& get_caliber() { return caliber; }
-		auto& get_speed() { return speed; }
-		auto& get_pene() { return pene; }
-		auto& get_damage() { return damage; }
-		auto& get_name() { return name; }
+		auto& get_model(void) noexcept { return model; }//this->base.thisparts->ammo[0].get_model()
+		auto& get_model_full(void) const noexcept { return model_full; }
+		auto& get_caliber(void) const noexcept { return caliber; }
+		auto& get_speed(void) const noexcept { return speed; }
+		auto& get_pene(void) const noexcept { return pene; }
+		auto& get_damage(void) const noexcept { return damage; }
+		auto& get_name(void) noexcept { return name; }
 
 		void Set_before(std::string path_, std::string named) {
 			this->name = named;
@@ -774,7 +779,7 @@ protected:
 			MV1::Load(this->path + "/ammo.mv1", &this->model, true);
 			MV1::Load(this->path + "/ammo2.mv1", &this->model_full, true);
 		}
-		void Set(void) {
+		void Set(void) noexcept {
 			int mdata = FileRead_open((this->path + "/data.txt").c_str(), FALSE);
 			this->caliber = getparams::_float(mdata)*0.001f;//口径
 			this->speed = getparams::_float(mdata);	//弾速
@@ -811,6 +816,7 @@ protected:
 		float reload_time = 1.f;//再装填時間
 		//
 		std::vector <uint8_t> select;	//セレクター
+		std::vector <uint8_t> select_lam;	//ライト・レーザー
 		//common
 		size_t id_t = 0;
 		Models mod;
@@ -828,12 +834,12 @@ protected:
 		//magazine
 		size_t cap = 1;
 		//
-		auto& get_type() { return type; }
-		void Set_datas(const size_t& id_, const int& type_t) {
+		auto& get_type(void) const noexcept { return type; }
+		void Set_datas(size_t id_, int type_t) {
 			this->id_t = id_;
 			this->type = type_t;
 			//テキスト
-			this->mod.Set_([&]() {
+			this->mod.Set_([&](void) noexcept {
 				//共通データ
 				{
 					per.name = getparams::get_str(this->mod.mdata);		//名前
@@ -881,6 +887,24 @@ protected:
 					this->cap = getparams::_long(this->mod.mdata);			//口径
 					Set_Ammos_data(this->mod.mdata);						//弾データ
 				}
+				if (this->type == EnumGunParts::PARTS_LAM) {
+					//レーザーかライトか
+					while (true) {
+						auto p = getparams::_str(this->mod.mdata);
+						if (getparams::getright(p.c_str()) == "end") {
+							break;
+						}
+						else if (getparams::getright(p.c_str()) == "laser") {
+							this->select_lam.emplace_back(uint8_t(EnumSELECT_LAM::SELECT_LASER));	//レーザー
+						}
+						else if (getparams::getright(p.c_str()) == "light") {
+							this->select_lam.emplace_back(uint8_t(EnumSELECT_LAM::SELECT_LIGHT));	//ライト
+						}
+						else {
+							this->select_lam.emplace_back(uint8_t(EnumSELECT_LAM::SELECT_LASER));	//レーザー
+						}
+					}
+				}
 				//共通データ
 				{
 					per.recoil = getparams::_float(this->mod.mdata);		//リコイル
@@ -906,7 +930,7 @@ protected:
 			}
 		}
 		//
-		void Set_Ammos_data(const int& mdata) {
+		void Set_Ammos_data(int mdata) {
 			while (true) {
 				auto p = getparams::_str(mdata);
 				if (getparams::getright(p.c_str()).find("end") != std::string::npos) {
@@ -919,16 +943,16 @@ protected:
 			}
 		}
 		//
-		int Select_Chose(const int& sel_chose) {
+		int Select_Chose(int sel_chose) {
 			for (auto& s : this->select) {
-				if (s == sel_chose) {//1~4
+				if (s == sel_chose) {
 					return int(&s - &this->select[0]);
 				}
 			}
 			return -1;
 		}
 		//
-		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, const int& selecting) {
+		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, int selecting) {
 			for (auto& sel : this->select) {
 				easing_set(&gunanime_sel[&sel - &this->select[0]]->per, float(int(sel == this->select[selecting])), 0.5f);
 			}
@@ -942,10 +966,10 @@ protected:
 		Models mod;
 		/**/
 		int repair = 0;
-		void Set_datas(const size_t& id_) {
+		void Set_datas(size_t id_) {
 			this->id_t = id_;
 			//テキスト
-			this->mod.Set_([&]() {
+			this->mod.Set_([&](void) noexcept {
 				this->repair = getparams::_long(this->mod.mdata);//
 			});
 		}
@@ -966,14 +990,14 @@ protected:
 		bool isUPDate = true;
 	public:
 		//初期化
-		void init() {
+		void init(void) noexcept {
 			SetUseASyncLoadFlag(FALSE);
 			hits_pic = GraphHandle::Load("data/model/hit/hit.png");		 /*grass*/
 			MV1::Load("data/model/hit/model.mv1", &hits, false);	//弾痕
 			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
 		}
 		//毎回のリセット
-		void clear() {
+		void clear(void) noexcept {
 			hitss = 0;
 			vnum = 0;
 			pnum = 0;
@@ -991,11 +1015,11 @@ protected:
 			hitsind.resize(IndexNum);								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 			{
 				float asize = 200.f*caliber;
-				VECTOR_ref y_vec = Normal;
-				VECTOR_ref z_vec = y_vec.cross(Zvec).Norm();
-				VECTOR_ref scale = VGet(asize / std::abs(y_vec.dot(Zvec)), asize, asize);
-				VECTOR_ref pos = VECTOR_ref(Position) + y_vec * 0.02f;
-				MATRIX_ref mat = MATRIX_ref::Scale(scale)*  MATRIX_ref::Axis1_YZ(y_vec, z_vec);
+				auto y_vec = Normal;
+				auto z_vec = y_vec.cross(Zvec).Norm();
+				auto scale = VECTOR_ref::vget(asize / std::abs(y_vec.dot(Zvec)), asize, asize);
+				auto pos = Position + y_vec * 0.02f;
+				MATRIX_ref mat = MATRIX_ref::GetScale(scale)*  MATRIX_ref::Axis1_YZ(y_vec, z_vec);
 
 				hits.SetMatrix(mat*MATRIX_ref::Mtrans(pos));
 			}
@@ -1020,7 +1044,7 @@ protected:
 			pnum += RefMesh.PolygonNum * 3;
 			isUPDate = true;
 		}
-		void update() {
+		void update(void) noexcept {
 			if(isUPDate){
 				isUPDate = false;
 				VerBuf = CreateVertexBuffer(VerNum, DX_VERTEX_TYPE_NORMAL_3D);
@@ -1029,7 +1053,7 @@ protected:
 				SetIndexBufferData(0, hitsind.data(), IndexNum, IndexBuf);
 			}
 		}
-		void draw() {
+		void draw(void) noexcept {
 			//SetDrawAlphaTest(DX_CMP_GREATER, 128);
 			{
 				DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, hits_pic.get(), TRUE);
@@ -1059,10 +1083,10 @@ protected:
 		Meds medkit;
 	public:
 		bool flag_canlook_player = true;
-		auto& get_ptr_mag() { return ptr_mag; }
-		auto& get_ptr_med() { return ptr_med; }
-		auto& get_magazine() { return magazine; }
-		auto& get_pos_() { return pos; }
+		auto& get_ptr_mag(void) const noexcept { return ptr_mag; }
+		auto& get_ptr_med(void) const noexcept { return ptr_med; }
+		auto& get_magazine(void) const noexcept { return magazine; }
+		auto& get_pos_(void) const noexcept { return pos; }
 	private:
 		//mag
 		void Set_item_1(GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
@@ -1081,7 +1105,7 @@ protected:
 			this->obj = this->ptr_med->mod.get_model().Duplicate();
 		}
 	public:
-		void set_item_mag() {
+		void set_item_mag(void) noexcept {
 			if (this->ptr_mag != nullptr) {
 				if (this->magazine.ammo.size() < this->ptr_mag->ammo.size()) {
 					this->magazine.ammo.resize(this->ptr_mag->ammo.size());
@@ -1090,7 +1114,7 @@ protected:
 			}
 		}
 		//mag
-		void Set_item_magazine(const size_t& id, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_, const size_t& dnm = SIZE_MAX) {
+		void Set_item_magazine(size_t id, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_, size_t dnm = SIZE_MAX) {
 			this->id_t = id;
 			this->Set_item_1(magdata, pos_, add_, mat_);
 			if (dnm == SIZE_MAX) {
@@ -1104,7 +1128,7 @@ protected:
 			set_item_mag();
 			this->del_timer = (this->magazine.cap == 0) ? 5.f : 20.f;
 		}
-		bool Set_item_magrelease(const size_t& dnm, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+		bool Set_item_magrelease(size_t dnm, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr) {
 				Set_item_magazine(id_t, magdata, pos_, add_, mat_, dnm);
 				return true;
@@ -1112,7 +1136,7 @@ protected:
 			return false;
 		}
 		//med
-		void Set_item_med_(const size_t& id, Meds*meddata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+		void Set_item_med_(size_t id, Meds*meddata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
 			this->id_t = id;
 			this->Set_item(meddata, pos_, add_, mat_);
 		}
@@ -1125,35 +1149,34 @@ protected:
 		}
 		//
 		template<class Y, class D>
-		void UpDate(std::vector<Items>& item, std::unique_ptr<Y, D>& MAPPTs) {
-			const auto fps_ = GetFPS();
+		void UpDate(std::list<Items>& item, std::unique_ptr<Y, D>& MAPPTs) {
 			auto old = this->pos;
 			if (this->ptr_mag != nullptr || this->ptr_med != nullptr) {
 				this->obj.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
 				this->pos += this->add_vec;
-				this->add_vec.yadd(M_GR / powf(fps_, 2.f));
+				this->add_vec.yadd(M_GR / powf(FPS, 2.f));
 				for (auto& p : item) {
 					if ((p.ptr_mag != nullptr || p.ptr_med != nullptr) && &p != &*this) {
 						if ((p.pos - this->pos).size() <= 0.35f) {
-							p.add_vec.xadd((p.pos - this->pos).x()*5.f / fps_);
-							p.add_vec.zadd((p.pos - this->pos).z()*5.f / fps_);
-							this->add_vec.xadd((this->pos - p.pos).x()*5.f / fps_);
-							this->add_vec.zadd((this->pos - p.pos).z()*5.f / fps_);
+							p.add_vec.xadd((p.pos - this->pos).x()*5.f / FPS);
+							p.add_vec.zadd((p.pos - this->pos).z()*5.f / FPS);
+							this->add_vec.xadd((this->pos - p.pos).x()*5.f / FPS);
+							this->add_vec.zadd((this->pos - p.pos).z()*5.f / FPS);
 						}
 					}
 				}
-				auto pp = MAPPTs->map_col_line(old - VGet(0, 0.0025f, 0), this->pos - VGet(0, 0.0025f, 0));
+				auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->pos - VECTOR_ref::vget(0, 0.0025f, 0));
 				if (pp.HitFlag) {
 					this->pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
 					this->mat *= MATRIX_ref::RotVec2(this->mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
 					this->add_vec.clear();
-					//easing_set(&this->add_vec, VGet(0, 0, 0), 0.8f);
+					//easing_set(&this->add_vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
 				}
 				//
 			}
 			//
 			if (this->ptr_mag != nullptr) {
-				this->del_timer -= 1.f / GetFPS();
+				this->del_timer -= 1.f / FPS;
 			}
 		}
 		template<class Y, class D, class Chara>
@@ -1197,10 +1220,10 @@ protected:
 				}
 			}
 		}
-		void Check_CameraViewClip(void) {
+		void Check_CameraViewClip(void) noexcept {
 			this->flag_canlook_player = true;
 			auto ttt = this->pos;
-			if (CheckCameraViewClip_Box((ttt + VGet(-0.3f, 0, -0.3f)).get(), (ttt + VGet(0.3f, 0.3f, 0.3f)).get())) {
+			if (CheckCameraViewClip_Box((ttt + VECTOR_ref::vget(-0.3f, 0, -0.3f)).get(), (ttt + VECTOR_ref::vget(0.3f, 0.3f, 0.3f)).get())) {
 				this->flag_canlook_player = false;
 				return;
 			}
@@ -1209,26 +1232,26 @@ protected:
 		void Check_CameraViewClip_MAPCOL(std::unique_ptr<Y, D>& MAPPTs) {
 			Check_CameraViewClip();
 			auto ttt = this->pos;
-			if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VGet(0, 0.3f, 0)).HitFlag &&
-				MAPPTs->map_col_line(GetCameraPosition(), ttt + VGet(0, 0.0f, 0)).HitFlag) {
+			if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.3f, 0)).HitFlag &&
+				MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.0f, 0)).HitFlag) {
 				this->flag_canlook_player = false;
 				return;
 			}
 		}
 
-		void Draw_item(void) {
+		void Draw_item(void) noexcept {
 			if (this->flag_canlook_player) {
 				if (this->ptr_mag != nullptr || this->ptr_med != nullptr) {
 					this->obj.DrawModel();
 				}
 			}
 		}
-		void Detach_item(void) {
+		void Detach_item(void) noexcept {
 			this->ptr_mag = nullptr;
 			this->ptr_med = nullptr;
 			this->obj.Dispose();
 		}
-		bool Detach_mag(void) {
+		bool Detach_mag(void) noexcept {
 			if (this->ptr_mag != nullptr && this->del_timer <= 0.f) {
 				this->Detach_item();
 				return true;

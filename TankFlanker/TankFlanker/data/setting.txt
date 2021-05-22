@@ -1,5 +1,5 @@
 grass_level=4
-DoF=true
+DoF=false
 bloom=true
 shadow=true
 usevr=false
