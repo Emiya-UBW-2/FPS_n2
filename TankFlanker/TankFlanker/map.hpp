@@ -268,11 +268,10 @@ public:
 			envi.play(DX_PLAYTYPE_LOOP, TRUE);
 		}
 		void Dispose(void) noexcept {
-			for (auto i = item.begin(); i != item.end();) {
-				i->Detach_item();
-				item.erase(i);
-				++i;
+			for (auto& i : item) {
+				i.Detach_item();
 			}
+			item.clear();
 			map.Dispose();		   //map
 			map_col.Dispose();		   //mapƒRƒŠƒWƒ‡ƒ“
 			sky.Dispose();	 //‹ó
@@ -438,6 +437,31 @@ public:
 			chara.get_canget_magitem() = false;
 			chara.get_canget_meditem() = false;
 			for (auto& g : this->item) { g.Get_item_2(StartPos, EndPos, chara, MAPPTs); }
+		}
+		//
+		template<size_t T>
+		int get_next_waypoint(std::array<int, T> wayp_pre, VECTOR_ref poss) {
+			int now = -1;
+			auto tmp = VECTOR_ref::vget(0, 100.f, 0);
+			for (auto& w : get_waypoint()) {
+				auto id = &w - &get_waypoint()[0];
+				bool tt = true;
+				for (auto& ww : wayp_pre) {
+					if (id == ww) {
+						tt = false;
+					}
+				}
+				if (tt) {
+					if (tmp.size() >= (w - poss).size()) {
+						auto p = map_col_line(w + VECTOR_ref::vget(0, 0.5f, 0), poss + VECTOR_ref::vget(0, 0.5f, 0));
+						if (!p.HitFlag) {
+							tmp = (w - poss);
+							now = int(id);
+						}
+					}
+				}
+			}
+			return now;
 		}
 	};
 	class MiniMap {

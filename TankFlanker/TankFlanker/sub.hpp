@@ -832,7 +832,7 @@ protected:
 		std::vector<Ammos> ammo;
 		Audios audio;
 		//magazine
-		size_t cap = 1;
+		size_t mag_cnt = 1;
 		//
 		auto& get_type(void) const noexcept { return type; }
 		void Set_datas(size_t id_, int type_t) {
@@ -884,7 +884,7 @@ protected:
 					Set_Ammos_data(this->mod.mdata);						//’eƒf[ƒ^
 				}
 				if (this->type == EnumGunParts::PARTS_MAGAZINE) {
-					this->cap = getparams::_long(this->mod.mdata);			//ŒûŒa
+					this->mag_cnt = getparams::_long(this->mod.mdata);			//’e”
 					Set_Ammos_data(this->mod.mdata);						//’eƒf[ƒ^
 				}
 				if (this->type == EnumGunParts::PARTS_LAM) {
@@ -1119,16 +1119,16 @@ protected:
 			this->Set_item_1(magdata, pos_, add_, mat_);
 			if (dnm == SIZE_MAX) {
 				if (this->ptr_mag != nullptr) {
-					this->magazine.cap = int(this->ptr_mag->cap);
+					this->magazine.mag_cnt = int(this->ptr_mag->mag_cnt);
 				}
 			}
 			else {
-				this->magazine.cap = dnm;
+				this->magazine.mag_cnt = dnm;
 			}
 			set_item_mag();
-			this->del_timer = (this->magazine.cap == 0) ? 5.f : 20.f;
+			this->del_timer = (this->magazine.mag_cnt == 0) ? 5.f : 20.f;
 		}
-		bool Set_item_magrelease(size_t dnm, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+		bool Set_item_magrelease(GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_, size_t dnm) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr) {
 				Set_item_magazine(id_t, magdata, pos_, add_, mat_, dnm);
 				return true;
@@ -1196,9 +1196,9 @@ protected:
 					if (zz) {
 						chara.get_canget_id() = this->id_t;
 						chara.get_canget_mag() = this->ptr_mag->mod.get_name();
-						if (chara.getmagazine_push() && this->magazine.cap != 0 && (this->ptr_mag->ammo[0].get_name() == this->magazine.ammo[0].get_name())) {
+						if (chara.getmagazine_push() && this->magazine.mag_cnt != 0 && (this->ptr_mag->ammo[0].get_name() == this->magazine.ammo[0].get_name())) {
 							chara.sort_f = false;
-							chara.gun_stat_now->magazine_plus(&(this->magazine));
+							chara.gun_stat_now->magazine_plus(this);
 							if (chara.gun_stat_now->get_magazine_in().size() == 1) {
 								chara.reloadf = true;
 							}

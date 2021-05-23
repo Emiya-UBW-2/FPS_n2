@@ -670,12 +670,12 @@ public:
 								yp = t_disp_y - x_r(20) - font_bighight * size;
 							}
 							for (auto& a : chara.gun_stat_now->get_magazine_in()) {
-								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a, chara.get_mag_g_parts()->thisparts->cap);
+								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.m_cnt, a.cap);
 								if (&a - &chara.gun_stat_now->get_magazine_in()[0] == 0) {
 									if (chara.gun_stat_now->not_chamber_EMPTY()) {
-										font->DrawString(xp + font_big->GetDrawWidthFormat("%d/%d", a, chara.get_mag_g_parts()->thisparts->cap), yp, " +1", GetColor(255, 0, 0));
+										font->DrawString(xp + font_big->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp, " +1", GetColor(255, 0, 0));
 									}
-									DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", a, chara.get_mag_g_parts()->thisparts->cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
+									DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
 									xp -= font_bighight / 3;
 								}
 								yp += font_bighight;
@@ -773,8 +773,8 @@ public:
 					int xp = 0, yp = 0;
 					xp = int(p.x());
 					yp = int(p.y());
-					int cnt = int(mine.gun_stat_now->get_magazine_in().front());
-					int per = 90 * cnt / int(mine.get_mag_g_parts()->thisparts->cap);
+					int cnt = int(mine.gun_stat_now->get_magazine_in().front().m_cnt);
+					int per = 90 * cnt / int(mine.gun_stat_now->get_magazine_in().front().cap);
 					float rad = deg2rad(90 - per);
 					int col_r = GetColor(std::clamp(int(255.f*sin(rad)*2.f), 0, 255), std::clamp(int(255.f*cos(rad)*2.f), 0, 255), 0);
 					if (std::max((pos_gun - cam_pos).size(), 1.f) <= 10.f) {
@@ -804,7 +804,7 @@ public:
 					if (g.flag_canlook_player) {
 						//mag
 						if (g.get_ptr_mag() != nullptr) {
-							Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().cap, g.get_ptr_mag()->cap);
+							Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().mag_cnt, g.get_ptr_mag()->mag_cnt);
 						}
 						//med
 						if (g.get_ptr_med() != nullptr) {

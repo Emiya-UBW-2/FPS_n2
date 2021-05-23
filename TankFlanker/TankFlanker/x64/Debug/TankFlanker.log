@@ -21,9 +21,12 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3727): warni
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(440): warning C4834: 'nodiscard' 属性を持つ関数の戻り値を破棄しています
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(441): warning C4834: 'nodiscard' 属性を持つ関数の戻り値を破棄しています
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(451): warning C4834: 'nodiscard' 属性を持つ関数の戻り値を破棄しています
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(452): warning C4834: 'nodiscard' 属性を持つ関数の戻り値を破棄しています
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\dxlib_ref\dxlib_mat.hpp(68): warning C4505: 'Segment_Point_MinLen': 参照されていないローカル関数は削除されました。
   TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Debug\FPS_n2.exe

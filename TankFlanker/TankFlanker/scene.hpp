@@ -527,7 +527,7 @@ public:
 						mine_ptr->set_gun_pos(VECTOR_ref::vget(0, 0, 0), MGetIdent());
 						mine_ptr->Set_gun();
 						mine_ptr->set_mag_pos();
-						mine_ptr->Set_mag();
+						mine_ptr->Set_mag_menu();
 
 						up.get_in(mine_ptr->get_wkey());
 						down.get_in(mine_ptr->get_skey());
@@ -705,11 +705,15 @@ public:
 		}
 		void Shadow_Draw(void) noexcept {
 			mine_ptr->Draw_gun();
-			mine_ptr->get_mag_g_parts()->Draw(2);
+			{
+				mine_ptr->get_mag_g_parts()->Draw();
+			}
 		}
 		void Main_Draw(void) noexcept {
 			mine_ptr->Draw_gun();
-			mine_ptr->get_mag_g_parts()->Draw(2);
+			{
+				mine_ptr->get_mag_g_parts()->Draw();
+			}
 		}
 		void Item_Draw(void) noexcept {
 		}
@@ -968,7 +972,7 @@ public:
 		void Set_Charaa(const size_t &spawn_total) noexcept {
 			//キャラ設定
 			this->chara.resize(spawn_total);
-			for (auto& c : this->chara) { c.Set(MAPPTs, DrawPts, gun_data, 0, body_obj, body_obj_lag, body_col ,DebugPTs); }
+			for (auto& c : this->chara) { c.Set_(MAPPTs, DrawPts, gun_data, 0, body_obj, body_obj_lag, body_col ,DebugPTs); }
 		}
 		void Set(void) noexcept {
 			for (auto& c : this->chara) {
@@ -998,7 +1002,7 @@ public:
 				//初回位置設定スポーン
 				{
 					auto&wp = (*MAPPTs)->get_spawn_point()[&c - &this->chara[0]];
-					c.spawn(wp, MATRIX_ref::RotY(atan2f(wp.x(), wp.z())));
+					c.Spawn(wp, MATRIX_ref::RotY(atan2f(wp.x(), wp.z())));
 				}
 			}
 			//ライティング
@@ -1034,7 +1038,7 @@ public:
 			}
 			//共通演算//2～3ms
 			for (auto& c : this->chara) {
-				c.UpDate(this->hit_obj_p, RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->chara, this->Get_Mine(), use_VR);
+				c.UpDate_(this->hit_obj_p, RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->chara, this->Get_Mine(), use_VR);
 			}
 			//弾痕の更新
 			this->hit_obj_p.update();
@@ -1099,7 +1103,7 @@ public:
 			//map
 			(*MAPPTs)->item_Draw();
 			//キャラ
-			for (auto& c : this->chara) { c.Draw_chara(); }
+			for (auto& c : this->chara) { c.Draw_chara(0); }
 		}
 		void Main_Draw(void) noexcept {
 			//map

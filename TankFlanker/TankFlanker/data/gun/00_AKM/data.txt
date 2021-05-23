@@ -37,3 +37,4 @@ weight=2.8
 00_AK_6P1_Stock
 01_AK_6P20_Stock
 00_AK_55_Magazine
+01_AK_55_Magazine
