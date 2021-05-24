@@ -60,7 +60,7 @@ public:
 				grasss = 2000;
 				break;
 			case 4:
-				grasss = 5000;
+				grasss = 4000;
 				break;
 			default:
 				grasss = 0;
@@ -102,7 +102,7 @@ public:
 				MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
 				auto p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
 				MV1_COLL_RESULT_POLY pt;
-				for (int i = 0; i < p.PolygonNum; i++) {
+				for (int i = 0; i < p.PolygonNum; ++i) {
 					switch (p.Polygons[i].MaterialIndex) {
 					case 1:
 					{
@@ -314,7 +314,7 @@ public:
 			auto HitDim = map_col.CollCheck_Sphere(OldPos, PLAYER_ENUM_DEFAULT_SIZE + MoveVector.size(), 0, 0);
 			std::vector<MV1_COLL_RESULT_POLY*> kabe_;// 壁ポリゴンと判断されたポリゴンの構造体のアドレスを保存しておく
 			// 検出されたポリゴンが壁ポリゴン( ＸＺ平面に垂直なポリゴン )か床ポリゴン( ＸＺ平面に垂直ではないポリゴン )かを判断する
-			for (int i = 0; i < HitDim.HitNum; i++) {
+			for (int i = 0; i < HitDim.HitNum; ++i) {
 				auto& h_d = HitDim.Dim[i];
 				//壁ポリゴンと判断された場合でも、プレイヤーのＹ座標＋0.1fより高いポリゴンのみ当たり判定を行う
 				if (
@@ -355,7 +355,7 @@ public:
 				if (
 					HitFlag
 					) {		// 壁に当たっていたら壁から押し出す処理を行う
-					for (int k = 0; k < PLAYER_HIT_TRYNUM; k++) {			// 壁からの押し出し処理を試みる最大数だけ繰り返し
+					for (int k = 0; k < PLAYER_HIT_TRYNUM; ++k) {			// 壁からの押し出し処理を試みる最大数だけ繰り返し
 						bool HitF = false;
 						for (auto& KeyBind : kabe_) {
 							if (Hit_Capsule_Tri(*NowPos + VECTOR_ref::vget(0.0f, 0.2f, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {// プレイヤーと当たっているかを判定
@@ -412,7 +412,7 @@ public:
 			}
 		}
 		void Shadow_Draw(void) noexcept {
-			for (int i = 0; i < 3; i++) {
+			for (int i = 0; i < 3; ++i) {
 				map.DrawMesh(i);
 			}
 			grass_Draw();

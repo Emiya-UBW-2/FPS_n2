@@ -5,4 +5,4 @@ shadow=true
 usevr=false
 SSAO=true
 fov=65.0
-vsync=true
+vsync=false

@@ -88,8 +88,9 @@ public:
 //キーバインド
 class key_bind {
 private:
-	struct keyhandle;
-	struct keys {
+	class keyhandle;
+	class keys {
+	public:
 		int mac = 0, px = 0, py = 0;
 		char onhandle[256]="", offhandle[256]="";
 	};
@@ -125,7 +126,8 @@ private:
 			}
 		}
 	};
-	struct keyhandle {
+	class keyhandle {
+	public:
 		keys key;
 		GraphHandle onhandle, offhandle;
 		key_pair* use_part = nullptr;
@@ -789,7 +791,8 @@ protected:
 		}
 	};
 	//パフォーマンス
-	struct performance {
+	class performance {
+	public:
 		float recoil = 0.f;
 		float weight = 0.f;
 		std::string name;
@@ -1077,7 +1080,7 @@ protected:
 		size_t id_t = 0;
 		//マガジン専用パラメーター
 		GUNPARTs* ptr_mag = nullptr;
-		GUNPARTs magazine;
+		GUNPARTs magazine_param;
 		//治療キット専用パラメーター
 		Meds* ptr_med = nullptr;
 		Meds medkit;
@@ -1085,7 +1088,7 @@ protected:
 		bool flag_canlook_player = true;
 		auto& get_ptr_mag(void) const noexcept { return ptr_mag; }
 		auto& get_ptr_med(void) const noexcept { return ptr_med; }
-		auto& get_magazine(void) const noexcept { return magazine; }
+		auto& get_magazine(void) const noexcept { return magazine_param; }
 		auto& get_pos_(void) const noexcept { return pos; }
 	private:
 		//mag
@@ -1107,10 +1110,10 @@ protected:
 	public:
 		void set_item_mag(void) noexcept {
 			if (this->ptr_mag != nullptr) {
-				if (this->magazine.ammo.size() < this->ptr_mag->ammo.size()) {
-					this->magazine.ammo.resize(this->ptr_mag->ammo.size());
+				if (this->magazine_param.ammo.size() < this->ptr_mag->ammo.size()) {
+					this->magazine_param.ammo.resize(this->ptr_mag->ammo.size());
 				}
-				this->magazine.ammo[0].get_name() = this->ptr_mag->ammo[0].get_name();
+				this->magazine_param.ammo[0].get_name() = this->ptr_mag->ammo[0].get_name();
 			}
 		}
 		//mag
@@ -1119,14 +1122,14 @@ protected:
 			this->Set_item_1(magdata, pos_, add_, mat_);
 			if (dnm == SIZE_MAX) {
 				if (this->ptr_mag != nullptr) {
-					this->magazine.mag_cnt = int(this->ptr_mag->mag_cnt);
+					this->magazine_param.mag_cnt = int(this->ptr_mag->mag_cnt);
 				}
 			}
 			else {
-				this->magazine.mag_cnt = dnm;
+				this->magazine_param.mag_cnt = dnm;
 			}
 			set_item_mag();
-			this->del_timer = (this->magazine.mag_cnt == 0) ? 5.f : 20.f;
+			this->del_timer = (this->magazine_param.mag_cnt == 0) ? 5.f : 20.f;
 		}
 		bool Set_item_magrelease(GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_, size_t dnm) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr) {
@@ -1196,7 +1199,7 @@ protected:
 					if (zz) {
 						chara.get_canget_id() = this->id_t;
 						chara.get_canget_mag() = this->ptr_mag->mod.get_name();
-						if (chara.getmagazine_push() && this->magazine.mag_cnt != 0 && (this->ptr_mag->ammo[0].get_name() == this->magazine.ammo[0].get_name())) {
+						if (chara.getmagazine_push() && this->magazine_param.mag_cnt != 0 && (this->ptr_mag->ammo[0].get_name() == this->magazine_param.ammo[0].get_name())) {
 							chara.sort_f = false;
 							chara.gun_stat_now->magazine_plus(this);
 							if (chara.gun_stat_now->get_magazine_in().size() == 1) {

@@ -91,11 +91,11 @@ public:
 						right.get_in(mine_ptr->get_dkey());
 						Start.get_in(mine_ptr->get_jamp());
 						if (left.push()) {
-							sel_p--;
+							--sel_p;
 							changef = true;
 						}
 						if (right.push()) {
-							sel_p++;
+							++sel_p;
 							changef = true;
 						}
 						if (sel_p < 0) { sel_p = sel_max - 1; }
@@ -369,7 +369,7 @@ public:
 						}
 					}
 					if (tmp_save.type_ == EnumGunParts::PARTS_SIGHT) {
-						pppp++;
+						++pppp;
 					}
 					mine_ptr->Attach_parts(temp_p, tmp_save.type_, temp_ptr, tmp_save.pt_cat_, pppp);
 				}
@@ -419,11 +419,11 @@ public:
 				}
 				set_pts_save(size_t(chang));
 			}
-			sel_max++;
+			++sel_max;
 
 			//サイト判定
 			if (Set_sight_at(mine_ptr->get_parts(parts_cat_t))) {
-				sight_ptr[sight_p_s] = mine_ptr->get_parts(parts_cat_t); sight_p_s++;
+				sight_ptr[sight_p_s] = mine_ptr->get_parts(parts_cat_t); ++sight_p_s;
 			}
 		}
 		//非必須品
@@ -448,11 +448,11 @@ public:
 					parts_cat = parts_cat_t;
 					Set_chang_needs(parts_cat, port_cat, chang);
 				}
-				sel_max++;
+				++sel_max;
 			}
 			//サイト判定
 			if (Set_sight_at(mine_ptr->get_parts(parts_cat_t))) {
-				sight_ptr[sight_p_s] = mine_ptr->get_parts(parts_cat_t); sight_p_s++;
+				sight_ptr[sight_p_s] = mine_ptr->get_parts(parts_cat_t); ++sight_p_s;
 			}
 		}
 		//非必須品3
@@ -496,7 +496,7 @@ public:
 						set_pts_save(chang_t);
 					}
 				}
-				sel_max++;
+				++sel_max;
 			}
 		}
 		//sight
@@ -513,7 +513,7 @@ public:
 							save_parts[sel_max].pt_sel_ = 1;//改善
 						}
 					}
-					sel_max++;
+					++sel_max;
 				}
 			}
 		}
@@ -550,7 +550,7 @@ public:
 							changef = true;
 						}
 						if (right.push()) {
-							sel_p++;
+							++sel_p;
 							chang = 0;
 							changef = true;
 						}
@@ -562,7 +562,7 @@ public:
 							changef = true;
 						}
 						if (down.push()) {
-							chang++;
+							++chang;
 							changef = true;
 						}
 						if (chang < 0) { chang = chang_max - 1; }
@@ -744,7 +744,7 @@ public:
 				if (this->key_TPS.on()) {
 					{
 						//cam
-						for (int i = 0; i < std::min<size_t>(chara.size(), 10); i++) {
+						for (int i = 0; i < std::min<size_t>(chara.size(), 10); ++i) {
 							if (CheckHitKey(KEY_INPUT_1 + i) != 0) {
 								this->sel_cam = i;
 							}

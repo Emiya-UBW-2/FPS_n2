@@ -684,7 +684,8 @@ public:
 					}
 				}
 				//キル
-				if (chara.kill_f) {
+				if (chara.scores.kill_f) {
+					auto killt = chara.scores.kill_timer;
 					if (use_vr) {
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2 - t_disp_y / 6;
@@ -693,18 +694,18 @@ public:
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2 - t_disp_y / 6;
 					}
-					int per = std::clamp(int(255.f*((chara.kill_time * 7) / 7.f)) - 255 * 6, 0, 255);
+					int per = std::clamp(int(255.f*((killt * 7) / 7.f)) - 255 * 6, 0, 255);
 
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					DrawBox(xp - int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp, xp + int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp + font_bighight + 2, GetColor(255, 255, 255), TRUE);
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((chara.kill_time * 2) / 7.f)), 0, 255));
-					font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", chara.kill_id); yp += font_bighight * 2;	//キル
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((killt * 2) / 7.f)), 0, 255));
+					font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", chara.scores.kill_id); yp += font_bighight * 2;	//キル
 
-					if (chara.kill_streak > 0) {
+					if (chara.scores.kill_streak > 0) {
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 						DrawBox(xp - int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp, xp + int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp + font_bighight + 2, GetColor(255, 255, 255), TRUE);
-						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((chara.kill_time * 2) / 7.f)), 0, 255));
-						font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", chara.kill_streak); yp += font_bighight;			//キルストリーク
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((killt * 2) / 7.f)), 0, 255));
+						font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", chara.scores.kill_streak); yp += font_bighight;			//キルストリーク
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
@@ -750,10 +751,10 @@ public:
 						xp = t_disp_x - font_bighight;
 						yp = t_disp_y / 2 - t_disp_y / 12 + font_bighight;
 					}
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", chara.get_score()); yp += font_bighight;			//スコア
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", chara.get_kill_cnt()); yp += font_bighight;			//キルデス
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", chara.get_death_cnt()); yp += font_bighight;			//キルデス
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float(chara.get_kill_cnt()) / float(std::max(chara.get_death_cnt(), 1))); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", chara.scores.score); yp += font_bighight;			//スコア
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", chara.scores.kill_cnt); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", chara.scores.death_cnt); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float(chara.scores.kill_cnt) / float(std::max(chara.scores.death_cnt, 1))); yp += font_bighight;			//キルデス
 				}
 				//終わり
 			}
