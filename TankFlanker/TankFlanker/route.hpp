@@ -15,6 +15,8 @@ class main_c {
 	cam_info* cam_t = nullptr;
 	bool update_effect = true;
 	LONGLONG update_effect_was = 0;
+
+	int Liget_ref = -1;
 public:
 	main_c(void) noexcept {
 		auto OPTPTs = std::make_unique<OPTION>();																		//設定読み込み
@@ -72,6 +74,11 @@ public:
 					SELECTscene->Set();
 					DrawPts->Set_Light_Shadow(SELECTscene->get_Shadow_maxpos(), SELECTscene->get_Shadow_minpos(), SELECTscene->get_Light_vec(), [&] {SELECTscene->Shadow_Draw_Far(); });
 					SetGlobalAmbientLight(SELECTscene->get_Light_color());
+
+					Liget_ref = CreateDirLightHandle((SELECTscene->get_Light_vec()*-1.f).get());
+
+					SetLightAmbColorHandle(Liget_ref, SELECTscene->get_Light_color_ref());
+
 					if (DrawPts->use_vr) {
 					}
 					else {
@@ -88,6 +95,11 @@ public:
 					MAINLOOPscene->Set();
 					DrawPts->Set_Light_Shadow(MAINLOOPscene->get_Shadow_maxpos(), MAINLOOPscene->get_Shadow_minpos(), MAINLOOPscene->get_Light_vec(), [&] {MAINLOOPscene->Shadow_Draw_Far(); });
 					SetGlobalAmbientLight(MAINLOOPscene->get_Light_color());
+
+					Liget_ref = CreateDirLightHandle((SELECTscene->get_Light_vec()*-1.f).get());
+
+					SetLightAmbColorHandle(Liget_ref, SELECTscene->get_Light_color_ref());
+
 					if (DrawPts->use_vr) {
 					}
 					else {
@@ -318,7 +330,8 @@ public:
 							//音位置指定
 							Set3DSoundListenerPosAndFrontPosAndUpVec(cam_t->campos.get(), cam_t->camvec.get(), cam_t->camup.get());
 							//影用意
-							DrawPts->Ready_Shadow(cam_t->campos, [&] {
+							DrawPts->Ready_Shadow(cam_t->campos, 
+								[&] {
 								switch (sel_scene) {
 								case scenes::ITEM_LOAD:
 									break;
@@ -335,8 +348,26 @@ public:
 								default:
 									break;
 								}
-
-							}, VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(5.f, 2.5f, 5.f));
+							},
+								[&] {
+								switch (sel_scene) {
+								case scenes::ITEM_LOAD:
+									break;
+								case scenes::MAP_LOAD:
+									break;
+								case scenes::LOAD:
+									break;
+								case scenes::SELECT:
+									SELECTscene->Shadow_Draw_NearFar();
+									break;
+								case scenes::MAIN_LOOP:
+									MAINLOOPscene->Shadow_Draw_NearFar();
+									break;
+								default:
+									break;
+								}
+							},
+								VECTOR_ref::vget(1.8f, 1.8f, 1.8f), VECTOR_ref::vget(5.f, 2.5f, 5.f));
 							//↑nearはこれ
 							//	(MAINLOOPscene->Get_Mine().get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
 							//エフェクシアのアプデを60FPS相当に変更
@@ -479,10 +510,12 @@ public:
 					break;
 				case scenes::SELECT:
 					SELECTscene->Dispose();
+					DeleteLightHandle(Liget_ref);
 					break;
 				case scenes::MAIN_LOOP:
 					MAINLOOPscene->Dispose();//解放
 					MAPPTs->Dispose();
+					DeleteLightHandle(Liget_ref);
 					break;
 				default:
 					break;

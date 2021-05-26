@@ -978,7 +978,7 @@ protected:
 		}
 	};
 	//–½’†ª
-	class Hit_p {
+	class HIT_PASSIVE {
 		//‰_
 		int hitss = 0;					/*hits‚Ì”*/
 		std::vector<VERTEX3D> hitsver;	/*hits*/

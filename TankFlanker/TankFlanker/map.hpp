@@ -25,18 +25,118 @@ public:
 		//太陽
 		GraphHandle sun_pic;			/*画像ハンドル*/
 		VECTOR_ref sun_pos;
-		//雲
+		//kusa
 		int grasss = 2000;				/*grassの数*/
-		std::vector<VERTEX3D> grassver; /*grass*/
-		std::vector<DWORD> grassind;    /*grass*/
-		int VerBuf = -1, IndexBuf = -1;	/*grass*/
-		MV1 grass;						/*grassモデル*/
 		GraphHandle grass_pic;			/*画像ハンドル*/
-		int IndexNum = -1, VerNum = -1;	/*grass*/
-		int vnum = -1, pnum = -1;		/*grass*/
-		MV1_REF_POLYGONLIST RefMesh;	/*grass*/
+		MV1 grass;						/*grassモデル*/
+
+		class grass_t {
+		public:
+			bool canlook = true;
+
+			std::vector<VERTEX3D> grassver; /*grass*/
+			std::vector<DWORD> grassind;    /*grass*/
+			int VerBuf = -1, IndexBuf = -1;	/*grass*/
+			int IndexNum = -1, VerNum = -1;	/*grass*/
+			int vnum = -1, pnum = -1;		/*grass*/
+			MV1_REF_POLYGONLIST RefMesh;	/*grass*/
+
+			void put_start(const MV1& grass, int total) {
+				MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
+				this->RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
+				this->IndexNum = this->RefMesh.PolygonNum * 3 * total; /*インデックスの数を取得*/
+				this->VerNum = this->RefMesh.VertexNum * total;	/*頂点の数を取得*/
+				this->grassver.resize(this->VerNum);   /*頂点データとインデックスデータを格納するメモリ領域の確保*/
+				this->grassind.resize(this->IndexNum); /*頂点データとインデックスデータを格納するメモリ領域の確保*/
+				this->vnum = 0;
+				this->pnum = 0;
+			}
+
+			void set_one(const MV1& grass) {
+				MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
+				this->RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
+				for (size_t j = 0; j < size_t(this->RefMesh.VertexNum); ++j) {
+					auto& g = this->grassver[j + this->vnum];
+					g.pos = this->RefMesh.Vertexs[j].Position;
+					g.norm = this->RefMesh.Vertexs[j].Normal;
+					g.dif = this->RefMesh.Vertexs[j].DiffuseColor;
+					g.spc = this->RefMesh.Vertexs[j].SpecularColor;
+					g.u = this->RefMesh.Vertexs[j].TexCoord[0].u;
+					g.v = this->RefMesh.Vertexs[j].TexCoord[0].v;
+					g.su = this->RefMesh.Vertexs[j].TexCoord[1].u;
+					g.sv = this->RefMesh.Vertexs[j].TexCoord[1].v;
+				}
+				for (size_t j = 0; j < size_t(this->RefMesh.PolygonNum); ++j) {
+					for (size_t k = 0; k < std::size(this->RefMesh.Polygons[j].VIndex); ++k)
+						this->grassind[j * 3 + k + this->pnum] = WORD(this->RefMesh.Polygons[j].VIndex[k] + this->vnum);
+				}
+				this->vnum += this->RefMesh.VertexNum;
+				this->pnum += this->RefMesh.PolygonNum * 3;
+			}
+			void put() {
+				canlook = true;
+				this->VerBuf = CreateVertexBuffer(this->VerNum, DX_VERTEX_TYPE_NORMAL_3D);
+				this->IndexBuf = CreateIndexBuffer(this->IndexNum, DX_INDEX_TYPE_32BIT);
+				SetVertexBufferData(0, this->grassver.data(), this->VerNum, this->VerBuf);
+				SetIndexBufferData(0, this->grassind.data(), this->IndexNum, this->IndexBuf);
+			}
+
+			/*視界外か否かを判断*/
+			void Check_CameraViewClip(int x_, int z_, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
+				int pos_xmax = 100 * 1 / 3;
+				int pos_xmin = 100 * (x_ + 0) / 3 - 50;
+				int pos_zmax = 100 * 1 / 3;
+				int pos_zmin = 100 * (z_ + 0) / 3 - 50;
+				float x_tmax = (float)((int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmax) + int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmin) / 100.0f;
+				float z_tmax = (float)((int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmax) + int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmin) / 100.0f;
+				float x_tmin = (float)(int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmin) / 100.0f;
+				float z_tmin = (float)(int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmin) / 100.0f;
+				VECTOR_ref min = VECTOR_ref::vget(x_tmin, -5.f, z_tmin);
+				VECTOR_ref max = VECTOR_ref::vget(x_tmax, 5.f, z_tmax);
+
+				this->canlook = true;
+
+				float range = std::hypotf((MAPPTs->x_max - MAPPTs->x_min) / 3.f, (MAPPTs->z_max - MAPPTs->z_min) / 3.f);
+
+				if ((min - GetCameraPosition()).size() > range && (max - GetCameraPosition()).size() > range) {
+					this->canlook = false;
+					return;
+				}
+				if (CheckCameraViewClip_Box(min.get(), max.get())) {
+					this->canlook = false;
+					return;
+				}
+			}
+			void Check_CameraViewClip_MAPCOL(int x_, int z_, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
+				int pos_xmax = 100 * 1 / 3;
+				int pos_xmin = 100 * (x_ + 0) / 3 - 50;
+				int pos_zmax = 100 * 1 / 3;
+				int pos_zmin = 100 * (z_ + 0) / 3 - 50;
+				float x_tmax = (float)((int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmax) + int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmin) / 100.0f;
+				float z_tmax = (float)((int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmax) + int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmin) / 100.0f;
+				float x_tmin = (float)(int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmin) / 100.0f;
+				float z_tmin = (float)(int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmin) / 100.0f;
+				VECTOR_ref min = VECTOR_ref::vget(x_tmin, -5.f, z_tmin);
+				VECTOR_ref max = VECTOR_ref::vget(x_tmax, 5.f, z_tmax);
+
+				Check_CameraViewClip(x_, z_, MAPPTs);
+				auto ttt = (max - min)*0.5f + min;
+				ttt.y(0.f);
+				if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 1.8f, 0)).HitFlag &&
+					MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.f, 0)).HitFlag) {
+					this->canlook = false;
+					return;
+				}
+			}
+		};
 	public:
+		float x_max = 0.f;
+		float z_max = 0.f;
+		float x_min = 0.f;
+		float z_min = 0.f;
+		std::array<std::array<grass_t, 3>, 3>grass__;
 		std::list<Items> item;					//アイテム
+
 	public:
 		std::vector<VECTOR_ref>& get_waypoint(void) noexcept { return way_point; }
 		std::vector<VECTOR_ref>& get_leanpoint_q(void) noexcept { return lean_point_q; }
@@ -51,16 +151,16 @@ public:
 				grasss = 0;
 				break;
 			case 1:
-				grasss = 500;
+				grasss = 500 / 9;
 				break;
 			case 2:
-				grasss = 1000;
+				grasss = 1000 / 9;
 				break;
 			case 3:
-				grasss = 2000;
+				grasss = 2000 / 9;
 				break;
 			case 4:
-				grasss = 4000;
+				grasss = 4000 / 9;
 				break;
 			default:
 				grasss = 0;
@@ -194,74 +294,49 @@ public:
 			minmap.GetSize(&x_size, &y_size);
 			/*grass*/
 			if(grasss!=0) {
-				MV1SetupReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの作成*/
-				RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
-				IndexNum = RefMesh.PolygonNum * 3 * grasss; /*インデックスの数を取得*/
-				VerNum = RefMesh.VertexNum * grasss;	/*頂点の数を取得*/
-				grassver.resize(VerNum);   /*頂点データとインデックスデータを格納するメモリ領域の確保*/
-				grassind.resize(IndexNum); /*頂点データとインデックスデータを格納するメモリ領域の確保*/
-
-				vnum = 0;
-				pnum = 0;
-
 				int xs = 0, ys = 0;
 				GetSoftImageSize(grass_pos, &xs, &ys);
+				x_max = map_col.mesh_maxpos(0).x();
+				z_max = map_col.mesh_maxpos(0).z();
+				x_min = map_col.mesh_minpos(0).x();
+				z_min = map_col.mesh_minpos(0).z();
 
-				float x_max = map_col.mesh_maxpos(0).x();
-				float z_max = map_col.mesh_maxpos(0).z();
-				float x_min = map_col.mesh_minpos(0).x();
-				float z_min = map_col.mesh_minpos(0).z();
+				for (int x_ = 0; x_ < 3; x_++) {
+					for (int z_ = 0; z_ < 3; z_++) {
+						auto& tgt_g = grass__[x_][z_];
+						int pos_xmax = 100 * 1 / 3;
+						int pos_xmin = 100 * (x_ + 0) / 3 - 50;
+						int pos_zmax = 100 * 1 / 3;
+						int pos_zmin = 100 * (z_ + 0) / 3 - 50;
 
-				for (int i = 0; i < grasss; ++i) {
-
-					float x_t = (float)(GetRand(int((x_max - x_min)) * 100) - int(x_max - x_min) * 50) / 100.0f;
-					float z_t = (float)(GetRand(int((z_max - z_min)) * 100) - int(z_max - z_min) * 50) / 100.0f;
-					int _r_, _g_, _b_, _a_;
-					while (true) {
-						GetPixelSoftImage(grass_pos, int((x_t - x_min) / (x_max - x_min)*float(xs)), int((z_t - z_min) / (z_max - z_min)*float(ys)), &_r_, &_g_, &_b_, &_a_);
-						if (_r_ <= 128) {
-							break;
+						tgt_g.put_start(grass, grasss);
+						for (int i = 0; i < grasss; ++i) {
+							float x_t = (float)(GetRand(int((x_max - x_min)) * pos_xmax) + int(x_max - x_min) * pos_xmin) / 100.0f;
+							float z_t = (float)(GetRand(int((z_max - z_min)) * pos_zmax) + int(z_max - z_min) * pos_zmin) / 100.0f;
+							int _r_, _g_, _b_, _a_;
+							while (true) {
+								GetPixelSoftImage(grass_pos, int((x_t - x_min) / (x_max - x_min)*float(xs)), int((z_t - z_min) / (z_max - z_min)*float(ys)), &_r_, &_g_, &_b_, &_a_);
+								if (_r_ <= 128) {
+									break;
+								}
+								else {
+									x_t = (float)(GetRand(int((x_max - x_min)) * pos_xmax) + int(x_max - x_min) * pos_xmin) / 100.0f;
+									z_t = (float)(GetRand(int((z_max - z_min)) * pos_zmax) + int(z_max - z_min) * pos_zmin) / 100.0f;
+								}
+							}
+							auto tmpvect2 = VECTOR_ref::vget(x_t, -5.f, z_t);
+							auto tmpvect = VECTOR_ref::vget(x_t, 5.f, z_t);
+							map_col_nearest(tmpvect2, &tmpvect);
+							//
+							grass.SetMatrix((MATRIX_ref::RotY(deg2rad(GetRand(90))) * MATRIX_ref::GetScale(VECTOR_ref::vget(1.f, float(100 - 20 + GetRand(20 * 2)) / 100.f, 1.f))) *MATRIX_ref::Mtrans(tmpvect));
+							//上省
+							tgt_g.set_one(grass);
 						}
-						else {
-							x_t = (float)(GetRand(int((x_max - x_min)) * 100) - int(x_max - x_min) * 50) / 100.0f;
-							z_t = (float)(GetRand(int((z_max - z_min)) * 100) - int(z_max - z_min) * 50) / 100.0f;
-						}
+						tgt_g.put();
 					}
-					auto tmpvect2 = VECTOR_ref::vget(x_t, -5.f, z_t);
-					auto tmpvect = VECTOR_ref::vget(x_t, 5.f, z_t);
-					map_col_nearest(tmpvect2, &tmpvect);
-					//
-					grass.SetMatrix(
-						(MATRIX_ref::RotY(deg2rad(GetRand(90))) * MATRIX_ref::GetScale(VECTOR_ref::vget(1.f, float(100 - 20 + GetRand(20 * 2)) / 100.f, 1.f))) *
-						MATRIX_ref::Mtrans(tmpvect)
-					);
-					//上省
-					MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
-					RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
-					for (size_t j = 0; j < size_t(RefMesh.VertexNum); ++j) {
-						auto& g = grassver[j + vnum];
-						g.pos = RefMesh.Vertexs[j].Position;
-						g.norm = RefMesh.Vertexs[j].Normal;
-						g.dif = RefMesh.Vertexs[j].DiffuseColor;
-						g.spc = RefMesh.Vertexs[j].SpecularColor;
-						g.u = RefMesh.Vertexs[j].TexCoord[0].u;
-						g.v = RefMesh.Vertexs[j].TexCoord[0].v;
-						g.su = RefMesh.Vertexs[j].TexCoord[1].u;
-						g.sv = RefMesh.Vertexs[j].TexCoord[1].v;
-					}
-					for (size_t j = 0; j < size_t(RefMesh.PolygonNum); ++j) {
-						for (size_t k = 0; k < std::size(RefMesh.Polygons[j].VIndex); ++k)
-							grassind[j * 3 + k + pnum] = WORD(RefMesh.Polygons[j].VIndex[k] + vnum);
-					}
-					vnum += RefMesh.VertexNum;
-					pnum += RefMesh.PolygonNum * 3;
 				}
+				//
 				DeleteSoftImage(grass_pos);
-
-				VerBuf = CreateVertexBuffer(VerNum, DX_VERTEX_TYPE_NORMAL_3D);
-				IndexBuf = CreateIndexBuffer(IndexNum, DX_INDEX_TYPE_32BIT);
-				SetVertexBufferData(0, grassver.data(), VerNum, VerBuf);
-				SetIndexBufferData(0, grassind.data(), IndexNum, IndexBuf);
 			}
 		}
 		void Set(void) noexcept {
@@ -285,13 +360,17 @@ public:
 			if (grasss != 0) {
 				grass_pic.Dispose();
 				grass.Dispose();
-				grassver.clear();
-				grassind.clear();
+				for (int x_ = 0; x_ < 3; x_++) {
+					for (int z_ = 0; z_ < 3; z_++) {
+						grass__[x_][z_].grassver.clear();
+						grass__[x_][z_].grassind.clear();
+					}
+				}
 			}
 		}
 		auto& map_get(void) const noexcept { return map; }
 		auto& map_col_get(void) const noexcept { return map_col; }
-		auto map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) noexcept {
+		MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) noexcept {
 			return map_col.CollCheck_Line(StartPos, EndPos, 0, 0);
 		}
 		void map_col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) noexcept {
@@ -405,7 +484,13 @@ public:
 				SetDrawAlphaTest(DX_CMP_GREATER, 128);
 				//SetUseLighting(FALSE);
 				{
-					DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, grass_pic.get(), TRUE);
+					for (int x_ = 0; x_ < 3; x_++) {
+						for (int z_ = 0; z_ < 3; z_++) {
+							if (grass__[x_][z_].canlook) {
+								DrawPolygonIndexed3D_UseVertexBuffer(grass__[x_][z_].VerBuf, grass__[x_][z_].IndexBuf, grass_pic.get(), TRUE);
+							}
+						}
+					}
 				}
 				//SetUseLighting(TRUE);
 				SetDrawAlphaTest(-1, 0);
@@ -421,9 +506,9 @@ public:
 			for(auto& i : item){ i.Draw_item(); }
 		}
 		void main_Draw(void) noexcept {
-			map.DrawMesh(0);
-			map.DrawMesh(1);
-			map.DrawMesh(2);
+			for (int i = 0; i < 3; ++i) {
+				map.DrawMesh(i);
+			}
 			SetFogEnable(FALSE);
 			map.DrawMesh(3);
 			SetFogEnable(TRUE);

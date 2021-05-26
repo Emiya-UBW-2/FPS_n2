@@ -139,6 +139,8 @@ public:
 		}
 		void BG_Draw(void) noexcept {
 		}
+		void Shadow_Draw_NearFar(void) noexcept {
+		}
 		void Shadow_Draw(void) noexcept {
 		}
 		void Main_Draw(void) noexcept {
@@ -196,6 +198,7 @@ public:
 		VECTOR_ref Shadow_maxpos;
 		VECTOR_ref Light_vec;
 		COLOR_F Light_color = GetColorF(0, 0, 0, 0);
+		COLOR_F Light_color_ref = GetColorF(0, 0, 0, 0);
 		//
 		float change_per = 1.f;
 		//
@@ -216,6 +219,7 @@ public:
 		auto& get_Shadow_maxpos(void) const noexcept { return Shadow_maxpos; }
 		auto& get_Light_vec(void) const noexcept { return Light_vec; }
 		auto& get_Light_color(void) const noexcept { return Light_color; }
+		auto& get_Light_color_ref(void) const noexcept { return Light_color_ref; }
 		auto& Get_Camera(void) noexcept { return camera_main; }
 		//
 		SELECT(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t, std::unique_ptr<OPTION, std::default_delete<OPTION>>* OPTPTs_t, std::unique_ptr<MAINLOOP, std::default_delete<MAINLOOP>>* MAINLOOPscene_t) noexcept {
@@ -273,6 +277,7 @@ public:
 			Shadow_minpos = VECTOR_ref::vget(-1.f, -1.f, -1.f);
 			Light_vec = VECTOR_ref::vget(0.5f, -0.5f, 0.5f);
 			Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
+			Light_color_ref = GetColorF(0.10f, 0.11f, 0.10f, 0.0f);
 			/*パーツデータをロード*/
 			{
 				std::fstream file;
@@ -703,6 +708,12 @@ public:
 		void Shadow_Draw_Far(void) noexcept {
 
 		}
+		void Shadow_Draw_NearFar(void) noexcept {
+			mine_ptr->Draw_gun();
+			{
+				mine_ptr->get_mag_g_parts()->Draw();
+			}
+		}
 		void Shadow_Draw(void) noexcept {
 			mine_ptr->Draw_gun();
 			{
@@ -737,7 +748,7 @@ public:
 			}
 			void Set(float& fov_pc) noexcept {
 				this->key_TPS.ready(false);
-				this->camera_TPS.campos = VECTOR_ref::vget(0, 1.8f, -10);
+				this->camera_TPS.campos = VECTOR_ref::vget(0, 10.f, -10);
 				this->camera_TPS.set_cam_info(deg2rad(fov_pc), 0.1f, 200.f);
 			}
 			void Set_info(std::vector<PLAYERclass::Chara>&chara) noexcept {
@@ -810,7 +821,7 @@ public:
 		std::vector<GUNPARTs> magazine_data;		//GUNデータ
 		std::vector<Meds> meds_data;				//GUNデータ
 		std::vector<PLAYERclass::Chara> chara;		//キャラ
-		Hit_p hit_obj_p;							//静的弾痕
+		HIT_PASSIVE hit_obj_p;							//静的弾痕
 		//そのまま
 		std::unique_ptr<HostPassEffect, std::default_delete<HostPassEffect>> Hostpassparts_TPS;
 		std::unique_ptr<TPS_parts, std::default_delete<TPS_parts>> TPSparts;
@@ -828,6 +839,8 @@ public:
 		VECTOR_ref Shadow_maxpos;
 		VECTOR_ref Light_vec;
 		COLOR_F Light_color = GetColorF(0, 0, 0, 0);
+		COLOR_F Light_color_ref = GetColorF(0, 0, 0, 0);
+
 	public:
 		PLAYERclass::Chara& Get_Mine(void) noexcept { return this->chara[0]; }
 		std::vector<GUNPARTs>* get_parts_data(size_t type_sel) noexcept {
@@ -899,6 +912,7 @@ public:
 		auto& get_Shadow_maxpos(void) const noexcept { return Shadow_maxpos; }
 		auto& get_Light_vec(void) const noexcept { return Light_vec; }
 		auto& get_Light_color(void) const noexcept { return Light_color; }
+		auto& get_Light_color_ref(void) const noexcept { return Light_color_ref; }
 		auto& Get_Camera(void) noexcept { return this->camera_main; }
 		MAINLOOP(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t, std::unique_ptr<OPTION, std::default_delete<OPTION>>* OPTPTs_t
 			,std::unique_ptr<DeBuG, std::default_delete<DeBuG>>* DebugPTs_t
@@ -1010,6 +1024,7 @@ public:
 			Shadow_minpos = (*MAPPTs)->map_col_get().mesh_minpos(0);
 			Light_vec = VECTOR_ref::vget(0.5f, -0.5f, 0.5f);
 			Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
+			Light_color_ref = GetColorF(0.10f, 0.11f, 0.10f, 0.0f);
 			//
 			(*MAPPTs)->Set();									//環境
 			for (auto& c : this->chara) { c.Start(); }			//プレイヤー操作変数群
@@ -1052,7 +1067,10 @@ public:
 			TPSparts->Set_info(this->chara);
 			if (TPSparts->key_TPS.on()) {
 				//影用意
-				(*DrawPts)->Ready_Shadow(TPSparts->camera_TPS.campos, [&] {Shadow_Draw(); }, VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(5.f, 2.5f, 5.f));
+				(*DrawPts)->Ready_Shadow(TPSparts->camera_TPS.campos,
+					[&] {Shadow_Draw(); },
+					[&] {Shadow_Draw_NearFar(); },
+					VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(5.f, 2.5f, 5.f));
 				//書き込み
 				Hostpassparts_TPS->BUF_draw([&](void) noexcept { BG_Draw(); }, [&] {(*DrawPts)->Draw_by_Shadow([&] {Main_Draw(); }); }, TPSparts->camera_TPS);	//被写体深度描画
 				Hostpassparts_TPS->Set_MAIN_draw();																												//最終描画
@@ -1069,6 +1087,13 @@ public:
 					for (auto& i : (*MAPPTs)->item) {
 						//i.Check_CameraViewClip_MAPCOL(*MAPPTs);
 						i.Check_CameraViewClip();
+					}
+
+					for (int x_ = 0; x_ < 3; x_++) {
+						for (int z_ = 0; z_ < 3; z_++) {
+							//(*MAPPTs)->grass__[x_][z_].Check_CameraViewClip_MAPCOL(x_, z_, *MAPPTs);
+							(*MAPPTs)->grass__[x_][z_].Check_CameraViewClip(x_, z_, *MAPPTs);
+						}
 					}
 				}
 			}
@@ -1099,11 +1124,26 @@ public:
 			//map
 			(*MAPPTs)->Shadow_Draw();
 		}
+		void Shadow_Draw_NearFar(void) noexcept {
+			//map
+			(*MAPPTs)->item_Draw();
+			//キャラ
+			for (auto& c : this->chara) {
+				if ((c.get_pos() - GetCameraPosition()).size() > 1.8f) {
+					c.Draw_chara(0);
+				}
+			}
+		}
+
 		void Shadow_Draw(void) noexcept {
 			//map
 			(*MAPPTs)->item_Draw();
 			//キャラ
-			for (auto& c : this->chara) { c.Draw_chara(0); }
+			for (auto& c : this->chara) {
+				if ((c.get_pos() - GetCameraPosition()).size() <= 1.8f) {
+					c.Draw_chara(0);
+				}
+			}
 		}
 		void Main_Draw(void) noexcept {
 			//map
