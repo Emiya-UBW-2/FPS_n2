@@ -119,6 +119,7 @@ public:
 						KeyBind->key_use_ID[14].isalways = true;
 						KeyBind->key_use_ID[15].isalways = true;
 						KeyBind->key_use_ID[16].isalways = true;
+						KeyBind->key_use_ID[17].isalways = true;
 						KeyBind->mouse_use_ID[0].isalways = true;
 						KeyBind->mouse_use_ID[1].isalways = true;
 						KeyBind->mouse_use_ID[2].isalways = true;
@@ -162,6 +163,7 @@ public:
 									mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
 									mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 									mine_k.sort_magazine = false;									//
+									mine_k.view_gun = false;
 									mine_k.drop_ = false;											//
 									mine_k.running = (ptr_->on[0] & BUTTON_TOUCHPAD) != 0;			//running
 									mine_k.jamp = (ptr_->on[0] & BUTTON_SIDE) != 0;					//jamp
@@ -186,6 +188,7 @@ public:
 							mine_k.sort_magazine = KeyBind->key_use_ID[12].get_key(2);
 							mine_k.running = KeyBind->key_use_ID[13].get_key(0);
 							mine_k.jamp = KeyBind->key_use_ID[14].get_key(2);
+							mine_k.view_gun = KeyBind->key_use_ID[17].get_key(2);
 							mine_k.shoot = KeyBind->mouse_use_ID[0].get_key(3);
 							mine_k.select = KeyBind->mouse_use_ID[1].get_key(5);
 							mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);
@@ -211,6 +214,7 @@ public:
 									mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
 									mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 									mine_k.sort_magazine = false;									//
+									mine_k.view_gun = false;
 									mine_k.drop_ = false;											//
 									mine_k.running = (ptr_->on[0] & BUTTON_TOUCHPAD) != 0;			//running
 									mine_k.jamp = (ptr_->on[0] & BUTTON_SIDE) != 0;					//jamp
@@ -235,6 +239,7 @@ public:
 							mine_k.sort_magazine = KeyBind->key_use_ID[12].get_key(2);
 							mine_k.running = KeyBind->key_use_ID[13].get_key(0);
 							mine_k.jamp = KeyBind->key_use_ID[14].get_key(2);
+							mine_k.view_gun = KeyBind->key_use_ID[17].get_key(2);
 							mine_k.shoot = KeyBind->mouse_use_ID[0].get_key(3);
 							mine_k.select = KeyBind->mouse_use_ID[1].get_key(5);
 							mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);
@@ -261,6 +266,7 @@ public:
 									mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
 									mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 									mine_k.sort_magazine = false;									//
+									mine_k.view_gun = false;
 									mine_k.drop_ = false;											//
 									mine_k.running = (ptr_->on[0] & BUTTON_TOUCHPAD) != 0;			//running
 									mine_k.jamp = (ptr_->on[0] & BUTTON_SIDE) != 0;					//jamp
@@ -286,6 +292,7 @@ public:
 							mine_k.running = KeyBind->key_use_ID[13].get_key(0);
 							mine_k.jamp = KeyBind->key_use_ID[14].get_key(0);
 							mine_k.TPS = KeyBind->key_use_ID[15].get_key(0);
+							mine_k.view_gun = KeyBind->key_use_ID[17].get_key(2);
 							mine_k.shoot = KeyBind->mouse_use_ID[0].get_key(3);
 							mine_k.select = KeyBind->mouse_use_ID[1].get_key(5);
 							mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);

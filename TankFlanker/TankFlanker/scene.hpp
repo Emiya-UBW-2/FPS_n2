@@ -277,7 +277,7 @@ public:
 			Shadow_minpos = VECTOR_ref::vget(-1.f, -1.f, -1.f);
 			Light_vec = VECTOR_ref::vget(0.5f, -0.5f, 0.5f);
 			Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
-			Light_color_ref = GetColorF(0.10f, 0.11f, 0.10f, 0.0f);
+			Light_color_ref = GetColorF(0.20f, 0.20f, 0.23f, 0.0f);
 			/*パーツデータをロード*/
 			{
 				std::fstream file;
@@ -1024,7 +1024,7 @@ public:
 			Shadow_minpos = (*MAPPTs)->map_col_get().mesh_minpos(0);
 			Light_vec = VECTOR_ref::vget(0.5f, -0.5f, 0.5f);
 			Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
-			Light_color_ref = GetColorF(0.10f, 0.11f, 0.10f, 0.0f);
+			Light_color_ref = GetColorF(0.20f, 0.20f, 0.23f, 0.0f);
 			//
 			(*MAPPTs)->Set();									//環境
 			for (auto& c : this->chara) { c.Start(); }			//プレイヤー操作変数群
@@ -1122,11 +1122,9 @@ public:
 		}
 		void Shadow_Draw_Far(void) noexcept {
 			//map
-			(*MAPPTs)->Shadow_Draw();
+			(*MAPPTs)->Shadow_Draw_Far();
 		}
 		void Shadow_Draw_NearFar(void) noexcept {
-			//map
-			(*MAPPTs)->item_Draw();
 			//キャラ
 			for (auto& c : this->chara) {
 				if ((c.get_pos() - GetCameraPosition()).size() > 1.8f) {
@@ -1141,7 +1139,7 @@ public:
 			//キャラ
 			for (auto& c : this->chara) {
 				if ((c.get_pos() - GetCameraPosition()).size() <= 1.8f) {
-					c.Draw_chara(0);
+					c.Draw_chara(1);
 				}
 			}
 		}

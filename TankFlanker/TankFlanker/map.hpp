@@ -496,14 +496,16 @@ public:
 				SetDrawAlphaTest(-1, 0);
 			}
 		}
-		void Shadow_Draw(void) noexcept {
+		void Shadow_Draw_Far(void) noexcept {
 			for (int i = 0; i < 3; ++i) {
 				map.DrawMesh(i);
 			}
 			grass_Draw();
 		}
 		void item_Draw(void) noexcept {
-			for(auto& i : item){ i.Draw_item(); }
+			for (auto& i : item) {
+				i.Draw_item();
+			}
 		}
 		void main_Draw(void) noexcept {
 			for (int i = 0; i < 3; ++i) {

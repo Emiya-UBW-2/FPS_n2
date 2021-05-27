@@ -206,6 +206,9 @@ public:
 			tmp_k.first = KEY_INPUT_F1;
 			tmp_k.second = "ƒL[ˆÄ“à";
 			this->key_use_ID.emplace_back(tmp_k);//16
+			tmp_k.first = KEY_INPUT_V;
+			tmp_k.second = "’­‚ß‚é";
+			this->key_use_ID.emplace_back(tmp_k);//17
 			//
 			tmp_k.first = MOUSE_INPUT_LEFT;
 			tmp_k.second = "ŽËŒ‚";

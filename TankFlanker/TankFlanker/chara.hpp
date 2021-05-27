@@ -651,6 +651,7 @@ public:
 			bool have_mag = false;		//マガジンを持つか
 			bool have_item = false;		//アイテム取得
 			bool sort_magazine = false;	//マガジンソート
+			bool view_gun = false;	//マガジンソート
 			bool drop_ = false;			//医療品落とす
 			bool aim = false;			//エイム
 			bool TPS = false;			//TPS
@@ -671,6 +672,7 @@ public:
 				this->reload = false;
 				this->have_item = false;
 				this->sort_magazine = false;
+				this->view_gun = false;
 				this->drop_ = false;
 				this->select = false;
 				this->have_mag = false;
@@ -812,6 +814,11 @@ public:
 			float rad = 0.f;
 		};
 		//
+		class anime_arm {
+		public:
+			float pers = 0.f;
+			float total = 1.f;
+		};
 		class aniv {
 		public:
 			std::array<VECTOR_ref, 3> vec;		//座標
@@ -1207,27 +1214,18 @@ public:
 			}
 		};
 	private:
-		class anime_arm {
-		public:
-			float pers = 0.f;
-			float total = 1.f;
-		};
 		//腕アニメ関連
-		aniv* prev = nullptr;
-		aniv* next = nullptr;
-		anime_arm* t_ptr=nullptr;
-
-		std::vector<anime_arm> ani_t;
-		std::vector<aniv> ani_v;
+		aniv* prev_ani_lefthand = nullptr;
+		aniv* next_ani_lefthand = nullptr;
+		anime_arm* now_timeline = nullptr;
 		//
-		VECTOR_ref vec_gunani_tgt;
-		VECTOR_ref pos_gunani_tgt;
-		bool have_magazine = true;			//マガジンを持つか
-		bool check_ammos = false;			//装備チェック
-		bool load_first = false;			//初段装填
+		std::vector<anime_arm> ani_timeline;
+		std::vector<aniv> ani_lefthand;
 		VECTOR_ref vec_gunani = VECTOR_ref::vget(0.f, 0.f, 1.f);
 		VECTOR_ref pos_gunani = VECTOR_ref::vget(0.f, 0.f, 0.f);
 		float zrad_gunani = 0.f;
+		//
+		bool have_magazine = true;			//マガジンを持つか
 		//
 		MV1 obj_body;
 		MV1 obj_lag;
@@ -1281,7 +1279,9 @@ public:
 		MATRIX_ref spawn_mat;		//spawnmat
 		VECTOR_ref add_vec_buf;		//移動ベクトルバッファ
 		float xrad_p = 0.f;			//マウスエイム用変数確保
-		bool sort_ing = false;		//走るか否か
+		bool sort_ing = false;		//整頓
+		bool view_ing = false;		//整頓
+		bool view_ing_2 = false;		//整頓
 		VECTOR_ref gunpos;			//マウスエイム用銃座標
 		bool gunf = false;			//射撃フラグ
 		opes key_;					//入力関連
@@ -1367,186 +1367,7 @@ public:
 		//
 		bool sort_f = false;
 		bool reloadf = false;
-	private:
-		auto LEFT_pos_gun(size_t select_t) noexcept {
-			auto ans = this->underhandguard.LEFT_pos(select_t);
-			auto f_ = this->foregrip.LEFT_pos(select_t);
-			if (f_ != VECTOR_ref::vget(0, 0, 0)) { ans = f_; }
-			return ans;
-		}
-		auto LEFT_mag_pos_gun(size_t select_t) noexcept {
-			auto ans = this->base.LEFT_mag_pos(select_t);
-			return ans;
-		}
-		auto LEFT_body_pos_gun(size_t select_t) noexcept {
-			auto ans = this->obj_body.frame(this->frame_s.LEFTbody_frame[select_t].first);
-			return ans;
-		}
-		auto RIGHT_pos_gun(size_t select_t) noexcept {
-			auto ans = this->base.RIGHT_pos(select_t);
-			return ans;
-		}
-		//
-		const auto LEFT_pos_Anim(size_t select_t) noexcept {
-			if (t_ptr != nullptr) {
-				if (t_ptr->pers < 1.f) {
-					auto pers = t_ptr->pers / t_ptr->total;
-					return prev->vec[select_t] * (1.f - pers) + next->vec[select_t] * pers;
-				}
-				else {
-					return next->vec[select_t];
-				}
-			}
-			else {
-				return next->vec[select_t];
-			}
-		}
-		void Set_GUN_pos_Anim() noexcept {
-			for (int i = 0; i < 3; ++i) {
-				ani_v[0].vec[i] = this->LEFT_pos_gun(i);
-				ani_v[1].vec[i] = this->LEFT_mag_pos_gun(i);
-				ani_v[2].vec[i] = this->LEFT_body_pos_gun(i);
-			}
-		}
-		void Set_LEFT_pos_Anim() noexcept {
-			//
-			this->ani_t[0].total = 0.4f;
-			this->ani_t[1].total = 0.85f;
-			this->ani_t[2].total = this->base.thisparts->reload_time - this->ani_t[1].total - 0.2f;
-			this->ani_t[3].total = 0.2f;
-			this->ani_t[4].total = 0.2f;
-			//
-			auto run = this->running() && !isReload() && !this->sort_ing;
-			//走る
-			if (run) {
-				prev = &this->ani_v[0];
-				next = &this->ani_v[0];
-				t_ptr = &this->ani_t[0];
-				vec_gunani_tgt = VECTOR_ref::vget(-0.75f, 0.15f, 0.35f);
-				pos_gunani_tgt = VECTOR_ref::vget(
-					0.05f + (sin(DX_PI_F*3.f*(this->anime_run->time / this->anime_run->alltime))*this->anime_run->per*0.04f),
-					-0.04f + (sin(DX_PI_F*3.f*(this->anime_run->time / this->anime_run->alltime))*this->anime_run->per*0.012f),
-					-0.1f
-				);
-				easing_set(&zrad_gunani, -80.f, 0.9f);
-			}
-			//リロード初期化
-			if (!run && !isReload()) {
-				this->have_magazine = false;
-			}
-			//リロード開始
-			if (!run && isReload() && !this->have_magazine) {
-				prev = &this->ani_v[0];
-				next = &this->ani_v[2];
-				t_ptr = &this->ani_t[1];
-				vec_gunani_tgt = VECTOR_ref::vget(0.35f, -0.25f, 0.9f);
-				pos_gunani_tgt = VECTOR_ref::vget(0, 0.1f, -0.025f);
-				easing_set(&zrad_gunani, 15.f, 0.9f);
 
-				if (t_ptr->pers == t_ptr->total) { this->have_magazine = true; }
-			}
-			//マガジン装着
-			if (!run && isReload() && this->have_magazine) {
-				prev = &this->ani_v[2];
-				next = &this->ani_v[1];
-				t_ptr = &this->ani_t[2];
-				vec_gunani_tgt = VECTOR_ref::vget(0.f, -0.25f, 0.9f);
-				pos_gunani_tgt = VECTOR_ref::vget(0.f, 0.05f, -0.025f);
-				easing_set(&zrad_gunani, 0.f, 0.9f);
-
-				if (t_ptr->pers == t_ptr->total) {}
-			}
-			//マグ整頓初期化
-			if (!run && !isReload() && !this->check_ammos) {
-				if (this->sort_ing) {
-					this->check_ammos = true;
-				}
-			}
-			//マグ整頓はじめ
-			if (!run && !isReload() && this->check_ammos) {
-				if (this->sort_ing) {
-					prev = &this->ani_v[0];
-					next = &this->ani_v[2];
-					t_ptr = &this->ani_t[3];
-					vec_gunani_tgt = VECTOR_ref::vget(0.35f, -0.25f, 0.9f);
-					pos_gunani_tgt = VECTOR_ref::vget(0, 0.1f, -0.025f);
-					easing_set(&zrad_gunani, 15.f, 0.9f);
-
-					if (t_ptr->pers == t_ptr->total) {}
-				}
-			}
-			//マグ整頓終わり
-			if (!run && !isReload() && this->check_ammos) {
-				if (!this->sort_ing) {
-					prev = &this->ani_v[2];
-					next = &this->ani_v[0];
-					t_ptr = &this->ani_t[4];
-					vec_gunani_tgt = VECTOR_ref::vget(0.f, 0.f, 1.f);
-					pos_gunani_tgt = VECTOR_ref::vget(0.f, 0.f, 0.f);
-					easing_set(&zrad_gunani, 0.f, 0.9f);
-
-					if (t_ptr->pers == t_ptr->total) { this->check_ammos = false; }
-				}
-			}
-			//初段装填初期化
-			if (!run && !isReload() && !this->check_ammos && !this->load_first) {
-				if (this->gunanime_first->per == 1.f) {
-					this->load_first = true;
-				}
-			}
-			//初段装填
-			if (!run && !isReload() && !this->check_ammos && this->load_first) {
-				if (this->gunanime_first->per == 1.f) {
-					prev = &this->ani_v[1];
-					next = &this->ani_v[0];
-					t_ptr = &this->ani_t[0];
-					vec_gunani_tgt = VECTOR_ref::vget(0.f, -0.75f, 0.9f);
-					pos_gunani_tgt = VECTOR_ref::vget(0.05f, -0.035f, -0.055f);
-					easing_set(&zrad_gunani, -40.f, 0.9f);
-
-					if (t_ptr->pers == t_ptr->total) {}
-				}
-			}
-			//ノーマル
-			if (!run && !isReload() && !this->check_ammos && this->load_first) {
-				if (!(this->gunanime_first->per == 1.f)) {
-					prev = &this->ani_v[1];
-					next = &this->ani_v[0];
-					t_ptr = &this->ani_t[0];
-					vec_gunani_tgt = VECTOR_ref::vget(0.f, 0.f, 1.f);
-					pos_gunani_tgt = VECTOR_ref::vget(0.f, 0.f, 0.f);
-					easing_set(&zrad_gunani, 0.f, 0.9f);
-
-					if (t_ptr->pers == t_ptr->total) { this->load_first = false; }
-				}
-			}
-			//ノーマル
-			if (!run && !isReload() && !this->check_ammos && !this->load_first) {
-				prev = &this->ani_v[0];
-				next = &this->ani_v[0];
-				t_ptr = &this->ani_t[0];
-				vec_gunani_tgt = VECTOR_ref::vget(0.f, 0.f, 1.f);
-				pos_gunani_tgt = VECTOR_ref::vget(0.f, 0.f, 0.f);
-				easing_set(&zrad_gunani, 0.f, 0.9f);
-			}
-			//リセット処理
-			for (auto& tt : this->ani_t) {
-				if (t_ptr != &tt) {
-					tt.pers = 0.f;
-				}
-			}
-			//更新
-			if (t_ptr != nullptr) {
-				if (t_ptr->pers < t_ptr->total) {
-					t_ptr->pers += 1.f / FPS;
-				}
-				else {
-					t_ptr->pers = t_ptr->total;
-				}
-			}
-			easing_set(&vec_gunani, vec_gunani_tgt, 0.8f);
-			easing_set(&pos_gunani, pos_gunani_tgt, 0.5f);
-		}
 	public:
 		//
 		g_parts* get_parts(size_t type_sel, int sight_mount = 0) noexcept {
@@ -1591,7 +1412,7 @@ public:
 				return base.mazzule_pos();
 			}
 		}
-		auto get_now_selector(void) noexcept { return this->get_parts(EnumGunParts::PARTS_BASE)->thisparts->select[this->gun_stat_now->selecter];}
+		auto get_now_selector(void) noexcept { return this->get_parts(EnumGunParts::PARTS_BASE)->thisparts->select[this->gun_stat_now->selecter]; }
 		//
 		float get_body_yrad(void) const noexcept { return this->body_yrad; }
 		bool get_alive(void) const noexcept { return this->HP != 0; }
@@ -1634,6 +1455,140 @@ public:
 		size_t& get_canget_id(void) noexcept { return canget_id; }
 	private:
 		//微妙に使う
+		//
+		auto LEFT_pos_gun(size_t select_t) noexcept {
+			auto ans = this->underhandguard.LEFT_pos(select_t);
+			auto f_ = this->foregrip.LEFT_pos(select_t);
+			if (f_ != VECTOR_ref::vget(0, 0, 0)) { ans = f_; }
+			return ans;
+		}
+		auto LEFT_mag_pos_gun(size_t select_t) noexcept {
+			auto ans = this->base.LEFT_mag_pos(select_t);
+			return ans;
+		}
+		auto LEFT_body_pos_gun(size_t select_t) noexcept {
+			auto ans = this->obj_body.frame(this->frame_s.LEFTbody_frame[select_t].first);
+			return ans;
+		}
+		//
+		auto RIGHT_pos_gun(size_t select_t) noexcept {
+			auto ans = this->base.RIGHT_pos(select_t);
+			return ans;
+		}
+		//
+		bool Func_Set_LEFT_pos_Anim(anime_arm*anim, aniv*next_ani, const VECTOR_ref& vec_gun, const VECTOR_ref& pos_gun, float zrad_gun) noexcept {
+			now_timeline = anim;
+			easing_set(&vec_gunani, vec_gun, 0.8f);
+			easing_set(&pos_gunani, pos_gun, 0.5f);
+			easing_set(&zrad_gunani, zrad_gun, 0.9f);
+			//更新
+			if (now_timeline->pers < now_timeline->total) {
+				next_ani_lefthand = next_ani;
+				now_timeline->pers += 1.f / FPS;
+			}
+			else {
+				prev_ani_lefthand = next_ani_lefthand;
+				now_timeline->pers = now_timeline->total;
+			}
+			//リセット処理
+			for (auto& tt : this->ani_timeline) {
+				if (now_timeline != &tt) {
+					tt.pers = 0.f;
+				}
+			}
+			return now_timeline->pers >= now_timeline->total;//終了フラグ
+		}
+		//手アニメ
+		const auto LEFT_pos_Anim(size_t select_t) noexcept {
+			if (now_timeline != nullptr) {
+				if (now_timeline->pers < 1.f) {
+					auto pers = now_timeline->pers / now_timeline->total;
+					return prev_ani_lefthand->vec[select_t] * (1.f - pers) + next_ani_lefthand->vec[select_t] * pers;
+				}
+				else {
+					return next_ani_lefthand->vec[select_t];
+				}
+			}
+			else {
+				return next_ani_lefthand->vec[select_t];
+			}
+		}
+		void Set_GUN_pos_Anim() noexcept {
+			for (int i = 0; i < 3; ++i) {
+				ani_lefthand[0].vec[i] = this->LEFT_pos_gun(i);
+				ani_lefthand[1].vec[i] = this->LEFT_mag_pos_gun(i);
+				ani_lefthand[2].vec[i] = this->LEFT_body_pos_gun(i);
+			}
+		}
+		void Set_LEFT_pos_Anim() noexcept {
+			//
+			this->ani_timeline[0].total = 0.4f;//構える
+			this->ani_timeline[1].total = 0.4f;//走る
+			this->ani_timeline[2].total = 0.85f;//マガジンリリース
+			this->ani_timeline[3].total = this->base.thisparts->reload_time - this->ani_timeline[2].total - 0.2f;//マガジン装着
+			this->ani_timeline[4].total = 0.2f;//マグ整頓
+			this->ani_timeline[5].total = 0.2f;//初段装填
+			this->ani_timeline[6].total = 1.5f;//初段装填
+			this->ani_timeline[7].total = 1.5f;//初段装填
+			//
+			if (this->running() && !isReload() && !this->sort_ing && !this->view_ing) {
+				//走る
+				VECTOR_ref vec_tgt = VECTOR_ref::vget(-0.75f, 0.15f, 0.35f);
+				VECTOR_ref pos_tgt = VECTOR_ref::vget(0.05f + (sin(DX_PI_F*3.f*(this->anime_run->time / this->anime_run->alltime))*this->anime_run->per*0.04f), -0.04f + (sin(DX_PI_F*3.f*(this->anime_run->time / this->anime_run->alltime))*this->anime_run->per*0.012f), -0.1f);
+				Func_Set_LEFT_pos_Anim(&this->ani_timeline[1], &this->ani_lefthand[0], vec_tgt, pos_tgt, -80.f);
+				return;
+			}
+			else {
+				if (!isReload()) {
+					//リロード初期化
+					this->have_magazine = false;
+				}
+				else {
+					//リロード開始
+					if (!this->have_magazine) {
+						if (Func_Set_LEFT_pos_Anim(&this->ani_timeline[2], &this->ani_lefthand[2], VECTOR_ref::vget(0.35f, -0.25f, 0.9f), VECTOR_ref::vget(0, 0.1f, -0.025f), 15.f)) {
+							this->have_magazine = true;
+						}
+						return;
+					}
+					//マガジン装着
+					if (this->have_magazine) {
+						Func_Set_LEFT_pos_Anim(&this->ani_timeline[3], &this->ani_lefthand[1], VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 0.f);
+						return;
+					}
+				}
+				//マグ整頓
+				if (this->sort_ing) {
+					Func_Set_LEFT_pos_Anim(&this->ani_timeline[4], &this->ani_lefthand[2], VECTOR_ref::vget(0.35f, -0.25f, 0.9f), VECTOR_ref::vget(0, 0.1f, -0.025f), 15.f);
+					return;
+				}
+				//初段装填
+				if (this->gunanime_first->per == 1.f) {
+					Func_Set_LEFT_pos_Anim(&this->ani_timeline[5], &this->ani_lefthand[0], VECTOR_ref::vget(0.f, -0.75f, 0.9f), VECTOR_ref::vget(0.05f, -0.035f, -0.055f), -40.f);
+					return;
+				}
+				//眺める
+				if (this->view_ing) {
+					if (!this->view_ing_2) {
+						if (Func_Set_LEFT_pos_Anim(&this->ani_timeline[6], &this->ani_lefthand[0], VECTOR_ref::vget(-0.55f, -0.05f, 0.45f), VECTOR_ref::vget(0.05f, 0.1f, -0.125f), -65.f)) {
+							this->view_ing_2 = true;
+						}
+						return;
+					}
+					if (this->view_ing_2) {
+						if (Func_Set_LEFT_pos_Anim(&this->ani_timeline[7], &this->ani_lefthand[0], VECTOR_ref::vget(-0.55f, -0.15f, 0.65f), VECTOR_ref::vget(0.05f, 0.1f, -0.2f), 40.f)) {
+							this->view_ing = false;
+							this->view_ing_2 = false;
+						}
+						return;
+					}
+				}
+				//ノーマル
+				Func_Set_LEFT_pos_Anim(&this->ani_timeline[0], &this->ani_lefthand[0], VECTOR_ref::vget(0.f, 0.f, 1.f), VECTOR_ref::vget(0.f, 0.f, 0.f), 0.f);
+				return;
+			}
+		}
+		//リロード中か否か
 		bool isReload(void) const noexcept { return this->reloadf && this->gun_stat_now->hav_mags(); }//リロード中
 		//アイテムリリース
 		void magrelease(GUN_STATUS::mag_state& mag) noexcept {
@@ -1930,6 +1885,7 @@ public:
 					this->key_.reload = false;
 					this->key_.have_item = false;
 					this->key_.sort_magazine = false;
+					this->key_.view_gun = false;
 					this->key_.drop_ = false;
 					this->key_.select = false;
 					this->key_.have_mag = true;
@@ -3010,8 +2966,8 @@ public:
 			for (auto& a : this->bullet) { a.Set(MAPPTs); }		//bullet
 			this->audio.Duplicate(this->base.thisparts->audio);	//audio
 
-			this->ani_t.resize(5);
-			this->ani_v.resize(3);
+			this->ani_timeline.resize(8);
+			this->ani_lefthand.resize(3);
 		}
 		/*キャラスポーン*/
 		void Spawn(const VECTOR_ref& pos_, const MATRIX_ref& mat_H) noexcept {
@@ -3061,8 +3017,8 @@ public:
 			this->gunanime_sel[0]->reset();
 			this->gunanime_sel[1]->reset();
 
-			prev = &this->ani_v[0];
-			next = &this->ani_v[0];
+			prev_ani_lefthand = &this->ani_lefthand[0];
+			next_ani_lefthand = &this->ani_lefthand[0];
 			this->nearhit = false;
 			//AIの選択をリセット
 			{
@@ -3287,6 +3243,10 @@ public:
 				if (this->key_.drop_) {
 					medrelease(&meds_data[0]);
 				}
+				//眺める
+				if (!this->view_ing && this->key_.view_gun) {
+					this->view_ing = true;
+				}
 				//マガジン整頓
 				if (!this->sort_ing && this->key_.sort_magazine && this->gun_stat_now->get_magazine_in().size() >= 2) {
 					this->sort_ing = true;
@@ -3397,7 +3357,7 @@ public:
 						this->audio.trigger.vol(255);
 					}
 					this->audio.trigger.play_3D(this->pos_gun, 5.f);
-					if (!this->gunf && this->gun_stat_now->not_chamber_EMPTY() && this->gunanime_first->per == 0.f) {
+					if (!this->gunf && this->gun_stat_now->not_chamber_EMPTY() && this->gunanime_first->per == 0.f && !this->view_ing) {
 						this->gunf = true;
 						//弾数管理
 						this->gun_stat_now->magazine_shot(isReload());
@@ -3561,6 +3521,13 @@ public:
 			if (this->flag_canlook_player) {
 				switch (drawlevel){
 				case 0://最低レベル
+					if (this->get_alive()) {
+						this->obj_body.DrawModel();
+					}
+					else {
+						this->obj_lag.DrawModel();
+					}
+				case 1://低レベル
 					if (this->get_alive()) {
 						this->obj_body.DrawModel();
 					}
