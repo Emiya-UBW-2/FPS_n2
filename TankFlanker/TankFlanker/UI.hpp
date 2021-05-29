@@ -443,6 +443,13 @@ public:
 		FontHandle font18;
 		FontHandle font12;
 		//
+		FontHandle* font_large;
+		FontHandle* font_big;
+		FontHandle* font;
+		int font_largehight;
+		int font_bighight;
+		int fonthight;
+		//
 		float Ready = 0.f;
 		float timer = 0.f;
 		//
@@ -450,18 +457,31 @@ public:
 		std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>* RULEparts;
 		//
 		void Draw_HP(int xpos, int ypos, int xsize, int ysize, PLAYERclass::Chara& chara) noexcept {
-			int will = int(chara.HP_r);
 			auto size = y_r(2);
-			DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, GetColor(64, 64, 64), TRUE);
-			DrawBox(xpos - xsize / 2, ypos, xpos + xsize / 2, ypos + ysize, GetColor(128, 128, 128), FALSE);
-			DrawBox(xpos - xsize / 2 + size, ypos + size, xpos - xsize / 2 + size + (xsize - size * 2)*chara.HP / chara.HP_full, ypos + ysize - size, GetColor(0, 255, 0), TRUE);
-			DrawBox(xpos - xsize / 2 + size + (xsize - size * 2)*chara.HP / chara.HP_full, ypos + size, xpos - xsize / 2 + size + (xsize - size * 2)*will / chara.HP_full, ypos + ysize - size, GetColor(255, 255, 0), TRUE);
-			font18.DrawStringFormat_MID(xpos + size, ypos + size, GetColor(255, 255, 255), "%d/%d", chara.HP, chara.HP_full);
+			int x1 = xpos - xsize / 2;
+			float size_y = float(ysize - size) / y_r(18);
+			int nowHP = (xsize - size * 2)*chara.HP / chara.HP_full;
+			int willHP = (xsize - size * 2)*int(chara.HP_r) / chara.HP_full;
+			//back
+			DrawBox(x1, ypos, x1 + xsize, ypos + ysize + size, GetColor(128, 128, 128), FALSE);
+			//
+			x1 += size;
+			if (willHP < xsize) {
+				DrawBox(x1 + willHP, ypos + size, x1 + xsize, ypos + ysize + size, GetColor(64, 64, 64), TRUE);
+			}
+			if (0 < nowHP) {
+				DrawBox(x1, ypos + size, x1 + nowHP, ypos + ysize + size, GetColor(0, 255, 0), TRUE);
+			}
+			if (nowHP < willHP) {
+				DrawBox(x1 + nowHP, ypos + size, x1 + willHP, ypos + ysize + size, GetColor(255, 255, 0), TRUE);
+			}
+			font18.DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", chara.HP, chara.HP_full);
 
-
-			SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - chara.got_damage_f, 5.f))), 0, 255));
-			font18.DrawStringFormat_MID(xpos + (xsize / 2 * chara.got_damage_x / 255), ypos + size - int(100 * (1.f - chara.got_damage_f)), chara.got_damage_color, "%d", chara.got_damage);
-			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			if (1.f - chara.got_damage_f >= 0.01f) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - chara.got_damage_f, 5.f))), 0, 255));
+				font18.DrawExtendStringFormat_MID(xpos + (xsize / 2 * chara.got_damage_x / 255), ypos + size - int(100 * (1.f - chara.got_damage_f)), size_y, size_y, chara.got_damage_color, "%d", chara.got_damage);
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			}
 		}
 		template <typename... Args>
 		void Draw_Item_UI(FontHandle* font_big, int font_bighight, int xp, int yp, const VECTOR_ref& pos_item, const VECTOR_ref& cam_pos, std::string String, Args&&... args) const noexcept {
@@ -513,17 +533,21 @@ public:
 			this->Ready = (*RULEparts)->get_Ready();
 			this->timer = std::max((*RULEparts)->get_timer(),0.f);
 		}
+
+		void set_fonts(bool use_vr = true) {
+			font_large = (use_vr) ? &font72 : &font48;
+			font_big = (use_vr) ? &font36 : &font24;
+			font = (use_vr) ? &font24 : &font18;
+			font_largehight = (use_vr) ? y_r(72) : y_r(48);
+			font_bighight = (use_vr) ? y_r(36) : y_r(24);
+			fonthight = (use_vr) ? y_r(24) : y_r(18);
+		}
+
 		void UI_Draw(PLAYERclass::Chara& chara, bool use_vr = true) noexcept {
+			set_fonts(use_vr);
 			if (use_vr) {
 				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
 			}
-
-			FontHandle* font_large = (use_vr) ? &font72 : &font48;
-			FontHandle* font_big = (use_vr) ? &font36 : &font24;
-			FontHandle* font = (use_vr) ? &font24 : &font18;
-			const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
-			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			const int fonthight = (use_vr) ? y_r(24) : y_r(18);
 			int xs = 0, ys = 0, xp = 0, yp = 0;
 			{
 				//HP表示
@@ -673,9 +697,9 @@ public:
 								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.m_cnt, a.cap);
 								if (&a - &chara.gun_stat_now->get_magazine_in()[0] == 0) {
 									if (chara.gun_stat_now->not_chamber_EMPTY()) {
-										font->DrawString(xp + font_big->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp, " +1", GetColor(255, 0, 0));
+										font->DrawString(xp + font_big->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + font_bighight - fonthight, " +1", GetColor(255, 0, 0));
 									}
-									DrawBox(xp, yp, xp + font_big->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + font_bighight + 1, GetColor(255, 255, 0), FALSE);
+									DrawTriangle(xp - y_r(10), yp + 5, xp, yp + font_bighight / 2, xp - y_r(10), yp + font_bighight - 5, GetColor(255, 255, 0), FALSE);
 									xp -= font_bighight / 3;
 								}
 								yp += font_bighight;
@@ -743,6 +767,7 @@ public:
 				}
 				//スコアその他
 				{
+					/*
 					if (use_vr) {
 						xp = t_disp_x / 2 + t_disp_y / 6 + font_bighight;
 						yp = t_disp_y / 2 - t_disp_y / 12 + font_bighight;
@@ -755,17 +780,13 @@ public:
 					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", chara.scores.kill_cnt); yp += font_bighight;			//キルデス
 					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", chara.scores.death_cnt); yp += font_bighight;			//キルデス
 					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float(chara.scores.kill_cnt) / float(std::max(chara.scores.death_cnt, 1))); yp += font_bighight;			//キルデス
+					//*/
 				}
 				//終わり
 			}
 		}
 		void item_Draw(std::vector<PLAYERclass::Chara>&chara, PLAYERclass::Chara&mine, const VECTOR_ref& cam_pos, bool use_vr = true) noexcept {
-			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
-			FontHandle* font_big = (use_vr) ? &font36 : &font24;
-			FontHandle* font = (use_vr) ? &font24 : &font18;
-			//int font_largehight = (use_vr) ? y_r(72) : y_r(48);
-			int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			int fonthight = (use_vr) ? y_r(24) : y_r(18);
+			set_fonts(use_vr);
 			//弾インジケーター
 			if (use_vr) {
 				auto pos_gun = mine.get_parts(EnumGunParts::PARTS_BASE)->obj.GetMatrix().pos();

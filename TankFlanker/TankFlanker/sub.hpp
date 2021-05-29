@@ -10,6 +10,7 @@ enum Effect {
 	ef_smoke, //銃の軌跡
 	ef_gndsmoke,//地面の軌跡
 	ef_fire2, //発砲炎
+	ef_hitblood, //血しぶき
 	effects, //読み込む
 };
 enum EnumGunParts {
@@ -209,6 +210,9 @@ public:
 			tmp_k.first = KEY_INPUT_V;
 			tmp_k.second = "眺める";
 			this->key_use_ID.emplace_back(tmp_k);//17
+			tmp_k.first = KEY_INPUT_P;
+			tmp_k.second = "ポーズ";
+			this->key_use_ID.emplace_back(tmp_k);//18
 			//
 			tmp_k.first = MOUSE_INPUT_LEFT;
 			tmp_k.second = "射撃";
@@ -608,6 +612,76 @@ public:
 			}
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 		}
+	}
+	//
+};
+//キーバインド
+class pause_menu {
+private:
+	std::unique_ptr<key_bind, std::default_delete<key_bind>>* KeyBind;
+
+	FontHandle font24;
+	int font24size = 24;
+
+	float P_f = 0.0f;
+public:
+	//
+	pause_menu(std::unique_ptr<key_bind, std::default_delete<key_bind>>* KeyBind_t) noexcept {
+		KeyBind = KeyBind_t;
+		SetUseASyncLoadFlag(FALSE);
+		font24 = FontHandle::Create(font24size, DX_FONTTYPE_EDGE);
+	}
+	//
+	void Pause_key_active() noexcept {
+		(*KeyBind)->key_use_ID[18].isalways = true;
+		//
+		if ((*KeyBind)->key_use_ID[18].on_off.on()) {
+			(*KeyBind)->key_use_ID[10].isalways = true;
+		}
+		else {
+			(*KeyBind)->key_use_ID[10].isalways = false;
+		}
+	}
+
+	const auto Pause_key() noexcept { return (*KeyBind)->key_use_ID[18].get_key(1); }
+	//
+	bool Update() noexcept {
+		bool selend = true;
+		//強制帰還はポーズメニューで
+		if ((*KeyBind)->key_use_ID[10].get_key(0)) {
+			(*KeyBind)->key_use_ID[18].on_off.first = false;
+			selend = false;
+		}
+		return selend;
+	}
+	//
+	void draw() noexcept {
+		auto tmp_P = (*KeyBind)->key_use_ID[18].on_off.on();
+		easing_set(&P_f, float(tmp_P), 0.9f);
+		//インフォ
+		if (P_f > 0.1f) {
+			int yp_t = 100;
+			//背景
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f*P_f));
+			DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
+			if (P_f > 0.9f) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+				//背景画像
+			}
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+			//前面
+			if (P_f > 0.9f) {
+				yp_t = 100;
+				//
+				font24.DrawString_RIGHT(1920 - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += font24size + 30;
+				//
+				font24.DrawString_RIGHT(1920 - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += font24size + 30;
+				//
+				font24.DrawString_RIGHT(1920 - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += font24size + 30;
+				//
+			}
+		}
+		//
 	}
 	//
 };
@@ -1067,6 +1141,92 @@ protected:
 			//SetDrawAlphaTest(-1, 0);
 		}
 	};
+	class HIT_BLOOD_PASSIVE {
+		//雲
+		int hitss = 0;					/*hitsの数*/
+		std::vector<VERTEX3D> hitsver;	/*hits*/
+		std::vector<DWORD> hitsind;	    /*hits*/
+		int VerBuf = -1, IndexBuf = -1;	/*hits*/
+		MV1 hits;						/*hitsモデル*/
+		GraphHandle hits_pic;			/*画像ハンドル*/
+		int IndexNum = -1, VerNum = -1;	/*hits*/
+		int vnum = -1, pnum = -1;		/*hits*/
+		MV1_REF_POLYGONLIST RefMesh;	/*hits*/
+
+		bool isUPDate = true;
+	public:
+		//初期化
+		void init(void) noexcept {
+			SetUseASyncLoadFlag(FALSE);
+			hits_pic = GraphHandle::Load("data/model/hit_blood/hit.png");		 /*grass*/
+			MV1::Load("data/model/hit_blood/model.mv1", &hits, false);	//弾痕
+			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
+		}
+		//毎回のリセット
+		void clear(void) noexcept {
+			hitss = 0;
+			vnum = 0;
+			pnum = 0;
+			hitsver.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			hitsind.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			hitsver.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			hitsind.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+		}
+
+		void set(const float &caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
+			hitss++;
+			IndexNum = RefMesh.PolygonNum * 3 * hitss;				/*インデックスの数を取得*/
+			VerNum = RefMesh.VertexNum * hitss;						/*頂点の数を取得*/
+			hitsver.resize(VerNum);									/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			hitsind.resize(IndexNum);								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			{
+				float asize = 200.f*caliber;
+				auto y_vec = Normal;
+				auto z_vec = y_vec.cross(Zvec).Norm();
+				auto scale = VECTOR_ref::vget(asize, asize, asize);
+				auto pos = Position + y_vec * 0.02f;
+				MATRIX_ref mat = MATRIX_ref::GetScale(scale)*  MATRIX_ref::Axis1_YZ(y_vec, z_vec);
+
+				hits.SetMatrix(mat*MATRIX_ref::Mtrans(pos));
+			}
+			MV1RefreshReferenceMesh(hits.get(), -1, TRUE);			/*参照用メッシュの更新*/
+			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
+			for (size_t j = 0; j < size_t(RefMesh.VertexNum); ++j) {
+				auto& g = hitsver[j + vnum];
+				g.pos = RefMesh.Vertexs[j].Position;
+				g.norm = RefMesh.Vertexs[j].Normal;
+				g.dif = RefMesh.Vertexs[j].DiffuseColor;
+				g.spc = RefMesh.Vertexs[j].SpecularColor;
+				g.u = RefMesh.Vertexs[j].TexCoord[0].u;
+				g.v = RefMesh.Vertexs[j].TexCoord[0].v;
+				g.su = RefMesh.Vertexs[j].TexCoord[1].u;
+				g.sv = RefMesh.Vertexs[j].TexCoord[1].v;
+			}
+			for (size_t j = 0; j < size_t(RefMesh.PolygonNum); ++j) {
+				for (size_t k = 0; k < std::size(RefMesh.Polygons[j].VIndex); ++k)
+					hitsind[j * 3 + k + pnum] = WORD(RefMesh.Polygons[j].VIndex[k] + vnum);
+			}
+			vnum += RefMesh.VertexNum;
+			pnum += RefMesh.PolygonNum * 3;
+			isUPDate = true;
+		}
+		void update(void) noexcept {
+			if (isUPDate) {
+				isUPDate = false;
+				VerBuf = CreateVertexBuffer(VerNum, DX_VERTEX_TYPE_NORMAL_3D);
+				IndexBuf = CreateIndexBuffer(IndexNum, DX_INDEX_TYPE_32BIT);
+				SetVertexBufferData(0, hitsver.data(), VerNum, VerBuf);
+				SetIndexBufferData(0, hitsind.data(), IndexNum, IndexBuf);
+			}
+		}
+		void draw(void) noexcept {
+			//SetDrawAlphaTest(DX_CMP_GREATER, 128);
+			{
+				DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, hits_pic.get(), TRUE);
+			}
+			//SetDrawAlphaTest(-1, 0);
+		}
+	};
 	//アイテム
 	class Items {
 	private:
@@ -1226,22 +1386,20 @@ protected:
 				}
 			}
 		}
-		void Check_CameraViewClip(void) noexcept {
+		template<class Y, class D>
+		void Check_CameraViewClip(std::unique_ptr<Y, D>& MAPPTs , bool use_occlusion) noexcept {
 			this->flag_canlook_player = true;
 			auto ttt = this->pos;
 			if (CheckCameraViewClip_Box((ttt + VECTOR_ref::vget(-0.3f, 0, -0.3f)).get(), (ttt + VECTOR_ref::vget(0.3f, 0.3f, 0.3f)).get())) {
 				this->flag_canlook_player = false;
 				return;
 			}
-		}
-		template<class Y, class D>
-		void Check_CameraViewClip_MAPCOL(std::unique_ptr<Y, D>& MAPPTs) {
-			Check_CameraViewClip();
-			auto ttt = this->pos;
-			if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.3f, 0)).HitFlag &&
-				MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.0f, 0)).HitFlag) {
-				this->flag_canlook_player = false;
-				return;
+			if (use_occlusion) {
+				if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.3f, 0)).HitFlag &&
+					MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.0f, 0)).HitFlag) {
+					this->flag_canlook_player = false;
+					return;
+				}
 			}
 		}
 

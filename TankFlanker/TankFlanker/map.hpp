@@ -82,7 +82,7 @@ public:
 			}
 
 			/*Ž‹ŠEŠO‚©”Û‚©‚ð”»’f*/
-			void Check_CameraViewClip(int x_, int z_, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
+			void Check_CameraViewClip(int x_, int z_, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs, bool use_occlusion) noexcept {
 				int pos_xmax = 100 * 1 / 3;
 				int pos_xmin = 100 * (x_ + 0) / 3 - 50;
 				int pos_zmax = 100 * 1 / 3;
@@ -106,26 +106,14 @@ public:
 					this->canlook = false;
 					return;
 				}
-			}
-			void Check_CameraViewClip_MAPCOL(int x_, int z_, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
-				int pos_xmax = 100 * 1 / 3;
-				int pos_xmin = 100 * (x_ + 0) / 3 - 50;
-				int pos_zmax = 100 * 1 / 3;
-				int pos_zmin = 100 * (z_ + 0) / 3 - 50;
-				float x_tmax = (float)((int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmax) + int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmin) / 100.0f;
-				float z_tmax = (float)((int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmax) + int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmin) / 100.0f;
-				float x_tmin = (float)(int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmin) / 100.0f;
-				float z_tmin = (float)(int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmin) / 100.0f;
-				VECTOR_ref min = VECTOR_ref::vget(x_tmin, -5.f, z_tmin);
-				VECTOR_ref max = VECTOR_ref::vget(x_tmax, 5.f, z_tmax);
-
-				Check_CameraViewClip(x_, z_, MAPPTs);
-				auto ttt = (max - min)*0.5f + min;
-				ttt.y(0.f);
-				if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 1.8f, 0)).HitFlag &&
-					MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.f, 0)).HitFlag) {
-					this->canlook = false;
-					return;
+				if (use_occlusion) {
+					auto ttt = (max - min)*0.5f + min;
+					ttt.y(0.f);
+					if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 1.8f, 0)).HitFlag &&
+						MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.f, 0)).HitFlag) {
+						this->canlook = false;
+						return;
+					}
 				}
 			}
 		};
@@ -549,6 +537,14 @@ public:
 				}
 			}
 			return now;
+		}
+
+		void Check_CameraViewClip(std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs, bool use_occlusion) {
+			for (int x_ = 0; x_ < 3; x_++) {
+				for (int z_ = 0; z_ < 3; z_++) {
+					this->grass__[x_][z_].Check_CameraViewClip(x_, z_, MAPPTs, use_occlusion);
+				}
+			}
 		}
 	};
 	class MiniMap {
