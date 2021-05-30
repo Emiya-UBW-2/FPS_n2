@@ -1358,10 +1358,9 @@ protected:
 				}
 				//ŒÂ•Ê
 				if (this->ptr_mag != nullptr) {
-					chara.get_canget_magitem() |= zz;
+					chara.addf_canget_magitem(zz);
 					if (zz) {
-						chara.get_canget_id() = this->id_t;
-						chara.get_canget_mag() = this->ptr_mag->mod.get_name();
+						chara.set_canget_mag(this->id_t, this->ptr_mag->mod.get_name());
 						if (chara.getmagazine_push() && this->magazine_param.mag_cnt != 0 && (this->ptr_mag->ammo[0].get_name() == this->magazine_param.ammo[0].get_name())) {
 							chara.sort_f = false;
 							chara.gun_stat_now->magazine_plus(this);
@@ -1374,10 +1373,9 @@ protected:
 				}
 				//
 				if (this->ptr_med != nullptr) {
-					chara.get_canget_meditem() |= zz;
+					chara.addf_canget_meditem(zz);
 					if (zz) {
-						chara.get_canget_id() = this->id_t;
-						chara.get_canget_med() = this->ptr_med->mod.get_name();
+						chara.set_canget_med(this->id_t, this->ptr_med->mod.get_name());
 						if (chara.getmagazine_push()) {
 							chara.HP = std::clamp<int>(chara.HP + this->ptr_med->repair, 0, chara.HP_full);
 							this->Detach_item();

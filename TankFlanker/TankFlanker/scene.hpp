@@ -155,9 +155,9 @@ public:
 				//‰‰ŽZ
 				{
 					{
-						left.get_in(mine_ptr->get_akey());
-						right.get_in(mine_ptr->get_dkey());
-						Start.get_in(mine_ptr->get_jamp());
+						left.get_in(mine_ptr->get_key_().akey);
+						right.get_in(mine_ptr->get_key_().dkey);
+						Start.get_in(mine_ptr->get_key_().jamp);
 						if (left.push()) {
 							--preset_select;
 							changef = true;
@@ -555,13 +555,13 @@ public:
 					mine_ptr->set_mag_pos();
 					mine_ptr->get_parts(EnumGunParts::PARTS_MAGAZINE)->Setpos_Nomal(mine_ptr->Mag_Mat());
 					//ƒL[
-					up.get_in(mine_ptr->get_wkey());
-					down.get_in(mine_ptr->get_skey());
-					left.get_in(mine_ptr->get_akey());
-					right.get_in(mine_ptr->get_dkey());
-					shot.get_in(mine_ptr->get_shoot());
-					Start.get_in(mine_ptr->get_jamp());
-					Rot.get_in(mine_ptr->get_selecter());
+					up.get_in(mine_ptr->get_key_().wkey);
+					down.get_in(mine_ptr->get_key_().skey);
+					left.get_in(mine_ptr->get_key_().akey);
+					right.get_in(mine_ptr->get_key_().dkey);
+					shot.get_in(mine_ptr->get_key_().shoot);
+					Start.get_in(mine_ptr->get_key_().jamp);
+					Rot.get_in(mine_ptr->get_key_().select);
 					//
 					if (Start_b) {
 						Start_b = false;

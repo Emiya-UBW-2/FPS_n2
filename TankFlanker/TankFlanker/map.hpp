@@ -509,8 +509,7 @@ public:
 		//
 		template<class Chara>
 		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos,Chara& chara, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
-			chara.get_canget_magitem() = false;
-			chara.get_canget_meditem() = false;
+			chara.reset_canget_item();
 			for (auto& g : this->item) { g.Get_item_2(StartPos, EndPos, chara, MAPPTs); }
 		}
 		//

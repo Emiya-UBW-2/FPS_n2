@@ -655,11 +655,11 @@ public:
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2 + t_disp_y / 12;
 					}
-					if (chara.get_canget_magitem()) {
-						font->DrawString_MID(xp, yp, chara.get_canget_mag() + "‚ğE‚¤", GetColor(255, 255, 0)); yp += fonthight;
+					if (chara.get_canget_mag_f()) {
+						font->DrawString_MID(xp, yp, chara.get_canget_mag_s() + "‚ğE‚¤", GetColor(255, 255, 0)); yp += fonthight;
 					}
 
-					if (chara.get_canget_meditem()) {
+					if (chara.get_canget_med_f()) {
 						font->DrawString_MID(xp, yp, chara.get_canget_med() + "‚ğE‚¤", GetColor(255, 255, 0)); yp += fonthight;
 					}
 				}
