@@ -96,55 +96,29 @@ public:
 				selpause = false;
 				update_effect_was = GetNowHiPerformanceCount();
 			}
-			//仮
-			auto set_keyb = [&]() {
-				if (DrawPts->use_vr) {
-					auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
-					if (DrawPts->get_hand1_num() != -1) {
-						auto ptr_ = DrawPts->get_device_hand1();
-						if (ptr_->turn && ptr_->now) {
-							mine_k.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
-							mine_k.reload = ((ptr_->on[0] & BUTTON_SIDE) != 0);																						//マグキャッチ
-							mine_k.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f&&ptr_->touch.y() < 0.5f&&ptr_->touch.y() > -0.5f);	//セレクター
-						}
-					}
-					if (DrawPts->get_hand2_num() != -1) {
-						auto ptr_ = DrawPts->get_device_hand2();
-						if (ptr_->turn && ptr_->now) {
-							mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
-							mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
-							mine_k.sort_magazine = false;									//
-							mine_k.view_gun = false;
-							mine_k.drop_ = false;											//
-							mine_k.running = (ptr_->on[0] & BUTTON_TOUCHPAD) != 0;			//running
-							mine_k.jamp = (ptr_->on[0] & BUTTON_SIDE) != 0;					//jamp
-						}
+			//仮(共通のため)
+			auto set_key_vr = [&]() {
+				auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
+				if (DrawPts->get_hand1_num() != -1) {
+					auto ptr_ = DrawPts->get_device_hand1();
+					if (ptr_->turn && ptr_->now) {
+						mine_k.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
+						mine_k.reload = ((ptr_->on[0] & BUTTON_SIDE) != 0);																						//マグキャッチ
+						mine_k.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f&&ptr_->touch.y() < 0.5f&&ptr_->touch.y() > -0.5f);	//セレクター
 					}
 				}
-				else {
-					auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
-					//記憶
-					KeyBind->key_use_ID[9].on_off.first = mine_k.squat;
-					//設定
-					mine_k.wkey = KeyBind->key_use_ID[0].get_key(0);
-					mine_k.skey = KeyBind->key_use_ID[1].get_key(0);
-					mine_k.dkey = KeyBind->key_use_ID[2].get_key(0);
-					mine_k.akey = KeyBind->key_use_ID[3].get_key(0);
-					mine_k.qkey = KeyBind->key_use_ID[4].get_key(0);
-					mine_k.ekey = KeyBind->key_use_ID[5].get_key(0);
-					mine_k.reload = KeyBind->key_use_ID[6].get_key(0);
-					mine_k.have_item = KeyBind->key_use_ID[7].get_key(2);
-					mine_k.drop_ = KeyBind->key_use_ID[8].get_key(2);
-					mine_k.squat = KeyBind->key_use_ID[9].get_key(1);
-					mine_k.sort_magazine = KeyBind->key_use_ID[12].get_key(2);
-					mine_k.running = KeyBind->key_use_ID[13].get_key(0);
-					mine_k.jamp = KeyBind->key_use_ID[14].get_key(2);
-					mine_k.TPS = KeyBind->key_use_ID[15].get_key(0);
-					mine_k.view_gun = KeyBind->key_use_ID[17].get_key(2);
-					mine_k.shoot = KeyBind->mouse_use_ID[0].get_key(3);
-					mine_k.select = KeyBind->mouse_use_ID[1].get_key(5);
-					mine_k.aim = KeyBind->mouse_use_ID[2].get_key(3);
-					mine_k.have_mag = true;
+				if (DrawPts->get_hand2_num() != -1) {
+					auto ptr_ = DrawPts->get_device_hand2();
+					if (ptr_->turn && ptr_->now) {
+						mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
+						mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
+						mine_k.sort_magazine = false;									//
+						mine_k.view_gun = false;
+						mine_k.drop_ = false;											//
+						mine_k.throw_gre = false;											//
+						mine_k.running = (ptr_->on[0] & BUTTON_TOUCHPAD) != 0;			//running
+						mine_k.jamp = (ptr_->on[0] & BUTTON_SIDE) != 0;					//jamp
+					}
 				}
 			};
 			//
@@ -165,16 +139,18 @@ public:
 						selend = UI_LOADPTs->Update();
 						break;
 					case scenes::LOAD:
-						set_keyb();
 						selpause = false;
 						if (!selpause) {
 							//キーアクティブ
 							if (DrawPts->use_vr) {
+								set_key_vr();
 							}
 							else {
-								KeyBind->key_use_ID[2].isalways = true;
-								KeyBind->key_use_ID[3].isalways = true;
-								KeyBind->key_use_ID[14].isalways = true;
+								auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
+								//設定
+								mine_k.dkey = KeyBind->get_key_use(2);
+								mine_k.akey = KeyBind->get_key_use(3);
+								mine_k.jamp = KeyBind->get_key_use(14);
 							}
 							//
 							selend = LOADscene->UpDate();
@@ -182,20 +158,22 @@ public:
 						//cam_t = &LOADscene->Get_Camera();
 						break;
 					case scenes::SELECT:
-						set_keyb();
 						selpause = false;
 						if (!selpause) {
 							//キーアクティブ
 							if (DrawPts->use_vr) {
+								set_key_vr();
 							}
 							else {
-								KeyBind->key_use_ID[0].isalways = true;
-								KeyBind->key_use_ID[1].isalways = true;
-								KeyBind->key_use_ID[2].isalways = true;
-								KeyBind->key_use_ID[3].isalways = true;
-								KeyBind->key_use_ID[14].isalways = true;
-								KeyBind->mouse_use_ID[0].isalways = true;
-								KeyBind->mouse_use_ID[1].isalways = true;
+								auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
+								//設定
+								mine_k.wkey = KeyBind->get_key_use(0);
+								mine_k.skey = KeyBind->get_key_use(1);
+								mine_k.dkey = KeyBind->get_key_use(2);
+								mine_k.akey = KeyBind->get_key_use(3);
+								mine_k.jamp = KeyBind->get_key_use(14);
+								mine_k.shoot = KeyBind->get_mouse_use(0);
+								mine_k.select = KeyBind->get_mouse_use(1);
 							}
 							//
 							selend = SELECTscene->UpDate();
@@ -203,32 +181,36 @@ public:
 						cam_t = &SELECTscene->Get_Camera();
 						break;
 					case scenes::MAIN_LOOP:
-						set_keyb();
 						selpause = PauseMenu->Pause_key();
 						if (!selpause) {
 							//キーアクティブ
 							if (DrawPts->use_vr) {
+								set_key_vr();
 							}
 							else {
-								KeyBind->key_use_ID[0].isalways = true;
-								KeyBind->key_use_ID[1].isalways = true;
-								KeyBind->key_use_ID[2].isalways = true;
-								KeyBind->key_use_ID[3].isalways = true;
-								KeyBind->key_use_ID[4].isalways = true;
-								KeyBind->key_use_ID[5].isalways = true;
-								KeyBind->key_use_ID[6].isalways = true;
-								KeyBind->key_use_ID[7].isalways = true;
-								KeyBind->key_use_ID[8].isalways = true;
-								KeyBind->key_use_ID[9].isalways = true;
-								KeyBind->key_use_ID[12].isalways = true;
-								KeyBind->key_use_ID[13].isalways = true;
-								KeyBind->key_use_ID[14].isalways = true;
-								KeyBind->key_use_ID[15].isalways = true;
-								KeyBind->key_use_ID[16].isalways = true;
-								KeyBind->key_use_ID[17].isalways = true;
-								KeyBind->mouse_use_ID[0].isalways = true;
-								KeyBind->mouse_use_ID[1].isalways = true;
-								KeyBind->mouse_use_ID[2].isalways = true;
+								auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
+								//設定
+								mine_k.have_mag = true;
+								mine_k.wkey = KeyBind->get_key_use(0);
+								mine_k.skey = KeyBind->get_key_use(1);
+								mine_k.dkey = KeyBind->get_key_use(2);
+								mine_k.akey = KeyBind->get_key_use(3);
+								mine_k.qkey = KeyBind->get_key_use(4);
+								mine_k.ekey = KeyBind->get_key_use(5);
+								mine_k.reload = KeyBind->get_key_use(6);
+								mine_k.have_item = KeyBind->get_key_use(7);
+								mine_k.throw_gre = KeyBind->get_key_use(8);
+								KeyBind->key_use_ID[9].on_off.first = mine_k.squat;	//記憶
+								mine_k.squat = KeyBind->get_key_use(9);
+								mine_k.sort_magazine = KeyBind->get_key_use(12);
+								mine_k.running = KeyBind->get_key_use(13);
+								mine_k.jamp = KeyBind->get_key_use(14);
+								mine_k.TPS = KeyBind->get_key_use(15);
+								mine_k.view_gun = KeyBind->get_key_use(17);
+								mine_k.drop_ = KeyBind->get_key_use(19);
+								mine_k.shoot = KeyBind->get_mouse_use(0);
+								mine_k.select = KeyBind->get_mouse_use(1);
+								mine_k.aim = KeyBind->get_mouse_use(2);
 							}
 							//
 							selend = MAINLOOPscene->UpDate();//2~4ms

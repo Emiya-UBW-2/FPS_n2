@@ -385,7 +385,6 @@ public:
 							font->DrawString(xp + xs_1, ytmp, strtmp, (&p == parts_p) ? GetColor(255, 0, 0) : GetColor(128, 0, 0));
 							if (&p == parts_p) {
 								DrawBox(xp + xs_1, ytmp, xp + xs_1 + font->GetDrawWidth(strtmp), ytmp + fonthight, GetColor(0, 255, 0), FALSE);
-
 								Draw_per_info(xp, ytmp, xs_1, ys, parts_p, change_per, use_vr);
 							}
 							i++;
@@ -695,7 +694,7 @@ public:
 							}
 							for (auto& a : chara.gun_stat_now->get_magazine_in()) {
 								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.m_cnt, a.cap);
-								if (&a - &chara.gun_stat_now->get_magazine_in()[0] == 0) {
+								if (&a == chara.mag_in_front()) {
 									if (chara.gun_stat_now->not_chamber_EMPTY()) {
 										font->DrawString(xp + font_big->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + font_bighight - fonthight, " +1", GetColor(255, 0, 0));
 									}
@@ -795,8 +794,8 @@ public:
 					int xp = 0, yp = 0;
 					xp = int(p.x());
 					yp = int(p.y());
-					int cnt = int(mine.gun_stat_now->get_magazine_in().front().m_cnt);
-					int per = 90 * cnt / int(mine.gun_stat_now->get_magazine_in().front().cap);
+					int cnt = int(mine.mag_in_front()->m_cnt);
+					int per = 90 * cnt / int(mine.mag_in_front()->cap);
 					float rad = deg2rad(90 - per);
 					int col_r = GetColor(std::clamp(int(255.f*sin(rad)*2.f), 0, 255), std::clamp(int(255.f*cos(rad)*2.f), 0, 255), 0);
 					if (std::max((pos_gun - cam_pos).size(), 1.f) <= 10.f) {

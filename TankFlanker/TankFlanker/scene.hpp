@@ -833,6 +833,7 @@ public:
 		std::vector<GUNPARTs> gun_data;				//GUNデータ
 		std::vector<GUNPARTs> magazine_data;		//GUNデータ
 		std::vector<Meds> meds_data;				//GUNデータ
+		std::vector<Grenades> gres_data;			//GUNデータ
 		std::vector<PLAYERclass::Chara> chara;		//キャラ
 		HIT_PASSIVE hit_obj_p;						//静的弾痕
 		HIT_BLOOD_PASSIVE hit_b_obj_p;				//静的血痕
@@ -876,6 +877,7 @@ public:
 			return nullptr;
 		}
 		std::vector<Meds>& get_meds_data(void) noexcept { return this->meds_data; }
+		std::vector<Grenades>& get_gres_data(void) noexcept { return this->gres_data; }
 		void set_parts_data_from_folder(std::vector<GUNPARTs>* data, std::string file_name) noexcept {
 			data->clear();
 			std::string p;
@@ -893,6 +895,22 @@ public:
 			FindClose(hFind);
 		}
 		void set_mads_data_from_folder(std::vector<Meds>* data, std::string file_name) noexcept {
+			data->clear();
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			HANDLE hFind;
+			hFind = FindFirstFile((file_name + "*").c_str(), &win32fdt);
+			if (hFind != INVALID_HANDLE_VALUE) {
+				do {
+					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
+						data->resize(data->size() + 1);
+						data->back().mod.Ready(file_name, win32fdt.cFileName);
+					}
+				} while (FindNextFile(hFind, &win32fdt));
+			} //else{ return false; }
+			FindClose(hFind);
+		}
+		void set_gres_data_from_folder(std::vector<Grenades>* data, std::string file_name) noexcept {
 			data->clear();
 			std::string p;
 			WIN32_FIND_DATA win32fdt;
@@ -946,6 +964,8 @@ public:
 			set_parts_data_from_folder(&this->magazine_data, "data/mag/");
 			//MEDデータ
 			set_mads_data_from_folder(&this->meds_data, "data/medkit/");
+			//グレネード
+			set_gres_data_from_folder(&this->gres_data, "data/grenade/");
 			//
 			this->hit_obj_p.init();
 			this->hit_b_obj_p.init();
@@ -969,6 +989,8 @@ public:
 			for (auto& g : this->magazine_data) { g.Set_datas(&g - &this->magazine_data[0], EnumGunParts::PARTS_MAGAZINE); }
 			//MEDデータ2
 			for (auto& g : this->meds_data) { g.Set_datas(&g - &this->meds_data[0]); }
+			//MEDデータ2
+			for (auto& g : this->gres_data) { g.Set_datas(&g - &this->gres_data[0]); }
 			//弾痕
 			this->hit_obj_p.clear();
 			this->hit_b_obj_p.clear();
@@ -1031,6 +1053,9 @@ public:
 					if (i->Detach_mag()) {
 						i = item.erase(i);
 					}
+					else if (i->Detach_gre()) {
+						i = item.erase(i);
+					}
 					else {
 						++i;
 					}
@@ -1038,7 +1063,12 @@ public:
 			}
 			//共通演算//2～3ms
 			for (auto& c : this->chara) {
-				c.UpDate_(this->hit_obj_p, this->hit_b_obj_p, RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->chara, this->Get_Mine(), use_VR);
+				c.UpDate_(
+					this->hit_obj_p, this->hit_b_obj_p,
+					RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, 
+					this->meds_data,
+					this->gres_data,
+					this->chara, this->Get_Mine(), use_VR);
 			}
 			//弾痕の更新
 			this->hit_obj_p.update();

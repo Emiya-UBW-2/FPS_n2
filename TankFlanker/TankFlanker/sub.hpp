@@ -102,6 +102,7 @@ private:
 		bool isalways = false;
 		switchs on_off;
 		keyhandle* use_handle = nullptr;
+		size_t use_mode = 0;
 		bool get_key(int id) {
 			switch (id) {
 				//キー
@@ -146,6 +147,15 @@ public:
 	std::vector < key_pair > key_use_ID;
 	std::vector < key_pair > mouse_use_ID;
 	//
+	bool get_key_use(int id_t) {
+		key_use_ID[id_t].isalways = true;
+		return key_use_ID[id_t].get_key(key_use_ID[id_t].use_mode);
+	}
+	bool get_mouse_use(int id_t) {
+		mouse_use_ID[id_t].isalways = true;
+		return mouse_use_ID[id_t].get_key(mouse_use_ID[id_t].use_mode);
+	}
+	//
 	key_bind(void) noexcept {
 		SetUseASyncLoadFlag(FALSE);
 		font24 = FontHandle::Create(font24size, DX_FONTTYPE_EDGE);
@@ -158,70 +168,96 @@ public:
 			key_pair tmp_k;
 			tmp_k.first = KEY_INPUT_W;
 			tmp_k.second = "前進";
+			tmp_k.use_mode = 0;
 			this->key_use_ID.emplace_back(tmp_k);//0
 			tmp_k.first = KEY_INPUT_S;
 			tmp_k.second = "後退";
+			tmp_k.use_mode = 0;
 			this->key_use_ID.emplace_back(tmp_k);//1
 			tmp_k.first = KEY_INPUT_D;
 			tmp_k.second = "右歩き";
+			tmp_k.use_mode = 0;
 			this->key_use_ID.emplace_back(tmp_k);//2
 			tmp_k.first = KEY_INPUT_A;
 			tmp_k.second = "左歩き";
+			tmp_k.use_mode = 0;
 			this->key_use_ID.emplace_back(tmp_k);//3
 			tmp_k.first = KEY_INPUT_Q;
 			tmp_k.second = "左リーン";
+			tmp_k.use_mode = 0;
 			this->key_use_ID.emplace_back(tmp_k);//4
 			tmp_k.first = KEY_INPUT_E;
 			tmp_k.second = "右リーン";
+			tmp_k.use_mode = 0;
 			this->key_use_ID.emplace_back(tmp_k);//5
 			tmp_k.first = KEY_INPUT_R;
 			tmp_k.second = "リロード";
+			tmp_k.use_mode = 0;
 			this->key_use_ID.emplace_back(tmp_k);//6
 			tmp_k.first = KEY_INPUT_F;
 			tmp_k.second = "アイテム取得";
+			tmp_k.use_mode = 2;
 			this->key_use_ID.emplace_back(tmp_k);//7
 			tmp_k.first = KEY_INPUT_G;
-			tmp_k.second = "治療キット排出";
+			tmp_k.second = "グレネード投擲";
+			tmp_k.use_mode = 2;
 			this->key_use_ID.emplace_back(tmp_k);//8
 			tmp_k.first = KEY_INPUT_C;
 			tmp_k.second = "しゃがみ";
+			tmp_k.use_mode = 1;
 			this->key_use_ID.emplace_back(tmp_k);//9
 			tmp_k.first = KEY_INPUT_O;
 			tmp_k.second = "タイトル画面に戻る";
+			tmp_k.use_mode = 1;
 			this->key_use_ID.emplace_back(tmp_k);//10
 			tmp_k.first = KEY_INPUT_ESCAPE;
 			tmp_k.second = "強制終了";
+			tmp_k.use_mode = 1;
 			this->key_use_ID.emplace_back(tmp_k);//11
 			tmp_k.first = KEY_INPUT_Z;
 			tmp_k.second = "マガジン整理";
+			tmp_k.use_mode = 2;
 			this->key_use_ID.emplace_back(tmp_k);//12
 			tmp_k.first = KEY_INPUT_LSHIFT;
 			tmp_k.second = "走る";
+			tmp_k.use_mode = 0;
 			this->key_use_ID.emplace_back(tmp_k);//13
 			tmp_k.first = KEY_INPUT_SPACE;
 			tmp_k.second = "ジャンプ";
+			tmp_k.use_mode = 2;
 			this->key_use_ID.emplace_back(tmp_k);//14
 			tmp_k.first = KEY_INPUT_LCONTROL;
 			tmp_k.second = "視点切替";
+			tmp_k.use_mode = 0;
 			this->key_use_ID.emplace_back(tmp_k);//15
 			tmp_k.first = KEY_INPUT_F1;
 			tmp_k.second = "キー案内";
+			tmp_k.use_mode = 1;
 			this->key_use_ID.emplace_back(tmp_k);//16
 			tmp_k.first = KEY_INPUT_V;
 			tmp_k.second = "眺める";
+			tmp_k.use_mode = 2;
 			this->key_use_ID.emplace_back(tmp_k);//17
 			tmp_k.first = KEY_INPUT_P;
 			tmp_k.second = "ポーズ";
+			tmp_k.use_mode = 1;
 			this->key_use_ID.emplace_back(tmp_k);//18
+			tmp_k.first = KEY_INPUT_H;
+			tmp_k.second = "治療キット排出";
+			tmp_k.use_mode = 2;
+			this->key_use_ID.emplace_back(tmp_k);//19
 			//
 			tmp_k.first = MOUSE_INPUT_LEFT;
 			tmp_k.second = "射撃";
+			tmp_k.use_mode = 3;
 			this->mouse_use_ID.emplace_back(tmp_k);//0
 			tmp_k.first = MOUSE_INPUT_MIDDLE;
 			tmp_k.second = "セレクター切替";
+			tmp_k.use_mode = 5;
 			this->mouse_use_ID.emplace_back(tmp_k);//1
 			tmp_k.first = MOUSE_INPUT_RIGHT;
 			tmp_k.second = "エイム";
+			tmp_k.use_mode = 3;
 			this->mouse_use_ID.emplace_back(tmp_k);//2
 		}
 		{
@@ -634,15 +670,8 @@ public:
 	//
 	void Pause_key_active() noexcept {
 		(*KeyBind)->key_use_ID[18].isalways = true;
-		//
-		if ((*KeyBind)->key_use_ID[18].on_off.on()) {
-			(*KeyBind)->key_use_ID[10].isalways = true;
-		}
-		else {
-			(*KeyBind)->key_use_ID[10].isalways = false;
-		}
+		(*KeyBind)->key_use_ID[10].isalways = (*KeyBind)->key_use_ID[18].on_off.on();
 	}
-
 	const auto Pause_key() noexcept { return (*KeyBind)->key_use_ID[18].get_key(1); }
 	//
 	bool Update() noexcept {
@@ -779,8 +808,8 @@ protected:
 			slide = SoundHandle::Load(slide_path);
 			trigger_path = "data/audio/trigger_" + getparams::_str(mdata) + ".wav";
 			trigger = SoundHandle::Load(trigger_path);
-			magazine_down = SoundHandle::Load("data/audio/magazine_down_" + getparams::_str(mdata) + ".wav");
-			magazine_Set = SoundHandle::Load("data/audio/magazine_Set_" + getparams::_str(mdata) + ".wav");
+			magazine_down = SoundHandle::Load("data/audio/mag_down_" + getparams::_str(mdata) + ".wav");
+			magazine_Set = SoundHandle::Load("data/audio/mag_set_" + getparams::_str(mdata) + ".wav");
 			case_down = SoundHandle::Load("data/audio/case_2.wav");
 			load_ = SoundHandle::Load("data/audio/load.wav");
 			sort_magazine = SoundHandle::Load("data/audio/sort.wav");
@@ -844,7 +873,7 @@ protected:
 		float pene = 10.f;//貫通
 		int damage = 10;//ダメージ
 	public:
-		auto& get_model(void) noexcept { return model; }//this->base.thisparts->ammo[0].get_model()
+		auto& get_model(void) noexcept { return model; }
 		auto& get_model_full(void) const noexcept { return model_full; }
 		auto& get_caliber(void) const noexcept { return caliber; }
 		auto& get_speed(void) const noexcept { return speed; }
@@ -1023,13 +1052,9 @@ protected:
 			}
 		}
 		//
-		int Select_Chose(int sel_chose) {
-			for (auto& s : this->select) {
-				if (s == sel_chose) {
-					return int(&s - &this->select[0]);
-				}
-			}
-			return -1;
+		int Select_Chose(uint8_t sel_chose) {
+			auto ans = std::find(this->select.begin(), this->select.end(), sel_chose);
+			return (ans != this->select.end()) ? (ans- this->select.begin()) : -1;
 		}
 		//
 		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, int selecting) {
@@ -1051,6 +1076,23 @@ protected:
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				this->repair = getparams::_long(this->mod.mdata);//
+			});
+		}
+	};
+
+	//薬品データ
+	class Grenades {
+	private:
+	public:
+		size_t id_t = 0;
+		Models mod;
+		/**/
+		float time = 0;
+		void Set_datas(size_t id_) {
+			this->id_t = id_;
+			//テキスト
+			this->mod.Set_([&](void) noexcept {
+				this->time = getparams::_float(this->mod.mdata);//
 			});
 		}
 	};
@@ -1247,6 +1289,9 @@ protected:
 		//治療キット専用パラメーター
 		Meds* ptr_med = nullptr;
 		Meds medkit;
+		//治療キット専用パラメーター
+		Grenades* ptr_gre = nullptr;
+		Grenades grenades;
 	public:
 		bool flag_canlook_player = true;
 		auto& get_ptr_mag(void) const noexcept { return ptr_mag; }
@@ -1269,6 +1314,15 @@ protected:
 			this->mat = mat_;
 			this->ptr_med = meddata;
 			this->obj = this->ptr_med->mod.get_model().Duplicate();
+		}
+		//med
+		void Set_item(Grenades*gredata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+			this->pos = pos_;
+			this->add_vec = add_;
+			this->mat = mat_;
+			this->ptr_gre = gredata;
+			this->obj = this->ptr_gre->mod.get_model().Duplicate();
+			this->del_timer = this->ptr_gre->time;
 		}
 	public:
 		void set_item_mag(void) noexcept {
@@ -1295,8 +1349,8 @@ protected:
 			this->del_timer = (this->magazine_param.mag_cnt == 0) ? 5.f : 20.f;
 		}
 		bool Set_item_magrelease(GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_, size_t dnm) {
-			if (this->ptr_mag == nullptr && this->ptr_med == nullptr) {
-				Set_item_magazine(id_t, magdata, pos_, add_, mat_, dnm);
+			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
+				this->Set_item_magazine(id_t, magdata, pos_, add_, mat_, dnm);
 				return true;
 			}
 			return false;
@@ -1307,8 +1361,20 @@ protected:
 			this->Set_item(meddata, pos_, add_, mat_);
 		}
 		bool Set_item_med(Meds*meddata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
-			if (this->ptr_mag == nullptr && this->ptr_med == nullptr) {
+			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
 				this->Set_item(meddata, pos_, add_, mat_);
+				return true;
+			}
+			return false;
+		}
+		//gre
+		void Set_item_gre_(size_t id, Grenades*gredata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+			this->id_t = id;
+			this->Set_item(gredata, pos_, add_, mat_);
+		}
+		bool Set_item_gre(Grenades*gredata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
+				this->Set_item(gredata, pos_, add_, mat_);
 				return true;
 			}
 			return false;
@@ -1317,12 +1383,12 @@ protected:
 		template<class Y, class D>
 		void UpDate(std::list<Items>& item, std::unique_ptr<Y, D>& MAPPTs) {
 			auto old = this->pos;
-			if (this->ptr_mag != nullptr || this->ptr_med != nullptr) {
+			if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
 				this->obj.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
 				this->pos += this->add_vec;
 				this->add_vec.yadd(M_GR / powf(FPS, 2.f));
 				for (auto& p : item) {
-					if ((p.ptr_mag != nullptr || p.ptr_med != nullptr) && &p != &*this) {
+					if ((p.ptr_mag != nullptr || p.ptr_med != nullptr || p.ptr_gre != nullptr) && &p != &*this) {
 						if ((p.pos - this->pos).size() <= 0.35f) {
 							p.add_vec.xadd((p.pos - this->pos).x()*5.f / FPS);
 							p.add_vec.zadd((p.pos - this->pos).z()*5.f / FPS);
@@ -1331,17 +1397,30 @@ protected:
 						}
 					}
 				}
-				auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->pos - VECTOR_ref::vget(0, 0.0025f, 0));
-				if (pp.HitFlag) {
-					this->pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
-					this->mat *= MATRIX_ref::RotVec2(this->mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
-					this->add_vec.clear();
-					//easing_set(&this->add_vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
+				if (this->ptr_gre != nullptr) {
+					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->pos - VECTOR_ref::vget(0, 0.0025f, 0));
+					if (pp.HitFlag) {
+						this->pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
+						this->mat *= MATRIX_ref::RotVec2(this->mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
+
+						auto fvec = this->add_vec.Norm();
+						auto nvec = VECTOR_ref(pp.Normal).Norm();
+						this->add_vec = (fvec + nvec * ((fvec*-1.f).dot(nvec)*2.f))*(this->add_vec.size()*0.5f);
+					}
+				}
+				else {
+					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->pos - VECTOR_ref::vget(0, 0.0025f, 0));
+					if (pp.HitFlag) {
+						this->pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
+						this->mat *= MATRIX_ref::RotVec2(this->mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
+						this->add_vec.clear();
+						//easing_set(&this->add_vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
+					}
 				}
 				//
 			}
 			//
-			if (this->ptr_mag != nullptr) {
+			if (this->ptr_mag != nullptr || this->ptr_gre != nullptr) {
 				this->del_timer -= 1.f / FPS;
 			}
 		}
@@ -1349,7 +1428,7 @@ protected:
 		void Get_item_2(VECTOR_ref StartPos, VECTOR_ref EndPos, Chara& chara, std::unique_ptr<Y, D>& MAPPTs) {
 			if (this->flag_canlook_player) {
 				bool zz = false;
-				if (this->ptr_mag != nullptr || this->ptr_med != nullptr) {
+				if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
 					auto p = MAPPTs->map_col_line(StartPos, EndPos);
 					if (p.HitFlag) {
 						EndPos = p.HitPosition;
@@ -1382,6 +1461,20 @@ protected:
 						}
 					}
 				}
+				//
+				/*
+				if (this->ptr_gre != nullptr) {
+					chara.addf_canget_meditem(zz);
+					if (zz) {
+						chara.set_canget_med(this->id_t, this->ptr_gre->mod.get_name());
+						if (chara.getmagazine_push()) {
+							chara.HP = std::clamp<int>(chara.HP + this->ptr_gre->repair, 0, chara.HP_full);
+							this->Detach_item();
+						}
+					}
+				}
+				*/
+				//
 			}
 		}
 		template<class Y, class D>
@@ -1403,7 +1496,7 @@ protected:
 
 		void Draw_item(void) noexcept {
 			if (this->flag_canlook_player) {
-				if (this->ptr_mag != nullptr || this->ptr_med != nullptr) {
+				if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
 					this->obj.DrawModel();
 				}
 			}
@@ -1411,10 +1504,20 @@ protected:
 		void Detach_item(void) noexcept {
 			this->ptr_mag = nullptr;
 			this->ptr_med = nullptr;
+			this->ptr_gre = nullptr;
 			this->obj.Dispose();
 		}
 		bool Detach_mag(void) noexcept {
 			if (this->ptr_mag != nullptr && this->del_timer <= 0.f) {
+				this->Detach_item();
+				return true;
+			}
+			return false;
+		}
+		bool Detach_gre(void) noexcept {
+			if (this->ptr_gre != nullptr && this->del_timer <= 0.f) {
+				//effect
+				//グレ爆破
 				this->Detach_item();
 				return true;
 			}
