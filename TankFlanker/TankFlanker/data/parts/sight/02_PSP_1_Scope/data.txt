@@ -1,0 +1,4 @@
+PSO-1 SCOPE
+サイドマウント対応のスコープ。
+recoil=-0.0
+weight=0.116

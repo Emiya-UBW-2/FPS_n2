@@ -612,7 +612,7 @@ public:
 				}
 			}
 		}
-		void Draw() noexcept {
+		void Draw(void) noexcept {
 			int xpos = y_r(64);
 			int ypos = y_r(64);
 			int xpos2 = xpos + y_r(x_size);

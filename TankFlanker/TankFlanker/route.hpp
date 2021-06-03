@@ -33,6 +33,7 @@ public:
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
 		auto MAPPTs = std::make_unique<MAPclass::Map>(OPTPTs->grass_level);																	//MAP
 		auto UI_LOADPTs = std::make_unique<UIclass::UI_LOADING>();																			//UI_LOADING
+		UI_LOADPTs->Get_ptr(&DrawPts, &MAPPTs);
 		//キー読み込み
 		auto KeyBind = std::make_unique<key_bind>();
 		auto PauseMenu = std::make_unique<pause_menu>(&KeyBind);
@@ -234,10 +235,10 @@ public:
 						HostpassPTs->Set_UI_draw([&](void) noexcept {
 							switch (sel_scene) {
 							case scenes::ITEM_LOAD:
-								UI_LOADPTs->UI_Draw(DrawPts->use_vr);
+								UI_LOADPTs->UI_Draw();
 								break;
 							case scenes::MAP_LOAD:
-								UI_LOADPTs->UI_Draw(DrawPts->use_vr);
+								UI_LOADPTs->UI_Draw();
 								break;
 							case scenes::LOAD:
 								LOADscene->UI_Draw();

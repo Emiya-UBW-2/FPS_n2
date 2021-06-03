@@ -21,19 +21,14 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3727): warni
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(152): warning C4267: '引数': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(156): warning C4267: '引数': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1057): warning C4244: 'return': '__int64' から 'int' への変換です。データが失われる可能性があります。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
   コード生成しています。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(2922): warning C4172: ローカル変数またはテンポラリのアドレスを返します
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(2919): warning C4172: ローカル変数またはテンポラリのアドレスを返します
-  54 of 5544 functions ( 1.0%) were compiled, the rest were copied from previous compilation.
-    2 functions were new in current compilation
-    9 functions had inline decision re-evaluated but remain unchanged
+  5 of 5554 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
 EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\FPS_n2.exe

@@ -2,9 +2,11 @@
 //
 class UIclass : Mainclass {
 public:
-	//ロードするセーブデータを指定する
-	class UI_LOAD {
-	private:
+	class UI_TEMP {
+	protected:
+		//引き継ぐ
+		std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts = nullptr;
+		std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs = nullptr;
 		int t_disp_x = 1920;
 		int t_disp_y = 1080;
 		//font
@@ -14,16 +16,56 @@ public:
 		FontHandle font24;
 		FontHandle font18;
 		FontHandle font12;
-		//
+		FontHandle* font_large;
+		FontHandle* font_big;
+		FontHandle* font;
+		int font_largehight;
+		int font_bighight;
+		int fonthight;
+	public:
+		void Get_ptr(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t) noexcept {
+			DrawPts = DrawPts_t;
+			MAPPTs = MAPPTs_t;
+
+			if ((*DrawPts)->use_vr) {
+				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+			}
+			else {
+				t_disp_x = deskx;
+				t_disp_y = desky;
+			}
+
+			SetUseASyncLoadFlag(TRUE);
+			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
+			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
+			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
+			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
+			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
+			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
+			SetUseASyncLoadFlag(FALSE);
+		}
+		void set_fonts() {
+			font_large = ((*DrawPts)->use_vr) ? &font72 : &font48;
+			font_big = ((*DrawPts)->use_vr) ? &font36 : &font24;
+			font = ((*DrawPts)->use_vr) ? &font24 : &font18;
+			font_largehight = ((*DrawPts)->use_vr) ? y_r(72) : y_r(48);
+			font_bighight = ((*DrawPts)->use_vr) ? y_r(36) : y_r(24);
+			fonthight = ((*DrawPts)->use_vr) ? y_r(24) : y_r(18);
+		}
+		//virtual void UI_Draw(void) noexcept {}
+		//virtual void item_Draw(void) noexcept {}
+		virtual void Dispose(void) noexcept {
+		}
+	};
+
+
+	//ロードするセーブデータを指定する
+	class UI_LOAD : public UI_TEMP {
+	private:
 		int ypos = 0;
 		float ypos_real = 0.f;
-		void Draw_per_info(int xpos1, int ypos1, int xsize, int ysize, GUNPARTs* parts, bool use_vr = true) noexcept {
-			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
-			FontHandle* font_big = (use_vr) ? &font36 : &font24;
-			FontHandle* font = (use_vr) ? &font24 : &font18;
-			//const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
-			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			const int fonthight = (use_vr) ? y_r(24) : y_r(18 + 2);
+		void Draw_per_info(int xpos1, int ypos1, int xsize, int ysize, GUNPARTs* parts) noexcept {
+			set_fonts();
 
 			int back_siz = y_r(3);
 			int title_siz = y_r(6);
@@ -80,35 +122,15 @@ public:
 		}
 	public:
 		UI_LOAD(void) noexcept {
-
-			t_disp_x = deskx;
-			t_disp_y = desky;
-
-			SetUseASyncLoadFlag(TRUE);
-			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
-			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
-			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
-			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
-			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
-			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
-			SetUseASyncLoadFlag(FALSE);
 		}
 		~UI_LOAD(void) noexcept {
 		}
 		template<class Y, class D>
-		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, std::vector<save_c> save_parts, std::string& set_name, bool use_vr = true) noexcept {
-			if (use_vr) {
-				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
-			}
+		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, std::vector<save_c> save_parts, const std::string& set_name) noexcept {
+			set_fonts();
 
 			DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(192, 192, 192), TRUE);
 
-			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
-			FontHandle* font_big = (use_vr) ? &font36 : &font24;
-			FontHandle* font = (use_vr) ? &font24 : &font18;
-			//const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
-			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			const int fonthight = (use_vr) ? y_r(24) : y_r(18);
 			int xs = 0, ys = 0, xp = 0, yp = 0;
 			{
 				int i = 0;
@@ -166,7 +188,7 @@ public:
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
 						}
 						font_big->DrawString(xp, yp, parts_type, GetColor(0, 255, 0));
-						Draw_per_info(xp, yp + font_bighight, xs, ys - font_bighight, temp_p, use_vr);
+						Draw_per_info(xp, yp + font_bighight, xs, ys - font_bighight, temp_p);
 					}
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
@@ -181,37 +203,12 @@ public:
 			}
 
 		}
-		void item_Draw(void) noexcept {
-			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
-			//FontHandle* font_big = (use_vr) ? &font36 : &font24;
-			//FontHandle* font = (use_vr) ? &font24 : &font18;
-			//int font_largehight = (use_vr) ? y_r(72) : y_r(48);
-			//int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			//int fonthight = (use_vr) ? y_r(24) : y_r(18);
-			//
-		}
-		void Dispose(void) noexcept {
-		}
 	};
 	//カスタム画面
-	class UI_CUSTOM {
+	class UI_CUSTOM : public UI_TEMP {
 	private:
-		int t_disp_x = 1920;
-		int t_disp_y = 1080;
-		//font
-		FontHandle font72;
-		FontHandle font48;
-		FontHandle font36;
-		FontHandle font24;
-		FontHandle font18;
-		FontHandle font12;
-		void Draw_per_info(int xpos1, int ypos1, int xsize, int ysize, GUNPARTs* parts, const float&change_per, bool use_vr = true) noexcept {
-			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
-			FontHandle* font_big = (use_vr) ? &font36 : &font24;
-			FontHandle* font = (use_vr) ? &font24 : &font18;
-			//const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
-			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			const int fonthight = (use_vr) ? y_r(24) : y_r(18 + 2);
+		void Draw_per_info(int xpos1, int ypos1, int xsize, int ysize, GUNPARTs* parts, const float&change_per) noexcept {
+			set_fonts();
 
 			int back_siz = y_r(3);
 			int title_siz = y_r(6);
@@ -252,33 +249,13 @@ public:
 		}
 	public:
 		UI_CUSTOM(void) noexcept {
-
-			t_disp_x = deskx;
-			t_disp_y = desky;
-
-			SetUseASyncLoadFlag(TRUE);
-			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
-			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
-			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
-			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
-			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
-			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
-			SetUseASyncLoadFlag(FALSE);
 		}
 		~UI_CUSTOM(void) noexcept {
 		}
 		template<class Y, class D>
-		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, switchs &Rot, PLAYERclass::Chara* mine_ptr, GUNPARTs* parts_p, float& change_per, bool use_vr = true) noexcept {
-			if (use_vr) {
-				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
-			}
+		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, switchs &Rot, PLAYERclass::Chara& mine, GUNPARTs* parts_p, float& change_per) noexcept {
+			set_fonts();
 
-			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
-			FontHandle* font_big = (use_vr) ? &font36 : &font24;
-			FontHandle* font = (use_vr) ? &font24 : &font18;
-			//const int font_largehight = (use_vr) ? y_r(72) : y_r(48);
-			const int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			const int fonthight = (use_vr) ? y_r(24) : y_r(18);
 			int xs = 0, ys = 0, xp = 0, yp = 0;
 			{
 				int i = 0;
@@ -286,12 +263,12 @@ public:
 				//font->DrawStringFormat(100, 300, GetColor(255, 0, 0), "total : %d / %d", sel_p + 1, sel_max);
 				//font->DrawStringFormat(100, 350, GetColor(255, 0, 0), "chang : %d / %d", chang + 1, chang_max);
 				i = 0;
-				for (auto& m : mine_ptr->mount_) {
+				for (auto& m : mine.mount_) {
 					font->DrawString(400, 300 + 25*i, m.name, GetColor(255, 0, 0)); i ++;
 				}
 
 				i = 0;
-				for (auto& m : mine_ptr->sight_) {
+				for (auto& m : mine.sight_) {
 					font->DrawString(700, 300 + 25*i, m.name, GetColor(255, 0, 0)); i ++;
 				}
 
@@ -385,12 +362,12 @@ public:
 							font->DrawString(xp + xs_1, ytmp, strtmp, (&p == parts_p) ? GetColor(255, 0, 0) : GetColor(128, 0, 0));
 							if (&p == parts_p) {
 								DrawBox(xp + xs_1, ytmp, xp + xs_1 + font->GetDrawWidth(strtmp), ytmp + fonthight, GetColor(0, 255, 0), FALSE);
-								Draw_per_info(xp, ytmp, xs_1, ys, parts_p, change_per, use_vr);
+								Draw_per_info(xp, ytmp, xs_1, ys, parts_p, change_per);
 							}
 							i++;
 						}
 						if (parts_p == nullptr) {
-							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, parts_p, change_per, use_vr);
+							Draw_per_info(xp, yp + font_bighight, xs_1, ys - font_bighight, parts_p, change_per);
 						}
 					}
 					//
@@ -402,8 +379,8 @@ public:
 					}
 				}
 
-				font->DrawStringFormat(100, 700, GetColor(255, 0, 0), "weigt  : %5.2f", mine_ptr->get_per_all().weight);
-				font->DrawStringFormat(100, 725, GetColor(255, 0, 0), "recoil : %5.2f", mine_ptr->get_per_all().recoil);
+				font->DrawStringFormat(100, 700, GetColor(255, 0, 0), "weigt  : %5.2f", mine.get_per_all().weight);
+				font->DrawStringFormat(100, 725, GetColor(255, 0, 0), "recoil : %5.2f", mine.get_per_all().recoil);
 
 
 				font->DrawString(100, 575, "SPACE  :Go Battle", GetColor(255, 0, 0));
@@ -411,56 +388,25 @@ public:
 			}
 
 		}
-		void item_Draw(void) noexcept {
-			//FontHandle* font_large = (use_vr) ? &font72 : &font48;
-			//FontHandle* font_big = (use_vr) ? &font36 : &font24;
-			//FontHandle* font = (use_vr) ? &font24 : &font18;
-			//int font_largehight = (use_vr) ? y_r(72) : y_r(48);
-			//int font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			//int fonthight = (use_vr) ? y_r(24) : y_r(18);
-			//
-		}
-		void Dispose(void) noexcept {
-		}
 	};
 	//メイン画面
-	class UI_MAINLOOP {
+	class UI_MAINLOOP : public UI_TEMP {
 	private:
-		int t_disp_x = 1920;
-		int t_disp_y = 1080;
-		//pic
 		GraphHandle aim;
 		GraphHandle hit_Graph;
 		GraphHandle item;
 		GraphHandle dmg;
 		GraphHandle hit_rad;
-		//font
-		FontHandle font72;
-		FontHandle font48;
-		FontHandle font36;
-		FontHandle font24;
-		FontHandle font18;
-		FontHandle font12;
-		//
-		FontHandle* font_large;
-		FontHandle* font_big;
-		FontHandle* font;
-		int font_largehight;
-		int font_bighight;
-		int fonthight;
-		//
 		float Ready = 0.f;
 		float timer = 0.f;
-		//
-		std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs;
 		std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>* RULEparts;
-		//
-		void Draw_HP(int xpos, int ypos, int xsize, int ysize, PLAYERclass::Chara& chara) noexcept {
+	private:
+		void Draw_HP(int xpos, int ypos, int xsize, int ysize, PLAYERclass::Chara& mine) noexcept {
 			auto size = y_r(2);
 			int x1 = xpos - xsize / 2;
-			float size_y = float(ysize - size) / y_r(18);
-			int nowHP = (xsize - size * 2)*chara.HP / chara.HP_full;
-			int willHP = (xsize - size * 2)*int(chara.HP_r) / chara.HP_full;
+			float size_y = float(ysize - size) / fonthight;
+			int nowHP = (xsize - size * 2)*mine.HP / mine.HP_full;
+			int willHP = (xsize - size * 2)*int(mine.HP_r) / mine.HP_full;
 			//back
 			DrawBox(x1, ypos, x1 + xsize, ypos + ysize + size, GetColor(128, 128, 128), FALSE);
 			//
@@ -474,21 +420,21 @@ public:
 			if (nowHP < willHP) {
 				DrawBox(x1 + nowHP, ypos + size, x1 + willHP, ypos + ysize + size, GetColor(255, 255, 0), TRUE);
 			}
-			font18.DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", chara.HP, chara.HP_full);
+			font->DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", mine.HP, mine.HP_full);
 
-			if (1.f - chara.got_damage_f >= 0.01f) {
-				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - chara.got_damage_f, 5.f))), 0, 255));
-				font18.DrawExtendStringFormat_MID(xpos + (xsize / 2 * chara.got_damage_x / 255), ypos + size - int(100 * (1.f - chara.got_damage_f)), size_y, size_y, chara.got_damage_color, "%d", chara.got_damage);
+			if (1.f - mine.got_damage_f >= 0.01f) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - mine.got_damage_f, 5.f))), 0, 255));
+				font->DrawExtendStringFormat_MID(xpos + (xsize / 2 * mine.got_damage_x / 255), ypos + size - int(100 * (1.f - mine.got_damage_f)), size_y, size_y, mine.got_damage_color, "%d", mine.got_damage);
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 		}
 		template <typename... Args>
-		void Draw_Item_UI(FontHandle* font_big, int font_bighight, int xp, int yp, const VECTOR_ref& pos_item, const VECTOR_ref& cam_pos, std::string String, Args&&... args) const noexcept {
+		void Draw_Item_UI(int xp, int yp, const VECTOR_ref& pos_item, const std::string& String, Args&&... args) const noexcept {
 			VECTOR_ref p = ConvWorldPosToScreenPos(pos_item.get());
 			if (p.z() >= 0.f&&p.z() <= 1.f) {
 				int xp2 = int(p.x());
 				int yp2 = int(p.y());
-				float r_ = std::max((VECTOR_ref(pos_item) - cam_pos).size(), 1.f);
+				float r_ = std::max((VECTOR_ref(pos_item) - GetCameraPosition()).size(), 1.f);
 				if (r_ <= 10.f) {
 					int xp3 = int(float(xp) / r_);
 					int yp3 = int(float(yp) / r_);
@@ -504,8 +450,7 @@ public:
 			}
 		}
 	public:
-		UI_MAINLOOP(std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t, std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>* RULEparts_t) noexcept {
-			MAPPTs = MAPPTs_t;
+		UI_MAINLOOP(std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>* RULEparts_t) noexcept {
 			RULEparts = RULEparts_t;
 			SetUseASyncLoadFlag(TRUE);
 			this->hit_rad = GraphHandle::Load("data/UI/enemyrad.png");
@@ -513,47 +458,28 @@ public:
 			this->dmg = GraphHandle::Load("data/UI/damage.png");
 			this->item = GraphHandle::Load("data/UI/battle_item.bmp");
 			this->aim = GraphHandle::Load("data/UI/battle_aim.bmp");
-
-			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
-			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
-			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
-			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
-			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
-			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
-
 			SetUseASyncLoadFlag(FALSE);
-
-			t_disp_x = deskx;
-			t_disp_y = desky;
 		}
 		~UI_MAINLOOP(void) noexcept {
+			this->hit_rad.Dispose();
+			this->hit_Graph.Dispose();
+			this->dmg.Dispose();
+			this->item.Dispose();
+			this->aim.Dispose();
 		}
 		void Update(void) noexcept {
 			this->Ready = (*RULEparts)->get_Ready();
 			this->timer = std::max((*RULEparts)->get_timer(),0.f);
 		}
-
-		void set_fonts(bool use_vr = true) {
-			font_large = (use_vr) ? &font72 : &font48;
-			font_big = (use_vr) ? &font36 : &font24;
-			font = (use_vr) ? &font24 : &font18;
-			font_largehight = (use_vr) ? y_r(72) : y_r(48);
-			font_bighight = (use_vr) ? y_r(36) : y_r(24);
-			fonthight = (use_vr) ? y_r(24) : y_r(18);
-		}
-
-		void UI_Draw(PLAYERclass::Chara& chara, bool use_vr = true) noexcept {
-			set_fonts(use_vr);
-			if (use_vr) {
-				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
-			}
+		void UI_Draw(PLAYERclass::Chara& mine) noexcept {
+			set_fonts();
 			int xs = 0, ys = 0, xp = 0, yp = 0;
 			{
 				//HP表示
 				{
-					auto ratio = (1.f - float(float(chara.HP) / chara.HP_full));
+					auto ratio = (1.f - float(float(mine.HP) / mine.HP_full));
 					if (ratio > 1.f / 255.f) {
-						if (use_vr) {
+						if ((*DrawPts)->use_vr) {
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f*ratio), 0, 255));
 							DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(128, 0, 0), TRUE);
 						}
@@ -563,14 +489,14 @@ public:
 						}
 					}
 					//ダメージ
-					ratio = (float(int(chara.HP_r) - chara.HP) / 50.f);
+					ratio = (float(int(mine.HP_r) - mine.HP) / 50.f);
 					if (ratio > 1.f / 255.f) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*ratio), 0, 255));
 						DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(128, 0, 0), TRUE);
 					}
 				}
 				//
-				if (use_vr) {
+				if ((*DrawPts)->use_vr) {
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					aim.DrawRotaGraph(int(t_disp_x / 2), int(t_disp_y / 2), y_r(64) / 200.f, 0.f, true);
 				}
@@ -578,7 +504,7 @@ public:
 				{
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					if (Ready >= 0.f) {
-						if (use_vr) {
+						if ((*DrawPts)->use_vr) {
 							xp = t_disp_x / 2;
 							yp = t_disp_y / 2 - t_disp_y / 3;
 						}
@@ -589,7 +515,7 @@ public:
 						font_large->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "%02d:%02d", int(this->Ready) / 60, int(this->Ready) % 60); yp += font_largehight;
 					}
 					else {
-						if (use_vr) {
+						if ((*DrawPts)->use_vr) {
 							xp = t_disp_x / 2;
 							yp = t_disp_y / 2 - t_disp_y / 8;
 						}
@@ -602,11 +528,11 @@ public:
 				}
 				//警告
 				{
-					if ((!use_vr && !chara.ads_on()) || use_vr) {
+					if ((!(*DrawPts)->use_vr && !mine.ads_on()) || (*DrawPts)->use_vr) {
 						if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 							//空警告
-							if (!chara.gun_stat_now->not_chamber_EMPTY()) {
-								if (use_vr) {
+							if (!mine.gun_stat_now->not_chamber_EMPTY()) {
+								if ((*DrawPts)->use_vr) {
 									xp = t_disp_x / 2;
 									yp = t_disp_y / 2 + t_disp_y / 8;
 								}
@@ -621,7 +547,7 @@ public:
 				}
 				//セレクター
 				{
-					if (use_vr) {
+					if ((*DrawPts)->use_vr) {
 						xp = t_disp_x / 2 - t_disp_y / 10;
 						yp = t_disp_y / 2 + t_disp_y / 8;
 					}
@@ -629,7 +555,7 @@ public:
 						xp = t_disp_x / 2 + t_disp_y / 4;
 						yp = t_disp_y / 2 + t_disp_y / 6;
 					}
-					switch (chara.get_now_selector()) {
+					switch (mine.get_now_selector()) {
 					case EnumSELECTER::SELECT_SEMI:
 						font_big->DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
 						break;
@@ -646,7 +572,7 @@ public:
 				}
 				//アイテムを拾う
 				{
-					if (use_vr) {
+					if ((*DrawPts)->use_vr) {
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2 + t_disp_y / 12;
 					}
@@ -654,48 +580,44 @@ public:
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2 + t_disp_y / 12;
 					}
-					if (chara.get_canget_mag_f()) {
-						font->DrawString_MID(xp, yp, chara.get_canget_mag_s() + "を拾う", GetColor(255, 255, 0)); yp += fonthight;
+					if (mine.get_canget_mag_f()) {
+						font->DrawString_MID(xp, yp, mine.get_canget_mag_s() + "を拾う", GetColor(255, 255, 0)); yp += fonthight;
 					}
 
-					if (chara.get_canget_med_f()) {
-						font->DrawString_MID(xp, yp, chara.get_canget_med() + "を拾う", GetColor(255, 255, 0)); yp += fonthight;
+					if (mine.get_canget_med_f()) {
+						font->DrawString_MID(xp, yp, mine.get_canget_med() + "を拾う", GetColor(255, 255, 0)); yp += fonthight;
 					}
 				}
 				//弾薬
 				{
-					if ((!use_vr && !chara.ads_on()) || use_vr) {
-						if (use_vr) {
-							xs = x_r(200);
-							xp = t_disp_x / 2 - x_r(20) - xs;
-							ys = y_r(12);
+					if ((!(*DrawPts)->use_vr && !mine.ads_on()) || (*DrawPts)->use_vr) {
+						if ((*DrawPts)->use_vr) {
+							xp = t_disp_x / 2 - y_r(20) - y_r(200);
 							yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20);
 						}
 						else {
-							xs = x_r(200);
-							xp = x_r(20);
-							ys = y_r(18);
+							xp = y_r(20);
 							yp = t_disp_y - y_r(50);
 						}
 						//銃
 						{
-							font->DrawString(xp, yp, chara.get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
+							font->DrawString(xp, yp, mine.get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
 						}
 						//マガジン関連(仮)
 						{
-							int size = int(chara.gun_stat_now->get_magazine_in().size());
-							if (use_vr) {
-								xp = t_disp_x / 2 - x_r(140) + font_bighight;
+							int size = int(mine.gun_stat_now->get_magazine_in().size());
+							if ((*DrawPts)->use_vr) {
+								xp = t_disp_x / 2 - y_r(140) + font_bighight;
 								yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20) - font_bighight * size;
 							}
 							else {
-								xp = x_r(220) + font_bighight;
-								yp = t_disp_y - x_r(20) - font_bighight * size;
+								xp = y_r(220) + font_bighight;
+								yp = t_disp_y - y_r(20) - font_bighight * size;
 							}
-							for (auto& a : chara.gun_stat_now->get_magazine_in()) {
+							for (auto& a : mine.gun_stat_now->get_magazine_in()) {
 								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.m_cnt, a.cap);
-								if (&a == chara.mag_in_front()) {
-									if (chara.gun_stat_now->not_chamber_EMPTY()) {
+								if (&a == mine.mag_in_front()) {
+									if (mine.gun_stat_now->not_chamber_EMPTY()) {
 										font->DrawString(xp + font_big->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + font_bighight - fonthight, " +1", GetColor(255, 0, 0));
 									}
 									DrawTriangle(xp - y_r(10), yp + 5, xp, yp + font_bighight / 2, xp - y_r(10), yp + font_bighight - 5, GetColor(255, 255, 0), FALSE);
@@ -707,9 +629,9 @@ public:
 					}
 				}
 				//キル
-				if (chara.scores.kill_f) {
-					auto killt = chara.scores.kill_timer;
-					if (use_vr) {
+				if (mine.scores.kill_f) {
+					auto killt = mine.scores.kill_timer;
+					if ((*DrawPts)->use_vr) {
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2 - t_disp_y / 6;
 					}
@@ -722,19 +644,19 @@ public:
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					DrawBox(xp - int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp, xp + int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp + font_bighight + 2, GetColor(255, 255, 255), TRUE);
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((killt * 2) / 7.f)), 0, 255));
-					font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", chara.scores.kill_id); yp += font_bighight * 2;	//キル
+					font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", mine.scores.kill_id); yp += font_bighight * 2;	//キル
 
-					if (chara.scores.kill_streak > 0) {
+					if (mine.scores.kill_streak > 0) {
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 						DrawBox(xp - int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp, xp + int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp + font_bighight + 2, GetColor(255, 255, 255), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((killt * 2) / 7.f)), 0, 255));
-						font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", chara.scores.kill_streak); yp += font_bighight;			//キルストリーク
+						font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", mine.scores.kill_streak); yp += font_bighight;			//キルストリーク
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
 				//被弾方向
 				{
-					if (use_vr) {
+					if ((*DrawPts)->use_vr) {
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2;
 					}
@@ -742,7 +664,7 @@ public:
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2;
 					}
-					for (auto& d : chara.got_damage_) {
+					for (auto& d : mine.got_damage_) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - d.alpfa, 5.f))), 0, 255));
 						this->hit_rad.DrawRotaGraph(xp, yp, float(y_r(100 * 1.25f)) / 100.f*((1.f - 0.3f) + (d.alpfa*0.3f)), d.rad, true);
 					}
@@ -750,24 +672,24 @@ public:
 				}
 				//HP
 				{
-					if (use_vr) {
+					if ((*DrawPts)->use_vr) {
 						xp = t_disp_x / 2 + t_disp_y / 12;
 						yp = t_disp_y / 2 + t_disp_y / 6;
-						xs = x_r(200);
+						xs = y_r(200);
 						ys = y_r(18) + y_r(2);
 					}
 					else {
 						xp = t_disp_x / 2;
 						yp = t_disp_y - font_bighight * 2;
-						xs = x_r(600);
+						xs = y_r(600);
 						ys = y_r(18) + y_r(2);
 					}
-					Draw_HP(xp, yp, xs, ys, chara);
+					Draw_HP(xp, yp, xs, ys, mine);
 				}
 				//スコアその他
 				{
 					/*
-					if (use_vr) {
+					if ((*DrawPts)->use_vr) {
 						xp = t_disp_x / 2 + t_disp_y / 6 + font_bighight;
 						yp = t_disp_y / 2 - t_disp_y / 12 + font_bighight;
 					}
@@ -775,19 +697,19 @@ public:
 						xp = t_disp_x - font_bighight;
 						yp = t_disp_y / 2 - t_disp_y / 12 + font_bighight;
 					}
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", chara.scores.score); yp += font_bighight;			//スコア
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", chara.scores.kill_cnt); yp += font_bighight;			//キルデス
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", chara.scores.death_cnt); yp += font_bighight;			//キルデス
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float(chara.scores.kill_cnt) / float(std::max(chara.scores.death_cnt, 1))); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", mine.scores.score); yp += font_bighight;			//スコア
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", mine.scores.kill_cnt); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", mine.scores.death_cnt); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float(mine.scores.kill_cnt) / float(std::max(mine.scores.death_cnt, 1))); yp += font_bighight;			//キルデス
 					//*/
 				}
 				//終わり
 			}
 		}
-		void item_Draw(std::vector<PLAYERclass::Chara>&chara, PLAYERclass::Chara&mine, const VECTOR_ref& cam_pos, bool use_vr = true) noexcept {
-			set_fonts(use_vr);
+		void item_Draw(std::vector<PLAYERclass::Chara>&chara, PLAYERclass::Chara&mine) noexcept {
+			set_fonts();
 			//弾インジケーター
-			if (use_vr) {
+			if ((*DrawPts)->use_vr) {
 				auto pos_gun = mine.get_parts(EnumGunParts::PARTS_BASE)->obj.GetMatrix().pos();
 				VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
@@ -798,7 +720,7 @@ public:
 					int per = 90 * cnt / int(mine.mag_in_front()->cap);
 					float rad = deg2rad(90 - per);
 					int col_r = GetColor(std::clamp(int(255.f*sin(rad)*2.f), 0, 255), std::clamp(int(255.f*cos(rad)*2.f), 0, 255), 0);
-					if (std::max((pos_gun - cam_pos).size(), 1.f) <= 10.f) {
+					if (std::max((pos_gun - GetCameraPosition()).size(), 1.f) <= 10.f) {
 						int siz = font->GetDrawWidthFormat("%04d", cnt);
 						for (int i = 0; i < 4; i++) {
 							DrawBox(xp - siz / 2 + siz * i / 4 + 2 + 1, yp - y_r(30) - i * 2 + 1, xp - siz / 2 + siz * (i + 1) / 4 - 2 + 1, yp - y_r(10) + 1, GetColor(128, 128, 128), TRUE);
@@ -825,11 +747,11 @@ public:
 					if (g.flag_canlook_player) {
 						//mag
 						if (g.get_ptr_mag() != nullptr) {
-							Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().mag_cnt, g.get_ptr_mag()->mag_cnt);
+							Draw_Item_UI(y_r(144), y_r(144), g.get_pos_(), "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().mag_cnt, g.get_ptr_mag()->mag_cnt);
 						}
 						//med
 						if (g.get_ptr_med() != nullptr) {
-							Draw_Item_UI(font_big, font_bighight, y_r(144.f), y_r(144.f), g.get_pos_(), cam_pos, "%s", g.get_ptr_med()->mod.get_name().c_str());
+							Draw_Item_UI(y_r(144), y_r(144), g.get_pos_(), "%s", g.get_ptr_med()->mod.get_name().c_str());
 						}
 						//
 					}
@@ -841,9 +763,9 @@ public:
 			{
 				SetCameraNearFar(0.01f, 100.f);
 				for (auto& c : chara) {
-					auto p = c.Set_HP_UI(cam_pos);
+					auto p = c.Set_HP_UI();
 					if (p.z() >= 0.f && p.z() <= 1.f) {
-						this->Draw_HP(int(p.x()), int(p.y()), x_r(140), y_r(20), c);
+						this->Draw_HP(int(p.x()), int(p.y()), y_r(140), y_r(20), c);
 					}
 				}
 			}
@@ -859,29 +781,18 @@ public:
 		}
 	};
 	//ローディング画面
-	class UI_LOADING {
+	class UI_LOADING : public UI_TEMP {
 	private:
-		FontHandle font18;
 		float bar = 0.f;
 		int tmp = 0;
 		int all = 0;
-		int t_disp_x = 1920;
-		int t_disp_y = 1080;
 		std::string message;
 	public:
 		UI_LOADING(void) noexcept {
-			t_disp_x = deskx;
-			t_disp_y = desky;
-
-			SetUseASyncLoadFlag(TRUE);
-
-			font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
-
-			SetUseASyncLoadFlag(FALSE);
 		}
 		~UI_LOADING(void) noexcept {
 		}
-		void Set(const char* mes) noexcept {
+		void Set(const std::string& mes) noexcept {
 			SetUseASyncLoadFlag(FALSE);
 			bar = 0.f;
 			all = GetASyncLoadNum();
@@ -895,17 +806,12 @@ public:
 			easing_set(&bar, float(tmp), 0.95f);
 			return true;
 		}
-		void UI_Draw(bool use_vr = true) noexcept {
-			if (use_vr) {
-				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
-			}
-
+		void UI_Draw(void) noexcept {
+			set_fonts();
 			DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(0, 0, 0), TRUE);
-			font18.DrawStringFormat(0, t_disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
-			font18.DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), GetColor(0, 255, 0), "%s 読み込み中 ", message.c_str());
+			font->DrawStringFormat(0, t_disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
+			font->DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), GetColor(0, 255, 0), "%s 読み込み中 ", message.c_str());
 			DrawBox(0, t_disp_y - y_r(50), int(float(t_disp_x) * bar / float(all)), t_disp_y - y_r(40), GetColor(0, 255, 0), TRUE);
-		}
-		void Dispose(void) noexcept {
 		}
 	};
 };

@@ -390,7 +390,7 @@ public:
 			bool stay = false;
 		public:
 			auto& Get_Flag() const noexcept { return Flag; }
-			auto& Get_pos() noexcept { return pos; }
+			auto& Get_pos(void) noexcept { return pos; }
 
 			void Set(void) noexcept {
 				this->Dispose();
@@ -424,7 +424,7 @@ public:
 				}
 			}
 
-			void UpDate_pos() noexcept {
+			void UpDate_pos(void) noexcept {
 				if (this->Flag) {
 					if (!this->stay) {
 						this->cnt -= this->rate / FPS;
@@ -502,7 +502,7 @@ public:
 			size_t ammo_cnt = 0;				//チャンバー内
 			uint8_t select = 0;					//セレクター
 			std::vector<MAG_STATUS> magazine_in;	//マガジン内データ
-			size_t get_magazine_in_not_full() noexcept {
+			size_t get_magazine_in_not_full(void) noexcept {
 				for (auto& m : this->magazine_in) {
 					const size_t index = &m - &this->magazine_in.front();
 					if ((index != 0) && (m.m_cnt != m.cap)) {
@@ -514,19 +514,19 @@ public:
 		public:
 			uint8_t selecter = 0;					//セレクター
 			//
-			void get_magazine_in_pop_front() noexcept { magazine_in.erase(magazine_in.begin()); }
+			void get_magazine_in_pop_front(void) noexcept { magazine_in.erase(magazine_in.begin()); }
 			//
-			auto& get_magazine_in() noexcept { return magazine_in; }
+			auto& get_magazine_in(void) noexcept { return magazine_in; }
 			//マガジンを持っているか
 			bool hav_mags(void) const noexcept { return magazine_in.size() > 0; }
 			//チャンバーに弾があるか否か
 			bool not_chamber_EMPTY(void) const noexcept { return in_chamber; }
 			//マグ順ソート
-			void sort_magazine() noexcept {
+			void sort_magazine(void) noexcept {
 				std::sort(this->magazine_in.begin() + 1, this->magazine_in.end(), [](MAG_STATUS& a, MAG_STATUS& b) { return a.m_cnt > b.m_cnt; });
 			}
 			//弾抜き、装填
-			void load_magazine() noexcept {
+			void load_magazine(void) noexcept {
 				size_t siz = this->get_magazine_in_not_full();
 				auto be_ = std::clamp<size_t>(this->magazine_in.back().m_cnt, 0, magazine_in[siz].cap - this->magazine_in[siz].m_cnt);
 				this->magazine_in.back().m_cnt -= be_;
@@ -1023,34 +1023,34 @@ public:
 			auto& get_attaching() const noexcept { return attach; }
 			auto& get_attach_frame() const noexcept { return attach_frame.second; }
 			auto& get_sight_frame() const noexcept { return sight_frame.second; }
-			const int get_mazzuletype() noexcept {
+			const int get_mazzuletype(void) noexcept {
 				if (this->attach) {
 					return int(this->thisparts->mazzule_type);
 				}
 				return -1;
 			}
-			const int get_stocktype() noexcept {
+			const int get_stocktype(void) noexcept {
 				if (this->attach) {
 					return int(this->thisparts->stock_type);
 				}
 				return -1;
 			}
-			const auto mazzule_pos() noexcept {
+			const auto mazzule_pos(void) noexcept {
 				if (this->attach) {
 					return this->obj.frame(this->mazzule_frame.first);
 				}
 				return VECTOR_ref::vget(0, 0, 0);
 			}
-			const auto cate_pos() noexcept {
+			const auto cate_pos(void) noexcept {
 				if (this->attach) {
 					return this->obj.frame(this->cate_f.first);
 				}
 				return VECTOR_ref::vget(0, 0, 0);
 			}
-			const auto cate_vec() noexcept {
+			const auto cate_vec(void) noexcept {
 				return (this->obj.frame(this->cate_f.first + 1) - this->cate_pos()).Norm();
 			}
-			const auto sight_pos() noexcept {
+			const auto sight_pos(void) noexcept {
 				if (this->site_f.first != INT_MAX) {
 					return this->site_f.second;
 				}
@@ -1074,20 +1074,20 @@ public:
 				}
 				return VECTOR_ref::vget(0, 0, 0);
 			}
-			const auto magf_pos() noexcept {
+			const auto magf_pos(void) noexcept {
 				if (this->attach) {
 					return this->obj.frame(this->mag_f.first);
 				}
 				return VECTOR_ref::vget(0, 0, 0);
 			}
 			auto& getmagazine_f(int i) const noexcept { return magazine_f[i]; }
-			const auto mag2f_pos() noexcept {
+			const auto mag2f_pos(void) noexcept {
 				if (this->attach) {
 					return this->obj.frame(this->magazine2_f.first);
 				}
 				return VECTOR_ref::vget(0, 0, 0);
 			}
-			const auto source_frame_pos() noexcept {
+			const auto source_frame_pos(void) noexcept {
 				if (this->attach) {
 					return this->obj.frame(this->source_frame.first);
 				}
@@ -1096,7 +1096,7 @@ public:
 			g_parts(void) noexcept {
 				this->LightHandle = -1;
 			}
-			void Draw() noexcept {
+			void Draw(void) noexcept {
 				if (this->attach) {
 					this->obj.DrawModel();
 				}
@@ -1252,7 +1252,7 @@ public:
 					}
 				}
 			}
-			void Draw_reticle() noexcept {
+			void Draw_reticle(void) noexcept {
 				if (this->attach) {
 					if (this->type == EnumGunParts::PARTS_SIGHT) {
 						auto ret = this->obj.frame(3);
@@ -1554,7 +1554,7 @@ public:
 		auto get_now_selector(void) noexcept { return this->get_parts(EnumGunParts::PARTS_BASE)->thisparts->select[this->gun_stat_now->selecter]; }
 		auto& get_mat_gun(void) noexcept { return mat_gun; }
 		//視点取得
-		void set_HMDpos() noexcept {
+		void set_HMDpos(void) noexcept {
 			this->HMD.pos = (this->BodyFrame(this->frame_s.RIGHTeye_f.first) + (this->BodyFrame(this->frame_s.LEFTeye_f.first) - this->BodyFrame(this->frame_s.RIGHTeye_f.first))*0.5f) - this->pos_tt;
 		}
 		//ミニマップ用
@@ -1562,7 +1562,7 @@ public:
 		//生きているか
 		const bool get_alive(void) const noexcept { return this->HP != 0; }
 		//pos
-		const VECTOR_ref& get_pos(void) noexcept { return this->pos_tt + this->HMD.pos - this->HMD.pos_rep; }
+		const VECTOR_ref get_pos(void) noexcept { return this->pos_tt + this->HMD.pos - this->HMD.pos_rep; }
 		//UI表示用
 		const auto& get_per_all(void) const noexcept { return per_all; }		//性能
 		//key
@@ -1636,17 +1636,17 @@ public:
 		//右腕座標(固定)
 		const auto& RIGHT_pos_gun(size_t select_t) noexcept { return this->base.RIGHT_pos(select_t); }
 		//左腕座標
-		const auto& LEFT_pos_gun(size_t select_t) noexcept {
+		const auto LEFT_pos_gun(size_t select_t) noexcept {
 			auto ans = this->underhandguard.LEFT_pos(select_t);
 			auto f_ = this->foregrip.LEFT_pos(select_t);
 			if (f_ != VECTOR_ref::vget(0, 0, 0)) { ans = f_; }
 			return ans;
 		}
-		const auto& LEFT_mag_pos_gun(size_t select_t) noexcept { return this->base.LEFT_mag_pos(select_t); }
-		const auto& LEFT_body_pos_gun(size_t select_t)const  noexcept { return this->BodyFrame(this->frame_s.LEFTBodyFrame[select_t].first); }
+		const auto LEFT_mag_pos_gun(size_t select_t) noexcept { return this->base.LEFT_mag_pos(select_t); }
+		const auto LEFT_body_pos_gun(size_t select_t)const  noexcept { return this->BodyFrame(this->frame_s.LEFTBodyFrame[select_t].first); }
 	private:
 		//腕アニメで使う座標の決定
-		void Set_GUN_pos_Anim() noexcept {
+		void Set_GUN_pos_Anim(void) noexcept {
 			for (int i = 0; i < 3; ++i) {
 				ani_lefthand[0].vec[i] = this->LEFT_pos_gun(i);
 				ani_lefthand[1].vec[i] = this->LEFT_mag_pos_gun(i);
@@ -1693,7 +1693,7 @@ public:
 			}
 		}
 		//腕アニメの決定
-		void Set_LEFT_pos_Anim() noexcept {
+		void Set_LEFT_pos_Anim(void) noexcept {
 			if (!isReload()) {
 				//リロード初期化
 				this->have_magazine = false;
@@ -2361,13 +2361,13 @@ public:
 		}
 	private:
 		//操作
-		void operation(const bool cannotmove, std::vector<Chara>&chara, const float fov_per, uint8_t move_mode, bool use_vr) noexcept {
+		void operation(const bool cannotmove, std::vector<Chara>&chara, const float fov_per, uint8_t move_mode) noexcept {
 			int32_t x_m = 0, y_m = 0;
 			if (this->get_alive()) {
 				if (this->get_alive()) {
 					switch (move_mode) {
 					case 0://player move
-						if (use_vr) {
+						if ((*DrawPts)->use_vr) {
 							vr_move();//player move(VR)
 						}
 						else {
@@ -2388,7 +2388,7 @@ public:
 				//移動
 				easing_set(&this->add_vec_buf, VECTOR_ref::vget(0, 0, 0), 0.95f);
 			}
-			if (use_vr) {
+			if ((*DrawPts)->use_vr) {
 				//HMD_mat+視点取得
 				this->pos_HMD_old = this->HMD.pos;
 				this->HMD.UpDate_pos((*DrawPts)->get_hmd_num(), flag_start_loop);
@@ -2462,9 +2462,9 @@ public:
 			//
 		}
 		//壁、床判定
-		void wall_col(Chara& mine, const bool use_vr) noexcept {
+		void wall_col(Chara& mine) noexcept {
 			//VR用
-			if (use_vr) {
+			if ((*DrawPts)->use_vr) {
 				auto pos_t2 = this->pos_tt + (VECTOR_ref(VECTOR_ref::vget(this->pos_HMD_old.x(), 0.f, this->pos_HMD_old.z())) - this->HMD.pos_rep);
 				auto pos_t = this->pos_tt + (this->HMD.get_pos_noY() - this->HMD.pos_rep);
 				(*MAPPTs)->map_col_wall(pos_t2, &pos_t);//壁
@@ -2497,7 +2497,7 @@ public:
 						//復帰
 						if (pos_t.y() <= -5.f) {
 							pos_t = this->spawn_pos;
-							if (!use_vr && (this == &mine)) {
+							if (!(*DrawPts)->use_vr && (this == &mine)) {
 								this->xrad_p = 0;
 							}
 							this->Spawn(this->spawn_pos, this->spawn_mat);
@@ -2511,8 +2511,8 @@ public:
 		}
 	private:
 		//体の動作を決定
-		void Set_body(bool use_vr, Chara& mine) noexcept {
-			bool useVR = use_vr && (this == &mine);
+		void Set_body(Chara& mine) noexcept {
+			bool useVR = (*DrawPts)->use_vr && (this == &mine);
 			//
 			if (this->get_alive()) {
 				if (useVR) {
@@ -2915,10 +2915,10 @@ public:
 			this->mat_gun = mat_t;
 		}
 		//
-		const MATRIX_ref& Mag_Mat(void) noexcept {
+		const MATRIX_ref Mag_Mat(void) noexcept {
 			return this->mat_mag* MATRIX_ref::Mtrans(this->pos_mag);
 		}
-		const MATRIX_ref& Gun_Mat(void) noexcept {
+		const MATRIX_ref Gun_Mat(void) noexcept {
 			return this->mat_gun * MATRIX_ref::Mtrans(this->pos_gun);
 		}
 		//刺さっている時のマガジン座標
@@ -3295,7 +3295,7 @@ public:
 			const bool playing, const float fov_per,
 			std::vector <Meds>& meds_data,
 			std::vector<Grenades>& gres_data,
-			std::vector<Chara>&chara, Chara&mine, const bool use_vr) noexcept {
+			std::vector<Chara>&chara, Chara&mine) noexcept {
 			/*
 			全体　0.4ms～1.4ms
 			*/
@@ -3367,13 +3367,13 @@ public:
 			}
 //p1～p2 0.00ms
 			//プレイヤー操作
-			this->operation(!playing, chara, fov_per, (this == &mine) ? 0 : 1, use_vr);
+			this->operation(!playing, chara, fov_per, (this == &mine) ? 0 : 1);
 //p2～p2-1 ～0.11ms
 			//壁その他の判定
-			this->wall_col(mine, use_vr);
+			this->wall_col(mine);
 //p2-1～p3 ～0.04ms
 			//obj演算
-			this->Set_body(use_vr, mine);
+			this->Set_body(mine);
 //p3～p4 0.15～0.25ms
 			//lag演算
 			//if (!this->get_alive()) {
@@ -3387,7 +3387,7 @@ public:
 			}
 //p4-2～p4-3 0.01ms
 			//
-			if (!(use_vr && (this == &mine))) {
+			if (!((*DrawPts)->use_vr && (this == &mine))) {
 				//視点取得
 				set_HMDpos();
 				//銃器
@@ -3687,16 +3687,16 @@ public:
 			}
 		}
 		/*カメラ指定*/
-		void Set_cam(cam_info& camera_main, std::vector<Chara>&chara, const float fov_, const bool use_vr) noexcept {
+		void Set_cam(cam_info& camera_main, std::vector<Chara>&chara, const float fov_) noexcept {
 			if (this->get_alive()) {
 				auto mat_T = get_res_blur(0.7f) * this->HMD.mat;//リコイル
 
 				auto ppsh = MATRIX_ref::Vtrans(VECTOR_ref::vget(-0.035f, 0, 0), mat_T);
-				if (use_vr) {
+				if ((*DrawPts)->use_vr) {
 					mat_T = this->HMD.mat;
 					ppsh.clear();
 				}
-				camera_main.set_cam_pos(this->get_pos() + ppsh, this->get_pos() + ppsh + mat_T.zvec()*(use_vr ? 1.f : -1.f), mat_T.yvec());
+				camera_main.set_cam_pos(this->get_pos() + ppsh, this->get_pos() + ppsh + mat_T.zvec()*((*DrawPts)->use_vr ? 1.f : -1.f), mat_T.yvec());
 				if (this->ads_on()) {
 					easing_set(&camera_main.fov, deg2rad(25),
 
@@ -3826,10 +3826,10 @@ public:
 		}
 		/*UI描画*/
 		/*HPバーを表示する場所*/
-		const auto Set_HP_UI(const VECTOR_ref& cam_pos) noexcept {
+		const auto Set_HP_UI(void) noexcept {
 			if ((int(this->HP_r) - this->HP) >= 2) {
 				auto head = this->get_head_pos();
-				return VECTOR_ref(ConvWorldPosToScreenPos((head + VECTOR_ref::vget(0, 0.3f + 2.7f*std::max((head - cam_pos).size(), 1.f) / 100.f, 0)).get()));
+				return VECTOR_ref(ConvWorldPosToScreenPos((head + VECTOR_ref::vget(0, 0.3f + 2.7f*std::max((head - GetCameraPosition()).size(), 1.f) / 100.f, 0)).get()));
 			}
 			else {
 				return VECTOR_ref::vget(0.f, 0.f, -1.f);

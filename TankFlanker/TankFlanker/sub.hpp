@@ -102,7 +102,7 @@ private:
 		bool isalways = false;
 		switchs on_off;
 		keyhandle* use_handle = nullptr;
-		size_t use_mode = 0;
+		int use_mode = 0;
 		bool get_key(int id) {
 			switch (id) {
 				//キー
@@ -357,9 +357,9 @@ public:
 		}
 	}
 	//
-	const auto Esc_key() noexcept { return this->key_use_ID[11].get_key(0); }
+	const auto Esc_key(void) noexcept { return this->key_use_ID[11].get_key(0); }
 	//
-	void reSet_isalways() noexcept {
+	void reSet_isalways(void) noexcept {
 		for (auto& i : this->key_use_ID) {
 			i.isalways = false;
 		}
@@ -370,7 +370,7 @@ public:
 		this->key_use_ID[16].isalways = true;
 	}
 	//
-	void draw() noexcept {
+	void draw(void) noexcept {
 		auto tmp_f1 = this->key_use_ID[16].get_key(1);
 		easing_set(&F1_f, float(tmp_f1), 0.9f);
 		noF1_f = std::max(noF1_f - 1.f / FPS, 0.f);
@@ -541,7 +541,7 @@ public:
 		}
 		//
 	}
-	void draw_botsu() noexcept {
+	void draw_botsu(void) noexcept {
 		auto tmp_f1 = this->key_use_ID[16].get_key(1);
 		easing_set(&F1_f, float(tmp_f1), 0.9f);
 		//インフォ
@@ -668,13 +668,13 @@ public:
 		font24 = FontHandle::Create(font24size, DX_FONTTYPE_EDGE);
 	}
 	//
-	void Pause_key_active() noexcept {
+	void Pause_key_active(void) noexcept {
 		(*KeyBind)->key_use_ID[18].isalways = true;
 		(*KeyBind)->key_use_ID[10].isalways = (*KeyBind)->key_use_ID[18].on_off.on();
 	}
-	const auto Pause_key() noexcept { return (*KeyBind)->key_use_ID[18].get_key(1); }
+	const auto Pause_key(void) noexcept { return (*KeyBind)->key_use_ID[18].get_key(1); }
 	//
-	bool Update() noexcept {
+	bool Update(void) noexcept {
 		bool selend = true;
 		//強制帰還はポーズメニューで
 		if ((*KeyBind)->key_use_ID[10].get_key(0)) {
@@ -684,7 +684,7 @@ public:
 		return selend;
 	}
 	//
-	void draw() noexcept {
+	void draw(void) noexcept {
 		auto tmp_P = (*KeyBind)->key_use_ID[18].on_off.on();
 		easing_set(&P_f, float(tmp_P), 0.9f);
 		//インフォ
@@ -1052,9 +1052,9 @@ protected:
 			}
 		}
 		//
-		int Select_Chose(uint8_t sel_chose) {
+		uint8_t Select_Chose(uint8_t sel_chose) {
 			auto ans = std::find(this->select.begin(), this->select.end(), sel_chose);
-			return (ans != this->select.end()) ? (ans- this->select.begin()) : -1;
+			return uint8_t((ans != this->select.end()) ? (ans - this->select.begin()) : -1);
 		}
 		//
 		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, int selecting) {

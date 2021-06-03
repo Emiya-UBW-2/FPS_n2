@@ -23,7 +23,6 @@ public:
 		//カメラ
 		cam_info camera_main;
 		float fov_base = DX_PI_F / 2;
-		bool use_VR = false;
 		//
 		VECTOR_ref Shadow_minpos;
 		VECTOR_ref Shadow_maxpos;
@@ -43,7 +42,6 @@ public:
 			MAPPTs = MAPPTs_t;
 			MAINLOOPscene = MAINLOOPscene_t;
 			DebugPTs = DebugPTs_t;
-			use_VR = (*DrawPts)->use_vr;
 
 			this->decision = SoundHandle::Load("data/audio/shot_2.wav");//
 			this->cancel = SoundHandle::Load("data/audio/cancel.wav");
@@ -59,7 +57,7 @@ public:
 		cam_info& Get_Camera(void) noexcept { return camera_main; }
 
 		virtual void Set(void) noexcept {
-			fov_base = deg2rad(use_VR ? 120 : (*OPTPTs)->Fov);	//fov
+			fov_base = deg2rad((*DrawPts)->use_vr ? 120 : (*OPTPTs)->Fov);	//fov
 			SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
 			SetMousePoint(deskx / 2, desky / 2);											//
 			camera_main.set_cam_info(fov_base, 0.1f, 200.f);//1P
@@ -111,6 +109,7 @@ public:
 		}
 		void Set(void) noexcept override {
 			TEMPSCENE::Set();
+			UIparts->Get_ptr(DrawPts,MAPPTs);
 			{
 				left.ready(false);
 				right.ready(false);
@@ -200,7 +199,7 @@ public:
 			//
 		}
 		void UI_Draw(void) noexcept override {
-			UIparts->UI_Draw(*MAINLOOPscene, save_parts, save_presets[preset_select], use_VR);
+			UIparts->UI_Draw(*MAINLOOPscene, save_parts, save_presets[preset_select]);
 		}
 	};
 	//
@@ -392,6 +391,20 @@ public:
 						}
 					}
 					++parts_select_max;
+					return;
+				}
+
+				port_cat = EnumAttachPoint::SIDEMOUNT;
+				if (port_ptr->rail_f[port_cat][0].first > 0) {
+					if (parts_select == parts_select_max) {
+						parts_cat = EnumGunParts::PARTS_SIGHT;
+						Set_chang_needs(parts_cat, port_cat, change_select, sel);
+						if (port_type == EnumGunParts::PARTS_MOUNT) {
+							save_parts[parts_select_max].pt_sel_ = 1;//改善
+						}
+					}
+					++parts_select_max;
+					return;
 				}
 			}
 		}
@@ -403,6 +416,7 @@ public:
 		}
 		void Set(void) noexcept  override {
 			TEMPSCENE::Set();
+			UIparts->Get_ptr(DrawPts, MAPPTs);
 			{
 				up.ready(false);
 				down.ready(false);
@@ -723,7 +737,7 @@ public:
 			trigger_se.Dispose();
 		}
 		void UI_Draw(void) noexcept  override {
-			UIparts->UI_Draw(*MAINLOOPscene, parts_cat, Rot, mine_ptr, parts_p, change_per, use_VR);
+			UIparts->UI_Draw(*MAINLOOPscene, parts_cat, Rot, *mine_ptr, parts_p, change_per);
 			easing_set(&change_per, 0.f, 0.5f);
 		}
 		void BG_Draw(void) noexcept override {
@@ -932,7 +946,7 @@ public:
 			MAPPTs = MAPPTs_t;
 			OPTPTs = OPTPTs_t;
 			//
-			UIparts = std::make_unique<UIclass::UI_MAINLOOP>(MAPPTs, &RULEparts);
+			UIparts = std::make_unique<UIclass::UI_MAINLOOP>(&RULEparts);
 			TPSparts = std::make_unique<TPS_parts>(MAPPTs);
 			RULEparts = std::make_unique<RULE_parts>();
 			Hostpassparts_TPS = std::make_unique<HostPassEffect>((*OPTPTs)->DoF, (*OPTPTs)->Bloom, (*OPTPTs)->SSAO, deskx, desky);	//ホストパスエフェクト(フルスクリーン向け、TPS用)
@@ -1004,6 +1018,7 @@ public:
 	public:
 		void Set(void) noexcept override {
 			TEMPSCENE::Set();
+			UIparts->Get_ptr(DrawPts, MAPPTs);
 			//
 			for (auto& c : this->chara) {
 				//カスタムattach
@@ -1063,18 +1078,13 @@ public:
 			}
 			//共通演算//2～3ms
 			for (auto& c : this->chara) {
-				c.UpDate_(
-					this->hit_obj_p, this->hit_b_obj_p,
-					RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, 
-					this->meds_data,
-					this->gres_data,
-					this->chara, this->Get_Mine(), use_VR);
+				c.UpDate_(this->hit_obj_p, this->hit_b_obj_p, RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data, this->chara, this->Get_Mine());
 			}
 			//弾痕の更新
 			this->hit_obj_p.update();
 			this->hit_b_obj_p.update();
 			//campos,camvec,camupの指定
-			this->Get_Mine().Set_cam(this->camera_main, this->chara, this->fov_base, use_VR);
+			this->Get_Mine().Set_cam(this->camera_main, this->chara, this->fov_base);
 			//ルール保存
 			UIparts->Update();
 			RULEparts->UpDate();
@@ -1116,7 +1126,7 @@ public:
 			this->chara.clear();
 		}
 		void UI_Draw(void) noexcept  override {
-			UIparts->UI_Draw(this->Get_Mine(), use_VR);
+			UIparts->UI_Draw(this->Get_Mine());
 			//ミニマップ
 			minimapparts->UI_Draw(this->chara, (TPSparts->key_TPS.on()) ? this->chara[TPSparts->sel_cam] : this->Get_Mine());
 		}
@@ -1170,7 +1180,7 @@ public:
 			for (auto& c : this->chara) {
 				c.Set_Draw_bullet();
 			}
-			UIparts->item_Draw(this->chara, Get_Mine(), this->camera_main.campos, use_VR);
+			UIparts->item_Draw(this->chara, Get_Mine());
 		}
 		void LAST_Draw(void) noexcept override {
 			//TPS視点
