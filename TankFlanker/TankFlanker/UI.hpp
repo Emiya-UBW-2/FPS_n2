@@ -3,6 +3,8 @@
 class UIclass : Mainclass {
 public:
 	class UI_TEMP {
+	private:
+		bool first_f = true;
 	protected:
 		//ˆø‚«Œp‚®
 		std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts = nullptr;
@@ -15,7 +17,6 @@ public:
 		FontHandle font36;
 		FontHandle font24;
 		FontHandle font18;
-		FontHandle font12;
 		FontHandle* font_large;
 		FontHandle* font_big;
 		FontHandle* font;
@@ -24,25 +25,26 @@ public:
 		int fonthight;
 	public:
 		void Get_ptr(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t) noexcept {
-			DrawPts = DrawPts_t;
-			MAPPTs = MAPPTs_t;
+			if (first_f) {
+				first_f = false;
 
-			if ((*DrawPts)->use_vr) {
-				GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+				DrawPts = DrawPts_t;
+				MAPPTs = MAPPTs_t;
+				if ((*DrawPts)->use_vr) {
+					GetScreenState(&t_disp_x, &t_disp_y, nullptr);
+				}
+				else {
+					t_disp_x = deskx;
+					t_disp_y = desky;
+				}
+				SetUseASyncLoadFlag(TRUE);
+				this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
+				this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
+				this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
+				this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
+				this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
+				SetUseASyncLoadFlag(FALSE);
 			}
-			else {
-				t_disp_x = deskx;
-				t_disp_y = desky;
-			}
-
-			SetUseASyncLoadFlag(TRUE);
-			this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
-			this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
-			this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
-			this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
-			this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
-			this->font12 = FontHandle::Create(y_r(12), DX_FONTTYPE_EDGE);
-			SetUseASyncLoadFlag(FALSE);
 		}
 		void set_fonts() {
 			font_large = ((*DrawPts)->use_vr) ? &font72 : &font48;
@@ -201,7 +203,6 @@ public:
 				}
 				font->DrawString(100, 575, "SPACE  :GO EDIT", GetColor(255, 0, 0));
 			}
-
 		}
 	};
 	//ƒJƒXƒ^ƒ€‰æ–Ê
@@ -253,7 +254,7 @@ public:
 		~UI_CUSTOM(void) noexcept {
 		}
 		template<class Y, class D>
-		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, switchs &Rot, PLAYERclass::Chara& mine, GUNPARTs* parts_p, float& change_per) noexcept {
+		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, const bool &Rot, PLAYERclass::Chara& mine, GUNPARTs* parts_p, float& change_per) noexcept {
 			set_fonts();
 
 			int xs = 0, ys = 0, xp = 0, yp = 0;
@@ -384,7 +385,7 @@ public:
 
 
 				font->DrawString(100, 575, "SPACE  :Go Battle", GetColor(255, 0, 0));
-				font->DrawString(100, 600, (Rot.on()) ? "RANGE  :FREE" : "RANGE  :FIXED", GetColor(255, 0, 0));
+				font->DrawString(100, 600, (Rot) ? "RANGE  :FREE" : "RANGE  :FIXED", GetColor(255, 0, 0));
 			}
 
 		}
@@ -469,7 +470,7 @@ public:
 		}
 		void Update(void) noexcept {
 			this->Ready = (*RULEparts)->get_Ready();
-			this->timer = std::max((*RULEparts)->get_timer(),0.f);
+			this->timer = std::max((*RULEparts)->get_timer(), 0.f);
 		}
 		void UI_Draw(PLAYERclass::Chara& mine) noexcept {
 			set_fonts();
@@ -616,7 +617,7 @@ public:
 							}
 							for (auto& a : mine.gun_stat_now->get_magazine_in()) {
 								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.m_cnt, a.cap);
-								if (&a == mine.mag_in_front()) {
+								if (&a == &mine.gun_stat_now->get_magazine_in().front()) {
 									if (mine.gun_stat_now->not_chamber_EMPTY()) {
 										font->DrawString(xp + font_big->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + font_bighight - fonthight, " +1", GetColor(255, 0, 0));
 									}
@@ -713,11 +714,10 @@ public:
 				auto pos_gun = mine.get_parts(EnumGunParts::PARTS_BASE)->obj.GetMatrix().pos();
 				VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
-					int xp = 0, yp = 0;
-					xp = int(p.x());
-					yp = int(p.y());
-					int cnt = int(mine.mag_in_front()->m_cnt);
-					int per = 90 * cnt / int(mine.mag_in_front()->cap);
+					int xp = int(p.x());
+					int yp = int(p.y());
+					int cnt = int(mine.gun_stat_now->get_magazine_in().front().m_cnt);
+					int per = 90 * cnt / int(mine.gun_stat_now->get_magazine_in().front().cap);
 					float rad = deg2rad(90 - per);
 					int col_r = GetColor(std::clamp(int(255.f*sin(rad)*2.f), 0, 255), std::clamp(int(255.f*cos(rad)*2.f), 0, 255), 0);
 					if (std::max((pos_gun - GetCameraPosition()).size(), 1.f) <= 10.f) {

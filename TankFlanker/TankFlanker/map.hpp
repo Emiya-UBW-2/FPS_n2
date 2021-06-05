@@ -175,8 +175,7 @@ public:
 				grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
 			}
 		}
-		void Start(std::vector<GUNPARTs>* get_parts_data, std::vector<Meds>* get_meds_data, const VECTOR_ref& ray) noexcept {
-			this->sun_pos = ray.Norm() * -1500.f;
+		void Start(void) noexcept {
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			VECTOR_ref size;
 			{
@@ -228,60 +227,10 @@ public:
 			SetFogStartEnd(40.0f - 15.f, 40.f);
 			SetFogColor(12, 6, 0);
 			item.clear();
-			{
-				int mdata = FileRead_open((this->path + "Set.txt").c_str(), FALSE);
-				//item_data magitem
-				while (true) {
-					auto p = getparams::_str(mdata);
-					if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
-						size_t p1 = 0;
-						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
-						for (auto& g : *get_parts_data) {
-							if (p.find(g.mod.get_name()) != std::string::npos) {
-								p1 = g.id_t;
-								break;
-							}
-						}
-						p2 = getparams::_float(mdata);
-						p3 = getparams::_float(mdata);
-						p4 = getparams::_float(mdata);
-
-						item.resize(item.size() + 1);
-						item.back().Set_item_magazine(item.size() - 1, &(*get_parts_data)[p1], VECTOR_ref::vget(p2, p3, p4), VECTOR_ref::vget(0, 0, 0), MGetIdent());
-					}
-					else {
-						break;
-					}
-				}
-				//item_data meditem
-				while (true) {
-					auto p = getparams::_str(mdata);
-					if (getparams::getright(p.c_str()).find("end") == std::string::npos) {
-						size_t p1 = 0;
-						float p2 = 0.f, p3 = 0.f, p4 = 0.f;
-						for (auto& g : *get_meds_data) {
-							if (p.find(g.mod.get_name()) != std::string::npos) {
-								p1 = g.id_t;
-								break;
-							}
-						}
-						p2 = getparams::_float(mdata);
-						p3 = getparams::_float(mdata);
-						p4 = getparams::_float(mdata);
-
-						item.resize(item.size() + 1);
-						item.back().Set_item_med_(item.size() - 1 ,&(*get_meds_data)[p1], VECTOR_ref::vget(p2, p3, p4), VECTOR_ref::vget(0, 0, 0), MGetIdent());
-					}
-					else {
-						break;
-					}
-				}
-				FileRead_close(mdata);
-			}
 			/*minimap*/
 			minmap.GetSize(&x_size, &y_size);
 			/*grass*/
-			if(grasss!=0) {
+			if (grasss != 0) {
 				int xs = 0, ys = 0;
 				GetSoftImageSize(grass_pos, &xs, &ys);
 				x_max = map_col.mesh_maxpos(0).x();
@@ -326,6 +275,9 @@ public:
 				//
 				DeleteSoftImage(grass_pos);
 			}
+		}
+		void Start_Ray(const VECTOR_ref& ray) noexcept {
+			this->sun_pos = ray.Norm() * -1500.f;
 		}
 		void Set(void) noexcept {
 			envi.play(DX_PLAYTYPE_LOOP, TRUE);
@@ -508,7 +460,7 @@ public:
 		}
 		//
 		template<class Chara>
-		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos,Chara& chara, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
+		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, Chara& chara, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
 			chara.reset_canget_item();
 			for (auto& g : this->item) { g.Get_item_2(StartPos, EndPos, chara, MAPPTs); }
 		}

@@ -16,7 +16,6 @@ class main_c {
 	bool update_effect_f = true;
 	LONGLONG update_effect_was = 0;
 
-	int Liget_ref = -1;
 	bool selend = true;
 	bool selpause = true;
 public:
@@ -62,13 +61,11 @@ public:
 					break;
 				case scenes::LOAD:
 					//キャラ設定
-					MAINLOOPscene->Set_Charaa( MAPPTs->get_spawn_point().size() );
+					MAINLOOPscene->Set_Charaa(MAPPTs->get_spawn_point().size());
 					//
 					LOADscene->Set();
 					DrawPts->Set_Light_Shadow(LOADscene->get_Shadow_maxpos(), LOADscene->get_Shadow_minpos(), LOADscene->get_Light_vec(), [&] {LOADscene->Shadow_Draw_Far(); });
 					SetGlobalAmbientLight(LOADscene->get_Light_color());
-					Liget_ref = CreateDirLightHandle((LOADscene->get_Light_vec()*-1.f).get());
-					SetLightAmbColorHandle(Liget_ref, LOADscene->get_Light_color_ref());
 					//
 					break;
 				case scenes::SELECT:
@@ -76,17 +73,14 @@ public:
 					SELECTscene->Set();
 					DrawPts->Set_Light_Shadow(SELECTscene->get_Shadow_maxpos(), SELECTscene->get_Shadow_minpos(), SELECTscene->get_Light_vec(), [&] {SELECTscene->Shadow_Draw_Far(); });
 					SetGlobalAmbientLight(SELECTscene->get_Light_color());
-					Liget_ref = CreateDirLightHandle((SELECTscene->get_Light_vec()*-1.f).get());
-					SetLightAmbColorHandle(Liget_ref, SELECTscene->get_Light_color_ref());
 					//
 					break;
 				case scenes::MAIN_LOOP:
 					//
 					MAINLOOPscene->Set();
+					MAPPTs->Start_Ray(MAINLOOPscene->get_Light_vec());
 					DrawPts->Set_Light_Shadow(MAINLOOPscene->get_Shadow_maxpos(), MAINLOOPscene->get_Shadow_minpos(), MAINLOOPscene->get_Light_vec(), [&] {MAINLOOPscene->Shadow_Draw_Far(); });
 					SetGlobalAmbientLight(MAINLOOPscene->get_Light_color());
-					Liget_ref = CreateDirLightHandle((MAINLOOPscene->get_Light_vec()*-1.f).get());
-					SetLightAmbColorHandle(Liget_ref, MAINLOOPscene->get_Light_color_ref());
 					//
 					break;
 				default:
@@ -99,6 +93,7 @@ public:
 			}
 			//仮(共通のため)
 			auto set_key_vr = [&]() {
+#ifdef _USE_OPENVR_
 				auto& mine_k = MAINLOOPscene->Get_Mine().get_key_();
 				if (DrawPts->get_hand1_num() != -1) {
 					auto ptr_ = DrawPts->get_device_hand1();
@@ -111,16 +106,17 @@ public:
 				if (DrawPts->get_hand2_num() != -1) {
 					auto ptr_ = DrawPts->get_device_hand2();
 					if (ptr_->turn && ptr_->now) {
-						mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);	//マガジン持つ
+						mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);		//マガジン持つ
 						mine_k.have_item = (ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0;		//アイテム取得
 						mine_k.sort_magazine = false;									//
 						mine_k.view_gun = false;
 						mine_k.drop_ = false;											//
-						mine_k.throw_gre = false;											//
+						mine_k.throw_gre = false;										//
 						mine_k.running = (ptr_->on[0] & BUTTON_TOUCHPAD) != 0;			//running
 						mine_k.jamp = (ptr_->on[0] & BUTTON_SIDE) != 0;					//jamp
 					}
 				}
+#endif // _USE_OPENVR_
 			};
 			//
 			while (ProcessMessage() == 0) {
@@ -410,11 +406,7 @@ public:
 					break;
 				case scenes::MAP_LOAD:
 					UI_LOADPTs->Dispose();
-					MAPPTs->Start(
-						MAINLOOPscene->get_parts_data(EnumGunParts::PARTS_MAGAZINE),
-						&MAINLOOPscene->get_meds_data(),
-						VECTOR_ref::vget(0.5f, -0.5f, 0.5f)/*MAINLOOPscene->get_Light_vec()*/
-					);
+					MAPPTs->Start();
 					break;
 				case scenes::LOAD:
 					LOADscene->Dispose();
@@ -422,12 +414,10 @@ public:
 					break;
 				case scenes::SELECT:
 					SELECTscene->Dispose();
-					DeleteLightHandle(Liget_ref);
 					break;
 				case scenes::MAIN_LOOP:
 					MAINLOOPscene->Dispose();//解放
 					MAPPTs->Dispose();
-					DeleteLightHandle(Liget_ref);
 					break;
 				default:
 					break;

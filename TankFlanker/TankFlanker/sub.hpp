@@ -5,13 +5,14 @@
 #define y_r(p1) (int(p1) * desky / 1080)
 //
 enum Effect {
-	ef_fire, //”­–C‰Š
-	ef_reco, //¬ŒûŒa’µ’e
-	ef_smoke, //e‚Ì‹OÕ
+	ef_fire,	//”­–C‰Š
+	ef_reco,	//¬ŒûŒa’µ’e
+	ef_smoke,	//e‚Ì‹OÕ
 	ef_gndsmoke,//’n–Ê‚Ì‹OÕ
-	ef_fire2, //”­–C‰Š
-	ef_hitblood, //ŒŒ‚µ‚Ô‚«
-	effects, //“Ç‚Ýž‚Þ
+	ef_fire2,	//”­–C‰Š
+	ef_hitblood,//ŒŒ‚µ‚Ô‚«
+	ef_greexp,	//ƒOƒŒ”š”­
+	effects,	//“Ç‚Ýž‚Þ
 };
 enum EnumGunParts {
 	PARTS_NONE,
@@ -93,7 +94,7 @@ private:
 	class keys {
 	public:
 		int mac = 0, px = 0, py = 0;
-		char onhandle[256]="", offhandle[256]="";
+		char onhandle[256] = "", offhandle[256] = "";
 	};
 	class key_pair {
 	public:
@@ -461,7 +462,7 @@ public:
 		}
 		//íŽž•\Ž¦
 		if (!tmp_f1) {
-			if(noF1_f>=0.1f) {
+			if (noF1_f >= 0.1f) {
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f*std::clamp(noF1_f, 0.f, 1.f)));
 				int xp_s = 1920 - 700, yp_s = 1080 - 28, x_size = 26, y_size = 24;
 				int xss = 0, yss = 0;
@@ -675,6 +676,8 @@ public:
 	const auto Pause_key(void) noexcept { return (*KeyBind)->key_use_ID[18].get_key(1); }
 	//
 	bool Update(void) noexcept {
+		SetMouseDispFlag(TRUE);
+
 		bool selend = true;
 		//‹­§‹AŠÒ‚Íƒ|[ƒYƒƒjƒ…[‚Å
 		if ((*KeyBind)->key_use_ID[10].get_key(0)) {
@@ -1167,7 +1170,7 @@ protected:
 			isUPDate = true;
 		}
 		void update(void) noexcept {
-			if(isUPDate){
+			if (isUPDate) {
 				isUPDate = false;
 				VerBuf = CreateVertexBuffer(VerNum, DX_VERTEX_TYPE_NORMAL_3D);
 				IndexBuf = CreateIndexBuffer(IndexNum, DX_INDEX_TYPE_32BIT);
@@ -1273,9 +1276,8 @@ protected:
 	class Items {
 	private:
 		//‹¤’Ê
-		VECTOR_ref pos;
+		moves move;
 		VECTOR_ref add_vec;
-		MATRIX_ref mat;
 		MV1 obj;
 		//ƒ}ƒKƒWƒ“ê—pƒpƒ‰ƒ[ƒ^[
 		//Ž¡—ÃƒLƒbƒgê—pƒpƒ‰ƒ[ƒ^[
@@ -1297,29 +1299,26 @@ protected:
 		auto& get_ptr_mag(void) const noexcept { return ptr_mag; }
 		auto& get_ptr_med(void) const noexcept { return ptr_med; }
 		auto& get_magazine(void) const noexcept { return magazine_param; }
-		auto& get_pos_(void) const noexcept { return pos; }
+		auto& get_pos_(void) const noexcept { return move.pos; }
 	private:
 		//mag
-		void Set_item_1(GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
-			this->pos = pos_;
+		void Set_item_1(GUNPARTs*magdata, const moves& move_, const VECTOR_ref& add_) {
+			this->move = move_;
 			this->add_vec = add_;
-			this->mat = mat_;
 			this->ptr_mag = magdata;
 			this->obj = this->ptr_mag->mod.get_model().Duplicate();
 		}
 		//med
-		void Set_item(Meds*meddata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
-			this->pos = pos_;
+		void Set_item(Meds*meddata, const moves& move_, const VECTOR_ref& add_) {
+			this->move = move_;
 			this->add_vec = add_;
-			this->mat = mat_;
 			this->ptr_med = meddata;
 			this->obj = this->ptr_med->mod.get_model().Duplicate();
 		}
 		//med
-		void Set_item(Grenades*gredata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
-			this->pos = pos_;
+		void Set_item(Grenades*gredata, const moves& move_, const VECTOR_ref& add_) {
+			this->move = move_;
 			this->add_vec = add_;
-			this->mat = mat_;
 			this->ptr_gre = gredata;
 			this->obj = this->ptr_gre->mod.get_model().Duplicate();
 			this->del_timer = this->ptr_gre->time;
@@ -1334,9 +1333,9 @@ protected:
 			}
 		}
 		//mag
-		void Set_item_magazine(size_t id, GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_, size_t dnm = SIZE_MAX) {
+		void Set_item_magazine(size_t id, GUNPARTs*magdata, const moves& move_, const VECTOR_ref& add_, size_t dnm = SIZE_MAX) {
 			this->id_t = id;
-			this->Set_item_1(magdata, pos_, add_, mat_);
+			this->Set_item_1(magdata, move_, add_);
 			if (dnm == SIZE_MAX) {
 				if (this->ptr_mag != nullptr) {
 					this->magazine_param.mag_cnt = int(this->ptr_mag->mag_cnt);
@@ -1348,33 +1347,33 @@ protected:
 			set_item_mag();
 			this->del_timer = (this->magazine_param.mag_cnt == 0) ? 5.f : 20.f;
 		}
-		bool Set_item_magrelease(GUNPARTs*magdata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_, size_t dnm) {
+		bool Set_item_magrelease(GUNPARTs*magdata, const moves& move_, const VECTOR_ref& add_, size_t dnm) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
-				this->Set_item_magazine(id_t, magdata, pos_, add_, mat_, dnm);
+				this->Set_item_magazine(id_t, magdata, move_, add_, dnm);
 				return true;
 			}
 			return false;
 		}
 		//med
-		void Set_item_med_(size_t id, Meds*meddata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+		void Set_item_med_(size_t id, Meds*meddata, const moves& move_, const VECTOR_ref& add_) {
 			this->id_t = id;
-			this->Set_item(meddata, pos_, add_, mat_);
+			this->Set_item(meddata, move_, add_);
 		}
-		bool Set_item_med(Meds*meddata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+		bool Set_item_med(Meds*meddata, const moves& move_, const VECTOR_ref& add_) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
-				this->Set_item(meddata, pos_, add_, mat_);
+				this->Set_item(meddata, move_, add_);
 				return true;
 			}
 			return false;
 		}
 		//gre
-		void Set_item_gre_(size_t id, Grenades*gredata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+		void Set_item_gre_(size_t id, Grenades*gredata, const moves& move_, const VECTOR_ref& add_) {
 			this->id_t = id;
-			this->Set_item(gredata, pos_, add_, mat_);
+			this->Set_item(gredata, move_, add_);
 		}
-		bool Set_item_gre(Grenades*gredata, const VECTOR_ref& pos_, const VECTOR_ref& add_, const MATRIX_ref& mat_) {
+		bool Set_item_gre(Grenades*gredata, const moves& move_, const VECTOR_ref& add_) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
-				this->Set_item(gredata, pos_, add_, mat_);
+				this->Set_item(gredata, move_, add_);
 				return true;
 			}
 			return false;
@@ -1382,26 +1381,26 @@ protected:
 		//
 		template<class Y, class D>
 		void UpDate(std::list<Items>& item, std::unique_ptr<Y, D>& MAPPTs) {
-			auto old = this->pos;
+			auto old = this->move.pos;
 			if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
-				this->obj.SetMatrix(this->mat*MATRIX_ref::Mtrans(this->pos));
-				this->pos += this->add_vec;
+				this->obj.SetMatrix(this->move.mat*MATRIX_ref::Mtrans(this->move.pos));
+				this->move.pos += this->add_vec;
 				this->add_vec.yadd(M_GR / powf(FPS, 2.f));
 				for (auto& p : item) {
 					if ((p.ptr_mag != nullptr || p.ptr_med != nullptr || p.ptr_gre != nullptr) && &p != &*this) {
-						if ((p.pos - this->pos).size() <= 0.35f) {
-							p.add_vec.xadd((p.pos - this->pos).x()*5.f / FPS);
-							p.add_vec.zadd((p.pos - this->pos).z()*5.f / FPS);
-							this->add_vec.xadd((this->pos - p.pos).x()*5.f / FPS);
-							this->add_vec.zadd((this->pos - p.pos).z()*5.f / FPS);
+						if ((p.move.pos - this->move.pos).size() <= 0.35f) {
+							p.add_vec.xadd((p.move.pos - this->move.pos).x()*5.f / FPS);
+							p.add_vec.zadd((p.move.pos - this->move.pos).z()*5.f / FPS);
+							this->add_vec.xadd((this->move.pos - p.move.pos).x()*5.f / FPS);
+							this->add_vec.zadd((this->move.pos - p.move.pos).z()*5.f / FPS);
 						}
 					}
 				}
 				if (this->ptr_gre != nullptr) {
-					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->pos - VECTOR_ref::vget(0, 0.0025f, 0));
+					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.0025f, 0));
 					if (pp.HitFlag) {
-						this->pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
-						this->mat *= MATRIX_ref::RotVec2(this->mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
+						this->move.pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
+						this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
 
 						auto fvec = this->add_vec.Norm();
 						auto nvec = VECTOR_ref(pp.Normal).Norm();
@@ -1409,10 +1408,10 @@ protected:
 					}
 				}
 				else {
-					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->pos - VECTOR_ref::vget(0, 0.0025f, 0));
+					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.0025f, 0));
 					if (pp.HitFlag) {
-						this->pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
-						this->mat *= MATRIX_ref::RotVec2(this->mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
+						this->move.pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
+						this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
 						this->add_vec.clear();
 						//easing_set(&this->add_vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
 					}
@@ -1433,7 +1432,7 @@ protected:
 					if (p.HitFlag) {
 						EndPos = p.HitPosition;
 					}
-					zz = (Segment_Point_MinLength(StartPos.get(), EndPos.get(), this->pos.get()) <= 0.4f);
+					zz = (Segment_Point_MinLength(StartPos.get(), EndPos.get(), this->move.pos.get()) <= 0.4f);
 				}
 				//ŒÂ•Ê
 				if (this->ptr_mag != nullptr) {
@@ -1478,9 +1477,9 @@ protected:
 			}
 		}
 		template<class Y, class D>
-		void Check_CameraViewClip(std::unique_ptr<Y, D>& MAPPTs , bool use_occlusion) noexcept {
+		void Check_CameraViewClip(std::unique_ptr<Y, D>& MAPPTs, bool use_occlusion) noexcept {
 			this->flag_canlook_player = true;
-			auto ttt = this->pos;
+			auto ttt = this->move.pos;
 			if (CheckCameraViewClip_Box((ttt + VECTOR_ref::vget(-0.3f, 0, -0.3f)).get(), (ttt + VECTOR_ref::vget(0.3f, 0.3f, 0.3f)).get())) {
 				this->flag_canlook_player = false;
 				return;
@@ -1514,9 +1513,11 @@ protected:
 			}
 			return false;
 		}
-		bool Detach_gre(void) noexcept {
+		template<class Chara>
+		bool Detach_gre(Chara& mine) noexcept {
 			if (this->ptr_gre != nullptr && this->del_timer <= 0.f) {
 				//effect
+				mine.calc_gre_effect(this->move.pos);
 				//ƒOƒŒ”š”j
 				this->Detach_item();
 				return true;
@@ -1525,4 +1526,3 @@ protected:
 		}
 	};
 };
-//
