@@ -24,6 +24,10 @@ public:
 		cam_info camera_main;
 		float fov_base = DX_PI_F / 2;
 		//
+		bool use_lens = false;
+		float lens_zoom = 1.f;
+		float lens_size = 1.f;
+		//
 		VECTOR_ref Shadow_minpos;
 		VECTOR_ref Shadow_maxpos;
 		VECTOR_ref Light_vec;
@@ -60,7 +64,7 @@ public:
 			fov_base = deg2rad((*DrawPts)->use_vr ? 120 : (*OPTPTs)->Fov);	//fov
 			SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
 			SetMousePoint(deskx / 2, desky / 2);											//
-			camera_main.set_cam_info(fov_base, 0.1f, 200.f);//1P
+			camera_main.set_cam_info(fov_base, 0.05f, 200.f);//1P
 		}
 		virtual bool UpDate(void) noexcept {
 			return true;
@@ -79,6 +83,9 @@ public:
 		}
 		virtual void Main_Draw(void) noexcept {
 		}
+		virtual const bool& is_lens(void) { return use_lens; }
+		virtual const float& zoom_lens(void) { return lens_zoom; }
+		virtual const float& size_lens(void) { return lens_size; }
 		virtual void Item_Draw(void) noexcept {
 		}
 		virtual void LAST_Draw(void) noexcept {
@@ -1054,7 +1061,7 @@ public:
 					if (i->Detach_mag()) {
 						i = item.erase(i);
 					}
-					else if (i->Detach_gre(this->chara[0])) {
+					else if (i->Detach_gre((*MAPPTs),this->chara[0],this->chara)) {
 						i = item.erase(i);
 					}
 					else {
@@ -1163,9 +1170,12 @@ public:
 			//
 		}
 		void Item_Draw(void) noexcept override {
-			for (auto& c : this->chara) {
-				c.Set_Draw_bullet();
+			lens_zoom = this->Get_Mine().Draw_reticle_UI();
+			lens_size = this->Get_Mine().Get_reticle_size();
+			if (lens_zoom > 1.0f) {
+				use_lens = this->Get_Mine().ads_on();
 			}
+			for (auto& c : this->chara) { c.Set_Draw_bullet(); }
 			UIparts->item_Draw(this->chara, this->Get_Mine());
 		}
 		void LAST_Draw(void) noexcept override {

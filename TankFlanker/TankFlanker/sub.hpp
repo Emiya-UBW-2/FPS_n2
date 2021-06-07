@@ -937,6 +937,9 @@ protected:
 		size_t mazzule_type = 0;
 		//sight
 		GraphHandle reticle;
+		float zoom = 1.f;
+		float reticle_size = 600.f;
+		float zoom_size = 600.f;
 		//stock
 		size_t stock_type = 0;
 		//
@@ -1016,6 +1019,11 @@ protected:
 							this->select_lam.emplace_back(uint8_t(EnumSELECT_LAM::SELECT_LASER));	//レーザー
 						}
 					}
+				}
+				if (this->type == EnumGunParts::PARTS_SIGHT) {
+					this->zoom = getparams::_float(this->mod.mdata);
+					this->reticle_size = getparams::_float(this->mod.mdata);
+					this->zoom_size = getparams::_float(this->mod.mdata);
 				}
 				//共通データ
 				{
@@ -1513,13 +1521,52 @@ protected:
 			}
 			return false;
 		}
-		template<class Chara>
-		bool Detach_gre(Chara& mine) noexcept {
+		template<class Y, class D,class Chara>
+		bool Detach_gre(std::unique_ptr<Y, D>& MAPPTs,Chara& mine,std::vector<Chara>& chara) noexcept {
 			if (this->ptr_gre != nullptr && this->del_timer <= 0.f) {
 				//effect
 				mine.calc_gre_effect(this->move.pos);
 				//グレ爆破
 				this->Detach_item();
+				for (auto& tgt : chara) {
+					if (!MAPPTs->map_col_line(this->move.pos, tgt.get_head_pos()).HitFlag) {
+						int damage = 100;
+						auto old = tgt.HP;
+						tgt.HP = std::clamp(tgt.HP - damage, 0, tgt.HP_full);
+						tgt.HP_parts[0] = std::clamp(tgt.HP_parts[0] - damage, 0, tgt.HP_full);
+						tgt.got_damage = old - tgt.HP;
+						tgt.got_damage_color = GetColor(255, 255, 255);
+
+						if (float(tgt.HP) / float(tgt.HP_full) <= 0.66) {
+							tgt.got_damage_color = GetColor(255, 255, 0);
+						}
+						if (float(tgt.HP) / float(tgt.HP_full) <= 0.33) {
+							tgt.got_damage_color = GetColor(255, 128, 0);
+						}
+						if ((damage) != tgt.got_damage) {
+							tgt.got_damage_color = GetColor(255, 0, 0);
+						}
+						tgt.got_damage_x = -255 + GetRand(255 * 2);
+						tgt.got_damage_f = 1.f;
+						{
+							float x_1 = sinf(tgt.get_body_yrad());
+							float y_1 = cosf(tgt.get_body_yrad());
+							auto vc = (mine.get_pos() - tgt.get_pos()).Norm();
+							tgt.got_damage_.resize(tgt.got_damage_.size() + 1);
+							tgt.got_damage_.back().alpfa = 1.f;
+							tgt.got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
+						}
+						if (!tgt.get_alive()) {
+							mine.scores.set_kill(&tgt - &chara.front(), 70);
+							tgt.scores.set_death(&mine - &chara.front());
+							//tgt.audio.voice_death.play_3D(tgt.get_pos(), 10.f);
+						}
+						else {
+							//tgt.audio.voice_damage.play_3D(tgt.get_pos(), 10.f);
+						}
+						break;
+					}
+				}
 				return true;
 			}
 			return false;

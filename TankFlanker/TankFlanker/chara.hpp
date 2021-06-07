@@ -1018,6 +1018,7 @@ public:
 			GraphHandle reticle;					//レティクル
 			int LightHandle = -1;					//ライト
 		public:
+			VECTOR_ref sightpos;					//レティクル描画
 			MV1 obj;
 			//MV1 obj_col;
 			std::array<MV1, 2> obj_ammo;			//マガジン用弾
@@ -1264,19 +1265,47 @@ public:
 			void Draw_reticle(void) noexcept {
 				if (this->attach) {
 					if (this->type == EnumGunParts::PARTS_SIGHT) {
-						auto ret = this->obj.frame(3);
-						auto camp = GetCameraPosition();
+						sightpos = this->obj.frame(3);
 
-						//clsDx();
-						//printfDx("%0.5f", (camp - this->obj.frame(this->sight_frame.first)).size());
-						if (this->obj.CollCheck_Line(camp, ret, -1, 1).HitFlag == TRUE) {
+						if (this->obj.CollCheck_Line(GetCameraPosition(), sightpos, -1, 1).HitFlag == TRUE) {
 							SetUseZBuffer3D(FALSE);
-							DrawBillboard3D(ret.get(), 0.5f, 0.5f, 3.f, 0.f, this->reticle.get(), TRUE);
+							//DrawBillboard3D(sightpos.get(), 0.5f, 0.5f, 9.f, 0.f, this->reticle.get(), TRUE);
 							SetUseZBuffer3D(TRUE);
+						}
+						else {
+							sightpos.clear();
 						}
 					}
 				}
 			}
+			const float Draw_reticle_UI(void) noexcept {
+				float ans = 1.f;
+				if (this->attach) {
+					if (this->type == EnumGunParts::PARTS_SIGHT) {
+						if (sightpos != VECTOR_ref::vget(0, 0, 0)) {
+							VECTOR_ref tmp = ConvWorldPosToScreenPos(sightpos.get());
+							if (tmp.z() >= 0.f && tmp.z() <= 1.f) {
+								ans = this->thisparts->zoom;
+								int siz = int(this->thisparts->reticle_size / 2.f);
+								this->reticle.DrawExtendGraph(int(tmp.x()) - siz, int(tmp.y()) - siz, int(tmp.x()) + siz, int(tmp.y()) + siz, true);
+							}
+						}
+					}
+				}
+				return ans;
+			}
+			const float Get_reticle_size(void) noexcept {
+				float ans = 1.f;
+				if (this->attach) {
+					if (this->type == EnumGunParts::PARTS_SIGHT) {
+						if (sightpos != VECTOR_ref::vget(0, 0, 0)) {
+							ans = float(y_r(this->thisparts->zoom_size / 2.f));
+						}
+					}
+				}
+				return ans;
+			}
+
 			void Set_reticle(void) noexcept {
 				if (this->attach) {
 					this->obj.RefreshCollInfo(-1, 1);
@@ -1490,9 +1519,16 @@ public:
 		g_parts mount_base;
 		g_parts mount_;
 		std::vector<g_parts> sight_;
+		size_t select_sight = 0;
 	public:
 		void Draw_reticle() {
-			for (auto& s : this->sight_) { s.Draw_reticle(); }
+			this->sight_[select_sight].Draw_reticle();
+		}
+		const float Draw_reticle_UI() {
+			return this->sight_[select_sight].Draw_reticle_UI();
+		}
+		const float Get_reticle_size() {
+			return this->sight_[select_sight].Get_reticle_size();
 		}
 		/*所持弾数などの武器データ*/
 		GUN_STATUS* gun_stat_now{ nullptr };
@@ -2041,7 +2077,8 @@ public:
 				{
 					//サイト位置決定
 					VECTOR_ref sight_vec = this->base.sight_pos();//アイアンサイト
-					for (auto&s : this->sight_) {
+					{
+						auto&s = this->sight_[select_sight];
 						if (s.get_attaching()) {
 							sight_vec = s.sight_vec;//サイト
 						}
@@ -2160,15 +2197,17 @@ public:
 #endif // _USE_OPENVR_
 		}
 		//Nomal操作
-		void key_move(int32_t& x_m, int32_t& y_m, const float fov_per) {
-			GetMousePoint(&x_m, &y_m);//~0.01
-			x_m = int(float(std::clamp(x_m - deskx / 2, -120, 120))*fov_per);
-			y_m = int(float(std::clamp(y_m - desky / 2, -120, 120))*fov_per);
+		void key_move(float& x_m, float& y_m, const float fov_per) {
+			int x_t, y_t;
+			GetMousePoint(&x_t, &y_t);//~0.01
+			x_m = float(std::clamp(x_t - deskx / 2, -120, 120))*fov_per;
+			y_m = float(std::clamp(y_t - desky / 2, -120, 120))*fov_per;
 			SetMousePoint(deskx / 2, desky / 2);//ウィンドウだと0.05～0.10ms掛かる?!
 			SetMouseDispFlag(FALSE);
 		}
 		//AI操作
-		void AI_move(int32_t& x_m, int32_t& y_m, std::vector<Chara>&chara) {
+		void AI_move(float& x_t, float& y_t, std::vector<Chara>&chara) {
+			int32_t x_m, y_m;
 			//AI
 			int turn = -1;
 			bool is_player = false;
@@ -2415,11 +2454,13 @@ public:
 			//(*DebugPTs)->end_way();
 			x_m = std::clamp(x_m, -40, 40);
 			y_m = std::clamp(y_m, -40, 40);
+			x_t = float(x_m);
+			y_t = float(y_m);
 		}
 	private:
 		//操作
 		void operation(const bool cannotmove, std::vector<Chara>&chara, const float fov_per, uint8_t move_mode) noexcept {
-			int32_t x_m = 0, y_m = 0;
+			float x_m = 0.f, y_m = 0.f;
 			if (this->get_alive()) {
 				if (this->get_alive()) {
 					switch (move_mode) {
@@ -2457,7 +2498,7 @@ public:
 				this->key_.rule_();
 				if (this->get_alive()) {
 					//z軸回転(リーン)
-					easing_set(&this->body_ztrun, -deg2rad(25 * x_m / 120)*1.f, 0.9f);
+					easing_set(&this->body_ztrun, -deg2rad(x_m * 25 / 120)*1.f, 0.9f);
 					if (this->key_.qkey) {
 						easing_set(&this->body_zrad, deg2rad(-25), 0.9f);
 					}
@@ -3277,13 +3318,15 @@ public:
 		}
 		/*キャラスポーン*/
 		void Spawn(const moves& move_) noexcept {
+			//
 			for (auto&s : this->sight_) {
 				if (s.get_attaching()) {
 					s.sight_vec = s.get_attach_frame() + s.get_sight_frame();
 					search_sight_base(&s.sight_vec, s);
 				}
 			}
-
+			select_sight = std::max<size_t>(this->sight_.size() - 1, 0);
+			//
 			this->xrad_p = 0;
 			this->spawn = move_;
 
@@ -3496,6 +3539,7 @@ public:
 				}
 				//手振れ
 				easing_set(&this->blur_vec, this->blur_vec_res, 0.975f);
+				//this->blur_vec = VECTOR_ref::vget(0, 0, 1.f);
 				easing_set(&this->blur_vec_res, VECTOR_ref::vget(0, 0, 1.f), 0.95f);
 				//複座
 				easing_set(&this->recoil_vec, this->recoil_vec_res, 0.6f);
@@ -3723,7 +3767,7 @@ public:
 						//
 			if (this == &mine) {
 				//レティクル
-				for (auto&s : this->sight_) { s.Set_reticle(); }
+				this->sight_[select_sight].Set_reticle();
 				//ライト
 				this->lam.Set_LightHandle(this->base.obj.GetMatrix().zvec()*-1.f);
 				//息
@@ -3778,7 +3822,9 @@ public:
 					ppsh.clear();
 				}
 				camera_main.set_cam_pos(this->get_pos() + ppsh, this->get_pos() + ppsh + mat_T.zvec()*((*DrawPts)->use_vr ? 1.f : -1.f), mat_T.yvec());
+				camera_main.near_ = 0.1f;//todo
 				if (this->ads_on()) {
+					camera_main.near_ = 0.1f;
 					easing_set(&camera_main.fov, deg2rad(25),
 
 						std::min(0.8f + ((0.9f - 0.8f)*(this->per_all.weight - this->base.thisparts->per.weight) / 3.f), 0.925f)

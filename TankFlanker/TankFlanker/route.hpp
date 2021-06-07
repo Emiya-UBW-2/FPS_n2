@@ -29,6 +29,47 @@ public:
 			OPTPTs->Bloom = false;
 			OPTPTs->SSAO = false;
 		}
+
+		//int PixelShaderHandle;
+		//int VertexShaderHandle;
+		//VertexShaderHandle = LoadVertexShader("shader/NormalMesh_PointLightVS.vso");			// 頂点シェーダーを読み込む
+		//PixelShaderHandle = LoadPixelShader("shader/NormalMesh_PointLightPS.pso");		// ピクセルシェーダーを読み込む
+
+		//SetUseVertexShader(VertexShaderHandle);	// 使用する頂点シェーダーをセット
+		//SetUsePixelShader(PixelShaderHandle);	// 使用するピクセルシェーダーをセット
+		//MV1SetUseOrigShader(TRUE);	// モデルの描画にオリジナルシェーダーを使用する設定をＯＮにする
+		int pshandle, vshandle;
+		VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
+		FLOAT2 *dispsize;
+		FLOAT4 *f4;
+		int pscbhandle;
+		int pscbhandle2;
+
+		vshandle = LoadVertexShader("shader/ShaderPolygon3DTestVS.vso");	// 頂点シェーダーバイナリコードの読み込み
+		pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
+		pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
+		pshandle = LoadPixelShader("shader/ShaderPolygon3DTestPS.pso");		// ピクセルシェーダーバイナリコードの読み込み
+
+		// 頂点データの準備
+		int xp1 = 0;
+		int yp1 = 0;
+		int xp2 = deskx;
+		int yp2 = desky;
+		Screen_vertex[0].pos = VGet(float(xp1), float(desky - yp1), 0.0f);
+		Screen_vertex[1].pos = VGet(float(xp2), float(desky - yp1), 0.0f);
+		Screen_vertex[2].pos = VGet(float(xp1), float(desky - yp2), 0.0f);
+		Screen_vertex[3].pos = VGet(float(xp2), float(desky - yp2), 0.0f);
+		Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
+		Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
+		Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
+		Screen_vertex[3].dif = GetColorU8(255, 255, 255, 255);
+		Screen_vertex[0].u = 0.0f; Screen_vertex[0].v = 0.0f;
+		Screen_vertex[1].u = 1.0f; Screen_vertex[1].v = 0.0f;
+		Screen_vertex[2].u = 0.0f; Screen_vertex[3].v = 1.0f;
+		Screen_vertex[3].u = 1.0f; Screen_vertex[2].v = 1.0f;
+		Screen_vertex[4] = Screen_vertex[2];
+		Screen_vertex[5] = Screen_vertex[1];
+
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
 		auto MAPPTs = std::make_unique<MAPclass::Map>(OPTPTs->grass_level);																	//MAP
 		auto UI_LOADPTs = std::make_unique<UIclass::UI_LOADING>();																			//UI_LOADING
@@ -308,7 +349,62 @@ public:
 									//最終描画
 									HostpassPTs->Set_MAIN_draw();
 								}
-								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_);
+								GraphHandle::SetDraw_Screen(tmp);
+								{
+									bool lens = false;
+									float zoom = 1.f;
+									float reticle_size = 1.f;
+									//被写体深度描画
+									switch (sel_scene) {
+									case scenes::ITEM_LOAD:
+										break;
+									case scenes::MAP_LOAD:
+										break;
+									case scenes::LOAD:
+										lens = LOADscene->is_lens();
+										zoom = LOADscene->zoom_lens();
+										reticle_size = LOADscene->size_lens();
+										break;
+									case scenes::SELECT:
+										lens = SELECTscene->is_lens();
+										zoom = SELECTscene->zoom_lens();
+										reticle_size = SELECTscene->size_lens();
+										break;
+									case scenes::MAIN_LOOP:
+										lens = MAINLOOPscene->is_lens();
+										zoom = MAINLOOPscene->zoom_lens();
+										reticle_size = MAINLOOPscene->size_lens();
+										break;
+									default:
+										break;
+									}
+									if (!lens) {
+										//デフォ描画
+										HostpassPTs->MAIN_draw();
+									}
+									else {
+										//レンズ描画
+										SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());		// 使用するテクスチャをセット
+										dispsize = (FLOAT2 *)GetBufferShaderConstantBuffer(pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+										dispsize->u = float(DrawPts->disp_x);
+										dispsize->v = float(DrawPts->disp_y);
+										UpdateShaderConstantBuffer(pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+										SetShaderConstantBuffer(pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
+										f4 = (FLOAT4 *)GetBufferShaderConstantBuffer(pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+										f4->x = float(DrawPts->disp_x) / 2.f;
+										f4->y = float(DrawPts->disp_y) / 2.f;
+										f4->z = reticle_size;
+										f4->w = zoom;
+										UpdateShaderConstantBuffer(pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+										SetShaderConstantBuffer(pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
+										SetUseVertexShader(vshandle);		// 使用する頂点シェーダーをセット
+										SetUsePixelShader(pshandle);		// 使用するピクセルシェーダーをセット
+										MV1SetUseOrigShader(TRUE);
+										DrawPolygon3DToShader(Screen_vertex, 2);		// 描画
+										MV1SetUseOrigShader(FALSE);
+									}
+								}
+								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_, false);
 								{
 									HostpassPTs->Draw(cam_t, DrawPts->use_vr);
 									//UI2
