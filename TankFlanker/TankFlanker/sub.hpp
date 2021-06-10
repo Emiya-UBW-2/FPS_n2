@@ -145,8 +145,8 @@ private:
 	GraphHandle keyboad;
 	GraphHandle mousehandle;
 public:
-	std::vector < key_pair > key_use_ID;
-	std::vector < key_pair > mouse_use_ID;
+	std::vector<key_pair> key_use_ID;
+	std::vector<key_pair> mouse_use_ID;
 	//
 	bool get_key_use(int id_t) {
 		key_use_ID[id_t].isalways = true;
@@ -1388,19 +1388,19 @@ protected:
 		}
 		//
 		template<class Y, class D>
-		void UpDate(std::list<Items>& item, std::unique_ptr<Y, D>& MAPPTs) {
+		void UpDate(std::vector<std::shared_ptr<Items>>& item, std::unique_ptr<Y, D>& MAPPTs) {
 			auto old = this->move.pos;
 			if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
 				this->obj.SetMatrix(this->move.mat*MATRIX_ref::Mtrans(this->move.pos));
 				this->move.pos += this->add_vec;
 				this->add_vec.yadd(M_GR / powf(FPS, 2.f));
 				for (auto& p : item) {
-					if ((p.ptr_mag != nullptr || p.ptr_med != nullptr || p.ptr_gre != nullptr) && &p != &*this) {
-						if ((p.move.pos - this->move.pos).size() <= 0.35f) {
-							p.add_vec.xadd((p.move.pos - this->move.pos).x()*5.f / FPS);
-							p.add_vec.zadd((p.move.pos - this->move.pos).z()*5.f / FPS);
-							this->add_vec.xadd((this->move.pos - p.move.pos).x()*5.f / FPS);
-							this->add_vec.zadd((this->move.pos - p.move.pos).z()*5.f / FPS);
+					if ((p->ptr_mag != nullptr || p->ptr_med != nullptr || p->ptr_gre != nullptr) && p.get() != this) {
+						if ((p->move.pos - this->move.pos).size() <= 0.35f) {
+							p->add_vec.xadd((p->move.pos - this->move.pos).x()*5.f / FPS);
+							p->add_vec.zadd((p->move.pos - this->move.pos).z()*5.f / FPS);
+							this->add_vec.xadd((this->move.pos - p->move.pos).x()*5.f / FPS);
+							this->add_vec.zadd((this->move.pos - p->move.pos).z()*5.f / FPS);
 						}
 					}
 				}
@@ -1521,48 +1521,48 @@ protected:
 			}
 			return false;
 		}
-		template<class Y, class D,class Chara>
-		bool Detach_gre(std::unique_ptr<Y, D>& MAPPTs,Chara& mine,std::vector<Chara>& chara) noexcept {
+		template<class Y, class D, class Chara>
+		bool Detach_gre(std::unique_ptr<Y, D>& MAPPTs, std::shared_ptr<Chara>* mine, std::vector<std::shared_ptr<Chara>>* chara) noexcept {
 			if (this->ptr_gre != nullptr && this->del_timer <= 0.f) {
 				//effect
-				mine.calc_gre_effect(this->move.pos);
+				(*mine)->calc_gre_effect(this->move.pos);
 				//グレ爆破
 				this->Detach_item();
-				for (auto& tgt : chara) {
-					if (!MAPPTs->map_col_line(this->move.pos, tgt.get_head_pos()).HitFlag) {
+				for (auto& tgt : *chara) {
+					if (!MAPPTs->map_col_line(this->move.pos, tgt->get_head_pos()).HitFlag) {
 						int damage = 100;
-						auto old = tgt.HP;
-						tgt.HP = std::clamp(tgt.HP - damage, 0, tgt.HP_full);
-						tgt.HP_parts[0] = std::clamp(tgt.HP_parts[0] - damage, 0, tgt.HP_full);
-						tgt.got_damage = old - tgt.HP;
-						tgt.got_damage_color = GetColor(255, 255, 255);
+						auto old = tgt->HP;
+						tgt->HP = std::clamp(tgt->HP - damage, 0, tgt->HP_full);
+						tgt->HP_parts[0] = std::clamp(tgt->HP_parts[0] - damage, 0, tgt->HP_full);
+						tgt->got_damage = old - tgt->HP;
+						tgt->got_damage_color = GetColor(255, 255, 255);
 
-						if (float(tgt.HP) / float(tgt.HP_full) <= 0.66) {
-							tgt.got_damage_color = GetColor(255, 255, 0);
+						if (float(tgt->HP) / float(tgt->HP_full) <= 0.66) {
+							tgt->got_damage_color = GetColor(255, 255, 0);
 						}
-						if (float(tgt.HP) / float(tgt.HP_full) <= 0.33) {
-							tgt.got_damage_color = GetColor(255, 128, 0);
+						if (float(tgt->HP) / float(tgt->HP_full) <= 0.33) {
+							tgt->got_damage_color = GetColor(255, 128, 0);
 						}
-						if ((damage) != tgt.got_damage) {
-							tgt.got_damage_color = GetColor(255, 0, 0);
+						if ((damage) != tgt->got_damage) {
+							tgt->got_damage_color = GetColor(255, 0, 0);
 						}
-						tgt.got_damage_x = -255 + GetRand(255 * 2);
-						tgt.got_damage_f = 1.f;
+						tgt->got_damage_x = -255 + GetRand(255 * 2);
+						tgt->got_damage_f = 1.f;
 						{
-							float x_1 = sinf(tgt.get_body_yrad());
-							float y_1 = cosf(tgt.get_body_yrad());
-							auto vc = (mine.get_pos() - tgt.get_pos()).Norm();
-							tgt.got_damage_.resize(tgt.got_damage_.size() + 1);
-							tgt.got_damage_.back().alpfa = 1.f;
-							tgt.got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
+							float x_1 = sinf(tgt->get_body_yrad());
+							float y_1 = cosf(tgt->get_body_yrad());
+							auto vc = ((*mine)->get_pos() - tgt->get_pos()).Norm();
+							tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
+							tgt->got_damage_.back().alpfa = 1.f;
+							tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
 						}
-						if (!tgt.get_alive()) {
-							mine.scores.set_kill(&tgt - &chara.front(), 70);
-							tgt.scores.set_death(&mine - &chara.front());
-							//tgt.audio.voice_death.play_3D(tgt.get_pos(), 10.f);
+						if (!tgt->get_alive()) {
+							(*mine)->scores.set_kill(&tgt - &(*chara).front(), 70);
+							tgt->scores.set_death(&(*mine) - &(*chara).front());
+							//tgt->audio.voice_death.play_3D(tgt->get_pos(), 10.f);
 						}
 						else {
-							//tgt.audio.voice_damage.play_3D(tgt.get_pos(), 10.f);
+							//tgt->audio.voice_damage.play_3D(tgt->get_pos(), 10.f);
 						}
 						break;
 					}
@@ -1571,5 +1571,18 @@ protected:
 			}
 			return false;
 		}
+
+		// コピーは禁止するが、ムーブは許可する
+		Items(const Items&) = delete;
+		Items& operator=(const Items&) = delete;
+
+		// 特殊メンバ関数を明示的に定義もしくはdeleteした場合、
+		// それ以外の特殊メンバ関数は明示的に定義もしくはdefault宣言しなければ
+		// 暗黙定義されない
+		Items(Items&&) = default;
+		Items() = default;
+		Items& operator=(Items&&) = default;
+
+		~Items() {}
 	};
 };

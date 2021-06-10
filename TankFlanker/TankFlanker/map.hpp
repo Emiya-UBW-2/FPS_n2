@@ -123,7 +123,7 @@ public:
 		float x_min = 0.f;
 		float z_min = 0.f;
 		std::array<std::array<grass_t, 3>, 3>grass__;
-		std::list<Items> item;					//アイテム
+		std::vector<std::shared_ptr<Items>> item;					//アイテム
 
 	public:
 		std::vector<VECTOR_ref>& get_waypoint(void) noexcept { return way_point; }
@@ -283,9 +283,7 @@ public:
 			envi.play(DX_PLAYTYPE_LOOP, TRUE);
 		}
 		void Dispose(void) noexcept {
-			for (auto& i : item) {
-				i.Detach_item();
-			}
+			for (auto& i : item) { i->Detach_item(); }
 			item.clear();
 			map.Dispose();		   //map
 			map_col.Dispose();		   //mapコリジョン
@@ -443,9 +441,7 @@ public:
 			grass_Draw();
 		}
 		void item_Draw(void) noexcept {
-			for (auto& i : item) {
-				i.Draw_item();
-			}
+			for (auto& i : item) { i->Draw_item(); }
 		}
 		void main_Draw(void) noexcept {
 			for (int i = 0; i < 3; ++i) {
@@ -462,7 +458,7 @@ public:
 		template<class Chara>
 		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, Chara& chara, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
 			chara.reset_canget_item();
-			for (auto& g : this->item) { g.Get_item_2(StartPos, EndPos, chara, MAPPTs); }
+			for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs); }
 		}
 		//
 		template<size_t T>
@@ -538,29 +534,29 @@ public:
 			MAPPTs = MAPPTs_t;
 		}
 		template<class Chara>
-		void UI_Draw(std::vector<Chara>&chara, Chara& mine) noexcept {
+		void UI_Draw(std::vector<std::shared_ptr<Chara>>*chara, std::shared_ptr<Chara>* mine) noexcept {
 			UI_minimap.SetDraw_Screen(true);
 			{
 				DrawBox(0, 0, x_size, y_size, GetColor(0, 128, 0), TRUE);
 				int xp = 0, yp = 0;
 				float radp = 0.f;
 				{
-					easing_set(&xcam, 1.f + mine.get_pseed_per() * 0.2f, 0.9f);
-					radp = -mine.get_body_yrad();
+					easing_set(&xcam, 1.f + (*mine)->get_pseed_per() * 0.2f, 0.9f);
+					radp = -(*mine)->get_body_yrad();
 					int xpos = 0, ypos = 0;
-					Set_pos_chara(&xpos, &ypos, mine.get_pos(), radp);
+					Set_pos_chara(&xpos, &ypos, (*mine)->get_pos(), radp);
 					xp = x_size / 2 - xpos;
 					yp = y_size / 2 - ypos;
 				}
 
 				(*MAPPTs)->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
-				for (auto& c : chara) {
+				for (auto& c : *chara) {
 					int xpos = 0, ypos = 0;
-					Set_pos_chara(&xpos, &ypos, c.get_pos(), radp);
+					Set_pos_chara(&xpos, &ypos, c->get_pos(), radp);
 					int xt = xp + xpos;
 					int yt = yp + ypos;
 
-					UI_player.DrawRotaGraph(xt, yt, xcam, radp + c.get_body_yrad(), true);
+					UI_player.DrawRotaGraph(xt, yt, xcam, radp + c->get_body_yrad(), true);
 				}
 			}
 		}

@@ -12,6 +12,8 @@ public:
 		std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts{ nullptr };
 		//仮
 		std::unique_ptr<DeBuG, std::default_delete<DeBuG>>* DebugPTs{ nullptr };
+		//
+		std::shared_ptr<PLAYERclass::Chara>* me = nullptr;
 	private:
 		//実際に発射される弾
 		class BULLETS {
@@ -47,7 +49,7 @@ public:
 				this->move = move_;
 				this->repos = this->move.pos;
 			}
-			void UpDate(Chara* c, std::vector<Chara>* chara, HIT_PASSIVE& hit_obj_p, HIT_BLOOD_PASSIVE& hit_b_obj_p) noexcept {
+			void UpDate(std::shared_ptr<PLAYERclass::Chara>* c, std::vector<std::shared_ptr<PLAYERclass::Chara>>* chara, HIT_PASSIVE& hit_obj_p, HIT_BLOOD_PASSIVE& hit_b_obj_p) noexcept {
 				if (this->Flag) {
 					this->repos = this->move.pos;
 					this->move.pos += this->move.mat.zvec() * (this->spec->get_speed() / FPS);
@@ -59,253 +61,253 @@ public:
 						}
 						//*
 						for (auto& tgt : *chara) {
-							if (&tgt == c || !tgt.get_alive()) {
+							if (tgt == (*c) || !tgt->get_alive()) {
 								continue;
 							}
-							if (tgt.set_ref_col(this->repos, this->move.pos)) {
+							if (tgt->set_ref_col(this->repos, this->move.pos)) {
 								//HEAD
 								{
-									auto q = tgt.obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 0);
+									auto q = tgt->obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 0);
 									if (q.HitFlag) {
 										this->move.pos = q.HitPosition;
 										//hit
-										//c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
-										c->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
+										//(*c)->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
+										(*c)->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
 										//
 										this->hit_Flag = true;
 										this->Flag = false;
 
-										auto old = tgt.HP;
-										tgt.HP = std::clamp(tgt.HP - this->spec->get_damage() * 3, 0, tgt.HP_full);
-										tgt.HP_parts[0] = std::clamp(tgt.HP_parts[0] - this->spec->get_damage() * 3, 0, tgt.HP_full);
-										tgt.got_damage = old - tgt.HP;
-										tgt.got_damage_color = GetColor(255, 255, 255);
+										auto old = tgt->HP;
+										tgt->HP = std::clamp(tgt->HP - this->spec->get_damage() * 3, 0, tgt->HP_full);
+										tgt->HP_parts[0] = std::clamp(tgt->HP_parts[0] - this->spec->get_damage() * 3, 0, tgt->HP_full);
+										tgt->got_damage = old - tgt->HP;
+										tgt->got_damage_color = GetColor(255, 255, 255);
 
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.66) {
-											tgt.got_damage_color = GetColor(255, 255, 0);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.66) {
+											tgt->got_damage_color = GetColor(255, 255, 0);
 										}
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.33) {
-											tgt.got_damage_color = GetColor(255, 128, 0);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.33) {
+											tgt->got_damage_color = GetColor(255, 128, 0);
 										}
-										if ((this->spec->get_damage() * 3) != tgt.got_damage) {
-											tgt.got_damage_color = GetColor(255, 0, 0);
+										if ((this->spec->get_damage() * 3) != tgt->got_damage) {
+											tgt->got_damage_color = GetColor(255, 0, 0);
 										}
-										tgt.got_damage_x = -255 + GetRand(255 * 2);
-										tgt.got_damage_f = 1.f;
+										tgt->got_damage_x = -255 + GetRand(255 * 2);
+										tgt->got_damage_f = 1.f;
 										{
-											float x_1 = sinf(tgt.body_yrad);
-											float y_1 = cosf(tgt.body_yrad);
-											auto vc = (c->get_pos() - tgt.get_pos()).Norm();
-											tgt.got_damage_.resize(tgt.got_damage_.size() + 1);
-											tgt.got_damage_.back().alpfa = 1.f;
-											tgt.got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
+											float x_1 = sinf(tgt->body_yrad);
+											float y_1 = cosf(tgt->body_yrad);
+											auto vc = ((*c)->get_pos() - tgt->get_pos()).Norm();
+											tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
+											tgt->got_damage_.back().alpfa = 1.f;
+											tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
 										}
-										if (!tgt.get_alive()) {
-											c->scores.set_kill(&tgt - &chara->front(), 70);
-											tgt.scores.set_death(c - &chara->front());
-											tgt.audio.voice_death.play_3D(tgt.get_pos(), 10.f);
+										if (!tgt->get_alive()) {
+											(*c)->scores.set_kill(&tgt - &chara->front(), 70);
+											tgt->scores.set_death(&(*c) - &chara->front());
+											tgt->audio.voice_death.play_3D(tgt->get_pos(), 10.f);
 										}
 										else {
-											tgt.audio.voice_damage.play_3D(tgt.get_pos(), 10.f);
+											tgt->audio.voice_damage.play_3D(tgt->get_pos(), 10.f);
 										}
 										break;
 									}
 								}
 								//BODY
 								{
-									auto q = tgt.obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 1);
+									auto q = tgt->obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 1);
 									if (q.HitFlag) {
 										this->move.pos = q.HitPosition;
 										//hit
-										//c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
-										c->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
+										//(*c)->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
+										(*c)->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
 
 										//
 										this->hit_Flag = true;
 										this->Flag = false;
 
-										auto old = tgt.HP;
-										tgt.HP = std::clamp(tgt.HP - this->spec->get_damage(), 0, tgt.HP_full);
-										tgt.HP_parts[1] = std::clamp(tgt.HP_parts[1] - this->spec->get_damage(), 0, tgt.HP_full);
-										tgt.got_damage = old - tgt.HP;
-										tgt.got_damage_color = GetColor(255, 255, 255);
+										auto old = tgt->HP;
+										tgt->HP = std::clamp(tgt->HP - this->spec->get_damage(), 0, tgt->HP_full);
+										tgt->HP_parts[1] = std::clamp(tgt->HP_parts[1] - this->spec->get_damage(), 0, tgt->HP_full);
+										tgt->got_damage = old - tgt->HP;
+										tgt->got_damage_color = GetColor(255, 255, 255);
 
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.66) {
-											tgt.got_damage_color = GetColor(255, 255, 0);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.66) {
+											tgt->got_damage_color = GetColor(255, 255, 0);
 										}
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.33) {
-											tgt.got_damage_color = GetColor(255, 128, 0);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.33) {
+											tgt->got_damage_color = GetColor(255, 128, 0);
 										}
-										if ((this->spec->get_damage()) != tgt.got_damage) {
-											tgt.got_damage_color = GetColor(255, 0, 0);
+										if ((this->spec->get_damage()) != tgt->got_damage) {
+											tgt->got_damage_color = GetColor(255, 0, 0);
 										}
 
-										tgt.got_damage_x = -255 + GetRand(255 * 2);
-										tgt.got_damage_f = 1.f;
+										tgt->got_damage_x = -255 + GetRand(255 * 2);
+										tgt->got_damage_f = 1.f;
 										{
-											float x_1 = sinf(tgt.body_yrad);
-											float y_1 = cosf(tgt.body_yrad);
-											auto vc = (c->get_pos() - tgt.get_pos()).Norm();
-											tgt.got_damage_.resize(tgt.got_damage_.size() + 1);
-											tgt.got_damage_.back().alpfa = 1.f;
-											tgt.got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
+											float x_1 = sinf(tgt->body_yrad);
+											float y_1 = cosf(tgt->body_yrad);
+											auto vc = ((*c)->get_pos() - tgt->get_pos()).Norm();
+											tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
+											tgt->got_damage_.back().alpfa = 1.f;
+											tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
 										}
-										if (!tgt.get_alive()) {
-											c->scores.set_kill(&tgt - &chara->front(), 100);
-											tgt.scores.set_death(c - &chara->front());
-											tgt.audio.voice_death.play_3D(tgt.get_pos(), 10.f);
+										if (!tgt->get_alive()) {
+											(*c)->scores.set_kill(&tgt - &chara->front(), 100);
+											tgt->scores.set_death(&(*c) - &chara->front());
+											tgt->audio.voice_death.play_3D(tgt->get_pos(), 10.f);
 										}
 										else {
-											tgt.audio.voice_damage.play_3D(tgt.get_pos(), 10.f);
+											tgt->audio.voice_damage.play_3D(tgt->get_pos(), 10.f);
 										}
 										break;
 									}
 								}
 								//LEFTHAND
 								{
-									auto q = tgt.obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 2);
+									auto q = tgt->obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 2);
 									if (q.HitFlag) {
 										this->move.pos = q.HitPosition;
 										//hit
-										//c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
-										c->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
+										//(*c)->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
+										(*c)->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
 
 										//
 										this->hit_Flag = true;
 										this->Flag = false;
 
-										auto old = tgt.HP;
-										tgt.HP = std::clamp(tgt.HP - this->spec->get_damage() * 2 / 5, 0, tgt.HP_full);
-										tgt.HP_parts[2] = std::clamp(tgt.HP_parts[2] - this->spec->get_damage() * 2 / 5, 0, tgt.HP_full);
-										tgt.got_damage = old - tgt.HP;
-										tgt.got_damage_color = GetColor(255, 255, 255);
+										auto old = tgt->HP;
+										tgt->HP = std::clamp(tgt->HP - this->spec->get_damage() * 2 / 5, 0, tgt->HP_full);
+										tgt->HP_parts[2] = std::clamp(tgt->HP_parts[2] - this->spec->get_damage() * 2 / 5, 0, tgt->HP_full);
+										tgt->got_damage = old - tgt->HP;
+										tgt->got_damage_color = GetColor(255, 255, 255);
 
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.66) {
-											tgt.got_damage_color = GetColor(255, 255, 0);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.66) {
+											tgt->got_damage_color = GetColor(255, 255, 0);
 										}
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.33) {
-											tgt.got_damage_color = GetColor(255, 128, 0);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.33) {
+											tgt->got_damage_color = GetColor(255, 128, 0);
 										}
-										if ((this->spec->get_damage() * 2 / 5) != tgt.got_damage) {
-											tgt.got_damage_color = GetColor(255, 0, 0);
+										if ((this->spec->get_damage() * 2 / 5) != tgt->got_damage) {
+											tgt->got_damage_color = GetColor(255, 0, 0);
 										}
 
-										tgt.got_damage_x = -255 + GetRand(255 * 2);
-										tgt.got_damage_f = 1.f;
+										tgt->got_damage_x = -255 + GetRand(255 * 2);
+										tgt->got_damage_f = 1.f;
 										{
-											float x_1 = sinf(tgt.body_yrad);
-											float y_1 = cosf(tgt.body_yrad);
-											auto vc = (c->get_pos() - tgt.get_pos()).Norm();
-											tgt.got_damage_.resize(tgt.got_damage_.size() + 1);
-											tgt.got_damage_.back().alpfa = 1.f;
-											tgt.got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
+											float x_1 = sinf(tgt->body_yrad);
+											float y_1 = cosf(tgt->body_yrad);
+											auto vc = ((*c)->get_pos() - tgt->get_pos()).Norm();
+											tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
+											tgt->got_damage_.back().alpfa = 1.f;
+											tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
 										}
-										if (!tgt.get_alive()) {
-											c->scores.set_kill(&tgt - &chara->front(), 100);
-											tgt.scores.set_death(c - &chara->front());
-											tgt.audio.voice_death.play_3D(tgt.get_pos(), 10.f);
+										if (!tgt->get_alive()) {
+											(*c)->scores.set_kill(&tgt - &chara->front(), 100);
+											tgt->scores.set_death(&(*c) - &chara->front());
+											tgt->audio.voice_death.play_3D(tgt->get_pos(), 10.f);
 										}
 										else {
-											tgt.audio.voice_damage.play_3D(tgt.get_pos(), 10.f);
+											tgt->audio.voice_damage.play_3D(tgt->get_pos(), 10.f);
 										}
 										break;
 									}
 								}
 								//RIGHTHAND
 								{
-									auto q = tgt.obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 3);
+									auto q = tgt->obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 3);
 									if (q.HitFlag) {
 										this->move.pos = q.HitPosition;
 										//hit
-										//c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
-										c->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
+										//(*c)->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
+										(*c)->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
 
 										//
 										this->hit_Flag = true;
 										this->Flag = false;
 
-										auto old = tgt.HP;
-										tgt.HP = std::clamp(tgt.HP - this->spec->get_damage() * 2 / 5, 0, tgt.HP_full);
-										tgt.HP_parts[3] = std::clamp(tgt.HP_parts[3] - this->spec->get_damage() * 2 / 5, 0, tgt.HP_full);
-										tgt.got_damage = old - tgt.HP;
-										tgt.got_damage_color = GetColor(255, 255, 255);
+										auto old = tgt->HP;
+										tgt->HP = std::clamp(tgt->HP - this->spec->get_damage() * 2 / 5, 0, tgt->HP_full);
+										tgt->HP_parts[3] = std::clamp(tgt->HP_parts[3] - this->spec->get_damage() * 2 / 5, 0, tgt->HP_full);
+										tgt->got_damage = old - tgt->HP;
+										tgt->got_damage_color = GetColor(255, 255, 255);
 
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.66) {
-											tgt.got_damage_color = GetColor(255, 255, 0);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.66) {
+											tgt->got_damage_color = GetColor(255, 255, 0);
 										}
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.33) {
-											tgt.got_damage_color = GetColor(255, 128, 0);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.33) {
+											tgt->got_damage_color = GetColor(255, 128, 0);
 										}
-										if ((this->spec->get_damage() * 2 / 5) != tgt.got_damage) {
-											tgt.got_damage_color = GetColor(255, 0, 0);
+										if ((this->spec->get_damage() * 2 / 5) != tgt->got_damage) {
+											tgt->got_damage_color = GetColor(255, 0, 0);
 										}
 
-										tgt.got_damage_x = -255 + GetRand(255 * 2);
-										tgt.got_damage_f = 1.f;
+										tgt->got_damage_x = -255 + GetRand(255 * 2);
+										tgt->got_damage_f = 1.f;
 										{
-											float x_1 = sinf(tgt.body_yrad);
-											float y_1 = cosf(tgt.body_yrad);
-											auto vc = (c->get_pos() - tgt.get_pos()).Norm();
-											tgt.got_damage_.resize(tgt.got_damage_.size() + 1);
-											tgt.got_damage_.back().alpfa = 1.f;
-											tgt.got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
+											float x_1 = sinf(tgt->body_yrad);
+											float y_1 = cosf(tgt->body_yrad);
+											auto vc = ((*c)->get_pos() - tgt->get_pos()).Norm();
+											tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
+											tgt->got_damage_.back().alpfa = 1.f;
+											tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
 										}
-										if (!tgt.get_alive()) {
-											c->scores.set_kill(&tgt - &chara->front(), 100);
-											tgt.scores.set_death(c - &chara->front());
-											tgt.audio.voice_death.play_3D(tgt.get_pos(), 10.f);
+										if (!tgt->get_alive()) {
+											(*c)->scores.set_kill(&tgt - &chara->front(), 100);
+											tgt->scores.set_death(&(*c) - &chara->front());
+											tgt->audio.voice_death.play_3D(tgt->get_pos(), 10.f);
 										}
 										else {
-											tgt.audio.voice_damage.play_3D(tgt.get_pos(), 10.f);
+											tgt->audio.voice_damage.play_3D(tgt->get_pos(), 10.f);
 										}
 										break;
 									}
 								}
 								//LEG
 								{
-									auto q = tgt.obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 4);
+									auto q = tgt->obj_col.CollCheck_Line(this->repos, this->move.pos, -1, 4);
 									if (q.HitFlag) {
 										this->move.pos = q.HitPosition;
 										//hit
-										//c->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
-										c->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
+										//(*c)->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
+										(*c)->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
 
 										//
 										this->hit_Flag = true;
 										this->Flag = false;
 
-										auto old = tgt.HP;
-										tgt.HP = std::clamp(tgt.HP - this->spec->get_damage() * 3 / 5, 0, tgt.HP_full);
-										tgt.HP_parts[4] = std::clamp(tgt.HP_parts[4] - this->spec->get_damage() * 3 / 5, 0, tgt.HP_full);
-										tgt.got_damage = old - tgt.HP;
-										tgt.got_damage_color = GetColor(255, 255, 255);
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.66) {
-											tgt.got_damage_color = GetColor(255, 255, 0);
+										auto old = tgt->HP;
+										tgt->HP = std::clamp(tgt->HP - this->spec->get_damage() * 3 / 5, 0, tgt->HP_full);
+										tgt->HP_parts[4] = std::clamp(tgt->HP_parts[4] - this->spec->get_damage() * 3 / 5, 0, tgt->HP_full);
+										tgt->got_damage = old - tgt->HP;
+										tgt->got_damage_color = GetColor(255, 255, 255);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.66) {
+											tgt->got_damage_color = GetColor(255, 255, 0);
 										}
-										if (float(tgt.HP) / float(tgt.HP_full) <= 0.33) {
-											tgt.got_damage_color = GetColor(255, 128, 0);
+										if (float(tgt->HP) / float(tgt->HP_full) <= 0.33) {
+											tgt->got_damage_color = GetColor(255, 128, 0);
 										}
-										if ((this->spec->get_damage() * 3 / 5) != tgt.got_damage) {
-											tgt.got_damage_color = GetColor(255, 0, 0);
+										if ((this->spec->get_damage() * 3 / 5) != tgt->got_damage) {
+											tgt->got_damage_color = GetColor(255, 0, 0);
 										}
 
-										tgt.got_damage_x = -255 + GetRand(255 * 2);
-										tgt.got_damage_f = 1.f;
+										tgt->got_damage_x = -255 + GetRand(255 * 2);
+										tgt->got_damage_f = 1.f;
 										{
-											float x_1 = sinf(tgt.body_yrad);
-											float y_1 = cosf(tgt.body_yrad);
-											auto vc = (c->get_pos() - tgt.get_pos()).Norm();
-											tgt.got_damage_.resize(tgt.got_damage_.size() + 1);
-											tgt.got_damage_.back().alpfa = 1.f;
-											tgt.got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
+											float x_1 = sinf(tgt->body_yrad);
+											float y_1 = cosf(tgt->body_yrad);
+											auto vc = ((*c)->get_pos() - tgt->get_pos()).Norm();
+											tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
+											tgt->got_damage_.back().alpfa = 1.f;
+											tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
 										}
-										if (!tgt.get_alive()) {
-											c->scores.set_kill(&tgt - &chara->front(), 50);
-											tgt.scores.set_death(c - &chara->front());
-											tgt.audio.voice_death.play_3D(tgt.get_pos(), 10.f);
+										if (!tgt->get_alive()) {
+											(*c)->scores.set_kill(&tgt - &chara->front(), 50);
+											tgt->scores.set_death(&(*c) - &chara->front());
+											tgt->audio.voice_death.play_3D(tgt->get_pos(), 10.f);
 										}
 										else {
-											tgt.audio.voice_damage.play_3D(tgt.get_pos(), 10.f);
+											tgt->audio.voice_damage.play_3D(tgt->get_pos(), 10.f);
 										}
 										break;
 									}
@@ -316,8 +318,8 @@ public:
 							if (this->Flag) {
 								this->Flag = false;
 								//弾痕
-								c->effcs_gndhit[c->use_effcsgndhit].set(this->move.pos, p.Normal, 0.025f / 0.1f);
-								++c->use_effcsgndhit %= c->effcs_gndhit.size();
+								(*c)->effcs_gndhit[(*c)->use_effcsgndhit].set(this->move.pos, p.Normal, 0.025f / 0.1f);
+								++(*c)->use_effcsgndhit %= (*c)->effcs_gndhit.size();
 								hit_obj_p.set(this->spec->get_caliber(), this->move.pos, p.Normal, this->move.mat.zvec());
 								return;
 							}
@@ -329,8 +331,8 @@ public:
 								p = (*MAPPTs)->map_col_line(this->move.pos, this->move.pos + vec * 5.f);
 							}
 							if (p.HitFlag) {
-								c->effcs_gndhit[c->use_effcsgndhit].set(p.HitPosition, p.Normal, 0.025f / 0.1f);
-								++c->use_effcsgndhit %= c->effcs_gndhit.size();
+								(*c)->effcs_gndhit[(*c)->use_effcsgndhit].set(p.HitPosition, p.Normal, 0.025f / 0.1f);
+								++(*c)->use_effcsgndhit %= (*c)->effcs_gndhit.size();
 								hit_b_obj_p.set(0.35f, p.HitPosition, p.Normal, this->move.mat.zvec());
 							}
 						}
@@ -512,7 +514,7 @@ public:
 			GUN_STATUS() {
 				Reset();
 			}
-			GUN_STATUS(const GUN_STATUS &gun_stat) {
+			GUN_STATUS(const GUN_STATUS &) {
 			}
 			~GUN_STATUS() {
 			}
@@ -1876,19 +1878,20 @@ public:
 		void magrelease(MAG_STATUS& mag) noexcept {
 			auto& item = (*MAPPTs)->item;
 			auto add_vec_t = (this->base.magf_pos() - this->base.mag2f_pos()).Norm()*1.f / FPS;
-			for (auto i = item.begin(); i != item.end();) {
+			for (auto& i : item) {
 				if (i->Set_item_magrelease(mag.ptr_mag, this->mag_m, add_vec_t, mag.m_cnt)) {
 					break;
 				}
-				++i;
-				if (i == item.end()) {
+				if (&i == &item.back()) {
 					item.resize(item.size() + 1);
-					item.back().Set_item_magazine(item.size() - 1, mag.ptr_mag, this->mag_m, add_vec_t, mag.m_cnt);
+					item.back() = std::make_shared<Items>();
+					item.back()->Set_item_magazine(item.size() - 1, mag.ptr_mag, this->mag_m, add_vec_t, mag.m_cnt);
 				}
 			}
 			if (item.size() == 0) {
 				item.resize(item.size() + 1);
-				item.back().Set_item_magazine(item.size() - 1, mag.ptr_mag, this->mag_m, add_vec_t, mag.m_cnt);
+				item.back() = std::make_shared<Items>();
+				item.back()->Set_item_magazine(item.size() - 1, mag.ptr_mag, this->mag_m, add_vec_t, mag.m_cnt);
 			}
 		}
 		void medrelease(Meds*meddata) noexcept {
@@ -1897,19 +1900,20 @@ public:
 			moves tmp;
 			tmp.pos = this->get_maz();
 			tmp.mat = this->gun_m.mat;
-			for (auto i = item.begin(); i != item.end();) {
+			for (auto& i : item) {
 				if (i->Set_item_med(meddata, tmp, add_vec_t)) {
 					break;
 				}
-				++i;
-				if (i == item.end()) {
+				if (&i == &item.back()) {
 					item.resize(item.size() + 1);
-					item.back().Set_item_med_(item.size() - 1, meddata, tmp, add_vec_t);
+					item.back() = std::make_shared<Items>();
+					item.back()->Set_item_med_(item.size() - 1, meddata, tmp, add_vec_t);
 				}
 			}
 			if (item.size() == 0) {
 				item.resize(item.size() + 1);
-				item.back().Set_item_med_(item.size() - 1, meddata, tmp, add_vec_t);
+				item.back() = std::make_shared<Items>();
+				item.back()->Set_item_med_(item.size() - 1, meddata, tmp, add_vec_t);
 			}
 		}
 		void grerelease(Grenades*gredata) noexcept {
@@ -1918,19 +1922,20 @@ public:
 			moves tmp;
 			tmp.pos = this->LEFTHAND.move.pos;
 			tmp.mat = this->gun_m.mat;
-			for (auto i = item.begin(); i != item.end();) {
+			for (auto& i : item) {
 				if (i->Set_item_gre(gredata, tmp, add_vec_t)) {
 					break;
 				}
-				++i;
-				if (i == item.end()) {
+				if (&i == &item.back()) {
 					item.resize(item.size() + 1);
-					item.back().Set_item_gre_(item.size() - 1, gredata, tmp, add_vec_t);
+					item.back() = std::make_shared<Items>();
+					item.back()->Set_item_gre_(item.size() - 1, gredata, tmp, add_vec_t);
 				}
 			}
 			if (item.size() == 0) {
 				item.resize(item.size() + 1);
-				item.back().Set_item_gre_(item.size() - 1, gredata, tmp, add_vec_t);
+				item.back() = std::make_shared<Items>();
+				item.back()->Set_item_gre_(item.size() - 1, gredata, tmp, add_vec_t);
 			}
 		}
 		//マガジン排出
@@ -2072,7 +2077,7 @@ public:
 		//頭の揺れ
 		const auto Head_bobbing(MV1::ani* ani_ptr) noexcept { return sin(DX_PI_F*2.f*(ani_ptr->time / ani_ptr->alltime)) *ani_ptr->per; }
 		//銃器の位置指定(右手が沿うため)
-		void move_nomal_gun(Chara& mine) noexcept {
+		void move_nomal_gun(std::shared_ptr<PLAYERclass::Chara>* mine) noexcept {
 			{
 				{
 					//サイト位置決定
@@ -2091,7 +2096,7 @@ public:
 					}
 					else {
 						easing_set(&this->gunpos,
-							VECTOR_ref::vget(-0.15f - sight_vec.x(), -0.07f - sight_vec.y() + Head_bobbing(this->anime_walk)*0.002f, ((this == &mine) ? -0.09f : -0.15f)),
+							VECTOR_ref::vget(-0.15f - sight_vec.x(), -0.07f - sight_vec.y() + Head_bobbing(this->anime_walk)*0.002f, ((this == (*mine).get()) ? -0.09f : -0.15f)),
 							0.75f);
 					}
 				}
@@ -2206,7 +2211,7 @@ public:
 			SetMouseDispFlag(FALSE);
 		}
 		//AI操作
-		void AI_move(float& x_t, float& y_t, std::vector<Chara>&chara) {
+		void AI_move(float& x_t, float& y_t, std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara) {
 			int32_t x_m, y_m;
 			//AI
 			int turn = -1;
@@ -2249,13 +2254,13 @@ public:
 				{
 					auto StartPos = this->get_head_pos();
 					VECTOR_ref EndPos;
-					for (auto& tgt : chara) {
-						if (this == &tgt) { continue; }
-						const size_t index = &tgt - &chara.front();
-						if (tgt.gunf) { turn = int(index); }
-						EndPos = (this->cpu_do.ai_time_shoot < 0.f) ? tgt.BodyFrame(tgt.frame_s.head_f.first) : tgt.BodyFrame(tgt.frame_s.bodyb_f.first);
+					for (auto& tgt : (*chara)) {
+						if (this == tgt.get()) { continue; }
+						const size_t index = &tgt - &(*chara).front();
+						if (tgt->gunf) { turn = int(index); }
+						EndPos = (this->cpu_do.ai_time_shoot < 0.f) ? tgt->BodyFrame(tgt->frame_s.head_f.first) : tgt->BodyFrame(tgt->frame_s.bodyb_f.first);
 						if (vec_to == VECTOR_ref::vget(0.f, 0.f, 0.f)) { vec_to = EndPos - StartPos; }//基準の作成
-						if (!tgt.get_alive()) { continue; }
+						if (!tgt->get_alive()) { continue; }
 						if ((*MAPPTs)->map_col_line(StartPos, EndPos).HitFlag) { continue; }
 						EndPos = EndPos - StartPos;
 						if (vec_to.size() >= EndPos.size()) {
@@ -2306,7 +2311,7 @@ public:
 
 				this->cpu_do.ai_time_shoot = 0.f;
 				//向き指定
-				vec_to = ((turn >= 0) ? chara[turn].get_pos() : waypoint[this->cpu_do.wayp_pre.front()]) - poss;
+				vec_to = ((turn >= 0) ? (*chara)[turn]->get_pos() : waypoint[this->cpu_do.wayp_pre.front()]) - poss;
 				//到達時に判断
 				if (vec_to.size() <= 0.5f) {
 					int now = (*MAPPTs)->get_next_waypoint(this->cpu_do.wayp_pre, poss);
@@ -2459,7 +2464,7 @@ public:
 		}
 	private:
 		//操作
-		void operation(const bool cannotmove, std::vector<Chara>&chara, const float fov_per, uint8_t move_mode) noexcept {
+		void operation(const bool cannotmove, std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara, const float fov_per, uint8_t move_mode) noexcept {
 			float x_m = 0.f, y_m = 0.f;
 			if (this->get_alive()) {
 				if (this->get_alive()) {
@@ -2613,8 +2618,8 @@ public:
 		}
 	private:
 		//体の動作を決定
-		void Set_body(Chara& mine) noexcept {
-			bool useVR = (*DrawPts)->use_vr && (this == &mine);
+		void Set_body(std::shared_ptr<PLAYERclass::Chara>* mine) noexcept {
+			bool useVR = (*DrawPts)->use_vr && (this == (*mine).get());
 			//
 			if (this->get_alive()) {
 #ifdef _USE_OPENVR_
@@ -3238,8 +3243,10 @@ public:
 			std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t,
 			std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t,
 			//std::unique_ptr<OPTION, std::default_delete<OPTION>>* OPTPTs_t,
-			std::unique_ptr<DeBuG, std::default_delete<DeBuG>>* DebugPTs_t
+			std::unique_ptr<DeBuG, std::default_delete<DeBuG>>* DebugPTs_t,
+			std::shared_ptr<PLAYERclass::Chara>* me_t
 		) noexcept {
+			me = me_t;
 			DrawPts = DrawPts_t;
 			//OPTPTs = OPTPTs_t;
 			MAPPTs = MAPPTs_t;
@@ -3303,6 +3310,7 @@ public:
 				this->gunanime_shot_last = &this->base.obj.get_anime(2);
 				this->gunanime_trigger = &this->base.obj.get_anime(3);
 				this->gunanime_magcatch = &this->base.obj.get_anime(4);
+				this->gunanime_sel.clear();
 				this->gunanime_sel.resize(this->base.thisparts->select.size());
 				this->gunanime_sel[0] = &this->base.obj.get_anime(5);
 				this->gunanime_sel[1] = &this->base.obj.get_anime(6);
@@ -3410,7 +3418,7 @@ public:
 			const bool playing, const float fov_per,
 			std::vector <Meds>& meds_data,
 			std::vector<Grenades>& gres_data,
-			std::vector<Chara>&chara, Chara&mine) noexcept {
+			std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara, std::shared_ptr<PLAYERclass::Chara>*mine) noexcept {
 			/*
 			全体　0.4ms～1.4ms
 			*/
@@ -3426,8 +3434,10 @@ public:
 						for (auto& d : this->got_damage_) {
 							if (std::clamp(int(255.f*(1.f - powf(1.f - d.alpfa, 5.f))), 0, 255) < 5) {
 								auto i = (&d - &this->got_damage_.front());
-								this->got_damage_.erase(this->got_damage_.begin() + i);
+								std::iter_swap(this->got_damage_.begin() + i, this->got_damage_.end() - 1);
+								this->got_damage_.pop_back();
 								none = false;
+								break;
 							}
 						}
 						if (none) {
@@ -3475,7 +3485,7 @@ public:
 			}
 			//座標取得
 #ifdef _USE_OPENVR_
-			if (this == &mine) {
+			if (this == (*mine).get()) {
 				if ((*DrawPts)->tracker_num.size() > 0) {
 					this->WAIST.UpDate_pos((*DrawPts)->tracker_num[0], flag_start_loop);
 					this->WAIST.move.pos = this->WAIST.move.pos - this->WAIST.pos_rep;
@@ -3484,7 +3494,7 @@ public:
 #endif // _USE_OPENVR_
 			//p1～p2 0.00ms
 						//プレイヤー操作
-			this->operation(!playing, chara, fov_per, (this == &mine) ? 0 : 1);
+			this->operation(!playing, chara, fov_per, (this == (*mine).get()) ? 0 : 1);
 			//p2～p2-1 ～0.11ms
 						//壁その他の判定
 			this->wall_col();
@@ -3504,7 +3514,7 @@ public:
 			}
 			//p4-2～p4-3 0.01ms
 						//
-			if (!((*DrawPts)->use_vr && (this == &mine))) {
+			if (!((*DrawPts)->use_vr && (this == (*mine).get()))) {
 				//視点取得
 				set_HMDpos();
 				//銃器
@@ -3727,7 +3737,7 @@ public:
 				//
 				this->Set_Magazine_Mat();
 				//弾の処理
-				for (auto& a : this->bullet) { a.UpDate(this, &chara, hit_obj_p, hit_b_obj_p); }
+				for (auto& a : this->bullet) { a.UpDate(me, chara, hit_obj_p, hit_b_obj_p); }
 				//薬莢の処理
 				update_cart();
 				//エフェクトの処理
@@ -3765,7 +3775,7 @@ public:
 			}
 			//p5-3～p6 0.04ms
 						//
-			if (this == &mine) {
+			if (this == (*mine).get()) {
 				//レティクル
 				this->sight_[select_sight].Set_reticle();
 				//ライト
@@ -3812,7 +3822,7 @@ public:
 			}
 		}
 		/*カメラ指定*/
-		void Set_cam(cam_info& camera_main, std::vector<Chara>&chara, const float fov_) noexcept {
+		void Set_cam(cam_info& camera_main, std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara, const float fov_) noexcept {
 			if (this->get_alive()) {
 				auto mat_T = get_res_blur(0.7f) * this->HMD.move.mat;//リコイル
 
@@ -3837,7 +3847,7 @@ public:
 			}
 			else {
 				//デスカメラ
-				easing_set(&camera_main.camvec, chara[this->scores.death_id].get_pos(), 0.9f);
+				easing_set(&camera_main.camvec, (*chara)[this->scores.death_id]->get_pos(), 0.9f);
 				auto rad = atan2f((camera_main.camvec - camera_main.campos).x(), (camera_main.camvec - camera_main.campos).z());
 				easing_set(&camera_main.campos, this->get_pos() + VECTOR_ref::vget(-5.f*sin(rad), 2.f, -5.f*cos(rad)), 0.9f);
 				camera_main.camup = VECTOR_ref::vget(0, 1.f, 0);
@@ -3910,7 +3920,7 @@ public:
 			for (auto& a : this->bullet) { a.Draw(); }
 		}
 		/*レーザー、ライト描画*/
-		void Draw_LAM_Effect(std::vector<Chara>&chara, GraphHandle&light_pic) noexcept {
+		void Draw_LAM_Effect(std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara, GraphHandle&light_pic) noexcept {
 			if (this->lam.get_attaching()) {
 				switch (this->lam.thisparts->select_lam[0]) {
 				case EnumSELECT_LAM::SELECT_LASER:
@@ -3918,13 +3928,13 @@ public:
 					auto StartPos = this->lam.source_frame_pos();
 					auto EndPos = StartPos - this->base.obj.GetMatrix().zvec()*100.f;
 					(*MAPPTs)->map_col_nearest(StartPos, &EndPos);
-					for (auto& tgt : chara) {
-						if (&tgt == this || !tgt.get_alive()) {
+					for (auto& tgt : *chara) {
+						if (tgt.get() == this || !tgt->get_alive()) {
 							continue;
 						}
-						if (tgt.set_ref_col(StartPos, EndPos)) {
+						if (tgt->set_ref_col(StartPos, EndPos)) {
 							for (int i = 0; i < this->obj_col.mesh_num(); ++i) {
-								auto q = tgt.obj_col.CollCheck_Line(StartPos, EndPos, -1, i);
+								auto q = tgt->obj_col.CollCheck_Line(StartPos, EndPos, -1, i);
 								if (q.HitFlag) {
 									EndPos = q.HitPosition;
 								}

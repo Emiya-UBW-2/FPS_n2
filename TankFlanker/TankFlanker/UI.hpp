@@ -127,8 +127,8 @@ public:
 		}
 		~UI_LOAD(void) noexcept {
 		}
-		template<class Y, class D>
-		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, std::vector<save_c> save_parts, const std::string& set_name) noexcept {
+		template<class Y>
+		void UI_Draw(std::shared_ptr<Y>& MAINLOOPscene, std::vector<save_c> save_parts, const std::string& set_name) noexcept {
 			set_fonts();
 
 			DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(192, 192, 192), TRUE);
@@ -253,8 +253,8 @@ public:
 		}
 		~UI_CUSTOM(void) noexcept {
 		}
-		template<class Y, class D>
-		void UI_Draw(std::unique_ptr<Y, D>& MAINLOOPscene, size_t& parts_cat, const bool &Rot, PLAYERclass::Chara& mine, GUNPARTs* parts_p, float& change_per) noexcept {
+		template<class Y>
+		void UI_Draw(std::shared_ptr<Y>& MAINLOOPscene, size_t& parts_cat, const bool &Rot, std::shared_ptr<PLAYERclass::Chara>* mine, GUNPARTs* parts_p, float& change_per) noexcept {
 			set_fonts();
 
 			int xs = 0, ys = 0, xp = 0, yp = 0;
@@ -264,12 +264,12 @@ public:
 				//font->DrawStringFormat(100, 300, GetColor(255, 0, 0), "total : %d / %d", sel_p + 1, sel_max);
 				//font->DrawStringFormat(100, 350, GetColor(255, 0, 0), "chang : %d / %d", chang + 1, chang_max);
 				i = 0;
-				for (auto& m : mine.mount_) {
+				for (auto& m : (*mine)->mount_) {
 					font->DrawString(400, 300 + 25*i, m.name, GetColor(255, 0, 0)); i ++;
 				}
 
 				i = 0;
-				for (auto& m : mine.sight_) {
+				for (auto& m : (*mine)->sight_) {
 					font->DrawString(700, 300 + 25*i, m.name, GetColor(255, 0, 0)); i ++;
 				}
 
@@ -380,8 +380,8 @@ public:
 					}
 				}
 
-				font->DrawStringFormat(100, 700, GetColor(255, 0, 0), "weigt  : %5.2f", mine.get_per_all().weight);
-				font->DrawStringFormat(100, 725, GetColor(255, 0, 0), "recoil : %5.2f", mine.get_per_all().recoil);
+				font->DrawStringFormat(100, 700, GetColor(255, 0, 0), "weigt  : %5.2f", (*mine)->get_per_all().weight);
+				font->DrawStringFormat(100, 725, GetColor(255, 0, 0), "recoil : %5.2f", (*mine)->get_per_all().recoil);
 
 
 				font->DrawString(100, 575, "SPACE  :Go Battle", GetColor(255, 0, 0));
@@ -402,12 +402,12 @@ public:
 		float timer = 0.f;
 		std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>* RULEparts;
 	private:
-		void Draw_HP(int xpos, int ypos, int xsize, int ysize, PLAYERclass::Chara& mine) noexcept {
+		void Draw_HP(int xpos, int ypos, int xsize, int ysize, std::shared_ptr<PLAYERclass::Chara>* mine) noexcept {
 			auto size = y_r(2);
 			int x1 = xpos - xsize / 2;
 			float size_y = float(ysize - size) / fonthight;
-			int nowHP = (xsize - size * 2)*mine.HP / mine.HP_full;
-			int willHP = (xsize - size * 2)*int(mine.HP_r) / mine.HP_full;
+			int nowHP = (xsize - size * 2)*(*mine)->HP / (*mine)->HP_full;
+			int willHP = (xsize - size * 2)*int((*mine)->HP_r) / (*mine)->HP_full;
 			//back
 			DrawBox(x1, ypos, x1 + xsize, ypos + ysize + size, GetColor(128, 128, 128), FALSE);
 			//
@@ -421,11 +421,11 @@ public:
 			if (nowHP < willHP) {
 				DrawBox(x1 + nowHP, ypos + size, x1 + willHP, ypos + ysize + size, GetColor(255, 255, 0), TRUE);
 			}
-			font->DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", mine.HP, mine.HP_full);
+			font->DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", (*mine)->HP, (*mine)->HP_full);
 
-			if (1.f - mine.got_damage_f >= 0.01f) {
-				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - mine.got_damage_f, 5.f))), 0, 255));
-				font->DrawExtendStringFormat_MID(xpos + (xsize / 2 * mine.got_damage_x / 255), ypos + size - int(100 * (1.f - mine.got_damage_f)), size_y, size_y, mine.got_damage_color, "%d", mine.got_damage);
+			if (1.f - (*mine)->got_damage_f >= 0.01f) {
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - (*mine)->got_damage_f, 5.f))), 0, 255));
+				font->DrawExtendStringFormat_MID(xpos + (xsize / 2 * (*mine)->got_damage_x / 255), ypos + size - int(100 * (1.f - (*mine)->got_damage_f)), size_y, size_y, (*mine)->got_damage_color, "%d", (*mine)->got_damage);
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 		}
@@ -472,13 +472,13 @@ public:
 			this->Ready = (*RULEparts)->get_Ready();
 			this->timer = std::max((*RULEparts)->get_timer(), 0.f);
 		}
-		void UI_Draw(PLAYERclass::Chara& mine) noexcept {
+		void UI_Draw(std::shared_ptr<PLAYERclass::Chara>* mine) noexcept {
 			set_fonts();
 			int xs = 0, ys = 0, xp = 0, yp = 0;
 			{
 				//HP表示
 				{
-					auto ratio = (1.f - float(float(mine.HP) / mine.HP_full));
+					auto ratio = (1.f - float(float((*mine)->HP) / (*mine)->HP_full));
 					if (ratio > 1.f / 255.f) {
 						if ((*DrawPts)->use_vr) {
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f*ratio), 0, 255));
@@ -490,7 +490,7 @@ public:
 						}
 					}
 					//ダメージ
-					ratio = (float(int(mine.HP_r) - mine.HP) / 50.f);
+					ratio = (float(int((*mine)->HP_r) - (*mine)->HP) / 50.f);
 					if (ratio > 1.f / 255.f) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*ratio), 0, 255));
 						DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(128, 0, 0), TRUE);
@@ -529,10 +529,10 @@ public:
 				}
 				//警告
 				{
-					if ((!(*DrawPts)->use_vr && !mine.ads_on()) || (*DrawPts)->use_vr) {
+					if ((!(*DrawPts)->use_vr && !(*mine)->ads_on()) || (*DrawPts)->use_vr) {
 						if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 							//空警告
-							if (!mine.gun_stat_now->not_chamber_EMPTY()) {
+							if (!(*mine)->gun_stat_now->not_chamber_EMPTY()) {
 								if ((*DrawPts)->use_vr) {
 									xp = t_disp_x / 2;
 									yp = t_disp_y / 2 + t_disp_y / 8;
@@ -556,7 +556,7 @@ public:
 						xp = t_disp_x / 2 + t_disp_y / 4;
 						yp = t_disp_y / 2 + t_disp_y / 6;
 					}
-					switch (mine.get_now_selector()) {
+					switch ((*mine)->get_now_selector()) {
 					case EnumSELECTER::SELECT_SEMI:
 						font_big->DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
 						break;
@@ -581,17 +581,17 @@ public:
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2 + t_disp_y / 12;
 					}
-					if (mine.get_canget_mag_f()) {
-						font->DrawString_MID(xp, yp, mine.get_canget_mag_s() + "を拾う", GetColor(255, 255, 0)); yp += fonthight;
+					if ((*mine)->get_canget_mag_f()) {
+						font->DrawString_MID(xp, yp, (*mine)->get_canget_mag_s() + "を拾う", GetColor(255, 255, 0)); yp += fonthight;
 					}
 
-					if (mine.get_canget_med_f()) {
-						font->DrawString_MID(xp, yp, mine.get_canget_med() + "を拾う", GetColor(255, 255, 0)); yp += fonthight;
+					if ((*mine)->get_canget_med_f()) {
+						font->DrawString_MID(xp, yp, (*mine)->get_canget_med() + "を拾う", GetColor(255, 255, 0)); yp += fonthight;
 					}
 				}
 				//弾薬
 				{
-					if ((!(*DrawPts)->use_vr && !mine.ads_on()) || (*DrawPts)->use_vr) {
+					if ((!(*DrawPts)->use_vr && !(*mine)->ads_on()) || (*DrawPts)->use_vr) {
 						if ((*DrawPts)->use_vr) {
 							xp = t_disp_x / 2 - y_r(20) - y_r(200);
 							yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20);
@@ -602,11 +602,11 @@ public:
 						}
 						//銃
 						{
-							font->DrawString(xp, yp, mine.get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
+							font->DrawString(xp, yp, (*mine)->get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
 						}
 						//マガジン関連(仮)
 						{
-							int size = int(mine.gun_stat_now->get_magazine_in().size());
+							int size = int((*mine)->gun_stat_now->get_magazine_in().size());
 							if ((*DrawPts)->use_vr) {
 								xp = t_disp_x / 2 - y_r(140) + font_bighight;
 								yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20) - font_bighight * size;
@@ -615,10 +615,10 @@ public:
 								xp = y_r(220) + font_bighight;
 								yp = t_disp_y - y_r(20) - font_bighight * size;
 							}
-							for (auto& a : mine.gun_stat_now->get_magazine_in()) {
+							for (auto& a : (*mine)->gun_stat_now->get_magazine_in()) {
 								font_big->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.m_cnt, a.cap);
-								if (&a == &mine.gun_stat_now->get_magazine_in().front()) {
-									if (mine.gun_stat_now->not_chamber_EMPTY()) {
+								if (&a == &(*mine)->gun_stat_now->get_magazine_in().front()) {
+									if ((*mine)->gun_stat_now->not_chamber_EMPTY()) {
 										font->DrawString(xp + font_big->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + font_bighight - fonthight, " +1", GetColor(255, 0, 0));
 									}
 									DrawTriangle(xp - y_r(10), yp + 5, xp, yp + font_bighight / 2, xp - y_r(10), yp + font_bighight - 5, GetColor(255, 255, 0), FALSE);
@@ -630,8 +630,8 @@ public:
 					}
 				}
 				//キル
-				if (mine.scores.kill_f) {
-					auto killt = mine.scores.kill_timer;
+				if ((*mine)->scores.kill_f) {
+					auto killt = (*mine)->scores.kill_timer;
 					if ((*DrawPts)->use_vr) {
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2 - t_disp_y / 6;
@@ -645,13 +645,13 @@ public:
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					DrawBox(xp - int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp, xp + int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp + font_bighight + 2, GetColor(255, 255, 255), TRUE);
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((killt * 2) / 7.f)), 0, 255));
-					font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", mine.scores.kill_id); yp += font_bighight * 2;	//キル
+					font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", (*mine)->scores.kill_id); yp += font_bighight * 2;	//キル
 
-					if (mine.scores.kill_streak > 0) {
+					if ((*mine)->scores.kill_streak > 0) {
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 						DrawBox(xp - int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp, xp + int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp + font_bighight + 2, GetColor(255, 255, 255), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*((killt * 2) / 7.f)), 0, 255));
-						font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", mine.scores.kill_streak); yp += font_bighight;			//キルストリーク
+						font_big->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", (*mine)->scores.kill_streak); yp += font_bighight;			//キルストリーク
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
@@ -665,7 +665,7 @@ public:
 						xp = t_disp_x / 2;
 						yp = t_disp_y / 2;
 					}
-					for (auto& d : mine.got_damage_) {
+					for (auto& d : (*mine)->got_damage_) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f*(1.f - powf(1.f - d.alpfa, 5.f))), 0, 255));
 						this->hit_rad.DrawRotaGraph(xp, yp, float(y_r(100 * 1.25f)) / 100.f*((1.f - 0.3f) + (d.alpfa*0.3f)), d.rad, true);
 					}
@@ -698,26 +698,26 @@ public:
 						xp = t_disp_x - font_bighight;
 						yp = t_disp_y / 2 - t_disp_y / 12 + font_bighight;
 					}
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", mine.scores.score); yp += font_bighight;			//スコア
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", mine.scores.kill_cnt); yp += font_bighight;			//キルデス
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", mine.scores.death_cnt); yp += font_bighight;			//キルデス
-					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float(mine.scores.kill_cnt) / float(std::max(mine.scores.death_cnt, 1))); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", (*mine)->scores.score); yp += font_bighight;			//スコア
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", (*mine)->scores.kill_cnt); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", (*mine)->scores.death_cnt); yp += font_bighight;			//キルデス
+					font_big->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float((*mine)->scores.kill_cnt) / float(std::max((*mine)->scores.death_cnt, 1))); yp += font_bighight;			//キルデス
 					//*/
 				}
 				//終わり
 			}
 		}
-		void item_Draw(std::vector<PLAYERclass::Chara>&chara, PLAYERclass::Chara&mine) noexcept {
+		void item_Draw(std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara, std::shared_ptr<PLAYERclass::Chara>*mine) noexcept {
 			set_fonts();
 			//弾インジケーター
 			if ((*DrawPts)->use_vr) {
-				auto pos_gun = mine.get_parts(EnumGunParts::PARTS_BASE)->obj.GetMatrix().pos();
+				auto pos_gun = (*mine)->get_parts(EnumGunParts::PARTS_BASE)->obj.GetMatrix().pos();
 				VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
 					int xp = int(p.x());
 					int yp = int(p.y());
-					int cnt = int(mine.gun_stat_now->get_magazine_in().front().m_cnt);
-					int per = 90 * cnt / int(mine.gun_stat_now->get_magazine_in().front().cap);
+					int cnt = int((*mine)->gun_stat_now->get_magazine_in().front().m_cnt);
+					int per = 90 * cnt / int((*mine)->gun_stat_now->get_magazine_in().front().cap);
 					float rad = deg2rad(90 - per);
 					int col_r = GetColor(std::clamp(int(255.f*sin(rad)*2.f), 0, 255), std::clamp(int(255.f*cos(rad)*2.f), 0, 255), 0);
 					if (std::max((pos_gun - GetCameraPosition()).size(), 1.f) <= 10.f) {
@@ -728,7 +728,7 @@ public:
 						for (int i = 0; i < std::clamp(int(4 * per / 90) + int(per != 0), 0, 4); i++) {
 							DrawBox(xp - siz / 2 + siz * i / 4 + 2, yp - y_r(30) - i * 2, xp - siz / 2 + siz * (i + 1) / 4 - 2, yp - y_r(10), col_r, TRUE);
 						}
-						if (!mine.gun_stat_now->not_chamber_EMPTY()) {
+						if (!(*mine)->gun_stat_now->not_chamber_EMPTY()) {
 							//空警告
 							if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 								font->DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += fonthight;
@@ -744,14 +744,14 @@ public:
 			{
 				SetCameraNearFar(0.01f, 10.f);
 				for (auto& g : (*MAPPTs)->item) {
-					if (g.flag_canlook_player) {
+					if (g->flag_canlook_player) {
 						//mag
-						if (g.get_ptr_mag() != nullptr) {
-							Draw_Item_UI(y_r(144), y_r(144), g.get_pos_(), "%s %d/%d", g.get_ptr_mag()->per.name.c_str(), g.get_magazine().mag_cnt, g.get_ptr_mag()->mag_cnt);
+						if (g->get_ptr_mag() != nullptr) {
+							Draw_Item_UI(y_r(144), y_r(144), g->get_pos_(), "%s %d/%d", g->get_ptr_mag()->per.name.c_str(), g->get_magazine().mag_cnt, g->get_ptr_mag()->mag_cnt);
 						}
 						//med
-						if (g.get_ptr_med() != nullptr) {
-							Draw_Item_UI(y_r(144), y_r(144), g.get_pos_(), "%s", g.get_ptr_med()->mod.get_name().c_str());
+						if (g->get_ptr_med() != nullptr) {
+							Draw_Item_UI(y_r(144), y_r(144), g->get_pos_(), "%s", g->get_ptr_med()->mod.get_name().c_str());
 						}
 						//
 					}
@@ -762,18 +762,18 @@ public:
 			//HP
 			{
 				SetCameraNearFar(0.01f, 100.f);
-				for (auto& c : chara) {
-					auto p = c.Set_HP_UI();
+				for (auto& c : *chara) {
+					auto p = c->Set_HP_UI();
 					if (p.z() >= 0.f && p.z() <= 1.f) {
-						this->Draw_HP(int(p.x()), int(p.y()), y_r(140), y_r(20), c);
+						this->Draw_HP(int(p.x()), int(p.y()), y_r(140), y_r(20), &c);
 					}
 				}
 			}
 			//ヒット
 			{
 				SetCameraNearFar(0.01f, 100.f);
-				for (auto& c : chara) {
-					c.Draw_Hit_UI(hit_Graph);
+				for (auto& c : *chara) {
+					c->Draw_Hit_UI(hit_Graph);
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
