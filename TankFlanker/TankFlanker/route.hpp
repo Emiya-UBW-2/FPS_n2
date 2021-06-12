@@ -20,6 +20,45 @@ class main_c {
 	bool selend = true;
 	bool selpause = true;
 
+	VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
+
+	class shaders2D {
+	public:
+		int pshandle, vshandle;
+		int pscbhandle;
+		int pscbhandle2;
+
+		void init(std::string vs, std::string ps) {
+			this->vshandle = LoadVertexShader(("shader/" + vs).c_str());	// 頂点シェーダーバイナリコードの読み込み
+			this->pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
+			this->pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
+			this->pshandle = LoadPixelShader(("shader/" + ps).c_str());		// ピクセルシェーダーバイナリコードの読み込み
+		}
+		void set_dispsize(int dispx,int dispy) {
+			FLOAT2 *dispsize = (FLOAT2 *)GetBufferShaderConstantBuffer(this->pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+			dispsize->u = float(dispx);
+			dispsize->v = float(dispy);
+			UpdateShaderConstantBuffer(this->pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+			SetShaderConstantBuffer(this->pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
+		}
+		void set_param(float param1, float param2, float param3, float param4) {
+			FLOAT4 *f4 = (FLOAT4 *)GetBufferShaderConstantBuffer(this->pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+			f4->x = param1;
+			f4->y = param2;
+			f4->z = param3;
+			f4->w = param4;
+			UpdateShaderConstantBuffer(this->pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+			SetShaderConstantBuffer(this->pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
+		}
+		void draw(VERTEX3DSHADER Screen_vertex[]) {
+			SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
+			SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
+			MV1SetUseOrigShader(TRUE);
+			DrawPolygon3DToShader(Screen_vertex, 2);		// 描画
+			MV1SetUseOrigShader(FALSE);
+		}
+	};
+	std::array<shaders2D, 2> shader2D;
 public:
 	main_c(void) noexcept {
 		auto OPTPTs = std::make_unique<OPTION>();																		//設定読み込み
@@ -31,60 +70,35 @@ public:
 			OPTPTs->Bloom = false;
 			OPTPTs->SSAO = false;
 		}
-		//int PixelShaderHandle;
-		//int VertexShaderHandle;
-		//VertexShaderHandle = LoadVertexShader("shader/NormalMesh_PointLightVS.vso");			// 頂点シェーダーを読み込む
-		//PixelShaderHandle = LoadPixelShader("shader/NormalMesh_PointLightPS.pso");		// ピクセルシェーダーを読み込む
-		//SetUseVertexShader(VertexShaderHandle);	// 使用する頂点シェーダーをセット
-		//SetUsePixelShader(PixelShaderHandle);	// 使用するピクセルシェーダーをセット
-		//MV1SetUseOrigShader(TRUE);	// モデルの描画にオリジナルシェーダーを使用する設定をＯＮにする
-
-		VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
-
 		// 頂点データの準備
-		int xp1 = 0;
-		int yp1 = 0;
-		int xp2 = deskx;
-		int yp2 = desky;
-		Screen_vertex[0].pos = VGet(float(xp1), float(desky - yp1), 0.0f);
-		Screen_vertex[1].pos = VGet(float(xp2), float(desky - yp1), 0.0f);
-		Screen_vertex[2].pos = VGet(float(xp1), float(desky - yp2), 0.0f);
-		Screen_vertex[3].pos = VGet(float(xp2), float(desky - yp2), 0.0f);
-		Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
-		Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
-		Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
-		Screen_vertex[3].dif = GetColorU8(255, 255, 255, 255);
-		Screen_vertex[0].u = 0.0f; Screen_vertex[0].v = 0.0f;
-		Screen_vertex[1].u = 1.0f; Screen_vertex[1].v = 0.0f;
-		Screen_vertex[2].u = 0.0f; Screen_vertex[3].v = 1.0f;
-		Screen_vertex[3].u = 1.0f; Screen_vertex[2].v = 1.0f;
-		Screen_vertex[4] = Screen_vertex[2];
-		Screen_vertex[5] = Screen_vertex[1];
+		{
+			int xp1 = 0;
+			int yp1 = 0;
+			int xp2 = deskx;
+			int yp2 = desky;
+			Screen_vertex[0].pos = VGet(float(xp1), float(desky - yp1), 0.0f);
+			Screen_vertex[1].pos = VGet(float(xp2), float(desky - yp1), 0.0f);
+			Screen_vertex[2].pos = VGet(float(xp1), float(desky - yp2), 0.0f);
+			Screen_vertex[3].pos = VGet(float(xp2), float(desky - yp2), 0.0f);
+			Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
+			Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
+			Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
+			Screen_vertex[3].dif = GetColorU8(255, 255, 255, 255);
+			Screen_vertex[0].u = 0.0f; Screen_vertex[0].v = 0.0f;
+			Screen_vertex[1].u = 1.0f; Screen_vertex[1].v = 0.0f;
+			Screen_vertex[2].u = 0.0f; Screen_vertex[3].v = 1.0f;
+			Screen_vertex[3].u = 1.0f; Screen_vertex[2].v = 1.0f;
+			Screen_vertex[4] = Screen_vertex[2];
+			Screen_vertex[5] = Screen_vertex[1];
+		}
 
-
-		FLOAT2 *dispsize;
-		FLOAT4 *f4;
-
-		//レンズ
-		int pshandle, vshandle;
-		int pscbhandle;
-		int pscbhandle2;
-		vshandle = LoadVertexShader("shader/VS_lens.vso");	// 頂点シェーダーバイナリコードの読み込み
-		pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
-		pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
-		pshandle = LoadPixelShader("shader/PS_lens.pso");		// ピクセルシェーダーバイナリコードの読み込み
-
-		//歪み
-		int pshandle_l, vshandle_l;
-		int pscbhandle_l;
-		int pscbhandle2_l;
-		vshandle_l = LoadVertexShader("shader/ShaderPolygon3DTestVS.vso");	// 頂点シェーダーバイナリコードの読み込み
-		pscbhandle_l = CreateShaderConstantBuffer(sizeof(float) * 4);
-		pscbhandle2_l = CreateShaderConstantBuffer(sizeof(float) * 4);
-		pshandle_l = LoadPixelShader("shader/ShaderPolygon3DTestPS.pso");		// ピクセルシェーダーバイナリコードの読み込み
-
+		//シェーダー
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
-		auto MAPPTs = std::make_unique<MAPclass::Map>(OPTPTs->grass_level);																	//MAP
+		shader2D[0].init("VS_lens.vso", "PS_lens.pso");																						//レンズ
+		shader2D[1].init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");															//歪み
+		SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());																		//使用するテクスチャをセット
+		//MAP
+		auto MAPPTs = std::make_unique<MAPclass::Map>(OPTPTs->grass_level);
 		//キー読み込み
 		auto KeyBind = std::make_unique<key_bind>();
 		auto PauseMenu = std::make_unique<pause_menu>(&KeyBind);
@@ -304,85 +318,33 @@ public:
 								}
 								GraphHandle::SetDraw_Screen(tmp);
 								{
-									float zoom = scenes_ptr->zoom_lens();
-									float reticle_size = scenes_ptr->size_lens();
-									if (scenes_ptr->is_lens())
-									{
+									if (scenes_ptr->is_lens()){
 										//レンズ描画
-										SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());		// 使用するテクスチャをセット
-										dispsize = (FLOAT2 *)GetBufferShaderConstantBuffer(pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-										dispsize->u = float(DrawPts->disp_x);
-										dispsize->v = float(DrawPts->disp_y);
-										UpdateShaderConstantBuffer(pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-										SetShaderConstantBuffer(pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
-										{
-											f4 = (FLOAT4 *)GetBufferShaderConstantBuffer(pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-											f4->x = float(DrawPts->disp_x) / 2.f;
-											f4->y = float(DrawPts->disp_y) / 2.f;
-											f4->z = reticle_size;
-											f4->w = zoom;
-										}
-										UpdateShaderConstantBuffer(pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-										SetShaderConstantBuffer(pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
-
+										shader2D[0].set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
+										shader2D[0].set_param(float(DrawPts->disp_x) / 2.f, float(DrawPts->disp_y) / 2.f, scenes_ptr->size_lens(), scenes_ptr->zoom_lens());
 										HostpassPTs->Get_BUF_Screen().SetDraw_Screen();
 										{
-											SetUseVertexShader(vshandle);		// 使用する頂点シェーダーをセット
-											SetUsePixelShader(pshandle);		// 使用するピクセルシェーダーをセット
-											MV1SetUseOrigShader(TRUE);
-											DrawPolygon3DToShader(Screen_vertex, 2);		// 描画
-											MV1SetUseOrigShader(FALSE);
+											shader2D[0].draw(Screen_vertex);
 										}
-										HostpassPTs->Get_MAIN_Screen().SetDraw_Screen();
-										{
-											HostpassPTs->Get_BUF_Screen().DrawGraph(0, 0, true);
-										}
+										HostpassPTs->Set_MAIN_draw_nohost();
 									}
 
-									float bless_ratio = scenes_ptr->ratio_bless();
-									float bless = scenes_ptr->time_bless();
-									if (scenes_ptr->is_bless())
-									{
+									if (scenes_ptr->is_bless()) {
 										//歪み描画
-										SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());		// 使用するテクスチャをセット
-										dispsize = (FLOAT2 *)GetBufferShaderConstantBuffer(pscbhandle_l);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-										dispsize->u = float(DrawPts->disp_x);
-										dispsize->v = float(DrawPts->disp_y);
-										UpdateShaderConstantBuffer(pscbhandle_l);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-										SetShaderConstantBuffer(pscbhandle_l, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
-										{
-											f4 = (FLOAT4 *)GetBufferShaderConstantBuffer(pscbhandle2_l);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-											f4->x = 0.f;
-											f4->y = 0.f;
-											f4->z = bless_ratio;
-											f4->w = bless_ratio * (1.f - cos(bless)) / 2.f;
-										}
-										UpdateShaderConstantBuffer(pscbhandle2_l);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-										SetShaderConstantBuffer(pscbhandle2_l, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
-
+										shader2D[1].set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
+										shader2D[1].set_param(0,0, scenes_ptr->ratio_bless(), (1.f - cos(scenes_ptr->time_bless())) / 2.f);
 										HostpassPTs->Get_BUF_Screen().SetDraw_Screen();
 										{
-											SetUseVertexShader(vshandle_l);		// 使用する頂点シェーダーをセット
-											SetUsePixelShader(pshandle_l);		// 使用するピクセルシェーダーをセット
-											MV1SetUseOrigShader(TRUE);
-											DrawPolygon3DToShader(Screen_vertex, 2);		// 描画
-											MV1SetUseOrigShader(FALSE);
+											shader2D[1].draw(Screen_vertex);
 										}
-										HostpassPTs->Get_MAIN_Screen().SetDraw_Screen();
-										{
-											HostpassPTs->Get_BUF_Screen().DrawGraph(0, 0, true);
-										}
+										HostpassPTs->Set_MAIN_draw_nohost();
 									}
-
 								}
 								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_, false);
 								{
-									//デフォ描画
-									HostpassPTs->MAIN_draw();
-									//
-									HostpassPTs->Draw(cam_t, DrawPts->use_vr);
-									//UI2
-									scenes_ptr->Item_Draw();
+									HostpassPTs->MAIN_draw();						//デフォ描画
+									HostpassPTs->DrawUI(cam_t, DrawPts->use_vr);	//UI1
+									scenes_ptr->Item_Draw();						//UI2
 								}
 							}, *cam_t);
 						}

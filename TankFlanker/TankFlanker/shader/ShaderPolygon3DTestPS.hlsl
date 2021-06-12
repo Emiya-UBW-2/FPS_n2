@@ -100,7 +100,7 @@ PS_OUTPUT main(PS_INPUT PSInput)
 	PSOutput.color0 = TextureDiffuseColor * PSInput.dif;
 
 	float Y = 0.3*PSOutput.color0.x + 0.59*PSOutput.color0.y + 0.11*PSOutput.color0.z;
-	float per = bless.z / 0.15f;
+	float per = bless.z;
 	PSOutput.color0.x = Y * per + (1.0 - per)*PSOutput.color0.x;
 	PSOutput.color0.y = Y * per + (1.0 - per)*PSOutput.color0.y;
 	PSOutput.color0.z = Y * per + (1.0 - per)*PSOutput.color0.z;
