@@ -194,28 +194,28 @@ public:
 					case 1:
 					{
 						way_point.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
-						pt = map_col.CollCheck_Line(way_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), way_point.back() + VECTOR_ref::vget(0, -10.f, 0.f), 0, 0);
+						pt = map_col_line(way_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), way_point.back() + VECTOR_ref::vget(0, -10.f, 0.f));
 						if (pt.HitFlag) { way_point.back() = pt.HitPosition; }
 						break;
 					}
 					case 2:
 					{
 						lean_point_e.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
-						pt = map_col.CollCheck_Line(lean_point_e.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_e.back() + VECTOR_ref::vget(0, -10.f, 0.f), 0, 0);
+						pt = map_col_line(lean_point_e.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_e.back() + VECTOR_ref::vget(0, -10.f, 0.f));
 						if (pt.HitFlag) { lean_point_e.back() = pt.HitPosition; }
 						break;
 					}
 					case 3:
 					{
 						lean_point_q.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
-						pt = map_col.CollCheck_Line(lean_point_q.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_q.back() + VECTOR_ref::vget(0, -10.f, 0.f), 0, 0);
+						pt = map_col_line(lean_point_q.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_q.back() + VECTOR_ref::vget(0, -10.f, 0.f));
 						if (pt.HitFlag) { lean_point_q.back() = pt.HitPosition; }
 						break;
 					}
 					case 4:
 					{
 						spawn_point.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
-						pt = map_col.CollCheck_Line(spawn_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), spawn_point.back() + VECTOR_ref::vget(0, -10.f, 0.f), 0, 0);
+						pt = map_col_line(spawn_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), spawn_point.back() + VECTOR_ref::vget(0, -10.f, 0.f));
 						if (pt.HitFlag) { spawn_point.back() = pt.HitPosition; }
 						break;
 					}
@@ -465,8 +465,8 @@ public:
 		int get_next_waypoint(std::array<int, T> wayp_pre, VECTOR_ref poss) {
 			int now = -1;
 			auto tmp = VECTOR_ref::vget(0, 100.f, 0);
-			for (auto& w : get_waypoint()) {
-				auto id = &w - &get_waypoint()[0];
+			for (auto& w : way_point) {
+				auto id = &w - &way_point[0];
 				bool tt = true;
 				for (auto& ww : wayp_pre) {
 					if (id == ww) {

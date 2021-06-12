@@ -19,6 +19,7 @@ class main_c {
 
 	bool selend = true;
 	bool selpause = true;
+
 public:
 	main_c(void) noexcept {
 		auto OPTPTs = std::make_unique<OPTION>();																		//設定読み込み
@@ -38,17 +39,7 @@ public:
 		//SetUsePixelShader(PixelShaderHandle);	// 使用するピクセルシェーダーをセット
 		//MV1SetUseOrigShader(TRUE);	// モデルの描画にオリジナルシェーダーを使用する設定をＯＮにする
 
-		int pshandle, vshandle;
 		VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
-		FLOAT2 *dispsize;
-		FLOAT4 *f4;
-		int pscbhandle;
-		int pscbhandle2;
-
-		vshandle = LoadVertexShader("shader/ShaderPolygon3DTestVS.vso");	// 頂点シェーダーバイナリコードの読み込み
-		pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
-		pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
-		pshandle = LoadPixelShader("shader/ShaderPolygon3DTestPS.pso");		// ピクセルシェーダーバイナリコードの読み込み
 
 		// 頂点データの準備
 		int xp1 = 0;
@@ -70,34 +61,60 @@ public:
 		Screen_vertex[4] = Screen_vertex[2];
 		Screen_vertex[5] = Screen_vertex[1];
 
+
+		FLOAT2 *dispsize;
+		FLOAT4 *f4;
+
+		//レンズ
+		int pshandle, vshandle;
+		int pscbhandle;
+		int pscbhandle2;
+		vshandle = LoadVertexShader("shader/VS_lens.vso");	// 頂点シェーダーバイナリコードの読み込み
+		pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
+		pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
+		pshandle = LoadPixelShader("shader/PS_lens.pso");		// ピクセルシェーダーバイナリコードの読み込み
+
+		//歪み
+		int pshandle_l, vshandle_l;
+		int pscbhandle_l;
+		int pscbhandle2_l;
+		vshandle_l = LoadVertexShader("shader/ShaderPolygon3DTestVS.vso");	// 頂点シェーダーバイナリコードの読み込み
+		pscbhandle_l = CreateShaderConstantBuffer(sizeof(float) * 4);
+		pscbhandle2_l = CreateShaderConstantBuffer(sizeof(float) * 4);
+		pshandle_l = LoadPixelShader("shader/ShaderPolygon3DTestPS.pso");		// ピクセルシェーダーバイナリコードの読み込み
+
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
 		auto MAPPTs = std::make_unique<MAPclass::Map>(OPTPTs->grass_level);																	//MAP
 		//キー読み込み
 		auto KeyBind = std::make_unique<key_bind>();
 		auto PauseMenu = std::make_unique<pause_menu>(&KeyBind);
 		//シーン
-		auto UI_LOADPTs = std::make_unique<UIclass::UI_LOADING>();
+		auto UI_LOADPTs = std::make_shared<Sceneclass::LOADING>();
 		auto MAINLOOPscene = std::make_shared<Sceneclass::MAINLOOP>(&MAPPTs, &OPTPTs);
 		auto LOADscene = std::make_shared<Sceneclass::LOAD>();
 		auto SELECTscene = std::make_shared<Sceneclass::SELECT>();
-
-		UI_LOADPTs->Get_ptr(&DrawPts, &MAPPTs);
+		std::shared_ptr<Sceneclass::TEMPSCENE> scenes_ptr{ nullptr };
+		//
+		UI_LOADPTs->Get_ptr(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
 		LOADscene->Get_ptr(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
 		SELECTscene->Get_ptr(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
 		MAINLOOPscene->Get_ptr(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
-
-		std::shared_ptr<Sceneclass::TEMPSCENE> scenes_ptr;
-
+		//
 		//繰り返し
 		do {
-			{
-				//遷移
-				//scenes_ptrがnullの場合ロード画面
-				scenes_ptr = nullptr;
-				switch (sel_scene) {
+			//遷移
+			switch (sel_scene) {
+				default:
+					UI_LOADPTs->settitle("アイテムデータ");							//アイテム読み込み
+					sel_scene = scenes::ITEM_LOAD;
+					scenes_ptr = UI_LOADPTs;
+					break;
 				case scenes::ITEM_LOAD:
 					MAINLOOPscene->Start_After();
+					MAPPTs->Ready_map("data/map_new2");								//マップ読み込み
+					UI_LOADPTs->settitle("マップ");									//マップ読み込み
 					sel_scene = scenes::MAP_LOAD;
+					scenes_ptr = UI_LOADPTs;
 					break;
 				case scenes::MAP_LOAD:
 					MAPPTs->Start();
@@ -116,36 +133,18 @@ public:
 					break;
 				case scenes::MAIN_LOOP:
 					MAPPTs->Dispose();
+					MAPPTs->Ready_map("data/map_new2");								//マップ読み込み
+					UI_LOADPTs->settitle("マップ");							//マップ読み込み
 					sel_scene = scenes::MAP_LOAD;
-					break;
-				default:
-					sel_scene = scenes::ITEM_LOAD;
+					scenes_ptr = UI_LOADPTs;
 					break;
 				}
-			}
 			//開始
 			{
-				//
-				if (scenes_ptr != nullptr) {
-					scenes_ptr->Set();
-					DrawPts->Set_Light_Shadow(scenes_ptr->get_Shadow_maxpos(), scenes_ptr->get_Shadow_minpos(), scenes_ptr->get_Light_vec(), [&] {scenes_ptr->Shadow_Draw_Far(); });
-					SetGlobalAmbientLight(scenes_ptr->get_Light_color());
-				}
-				switch (sel_scene) {
-				case scenes::ITEM_LOAD:
-					UI_LOADPTs->Set("アイテムデータ");					//アイテム読み込み
-					break;
-				case scenes::MAP_LOAD:
-					MAPPTs->Ready_map("data/map_new2");								//マップ読み込み
-					UI_LOADPTs->Set("マップ");							//マップ読み込み
-					break;
-				case scenes::MAIN_LOOP:
-					MAPPTs->Start_Ray(scenes_ptr->get_Light_vec());
-					break;
-				default:
-					break;
-				}
-				//
+				scenes_ptr->Set();
+				DrawPts->Set_Light_Shadow(scenes_ptr->get_Shadow_maxpos(), scenes_ptr->get_Shadow_minpos(), scenes_ptr->get_Light_vec(), [&] {scenes_ptr->Shadow_Draw_Far(); });
+				SetGlobalAmbientLight(scenes_ptr->get_Light_color());
+				if (sel_scene == scenes::MAIN_LOOP) { MAPPTs->Start_Ray(scenes_ptr->get_Light_vec()); }
 				selend = true;
 				selpause = false;
 				update_effect_was = GetNowHiPerformanceCount();
@@ -186,15 +185,8 @@ public:
 				{
 					//更新
 					KeyBind->reSet_isalways();
-					cam_t = nullptr;//2D機能だけ使うときはnull
 					selpause = false;
 					switch (sel_scene) {
-					case scenes::ITEM_LOAD:
-						selend = UI_LOADPTs->Update();
-						break;
-					case scenes::MAP_LOAD:
-						selend = UI_LOADPTs->Update();
-						break;
 					case scenes::LOAD:
 						if (!selpause) {
 							//キーアクティブ
@@ -272,32 +264,21 @@ public:
 					default:
 						break;
 					}
-					if (scenes_ptr != nullptr) {
-						if (!selpause) {
-							selend = scenes_ptr->UpDate();
-						}
-						cam_t = &scenes_ptr->Get_Camera();
+					if (!selpause) {
+						selend = scenes_ptr->UpDate();
 					}
+					cam_t = &scenes_ptr->Get_Camera();
 					//VR空間に適用
 					DrawPts->Move_Player();
 					//描画
 					{
 						//UI書き込み
-						HostpassPTs->Set_UI_draw([&](void) noexcept {
-							if (scenes_ptr != nullptr) {
-								scenes_ptr->UI_Draw();
-							}
-							else {
-								UI_LOADPTs->UI_Draw();
-							}
-						});
+						HostpassPTs->Set_UI_draw([&](void) noexcept { scenes_ptr->UI_Draw(); });
 						if (cam_t != nullptr) {
 							//音位置指定
 							Set3DSoundListenerPosAndFrontPosAndUpVec(cam_t->campos.get(), cam_t->camvec.get(), cam_t->camup.get());
 							//影用意
-							if (scenes_ptr != nullptr) {
-								DrawPts->Ready_Shadow(cam_t->campos, [&] { scenes_ptr->Shadow_Draw(); }, [&] { scenes_ptr->Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.5f, 2.5f, 2.5f), VECTOR_ref::vget(15.f, 2.5f, 15.f));
-							}
+							DrawPts->Ready_Shadow(cam_t->campos, [&] { scenes_ptr->Shadow_Draw(); }, [&] { scenes_ptr->Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.5f, 2.5f, 2.5f), VECTOR_ref::vget(15.f, 2.5f, 15.f));
 							//scenes::MAIN_LOOP:
 							//↑nearはこれ
 							//	(scenes_ptr->Get_Mine()->get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
@@ -317,28 +298,16 @@ public:
 								tmp_cam.camvec = GetCameraTarget();
 								{
 									//被写体深度描画
-									if (scenes_ptr != nullptr) {
-										HostpassPTs->BUF_draw([&](void) noexcept { scenes_ptr->BG_Draw(); }, [&](void) noexcept { DrawPts->Draw_by_Shadow([&] { scenes_ptr->Main_Draw(); }); }, tmp_cam, update_effect_f);
-									}
+									HostpassPTs->BUF_draw([&](void) noexcept { scenes_ptr->BG_Draw(); }, [&](void) noexcept { DrawPts->Draw_by_Shadow([&] { scenes_ptr->Main_Draw(); }); }, tmp_cam, update_effect_f);
 									//最終描画
 									HostpassPTs->Set_MAIN_draw();
 								}
 								GraphHandle::SetDraw_Screen(tmp);
 								{
-									bool lens = false;
-									float zoom = 1.f;
-									float reticle_size = 1.f;
-									//被写体深度描画
-									if (scenes_ptr != nullptr) {
-										lens = scenes_ptr->is_lens();
-										zoom = scenes_ptr->zoom_lens();
-										reticle_size = scenes_ptr->size_lens();
-									}
-									if (!lens) {
-										//デフォ描画
-										HostpassPTs->MAIN_draw();
-									}
-									else {
+									float zoom = scenes_ptr->zoom_lens();
+									float reticle_size = scenes_ptr->size_lens();
+									if (scenes_ptr->is_lens())
+									{
 										//レンズ描画
 										SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());		// 使用するテクスチャをセット
 										dispsize = (FLOAT2 *)GetBufferShaderConstantBuffer(pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
@@ -346,27 +315,74 @@ public:
 										dispsize->v = float(DrawPts->disp_y);
 										UpdateShaderConstantBuffer(pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
 										SetShaderConstantBuffer(pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
-										f4 = (FLOAT4 *)GetBufferShaderConstantBuffer(pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-										f4->x = float(DrawPts->disp_x) / 2.f;
-										f4->y = float(DrawPts->disp_y) / 2.f;
-										f4->z = reticle_size;
-										f4->w = zoom;
+										{
+											f4 = (FLOAT4 *)GetBufferShaderConstantBuffer(pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+											f4->x = float(DrawPts->disp_x) / 2.f;
+											f4->y = float(DrawPts->disp_y) / 2.f;
+											f4->z = reticle_size;
+											f4->w = zoom;
+										}
 										UpdateShaderConstantBuffer(pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
 										SetShaderConstantBuffer(pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
-										SetUseVertexShader(vshandle);		// 使用する頂点シェーダーをセット
-										SetUsePixelShader(pshandle);		// 使用するピクセルシェーダーをセット
-										MV1SetUseOrigShader(TRUE);
-										DrawPolygon3DToShader(Screen_vertex, 2);		// 描画
-										MV1SetUseOrigShader(FALSE);
+
+										HostpassPTs->Get_BUF_Screen().SetDraw_Screen();
+										{
+											SetUseVertexShader(vshandle);		// 使用する頂点シェーダーをセット
+											SetUsePixelShader(pshandle);		// 使用するピクセルシェーダーをセット
+											MV1SetUseOrigShader(TRUE);
+											DrawPolygon3DToShader(Screen_vertex, 2);		// 描画
+											MV1SetUseOrigShader(FALSE);
+										}
+										HostpassPTs->Get_MAIN_Screen().SetDraw_Screen();
+										{
+											HostpassPTs->Get_BUF_Screen().DrawGraph(0, 0, true);
+										}
 									}
+
+									float bless_ratio = scenes_ptr->ratio_bless();
+									float bless = scenes_ptr->time_bless();
+									if (scenes_ptr->is_bless())
+									{
+										//歪み描画
+										SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());		// 使用するテクスチャをセット
+										dispsize = (FLOAT2 *)GetBufferShaderConstantBuffer(pscbhandle_l);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+										dispsize->u = float(DrawPts->disp_x);
+										dispsize->v = float(DrawPts->disp_y);
+										UpdateShaderConstantBuffer(pscbhandle_l);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+										SetShaderConstantBuffer(pscbhandle_l, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
+										{
+											f4 = (FLOAT4 *)GetBufferShaderConstantBuffer(pscbhandle2_l);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+											f4->x = 0.f;
+											f4->y = 0.f;
+											f4->z = bless_ratio;
+											f4->w = bless_ratio * (1.f - cos(bless)) / 2.f;
+										}
+										UpdateShaderConstantBuffer(pscbhandle2_l);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+										SetShaderConstantBuffer(pscbhandle2_l, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
+
+										HostpassPTs->Get_BUF_Screen().SetDraw_Screen();
+										{
+											SetUseVertexShader(vshandle_l);		// 使用する頂点シェーダーをセット
+											SetUsePixelShader(pshandle_l);		// 使用するピクセルシェーダーをセット
+											MV1SetUseOrigShader(TRUE);
+											DrawPolygon3DToShader(Screen_vertex, 2);		// 描画
+											MV1SetUseOrigShader(FALSE);
+										}
+										HostpassPTs->Get_MAIN_Screen().SetDraw_Screen();
+										{
+											HostpassPTs->Get_BUF_Screen().DrawGraph(0, 0, true);
+										}
+									}
+
 								}
 								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_, false);
 								{
+									//デフォ描画
+									HostpassPTs->MAIN_draw();
+									//
 									HostpassPTs->Draw(cam_t, DrawPts->use_vr);
 									//UI2
-									if (scenes_ptr != nullptr) {
-										scenes_ptr->Item_Draw();
-									}
+									scenes_ptr->Item_Draw();
 								}
 							}, *cam_t);
 						}
@@ -393,9 +409,7 @@ public:
 							DrawPts->outScreen[0].DrawGraph(0, 0, false);
 						}
 						//上に書く
-						if (scenes_ptr != nullptr) {
-							scenes_ptr->LAST_Draw();
-						}
+						scenes_ptr->LAST_Draw();
 						//ポーズ
 						PauseMenu->draw();
 						//キー
@@ -422,12 +436,7 @@ public:
 			//終了処理
 			{
 				//解放
-				if (scenes_ptr != nullptr) {
-					scenes_ptr->Dispose();
-				}
-				else {
-					UI_LOADPTs->Dispose();
-				}
+				scenes_ptr->Dispose();
 				DrawPts->Delete_Shadow();
 			}
 			//

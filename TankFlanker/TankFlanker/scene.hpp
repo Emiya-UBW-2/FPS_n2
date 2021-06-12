@@ -10,12 +10,12 @@ public:
 		//
 	protected:
 		//引き継ぐ
-		std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts;
-		std::unique_ptr<OPTION, std::default_delete<OPTION>>* OPTPTs;
-		std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs;
-		std::shared_ptr<MAINLOOP>* MAINLOOPscene;
+		std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts{ nullptr };
+		std::unique_ptr<OPTION, std::default_delete<OPTION>>* OPTPTs{ nullptr };
+		std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs{ nullptr };
+		std::shared_ptr<MAINLOOP>* MAINLOOPscene{ nullptr };
 		//仮
-		std::unique_ptr<DeBuG, std::default_delete<DeBuG>>* DebugPTs;
+		std::unique_ptr<DeBuG, std::default_delete<DeBuG>>* DebugPTs{ nullptr };
 		//UIsound
 		SoundHandle decision;
 		SoundHandle cancel;
@@ -27,6 +27,10 @@ public:
 		bool use_lens = false;
 		float lens_zoom = 1.f;
 		float lens_size = 1.f;
+		//
+		bool use_bless = false;
+		float bless_ratio = 0.5f;
+		float bless = 0.f;
 		//
 		VECTOR_ref Shadow_minpos;
 		VECTOR_ref Shadow_maxpos;
@@ -67,6 +71,13 @@ public:
 			camera_main.set_cam_info(fov_base, 0.05f, 200.f);//1P
 		}
 		virtual bool UpDate(void) noexcept {
+			if (use_bless) {
+				bless += deg2rad(float(100 + GetRand(600)) / 100.f*FRAME_RATE / GetFPS());
+				bless_ratio -= (0.03f/90.f)*FRAME_RATE / GetFPS();
+				if (bless_ratio <= 0.f) {
+					use_bless = false;
+				}
+			}
 			return true;
 		}
 		virtual void Dispose(void) noexcept {
@@ -86,9 +97,46 @@ public:
 		virtual const bool& is_lens(void) { return use_lens; }
 		virtual const float& zoom_lens(void) { return lens_zoom; }
 		virtual const float& size_lens(void) { return lens_size; }
+
+		virtual const bool& is_bless(void) { return use_bless; }
+		virtual const float& ratio_bless(void) { return bless_ratio; }
+		virtual const float& time_bless(void) { return bless; }
+
 		virtual void Item_Draw(void) noexcept {
 		}
 		virtual void LAST_Draw(void) noexcept {
+		}
+	};
+	//
+	class LOADING : public TEMPSCENE {
+	private:
+		std::string title;
+		//そのまま
+		std::unique_ptr<UIclass::UI_LOADING, std::default_delete<UIclass::UI_LOADING>> UIparts;
+	public:
+		//
+		LOADING(void) noexcept {
+			UIparts = std::make_unique<UIclass::UI_LOADING>();
+		}
+
+		void settitle(const std::string& mes) {
+			title = mes;
+		}
+
+		void Set(void) noexcept override {
+			TEMPSCENE::Set();
+			UIparts->Get_ptr(DrawPts, MAPPTs);
+			UIparts->Set(title);
+		}
+		bool UpDate(void) noexcept override {
+			TEMPSCENE::UpDate();
+			return UIparts->Update();
+		}
+		void UI_Draw(void) noexcept override {
+			UIparts->UI_Draw();
+		}
+		void Dispose(void) noexcept override {
+			UIparts->Dispose();
 		}
 	};
 	//
@@ -154,6 +202,7 @@ public:
 			}
 		}
 		bool UpDate(void) noexcept override {
+			TEMPSCENE::UpDate();
 			bool changef = false;
 			//演算
 			{
@@ -194,7 +243,7 @@ public:
 			//
 		}
 		void UI_Draw(void) noexcept override {
-			UIparts->UI_Draw(*MAINLOOPscene, save_parts, save_presets[preset_select]);
+			UIparts->UI_Draw(MAINLOOPscene, save_parts, save_presets[preset_select]);
 		}
 	};
 	//
@@ -248,20 +297,6 @@ public:
 	public:
 		std::string preset;
 	private:
-		//サイトを乗せるかいなか
-		bool Set_sight_at(PLAYERclass::Chara::g_parts* ports_ptr) noexcept {
-			bool trm = false;
-			if (ports_ptr->get_attaching()) {
-				for (auto& can : ports_ptr->thisparts->can_attach) {
-					for (auto& tgt : *(*MAINLOOPscene)->get_parts_data(EnumGunParts::PARTS_SIGHT)) {
-						if (can == tgt.mod.get_name()) { trm = true; }
-						if (trm) { break; }
-					}
-					if (trm) { break; }
-				}
-			}
-			return trm;
-		}
 		//パーツのセーブ設定
 		void set_pts_save(size_t chang_t) {
 			if (save_parts.size() < size_t(parts_select_max) + 1) {
@@ -281,10 +316,10 @@ public:
 				port_cat = port_cat_t;
 				parts_cat = parts_cat_t;
 				{
-					change_select_max = (int)(*(*MAINLOOPscene)->get_parts_data(parts_cat)).size();
+					change_select_max = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size();
 					change_select = std::clamp(change_select, 0, change_select_max - 1);
 					parts_p = &(*(*MAINLOOPscene)->get_parts_data(parts_cat))[change_select];
-					viewparts_buf = port_ptr->obj.frame(port_ptr->rail_f[port_cat][0].first);
+					viewparts_buf = port_ptr->rail_pos(port_cat);
 					(*mine_ptr)->Detach_parts(parts_cat);
 					(*mine_ptr)->Attach_parts(parts_p, parts_cat, port_ptr, port_cat);
 				}
@@ -293,17 +328,17 @@ public:
 			++parts_select_max;
 
 			//サイト判定
-			if (Set_sight_at((*mine_ptr)->get_parts(parts_cat_t))) {
+			if ((*mine_ptr)->get_parts(parts_cat_t)->Set_sight_at(*(*MAINLOOPscene)->get_parts_data(EnumGunParts::PARTS_SIGHT))) {
 				sight_ptr[sight_p_s] = (*mine_ptr)->get_parts(parts_cat_t); ++sight_p_s;
 			}
 		}
 		//非必須品
 		void Set_chang_needs(size_t pts_cat, size_t pot_cat, int& chang_t, int sel = 0) noexcept {
-			change_select_max = (int)(*(*MAINLOOPscene)->get_parts_data(parts_cat)).size() + 1;
+			change_select_max = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size() + 1;
 			chang_t = std::clamp(chang_t, 0, change_select_max - 1);
 			if (chang_t == 0) { parts_p = nullptr; }
 			else { parts_p = &(*(*MAINLOOPscene)->get_parts_data(pts_cat))[std::max(chang_t - 1, 0)]; }
-			viewparts_buf = port_ptr->obj.frame(port_ptr->rail_f[pot_cat][0].first);
+			viewparts_buf = port_ptr->rail_pos(pot_cat);
 			(*mine_ptr)->Detach_parts(pts_cat, (sel == 0) ? sel : (sel - 1));
 			if (chang_t != 0) {
 				(*mine_ptr)->Attach_parts(parts_p, pts_cat, port_ptr, pot_cat, sel);
@@ -314,7 +349,7 @@ public:
 			port_type = port_type_t;
 			port_ptr = (*mine_ptr)->get_parts(port_type);
 			port_cat = port_cat_t;
-			if (port_ptr->rail_f[port_cat][0].first > 0) {
+			if (port_ptr->rail_fnum(port_cat).first > 0) {
 				if (parts_select == parts_select_max) {
 					parts_cat = parts_cat_t;
 					Set_chang_needs(parts_cat, port_cat, change_select);
@@ -322,7 +357,7 @@ public:
 				++parts_select_max;
 			}
 			//サイト判定
-			if (Set_sight_at((*mine_ptr)->get_parts(parts_cat_t))) {
+			if ((*mine_ptr)->get_parts(parts_cat_t)->Set_sight_at(*(*MAINLOOPscene)->get_parts_data(EnumGunParts::PARTS_SIGHT))) {
 				sight_ptr[sight_p_s] = (*mine_ptr)->get_parts(parts_cat_t); ++sight_p_s;
 			}
 		}
@@ -331,7 +366,7 @@ public:
 			port_type = port_type_t;
 			port_ptr = (*mine_ptr)->get_parts(port_type);
 			port_cat = port_cat_t;
-			if (port_ptr->rail_f[port_cat][0].first > 0) {
+			if (port_ptr->rail_fnum(port_cat).first > 0) {
 				if (parts_select == parts_select_max) {
 					if (change_select == 0) {
 						parts_cat = parts_cat_t_1;
@@ -356,7 +391,7 @@ public:
 						if (change_select != 0) {
 							(*mine_ptr)->Attach_parts(parts_p, parts_cat, port_ptr, port_cat);
 						}
-						viewparts_buf = port_ptr->obj.frame(port_ptr->rail_f[port_cat][0].first);
+						viewparts_buf = port_ptr->rail_pos(port_cat);
 					}
 					{
 						auto chang_t = change_select;
@@ -373,10 +408,11 @@ public:
 		//sight
 		void set_pts_need_sight(PLAYERclass::Chara::g_parts* s, int sel) {
 			if (s != nullptr) {
-				port_type = s->get_type();
 				port_ptr = s;
+				port_type = port_ptr->get_type();
+
 				port_cat = EnumAttachPoint::UPER_RAIL;
-				if (port_ptr->rail_f[port_cat][0].first > 0) {
+				if (port_ptr->rail_fnum(port_cat).first > 0) {
 					if (parts_select == parts_select_max) {
 						parts_cat = EnumGunParts::PARTS_SIGHT;
 						Set_chang_needs(parts_cat, port_cat, change_select, sel);
@@ -389,7 +425,7 @@ public:
 				}
 
 				port_cat = EnumAttachPoint::SIDEMOUNT;
-				if (port_ptr->rail_f[port_cat][0].first > 0) {
+				if (port_ptr->rail_fnum(port_cat).first > 0) {
 					if (parts_select == parts_select_max) {
 						parts_cat = EnumGunParts::PARTS_SIGHT;
 						Set_chang_needs(parts_cat, port_cat, change_select, sel);
@@ -550,6 +586,7 @@ public:
 			Light_color_ref = GetColorF(0.20f, 0.20f, 0.23f, 0.0f);
 		}
 		bool UpDate(void) noexcept override {
+			TEMPSCENE::UpDate();
 			bool changef = false;
 			//演算
 			{
@@ -661,7 +698,7 @@ public:
 				//銃発砲アニメ
 				(*mine_ptr)->Set_shot_anime(rate, true);
 				//銃アニメ更新
-				(*mine_ptr)->get_parts(EnumGunParts::PARTS_BASE)->obj.work_anime();
+				(*mine_ptr)->get_parts(EnumGunParts::PARTS_BASE)->updateani();
 				//薬莢の処理
 				(*mine_ptr)->update_cart();
 				//エフェクトの更新
@@ -727,7 +764,7 @@ public:
 			trigger_se.Dispose();
 		}
 		void UI_Draw(void) noexcept  override {
-			UIparts->UI_Draw(*MAINLOOPscene, parts_cat, Rot.on(), mine_ptr, parts_p, change_per);
+			UIparts->UI_Draw(MAINLOOPscene, parts_cat, Rot.on(), mine_ptr, parts_p, change_per);
 			easing_set(&change_per, 0.f, 0.5f);
 		}
 		void BG_Draw(void) noexcept override {
@@ -1002,9 +1039,10 @@ public:
 		void Set_Charaa(const size_t &spawn_total) noexcept {
 			//キャラ設定
 			this->chara.resize(spawn_total);
-			for (auto& c : this->chara) { c = std::make_shared<PLAYERclass::Chara>(); }
-			for (auto& c : this->chara) { c->Get_ptr(MAPPTs, DrawPts, DebugPTs, &c); }
-			for (auto& c : this->chara) { c->Set_(gun_data, 0, body_obj, body_obj_lag, body_col); }
+			for (auto& c : this->chara) {
+				c = std::make_shared<PLAYERclass::Chara>(MAPPTs, DrawPts, DebugPTs, gun_data, 0, body_obj, body_obj_lag, body_col);
+				c->Get_ptr(&c);
+			}
 		}
 	public:
 		void Set(void) noexcept override {
@@ -1053,6 +1091,7 @@ public:
 			(*MAPPTs)->Set();									//環境
 		}
 		bool UpDate(void) noexcept override {
+			TEMPSCENE::UpDate();
 			//アイテム演算
 			{
 				auto& item = (*MAPPTs)->item;
@@ -1090,6 +1129,13 @@ public:
 			this->hit_b_obj_p.update();
 			//campos,camvec,camupの指定
 			(*this->Get_Mine())->Set_cam(this->camera_main, &this->chara, this->fov_base);
+			//this->chara[1]->Set_cam(this->camera_main, &this->chara, this->fov_base);
+
+			this->camera_main.camup = MATRIX_ref::Vtrans(this->camera_main.camup, MATRIX_ref::RotAxis(
+				(this->camera_main.camvec - this->camera_main.campos), 
+				deg2rad(20.f*bless_ratio*sin(bless))
+			));
+
 			//ルール保存
 			UIparts->Update();
 			RULEparts->UpDate();
@@ -1187,6 +1233,15 @@ public:
 			if (lens_zoom > 1.0f) {
 				use_lens = (*this->Get_Mine())->ads_on();
 			}
+
+			//歪み出し
+			if (!use_bless && (*this->Get_Mine())->gre_eff) {
+				use_bless = true;
+				bless = 0.f;
+				bless_ratio = 0.15f;
+			}
+			(*this->Get_Mine())->gre_eff = false;
+
 			for (auto& c : this->chara) { c->Set_Draw_bullet(); }
 			UIparts->item_Draw(&this->chara, this->Get_Mine());
 		}

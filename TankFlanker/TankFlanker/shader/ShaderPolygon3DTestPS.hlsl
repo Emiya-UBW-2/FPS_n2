@@ -42,7 +42,7 @@ cbuffer cbMULTIPLYCOLOR_CBUFFER1 : register(b2)
 // プログラムとのやり取りのために使うレジスタ2
 cbuffer cbMULTIPLYCOLOR_CBUFFER2 : register(b3)
 {
-	float4	lenspos;
+	float4	bless;
 }
 
 SamplerState g_DiffuseMapSampler            : register(s0);		// ディフューズマップサンプラ
@@ -51,29 +51,25 @@ Texture2D    g_DiffuseMapTexture            : register(t0);		// ディフューズマッ
 //ブラックホールによる屈折の計算を行う関数(ブラックホールの位置、計算対象のピクセル位置)
 float2 ZoomCalc(in float2 pixel_pos) {
 	float2 pos;
-	pos.x = lenspos.x;
-	pos.y = lenspos.y;
+	pos.x = dispsize.x / 2;
+	pos.y = dispsize.y / 2;
 
 	float2 out_pos;
 	float2 pos_pix_vec = pixel_pos - pos;
 	float distance = sqrt(pow(pos_pix_vec.x, 2) + pow(pos_pix_vec.y, 2));//0~0.5
-	if (distance >= lenspos.z) {
-		out_pos.x = 0;
-		out_pos.y = 0;
-	}
-	else if (distance >= lenspos.z-30.0) 
-	{
-		float at = (1.f - (distance - (lenspos.z - 30.0))*0.5f / 30.0);
-		pos_pix_vec /= lenspos.w*at;
+
+	float dist_disp = sqrt(pow(dispsize.x / 2, 2) + pow(dispsize.y / 2, 2));//0~0.5
+
+	float at = (dist_disp - distance) / dist_disp;
+	if (at >= 0) {
+		pos_pix_vec *= at* bless.w + (1.0 - bless.w);
 		float2 cpos = pos_pix_vec + pos;
 		out_pos.x = (cpos - pixel_pos).x;
 		out_pos.y = (cpos - pixel_pos).y;
 	}
 	else {
-		pos_pix_vec /= lenspos.w;
-		float2 cpos = pos_pix_vec + pos;
-		out_pos.x = (cpos - pixel_pos).x;
-		out_pos.y = (cpos - pixel_pos).y;
+		out_pos.x = 0;
+		out_pos.y = 0;
 	}
 	return out_pos;
 }
@@ -102,6 +98,12 @@ PS_OUTPUT main(PS_INPUT PSInput)
 
 	// 出力カラー = テクスチャカラー * ディフューズカラー
 	PSOutput.color0 = TextureDiffuseColor * PSInput.dif;
+
+	float Y = 0.3*PSOutput.color0.x + 0.59*PSOutput.color0.y + 0.11*PSOutput.color0.z;
+	float per = bless.z / 0.15f;
+	PSOutput.color0.x = Y * per + (1.0 - per)*PSOutput.color0.x;
+	PSOutput.color0.y = Y * per + (1.0 - per)*PSOutput.color0.y;
+	PSOutput.color0.z = Y * per + (1.0 - per)*PSOutput.color0.z;
 
 	// 出力パラメータを返す
 	return PSOutput;

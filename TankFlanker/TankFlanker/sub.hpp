@@ -760,11 +760,16 @@ private:
 		std::string path;
 		MV1 model;
 		MV1 col;
+		std::array<frames, 2> magazine_ammo_f;	//マガジン用弾フレーム
+		std::array<frames, 3> LEFT_mag_frame;	//左手座標(マガジン保持時)
+		std::array<frames, 2> magazine_f;		//マガジンフレーム
 	public:
 		auto& get_name() const noexcept { return name; }
 		auto& get_path() const noexcept { return path; }
 		auto& get_model() const noexcept { return model; }
-
+		const frames& getmagazine_ammo_f(int i) const noexcept { return magazine_ammo_f[i]; }
+		const frames& getLEFT_mag_frame(int i) const noexcept { return LEFT_mag_frame[i]; }
+		const frames& getmagazine_f(int i) const noexcept { return magazine_f[i]; }
 		void Ready(std::string path_, std::string named) noexcept {
 			this->name = named;
 			this->path = path_ + named;
@@ -774,6 +779,24 @@ private:
 		int mdata = -1;
 		void Set_(std::function<void()> doing) {
 			this->model.SetMatrix(MGetIdent());
+			for (int i = 0; i < int(this->model.frame_num()); ++i) {
+				std::string p = this->model.frame_name(i);
+				if (p == std::string("ammo1")) {
+					this->magazine_ammo_f[0] = { int(i),this->model.frame(i) };
+				}
+				if (p == std::string("ammo2")) {
+					this->magazine_ammo_f[1] = { int(i),this->model.frame(i) };
+				}
+				if (p == std::string("LEFT_mag")) {
+					this->LEFT_mag_frame[0] = { int(i),this->model.frame(i) };
+					this->LEFT_mag_frame[1] = { int(i + 1),this->model.GetFrameLocalMatrix(i + 1).pos() };
+					this->LEFT_mag_frame[2] = { int(i + 2),this->model.GetFrameLocalMatrix(i + 2).pos() };
+				}
+				if (p == std::string("magazine_fall")) {
+					this->magazine_f[0] = { int(i),this->model.frame(i) };
+					this->magazine_f[1] = { int(i + 1),this->model.GetFrameLocalMatrix(i + 1).pos() };
+				}
+			}
 			this->mdata = FileRead_open((this->path + "/data.txt").c_str(), FALSE);
 			doing();
 			FileRead_close(mdata);
@@ -796,6 +819,7 @@ protected:
 		SoundHandle load_;
 		SoundHandle sort_magazine;
 		SoundHandle foot_;
+		SoundHandle explosion;
 		//
 		SoundHandle voice_damage;
 		SoundHandle voice_death;
@@ -821,6 +845,7 @@ protected:
 			voice_death = SoundHandle::Load("data/audio/voice/death.wav");
 			voice_breath = SoundHandle::Load("data/audio/voice/breath.wav");
 			voice_breath_run = SoundHandle::Load("data/audio/voice/breath_run.wav");
+			explosion = SoundHandle::Load("data/audio/explosion.wav");
 			SetCreate3DSoundFlag(FALSE);
 			SetUseASyncLoadFlag(FALSE);
 
@@ -831,6 +856,7 @@ protected:
 			this->slide_path = tgt.slide_path;
 			this->trigger_path = tgt.trigger_path;
 			this->shot = tgt.shot.Duplicate();
+			this->explosion = tgt.explosion.Duplicate();
 			this->slide = tgt.slide.Duplicate();
 			this->trigger = tgt.trigger.Duplicate();
 			this->magazine_down = tgt.magazine_down.Duplicate();
@@ -849,6 +875,7 @@ protected:
 			this->slide_path = "";
 			this->trigger_path = "";
 			this->shot.Dispose();
+			this->explosion.Duplicate();
 			this->slide.Dispose();
 			this->trigger.Dispose();
 			this->magazine_down.Dispose();
@@ -1341,6 +1368,9 @@ protected:
 			}
 		}
 		//mag
+		Items(size_t id, GUNPARTs*magdata, const moves& move_, const VECTOR_ref& add_, size_t dnm = SIZE_MAX) {
+			Set_item_magazine(id, magdata, move_, add_, dnm);
+		}
 		void Set_item_magazine(size_t id, GUNPARTs*magdata, const moves& move_, const VECTOR_ref& add_, size_t dnm = SIZE_MAX) {
 			this->id_t = id;
 			this->Set_item_1(magdata, move_, add_);
@@ -1363,7 +1393,7 @@ protected:
 			return false;
 		}
 		//med
-		void Set_item_med_(size_t id, Meds*meddata, const moves& move_, const VECTOR_ref& add_) {
+		Items(size_t id, Meds*meddata, const moves& move_, const VECTOR_ref& add_) {
 			this->id_t = id;
 			this->Set_item(meddata, move_, add_);
 		}
@@ -1375,7 +1405,7 @@ protected:
 			return false;
 		}
 		//gre
-		void Set_item_gre_(size_t id, Grenades*gredata, const moves& move_, const VECTOR_ref& add_) {
+		Items(size_t id, Grenades*gredata, const moves& move_, const VECTOR_ref& add_) {
 			this->id_t = id;
 			this->Set_item(gredata, move_, add_);
 		}
@@ -1526,45 +1556,55 @@ protected:
 			if (this->ptr_gre != nullptr && this->del_timer <= 0.f) {
 				//effect
 				(*mine)->calc_gre_effect(this->move.pos);
+				//
+				(*mine)->get_audio().explosion.vol(255);
+				(*mine)->get_audio().explosion.play_3D(this->move.pos, 100.f);
 				//グレ爆破
 				this->Detach_item();
 				for (auto& tgt : *chara) {
-					if (!MAPPTs->map_col_line(this->move.pos, tgt->get_head_pos()).HitFlag) {
-						int damage = 100;
-						auto old = tgt->HP;
-						tgt->HP = std::clamp(tgt->HP - damage, 0, tgt->HP_full);
-						tgt->HP_parts[0] = std::clamp(tgt->HP_parts[0] - damage, 0, tgt->HP_full);
-						tgt->got_damage = old - tgt->HP;
-						tgt->got_damage_color = GetColor(255, 255, 255);
+					if (tgt->get_alive()) {
+						float scale = (this->move.pos - tgt->get_head_pos()).size();
+						if (scale < 10.f) {
+							if (!MAPPTs->map_col_line(this->move.pos, tgt->get_head_pos()).HitFlag) {
+								int damage = int(150.f * (10.f - scale) / 10.f);
+								damage = std::clamp(damage, 0, 100);
+								auto old = tgt->HP;
+								tgt->HP = std::clamp(tgt->HP - damage, 0, tgt->HP_full);
+								tgt->HP_parts[0] = std::clamp(tgt->HP_parts[0] - damage, 0, tgt->HP_full);
+								tgt->got_damage = old - tgt->HP;
+								tgt->got_damage_color = GetColor(255, 255, 255);
 
-						if (float(tgt->HP) / float(tgt->HP_full) <= 0.66) {
-							tgt->got_damage_color = GetColor(255, 255, 0);
+								if (float(tgt->HP) / float(tgt->HP_full) <= 0.66) {
+									tgt->got_damage_color = GetColor(255, 255, 0);
+								}
+								if (float(tgt->HP) / float(tgt->HP_full) <= 0.33) {
+									tgt->got_damage_color = GetColor(255, 128, 0);
+								}
+								if ((damage) != tgt->got_damage) {
+									tgt->got_damage_color = GetColor(255, 0, 0);
+								}
+								tgt->got_damage_x = -255 + GetRand(255 * 2);
+								tgt->got_damage_f = 1.f;
+								{
+									float x_1 = sinf(tgt->get_body_yrad());
+									float y_1 = cosf(tgt->get_body_yrad());
+									auto vc = ((*mine)->get_pos() - tgt->get_pos()).Norm();
+									tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
+									tgt->got_damage_.back().alpfa = 1.f;
+									tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
+								}
+								if (!tgt->get_alive()) {
+									(*mine)->scores.set_kill(&tgt - &(*chara).front(), 70);
+									tgt->scores.set_death(&(*mine) - &(*chara).front());
+									tgt->get_audio().voice_death.play_3D(tgt->get_pos(), 10.f);
+								}
+								else {
+									tgt->get_audio().voice_damage.play_3D(tgt->get_pos(), 10.f);
+								}
+								tgt->gre_eff = true;
+								break;
+							}
 						}
-						if (float(tgt->HP) / float(tgt->HP_full) <= 0.33) {
-							tgt->got_damage_color = GetColor(255, 128, 0);
-						}
-						if ((damage) != tgt->got_damage) {
-							tgt->got_damage_color = GetColor(255, 0, 0);
-						}
-						tgt->got_damage_x = -255 + GetRand(255 * 2);
-						tgt->got_damage_f = 1.f;
-						{
-							float x_1 = sinf(tgt->get_body_yrad());
-							float y_1 = cosf(tgt->get_body_yrad());
-							auto vc = ((*mine)->get_pos() - tgt->get_pos()).Norm();
-							tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
-							tgt->got_damage_.back().alpfa = 1.f;
-							tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
-						}
-						if (!tgt->get_alive()) {
-							(*mine)->scores.set_kill(&tgt - &(*chara).front(), 70);
-							tgt->scores.set_death(&(*mine) - &(*chara).front());
-							//tgt->audio.voice_death.play_3D(tgt->get_pos(), 10.f);
-						}
-						else {
-							//tgt->audio.voice_damage.play_3D(tgt->get_pos(), 10.f);
-						}
-						break;
 					}
 				}
 				return true;

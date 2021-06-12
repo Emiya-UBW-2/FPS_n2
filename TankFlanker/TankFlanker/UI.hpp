@@ -17,12 +17,12 @@ public:
 		FontHandle font36;
 		FontHandle font24;
 		FontHandle font18;
-		FontHandle* font_large;
-		FontHandle* font_big;
-		FontHandle* font;
-		int font_largehight;
-		int font_bighight;
-		int fonthight;
+		FontHandle* font_large{ nullptr };
+		FontHandle* font_big{ nullptr };
+		FontHandle* font{ nullptr };
+		int font_largehight{ 0 };
+		int font_bighight{ 0 };
+		int fonthight{ 0 };
 	public:
 		void Get_ptr(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t) noexcept {
 			if (first_f) {
@@ -59,8 +59,6 @@ public:
 		virtual void Dispose(void) noexcept {
 		}
 	};
-
-
 	//ロードするセーブデータを指定する
 	class UI_LOAD : public UI_TEMP {
 	private:
@@ -128,7 +126,7 @@ public:
 		~UI_LOAD(void) noexcept {
 		}
 		template<class Y>
-		void UI_Draw(std::shared_ptr<Y>& MAINLOOPscene, std::vector<save_c> save_parts, const std::string& set_name) noexcept {
+		void UI_Draw(std::shared_ptr<Y>* MAINLOOPscene, std::vector<save_c> save_parts, const std::string& set_name) noexcept {
 			set_fonts();
 
 			DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(192, 192, 192), TRUE);
@@ -174,7 +172,7 @@ public:
 						break;
 					}
 					if (tmp_save.cang_ != SIZE_MAX) {
-						auto vec_data = MAINLOOPscene->get_parts_data(tmp_save.type_);
+						auto vec_data = (*MAINLOOPscene)->get_parts_data(tmp_save.type_);
 						if (vec_data != nullptr) {
 							temp_p = &(*vec_data)[tmp_save.cang_];
 						}
@@ -254,7 +252,7 @@ public:
 		~UI_CUSTOM(void) noexcept {
 		}
 		template<class Y>
-		void UI_Draw(std::shared_ptr<Y>& MAINLOOPscene, size_t& parts_cat, const bool &Rot, std::shared_ptr<PLAYERclass::Chara>* mine, GUNPARTs* parts_p, float& change_per) noexcept {
+		void UI_Draw(std::shared_ptr<Y>* MAINLOOPscene, size_t& parts_cat, const bool &Rot, std::shared_ptr<PLAYERclass::Chara>* mine, GUNPARTs* parts_p, float& change_per) noexcept {
 			set_fonts();
 
 			int xs = 0, ys = 0, xp = 0, yp = 0;
@@ -342,7 +340,7 @@ public:
 					default:
 						break;
 					}
-					parts_t = MAINLOOPscene->get_parts_data(parts_cat);
+					parts_t = (*MAINLOOPscene)->get_parts_data(parts_cat);
 					//
 					xp = t_disp_x - 600;
 					yp = t_disp_y - 400;
@@ -356,7 +354,7 @@ public:
 						for (auto& p : *parts_t) {
 							auto ytmp = yp + font_bighight + fonthight * i;
 							auto strtmp = p.per.name;
-							int base_siz = (xs + 100 - xs_1) / fonthight;//todo 100で合う???????
+							int base_siz = (xs + 100 - xs_1) / fonthight;//todo 100で合う?
 							if (p.per.name.length() > base_siz) {
 								strtmp = p.per.name.substr(0, base_siz) + "…";
 							}
@@ -711,7 +709,7 @@ public:
 			set_fonts();
 			//弾インジケーター
 			if ((*DrawPts)->use_vr) {
-				auto pos_gun = (*mine)->get_parts(EnumGunParts::PARTS_BASE)->obj.GetMatrix().pos();
+				auto pos_gun = (*mine)->get_parts(EnumGunParts::PARTS_BASE)->get_objmatrix().pos();
 				VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
 					int xp = int(p.x());
