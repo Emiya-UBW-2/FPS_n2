@@ -24,7 +24,7 @@ public:
 		int font_bighight{ 0 };
 		int fonthight{ 0 };
 	public:
-		void Get_ptr(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t) noexcept {
+		void Init(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t) noexcept {
 			if (first_f) {
 				first_f = false;
 

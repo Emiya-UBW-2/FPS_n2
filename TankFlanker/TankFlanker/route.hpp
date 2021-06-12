@@ -109,10 +109,10 @@ public:
 		auto SELECTscene = std::make_shared<Sceneclass::SELECT>();
 		std::shared_ptr<Sceneclass::TEMPSCENE> scenes_ptr{ nullptr };
 		//
-		UI_LOADPTs->Get_ptr(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
-		LOADscene->Get_ptr(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
-		SELECTscene->Get_ptr(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
-		MAINLOOPscene->Get_ptr(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
+		UI_LOADPTs->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
+		LOADscene->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
+		SELECTscene->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
+		MAINLOOPscene->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
 		//
 		//ŒJ‚è•Ô‚µ
 		do {
@@ -382,7 +382,8 @@ public:
 					}
 				}
 
-				printfDx("call :%d", GetDrawCallCount());
+				printfDx("call  :%d\n", GetDrawCallCount());
+				printfDx("Async :%d\n", GetASyncLoadNum());
 				//‰æ–Ê‚Ì”½‰f
 				DrawPts->Screen_Flip();
 				//I—¹”»’è

@@ -875,7 +875,7 @@ protected:
 			this->slide_path = "";
 			this->trigger_path = "";
 			this->shot.Dispose();
-			this->explosion.Duplicate();
+			this->explosion.Dispose();
 			this->slide.Dispose();
 			this->trigger.Dispose();
 			this->magazine_down.Dispose();
@@ -1562,6 +1562,7 @@ protected:
 				//ƒOƒŒ”š”j
 				this->Detach_item();
 				for (auto& tgt : *chara) {
+					tgt->calc_gredamage(mine, chara);
 					if (tgt->get_alive()) {
 						float scale = (this->move.pos - tgt->get_head_pos()).size();
 						if (scale < 10.f) {

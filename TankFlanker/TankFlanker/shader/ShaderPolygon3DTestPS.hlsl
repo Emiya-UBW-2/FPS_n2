@@ -62,7 +62,7 @@ float2 ZoomCalc(in float2 pixel_pos) {
 
 	float at = (dist_disp - distance) / dist_disp;
 	if (at >= 0) {
-		pos_pix_vec *= at* bless.w + (1.0 - bless.w);
+		pos_pix_vec *= at* bless.z*bless.w + (1.0 - bless.z * bless.w);
 		float2 cpos = pos_pix_vec + pos;
 		out_pos.x = (cpos - pixel_pos).x;
 		out_pos.y = (cpos - pixel_pos).y;

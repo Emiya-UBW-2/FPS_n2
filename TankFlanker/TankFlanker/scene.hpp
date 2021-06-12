@@ -38,7 +38,7 @@ public:
 		COLOR_F Light_color = GetColorF(0, 0, 0, 0);
 		COLOR_F Light_color_ref = GetColorF(0, 0, 0, 0);
 	public:
-		void Get_ptr(
+		void Init(
 			std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t,
 			std::unique_ptr<OPTION, std::default_delete<OPTION>>* OPTPTs_t,
 			std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t,
@@ -125,7 +125,7 @@ public:
 
 		void Set(void) noexcept override {
 			TEMPSCENE::Set();
-			UIparts->Get_ptr(DrawPts, MAPPTs);
+			UIparts->Init(DrawPts, MAPPTs);
 			UIparts->Set(title);
 		}
 		bool UpDate(void) noexcept override {
@@ -163,7 +163,7 @@ public:
 		}
 		void Set(void) noexcept override {
 			TEMPSCENE::Set();
-			UIparts->Get_ptr(DrawPts, MAPPTs);
+			UIparts->Init(DrawPts, MAPPTs);
 			{
 				left.ready(false);
 				right.ready(false);
@@ -445,7 +445,7 @@ public:
 		}
 		void Set(void) noexcept  override {
 			TEMPSCENE::Set();
-			UIparts->Get_ptr(DrawPts, MAPPTs);
+			UIparts->Init(DrawPts, MAPPTs);
 			{
 				up.ready(false);
 				down.ready(false);
@@ -806,7 +806,7 @@ public:
 			}
 			void Set(float& fov_pc) noexcept {
 				this->key_TPS.ready(false);
-				this->camera_TPS.campos = VECTOR_ref::vget(0, 10.f, -10);
+				this->camera_TPS.campos = VECTOR_ref::vget(0, 1.8f, -10);
 				this->camera_TPS.set_cam_info(deg2rad(fov_pc), 0.1f, 200.f);
 			}
 			void Set_info(std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara) noexcept {
@@ -878,7 +878,6 @@ public:
 		std::vector<std::shared_ptr<PLAYERclass::Chara>> chara;		//キャラ
 		HIT_PASSIVE hit_obj_p;						//静的弾痕
 		HIT_BLOOD_PASSIVE hit_b_obj_p;				//静的血痕
-		//そのまま
 		std::unique_ptr<HostPassEffect, std::default_delete<HostPassEffect>> Hostpassparts_TPS;
 		std::unique_ptr<TPS_parts, std::default_delete<TPS_parts>> TPSparts;
 		std::unique_ptr<UIclass::UI_MAINLOOP, std::default_delete<UIclass::UI_MAINLOOP>> UIparts;
@@ -1041,13 +1040,13 @@ public:
 			this->chara.resize(spawn_total);
 			for (auto& c : this->chara) {
 				c = std::make_shared<PLAYERclass::Chara>(MAPPTs, DrawPts, DebugPTs, gun_data, 0, body_obj, body_obj_lag, body_col);
-				c->Get_ptr(&c);
+				c->Init(&c);
 			}
 		}
 	public:
 		void Set(void) noexcept override {
 			TEMPSCENE::Set();
-			UIparts->Get_ptr(DrawPts, MAPPTs);
+			UIparts->Init(DrawPts, MAPPTs);
 			//
 			for (auto& c : this->chara) {
 				//カスタムattach
@@ -1213,8 +1212,6 @@ public:
 			//命中痕
 			this->hit_obj_p.draw();
 			this->hit_b_obj_p.draw();
-			//サイト
-			(*this->Get_Mine())->Draw_reticle();
 			//キャラ
 			for (auto& c : this->chara) { c->Draw_chara(); }
 			//レーザー
@@ -1228,7 +1225,8 @@ public:
 			//
 		}
 		void Item_Draw(void) noexcept override {
-			lens_zoom = (*this->Get_Mine())->Draw_reticle_UI();
+			//
+			lens_zoom = (*this->Get_Mine())->DrawReticle_UI();
 			lens_size = (*this->Get_Mine())->Get_reticle_size();
 			if (lens_zoom > 1.0f) {
 				use_lens = (*this->Get_Mine())->ads_on();
