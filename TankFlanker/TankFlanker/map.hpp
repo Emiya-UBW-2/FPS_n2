@@ -30,6 +30,10 @@ public:
 		GraphHandle grass_pic;			/*画像ハンドル*/
 		MV1 grass;						/*grassモデル*/
 
+		int Depth_NormalMeshVS;			// 深度の描画に使用するシェーダー
+		int DepthPS;					// 深度の描画に使用するシェーダー
+		shaders2D shader;				/*シェーダー*/
+
 		class grass_t {
 		public:
 			bool canlook = true;
@@ -118,6 +122,9 @@ public:
 			}
 		};
 	public:
+
+		GraphHandle DepthScreen;		// 深度を取得するスクリーン
+
 		float x_max = 0.f;
 		float z_max = 0.f;
 		float x_min = 0.f;
@@ -156,7 +163,7 @@ public:
 			}
 		}
 		~Map(void) noexcept { }
-		void Ready_map(std::string dir) noexcept {
+		void Ready_map(std::string dir, int dispx,int dispy) noexcept {
 			this->path = dir + "/";
 			MV1::Load(this->path + "model.mv1", &map, true);		   //map
 			MV1::Load(this->path + "col.mv1", &map_col, true);		   //mapコリジョン
@@ -174,6 +181,22 @@ public:
 				MV1::Load("data/model/grass/model.mv1", &grass, true);		/*grass*/
 				grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
 			}
+
+			// 深度を描画するテクスチャの作成( １チャンネル浮動小数点１６ビットテクスチャ )
+			{
+				SetCreateDrawValidGraphChannelNum(1);
+				SetDrawValidFloatTypeGraphCreateFlag(TRUE);
+				SetCreateGraphChannelBitDepth(16);
+				DepthScreen = GraphHandle::Make(dispx, dispy, false);
+				SetCreateDrawValidGraphChannelNum(0);
+				SetDrawValidFloatTypeGraphCreateFlag(FALSE);
+				SetCreateGraphChannelBitDepth(0);
+			}
+			// 深度を描画するためのシェーダーを読み込む
+			Depth_NormalMeshVS = LoadVertexShader("shader/DepthVS.vso");
+			DepthPS = LoadPixelShader("shader/DepthPS.pso");
+
+			shader.init("NormalMesh_PointLightVS.vso", "NormalMesh_PointLightPS.pso");
 		}
 		void Start(void) noexcept {
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
@@ -447,12 +470,34 @@ public:
 			for (int i = 0; i < 3; ++i) {
 				map.DrawMesh(i);
 			}
-			SetFogEnable(FALSE);
-			map.DrawMesh(3);
-			SetFogEnable(TRUE);
+
+			shader.draw_lamda(
+				[&]() {
+				SetUseTextureToShader(1, DepthScreen.get());
+				map.DrawMesh(3);
+			}
+			);
 
 			grass_Draw();
 			item_Draw();
+		}
+		//深度値描画
+		void DepthDraw(void) {
+			int handle = GetDrawScreen();
+			DepthScreen.SetDraw_Screen(GetCameraPosition(), GetCameraTarget(), GetCameraUpVector(), GetCameraFov(), GetCameraNear(), GetCameraFar());
+			{
+				SetUsePixelShader(DepthPS);
+				SetUseTextureToShader(0, -1);
+				SetUseVertexShader(Depth_NormalMeshVS);
+				MV1SetUseOrigShader(TRUE);
+				for (int i = 0; i < 3; ++i) {
+					map.DrawMesh(i);
+				}
+				MV1SetUseOrigShader(FALSE);
+				SetUsePixelShader(-1);
+				SetUseVertexShader(-1);
+			}
+			GraphHandle::SetDraw_Screen(handle,GetCameraPosition(), GetCameraTarget(), GetCameraUpVector(), GetCameraFov(), GetCameraNear(), GetCameraFar());
 		}
 		//
 		template<class Chara>
@@ -492,6 +537,7 @@ public:
 					this->grass__[x_][z_].Check_CameraViewClip(x_, z_, MAPPTs, use_occlusion);
 				}
 			}
+			DepthDraw();
 		}
 	};
 	class MiniMap {

@@ -751,6 +751,54 @@ public:
 	size_t pt_sel_ = 0;					//ベースパーツの番号(マウントなど)
 };
 //
+class shaders2D {
+public:
+	int pshandle, vshandle;
+	int pscbhandle;
+	int pscbhandle2;
+
+	void init(std::string vs, std::string ps) {
+		this->vshandle = LoadVertexShader(("shader/" + vs).c_str());	// 頂点シェーダーバイナリコードの読み込み
+		this->pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
+		this->pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
+		this->pshandle = LoadPixelShader(("shader/" + ps).c_str());		// ピクセルシェーダーバイナリコードの読み込み
+	}
+	void set_dispsize(int dispx, int dispy) {
+		FLOAT2 *dispsize = (FLOAT2 *)GetBufferShaderConstantBuffer(this->pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+		dispsize->u = float(dispx);
+		dispsize->v = float(dispy);
+		UpdateShaderConstantBuffer(this->pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+		SetShaderConstantBuffer(this->pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
+	}
+	void set_param(float param1, float param2, float param3, float param4) {
+		FLOAT4 *f4 = (FLOAT4 *)GetBufferShaderConstantBuffer(this->pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+		f4->x = param1;
+		f4->y = param2;
+		f4->z = param3;
+		f4->w = param4;
+		UpdateShaderConstantBuffer(this->pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+		SetShaderConstantBuffer(this->pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
+	}
+	void draw(VERTEX3DSHADER Screen_vertex[]) {
+		SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
+		SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
+		MV1SetUseOrigShader(TRUE);
+		DrawPolygon3DToShader(Screen_vertex, 2);// 描画
+		MV1SetUseOrigShader(FALSE);
+		SetUseVertexShader(-1);					// 使用する頂点シェーダーをセット
+		SetUsePixelShader(-1);					// 使用するピクセルシェーダーをセット
+	}
+	void draw_lamda(std::function<void()> doing) {
+		SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
+		SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
+		MV1SetUseOrigShader(TRUE);
+		doing();
+		MV1SetUseOrigShader(FALSE);
+		SetUseVertexShader(-1);					// 使用する頂点シェーダーをセット
+		SetUsePixelShader(-1);					// 使用するピクセルシェーダーをセット
+	}
+};
+//
 class Mainclass {
 private:
 	//銃、マガジン共通モデル

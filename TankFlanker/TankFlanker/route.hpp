@@ -22,42 +22,6 @@ class main_c {
 
 	VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
 
-	class shaders2D {
-	public:
-		int pshandle, vshandle;
-		int pscbhandle;
-		int pscbhandle2;
-
-		void init(std::string vs, std::string ps) {
-			this->vshandle = LoadVertexShader(("shader/" + vs).c_str());	// 頂点シェーダーバイナリコードの読み込み
-			this->pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
-			this->pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
-			this->pshandle = LoadPixelShader(("shader/" + ps).c_str());		// ピクセルシェーダーバイナリコードの読み込み
-		}
-		void set_dispsize(int dispx,int dispy) {
-			FLOAT2 *dispsize = (FLOAT2 *)GetBufferShaderConstantBuffer(this->pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-			dispsize->u = float(dispx);
-			dispsize->v = float(dispy);
-			UpdateShaderConstantBuffer(this->pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-			SetShaderConstantBuffer(this->pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
-		}
-		void set_param(float param1, float param2, float param3, float param4) {
-			FLOAT4 *f4 = (FLOAT4 *)GetBufferShaderConstantBuffer(this->pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-			f4->x = param1;
-			f4->y = param2;
-			f4->z = param3;
-			f4->w = param4;
-			UpdateShaderConstantBuffer(this->pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-			SetShaderConstantBuffer(this->pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
-		}
-		void draw(VERTEX3DSHADER Screen_vertex[]) {
-			SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
-			SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
-			MV1SetUseOrigShader(TRUE);
-			DrawPolygon3DToShader(Screen_vertex, 2);		// 描画
-			MV1SetUseOrigShader(FALSE);
-		}
-	};
 	std::array<shaders2D, 2> shader2D;
 public:
 	main_c(void) noexcept {
@@ -96,7 +60,6 @@ public:
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
 		shader2D[0].init("VS_lens.vso", "PS_lens.pso");																						//レンズ
 		shader2D[1].init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");															//歪み
-		SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());																		//使用するテクスチャをセット
 		//MAP
 		auto MAPPTs = std::make_unique<MAPclass::Map>(OPTPTs->grass_level);
 		//キー読み込み
@@ -125,7 +88,7 @@ public:
 					break;
 				case scenes::ITEM_LOAD:
 					MAINLOOPscene->Start_After();
-					MAPPTs->Ready_map("data/map_new2");								//マップ読み込み
+					MAPPTs->Ready_map("data/map", DrawPts->disp_x, DrawPts->disp_y);//マップ読み込み
 					UI_LOADPTs->settitle("マップ");									//マップ読み込み
 					sel_scene = scenes::MAP_LOAD;
 					scenes_ptr = UI_LOADPTs;
@@ -147,8 +110,8 @@ public:
 					break;
 				case scenes::MAIN_LOOP:
 					MAPPTs->Dispose();
-					MAPPTs->Ready_map("data/map_new2");								//マップ読み込み
-					UI_LOADPTs->settitle("マップ");							//マップ読み込み
+					MAPPTs->Ready_map("data/map", DrawPts->disp_x, DrawPts->disp_y);//マップ読み込み
+					UI_LOADPTs->settitle("マップ");									//マップ読み込み
 					sel_scene = scenes::MAP_LOAD;
 					scenes_ptr = UI_LOADPTs;
 					break;
@@ -318,6 +281,7 @@ public:
 								}
 								GraphHandle::SetDraw_Screen(tmp);
 								{
+									SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());	//使用するテクスチャをセット
 									if (scenes_ptr->is_lens()){
 										//レンズ描画
 										shader2D[0].set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
@@ -339,6 +303,7 @@ public:
 										}
 										HostpassPTs->Set_MAIN_draw_nohost();
 									}
+									SetUseTextureToShader(0, -1);	//使用するテクスチャをセット
 								}
 								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_, false);
 								{
@@ -381,6 +346,7 @@ public:
 						DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 					}
 				}
+				//MAPPTs->DepthScreen.DrawExtendGraph(0, 0, 960, 540, false);
 
 				printfDx("call  :%d\n", GetDrawCallCount());
 				printfDx("Async :%d\n", GetASyncLoadNum());

@@ -361,50 +361,6 @@ public:
 				sight_ptr[sight_p_s] = (*mine_ptr)->get_parts(parts_cat_t); ++sight_p_s;
 			}
 		}
-		//”ñ•K{•i3
-		void set_pts_need_3(size_t port_type_t, size_t port_cat_t, size_t parts_cat_t_1, size_t parts_cat_t_2) {
-			port_type = port_type_t;
-			port_ptr = (*mine_ptr)->get_parts(port_type);
-			port_cat = port_cat_t;
-			if (port_ptr->rail_fnum(port_cat).first > 0) {
-				if (parts_select == parts_select_max) {
-					if (change_select == 0) {
-						parts_cat = parts_cat_t_1;
-					}
-					else {
-						parts_cat = (change_select < (*MAINLOOPscene)->get_parts_data(parts_cat_t_1)->size() + 1) ? parts_cat_t_1 : parts_cat_t_2;
-					}
-					(*mine_ptr)->Detach_parts(parts_cat_t_1);
-					(*mine_ptr)->Detach_parts(parts_cat_t_2);
-					{
-						std::vector<GUNPARTs>&data1 = *(*MAINLOOPscene)->get_parts_data(parts_cat_t_1);
-						std::vector<GUNPARTs>&data2 = *(*MAINLOOPscene)->get_parts_data(parts_cat_t_2);
-
-						change_select_max = (int)(data1.size() + 1 + data2.size());
-						change_select = std::clamp(change_select, 0, change_select_max - 1);
-						if (change_select == 0) { parts_p = nullptr; }
-						else {
-							if (change_select < data1.size() + 1) { parts_p = &data1[std::max(change_select - 1, 0)]; }
-							else { parts_p = &data2[std::max(change_select - 1, 0) - data1.size()]; }
-						}
-						(*mine_ptr)->Detach_parts(parts_cat);
-						if (change_select != 0) {
-							(*mine_ptr)->Attach_parts(parts_p, parts_cat, port_ptr, port_cat);
-						}
-						viewparts_buf = port_ptr->rail_pos(port_cat);
-					}
-					{
-						auto chang_t = change_select;
-						if (change_select != 0) {
-							if (change_select < (*MAINLOOPscene)->get_parts_data(parts_cat_t_1)->size() + 1) { chang_t = std::max(change_select - 1, 0); }
-							else { chang_t = int(std::max(change_select - 1, 0) - (*MAINLOOPscene)->get_parts_data(parts_cat_t_1)->size()); }
-						}
-						set_pts_save(chang_t);
-					}
-				}
-				++parts_select_max;
-			}
-		}
 		//sight
 		void set_pts_need_sight(PLAYERclass::Chara::g_parts* s, int sel) {
 			if (s != nullptr) {
@@ -606,7 +562,7 @@ public:
 					//
 					if (Start_b) {
 						Start_b = false;
-						changef = true;
+						//changef = true;
 						int pp = (*mine_ptr)->get_parts(EnumGunParts::PARTS_BASE)->thisparts->Select_Chose(EnumSELECTER::SELECT_SEMI);
 						if (pp != -1) {
 							(*mine_ptr)->gun_stat_now->selector_set(pp);

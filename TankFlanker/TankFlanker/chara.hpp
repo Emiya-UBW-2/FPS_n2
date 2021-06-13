@@ -34,7 +34,6 @@ public:
 			std::array<MV1, 2> obj_ammo;			//マガジン用弾
 			//
 			GraphHandle reticle;					//レティクル
-			VECTOR_ref sightpos;					//レティクル描画
 			VECTOR_ref sight_vec;
 			//
 			MV1 obj;
@@ -282,9 +281,8 @@ public:
 					switch (this->type) {
 					case EnumGunParts::PARTS_SIGHT:
 					{
-						auto pp = GetASyncLoadNum();
 						this->reticle = this->thisparts->reticle.Duplicate();
- 						auto pps = this->obj.SetupCollInfo(1, 1, 1, -1, 1);
+ 						auto pps = this->obj.SetupCollInfo(1, 1, 1, -1, 1);//
 						break;
 					}
 					case EnumGunParts::PARTS_LAM:
@@ -298,15 +296,16 @@ public:
 					}
 				}
 			}
-			void Set_Reticle(bool ads, bool check) noexcept {
+			const float Draw_reticle_UI(bool ads, bool check) noexcept {
 				if (this->attach) {
 					if (this->type == EnumGunParts::PARTS_SIGHT) {
+						VECTOR_ref sightpos;
 						if (ads) {
 							sightpos = this->obj.frame(3);
 							if (check) {
 								auto pps = this->obj.RefreshCollInfo(-1, 1);
 								auto pp = this->obj.CollCheck_Line(GetCameraPosition(), sightpos, -1, 1);
-								if (pp.HitFlag == TRUE) {
+								if (this->obj.CollCheck_Line(GetCameraPosition(), sightpos, -1, 1).HitFlag == TRUE) {
 								}
 								else {
 									sightpos.clear();
@@ -316,12 +315,6 @@ public:
 						else {
 							sightpos.clear();
 						}
-					}
-				}
-			}
-			const float Draw_reticle_UI(void) noexcept {
-				if (this->attach) {
-					if (this->type == EnumGunParts::PARTS_SIGHT) {
 						if (sightpos != VECTOR_ref::vget(0, 0, 0)) {
 							VECTOR_ref tmp = ConvWorldPosToScreenPos(sightpos.get());
 							if (tmp.z() >= 0.f && tmp.z() <= 1.f) {
@@ -337,9 +330,7 @@ public:
 			const float Get_reticle_size(void) const noexcept {
 				if (this->attach) {
 					if (this->type == EnumGunParts::PARTS_SIGHT) {
-						if (sightpos != VECTOR_ref::vget(0, 0, 0)) {
-							return float(y_r(this->thisparts->zoom_size / 2.f));
-						}
+						return float(y_r(this->thisparts->zoom_size / 2.f));
 					}
 				}
 				return 1.f;
@@ -1525,7 +1516,7 @@ public:
 		}
 		//サイトを画面に表示
 		const float DrawReticle_UI(void) noexcept {
-			return this->sight_[select_sight].Draw_reticle_UI();
+			return this->sight_[select_sight].Draw_reticle_UI(this->ads_on(), true);
 		}
 		//gunfをOFFからONにする
 		const auto set_gunf(void) noexcept {
@@ -3624,8 +3615,6 @@ public:
 			//p5-3～p6 0.04ms
 						//
 			if (this == (*mine).get()) {
-				//レティクル
-				this->sight_[select_sight].Set_Reticle(this->ads_on(),true);
 				//ライト
 				this->lam.Set_LightHandle(this->base.get_objmatrix().zvec()*-1.f);
 				//息
