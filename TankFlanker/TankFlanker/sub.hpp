@@ -32,32 +32,33 @@ enum EnumGunParts {
 	PARTS_NUM,
 };
 enum EnumAttachPoint {
-	UPER_RAIL,
-	UNDER_RAIL,
-	LEFTSIDE_RAIL,
-	RIGHTSIDE_RAIL,
-	SIDEMOUNT,
-	SIDEMOUNT_BASE,
-	STOCK_BASE,
-	DUSTCOVER_BASE,
-	UPER_HANDGUARD,
-	UNDER_HANDGUARD,
-	MAZZULE_BASE,
-	MAGAZINE_BASE,
-	GRIP_BASE,
-	NUM_,
+	POINTS_NONE,
+	POINTS_UPER_RAIL,
+	POINTS_UNDER_RAIL,
+	POINTS_LEFTSIDE_RAIL,
+	POINTS_RIGHTSIDE_RAIL,
+	POINTS_SIDEMOUNT,
+	POINTS_SIDEMOUNT_BASE,
+	POINTS_STOCK_BASE,
+	POINTS_DUSTCOVER_BASE,
+	POINTS_UPER_HANDGUARD,
+	POINTS_UNDER_HANDGUARD,
+	POINTS_MAZZULE_BASE,
+	POINTS_MAGAZINE_BASE,
+	POINTS_GRIP_BASE,
+	POINTS_NUM,
 };
 enum EnumSELECTER {
 	SELECT_SEMI,
 	SELECT_FULL,
 	SELECT_3B,
 	SELECT_2B,
-	NUM__,
+	SELECT_NUM,
 };
 enum EnumSELECT_LAM {
-	SELECT_LASER,
-	SELECT_LIGHT,
-	NUM___,
+	SELECTLAM_LASER,
+	SELECTLAM_LIGHT,
+	SELECTLAM_NUM,
 };
 //option
 class OPTION {
@@ -66,8 +67,8 @@ public:
 	bool DoF = false;
 	bool Bloom = false;
 	bool Shadow = false;
-	bool useVR = true;
-	bool SSAO = true;
+	bool useVR{ true };
+	bool SSAO{ true };
 	float Fov = 45.f;
 	bool Vsync = false;
 	OPTION(void)  noexcept {
@@ -102,7 +103,7 @@ private:
 		std::string second;
 		bool isalways = false;
 		switchs on_off;
-		keyhandle* use_handle = nullptr;
+		keyhandle* use_handle{ nullptr };
 		int use_mode = 0;
 		bool get_key(int id) {
 			switch (id) {
@@ -110,20 +111,20 @@ private:
 			case 0:
 				return CheckHitKey(this->first) != 0;
 			case 1:
-				on_off.get_in(CheckHitKey(this->first) != 0);
+				on_off.GetInput(CheckHitKey(this->first) != 0);
 				return on_off.on();
 			case 2:
-				on_off.get_in(CheckHitKey(this->first) != 0);
-				return on_off.push();
+				on_off.GetInput(CheckHitKey(this->first) != 0);
+				return on_off.trigger();
 				//マウス
 			case 3:
 				return (GetMouseInput() & this->first) != 0;
 			case 4:
-				on_off.get_in((GetMouseInput() & this->first) != 0);
+				on_off.GetInput((GetMouseInput() & this->first) != 0);
 				return on_off.on();
 			case 5:
-				on_off.get_in((GetMouseInput() & this->first) != 0);
-				return on_off.push();
+				on_off.GetInput((GetMouseInput() & this->first) != 0);
+				return on_off.trigger();
 			default:
 				return CheckHitKey(this->first) != 0;
 			}
@@ -133,7 +134,7 @@ private:
 	public:
 		keys key;
 		GraphHandle onhandle, offhandle;
-		key_pair* use_part = nullptr;
+		key_pair* use_part{ nullptr };
 	};
 	FontHandle font24;
 	int font24size = 24;
@@ -655,7 +656,7 @@ public:
 //キーバインド
 class pause_menu {
 private:
-	std::unique_ptr<key_bind, std::default_delete<key_bind>>* KeyBind;
+	std::unique_ptr<key_bind>* KeyBind{ nullptr };
 
 	FontHandle font24;
 	int font24size = 24;
@@ -663,7 +664,7 @@ private:
 	float P_f = 0.0f;
 public:
 	//
-	pause_menu(std::unique_ptr<key_bind, std::default_delete<key_bind>>* KeyBind_t) noexcept {
+	pause_menu(std::unique_ptr<key_bind>* KeyBind_t) noexcept {
 		KeyBind = KeyBind_t;
 		SetUseASyncLoadFlag(FALSE);
 		font24 = FontHandle::Create(font24size, DX_FONTTYPE_EDGE);
@@ -744,11 +745,11 @@ public:
 //
 class save_c {
 public:
-	size_t cang_ = 0;					//パーツ選択
-	size_t type_ = 0;					//パーツの種類
-	size_t pt_cat_ = SIZE_MAX;			//ベースパーツの場所
-	size_t pt_type_ = 0;				//ベースパーツの種類
-	size_t pt_sel_ = 0;					//ベースパーツの番号(マウントなど)
+	size_t cang_ = 0;						//パーツ選択
+	EnumGunParts type_ = PARTS_NONE;			//パーツの種類
+	EnumAttachPoint pt_cat_ = POINTS_NONE;	//ベースパーツの場所
+	EnumGunParts pt_type_ = PARTS_NONE;		//ベースパーツの種類
+	size_t pt_sel_ = 0;						//ベースパーツの番号(マウントなど)
 };
 //
 class shaders2D {
@@ -991,43 +992,45 @@ protected:
 			this->weight -= t.weight;
 		}
 	};
-	//パーツデータ
-	class GUNPARTs {
-		int type = 0;
+	//
+	class BASE_Obj {
+	private:
 	public:
-		//base
-		float recoil_xup = 0.f;
-		float recoil_xdn = 0.f;
-		float recoil_yup = 0.f;
-		float recoil_ydn = 0.f;
-		float reload_time = 1.f;//再装填時間
-		//
-		std::vector <uint8_t> select;	//セレクター
-		std::vector <uint8_t> select_lam;	//ライト・レーザー
-		//common
 		size_t id_t = 0;
 		Models mod;
-		performance per;
-		//mazzule
-		size_t mazzule_type = 0;
-		//sight
-		GraphHandle reticle;
-		float zoom = 1.f;
-		float reticle_size = 600.f;
-		float zoom_size = 600.f;
-		//stock
-		size_t stock_type = 0;
-		//
+		void Set(size_t id_) {
+			this->id_t = id_;
+		}
+	};
+	//パーツデータ
+	class GUNPARTs :public BASE_Obj {
+		int type = 0;
+	public:
+		float recoil_xup = 0.f;				//反動
+		float recoil_xdn = 0.f;				//反動
+		float recoil_yup = 0.f;				//反動
+		float recoil_ydn = 0.f;				//反動
+		float reload_time = 1.f;			//再装填時間
+		std::vector <uint8_t> select;		//セレクター
+		std::vector <EnumSELECT_LAM> select_lam;	//ライト・レーザー
+		performance per;					//common
+		size_t mazzule_type = 0;			//mazzule
+		GraphHandle reticle;				//sight
+		float zoom = 1.f;					//sight
+		float reticle_size = 600.f;			//sight
+		float zoom_size = 600.f;			//sight
+		size_t stock_type = 0;				//stock
 		std::vector<std::string> can_attach;
 		std::vector<Ammos> ammo;
 		Audios audio;
 		//magazine
 		size_t mag_cnt = 1;
+	public:
+		//setter
+		void Set_type(int type_t) { this->type = type_t; }
 		//
-		auto& get_type(void) const noexcept { return type; }
-		void Set_datas(size_t id_, int type_t) {
-			this->id_t = id_;
-			this->type = type_t;
+		void Set(size_t id_) {
+			BASE_Obj::Set(id_);
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				//共通データ
@@ -1036,13 +1039,13 @@ protected:
 					per.info = getparams::get_str(this->mod.mdata);		//説明
 				}
 				//
-				if (this->type == EnumGunParts::PARTS_MAZZULE) {
+				if (this->type == PARTS_MAZZULE) {
 					mazzule_type = getparams::_ulong(this->mod.mdata);
 				}
-				if (this->type == EnumGunParts::PARTS_STOCK) {
+				if (this->type == PARTS_STOCK) {
 					stock_type = getparams::_ulong(this->mod.mdata);
 				}
-				if (this->type == EnumGunParts::PARTS_BASE) {
+				if (this->type == PARTS_BASE) {
 					//セレクター設定
 					while (true) {
 						auto p = getparams::_str(this->mod.mdata);
@@ -1073,11 +1076,11 @@ protected:
 					this->reload_time = getparams::_float(this->mod.mdata);	//リロードタイム
 					Set_Ammos_data(this->mod.mdata);						//弾データ
 				}
-				if (this->type == EnumGunParts::PARTS_MAGAZINE) {
+				if (this->type == PARTS_MAGAZINE) {
 					this->mag_cnt = getparams::_long(this->mod.mdata);			//弾数
 					Set_Ammos_data(this->mod.mdata);						//弾データ
 				}
-				if (this->type == EnumGunParts::PARTS_LAM) {
+				if (this->type == PARTS_LAM) {
 					//レーザーかライトか
 					while (true) {
 						auto p = getparams::_str(this->mod.mdata);
@@ -1085,17 +1088,17 @@ protected:
 							break;
 						}
 						else if (getparams::getright(p.c_str()) == "laser") {
-							this->select_lam.emplace_back(uint8_t(EnumSELECT_LAM::SELECT_LASER));	//レーザー
+							this->select_lam.emplace_back(SELECTLAM_LASER);	//レーザー
 						}
 						else if (getparams::getright(p.c_str()) == "light") {
-							this->select_lam.emplace_back(uint8_t(EnumSELECT_LAM::SELECT_LIGHT));	//ライト
+							this->select_lam.emplace_back(SELECTLAM_LIGHT);	//ライト
 						}
 						else {
-							this->select_lam.emplace_back(uint8_t(EnumSELECT_LAM::SELECT_LASER));	//レーザー
+							this->select_lam.emplace_back(SELECTLAM_LASER);	//レーザー
 						}
 					}
 				}
-				if (this->type == EnumGunParts::PARTS_SIGHT) {
+				if (this->type == PARTS_SIGHT) {
 					this->zoom = getparams::_float(this->mod.mdata);
 					this->reticle_size = getparams::_float(this->mod.mdata);
 					this->zoom_size = getparams::_float(this->mod.mdata);
@@ -1112,12 +1115,12 @@ protected:
 					}
 				}
 			});
-			if (this->type == EnumGunParts::PARTS_SIGHT) {
+			if (this->type == PARTS_SIGHT) {
 				SetUseASyncLoadFlag(FALSE);
 				this->reticle = GraphHandle::Load(this->mod.get_path() + "/reticle.png");
 				SetUseASyncLoadFlag(FALSE);
 			}
-			if (this->type == EnumGunParts::PARTS_BASE) {
+			if (this->type == PARTS_BASE) {
 				//フレーム
 				for (auto& a : this->ammo) {
 					a.Set();
@@ -1137,12 +1140,10 @@ protected:
 				}
 			}
 		}
-		//
 		uint8_t Select_Chose(uint8_t sel_chose) {
 			auto ans = std::find(this->select.begin(), this->select.end(), sel_chose);
 			return uint8_t((ans != this->select.end()) ? (ans - this->select.begin()) : -1);
 		}
-		//
 		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, int selecting) {
 			for (auto& sel : this->select) {
 				easing_set(&gunanime_sel[&sel - &this->select[0]]->per, float(int(sel == this->select[selecting])), 0.5f);
@@ -1150,15 +1151,11 @@ protected:
 		}
 	};
 	//薬品データ
-	class Meds {
-	private:
+	class Meds :public BASE_Obj {
 	public:
-		size_t id_t = 0;
-		Models mod;
-		/**/
 		int repair = 0;
-		void Set_datas(size_t id_) {
-			this->id_t = id_;
+		void Set(size_t id_) {
+			BASE_Obj::Set(id_);
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				this->repair = getparams::_long(this->mod.mdata);//
@@ -1167,15 +1164,11 @@ protected:
 	};
 
 	//薬品データ
-	class Grenades {
-	private:
+	class Grenades :public BASE_Obj {
 	public:
-		size_t id_t = 0;
-		Models mod;
-		/**/
 		float time = 0;
-		void Set_datas(size_t id_) {
-			this->id_t = id_;
+		void Set(size_t id_) {
+			BASE_Obj::Set(id_);
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				this->time = getparams::_float(this->mod.mdata);//
@@ -1195,7 +1188,7 @@ protected:
 		int vnum = -1, pnum = -1;		/*hits*/
 		MV1_REF_POLYGONLIST RefMesh;	/*hits*/
 
-		bool isUPDate = true;
+		bool isUPDate{ true };
 	public:
 		//初期化
 		void init(void) noexcept {
@@ -1281,7 +1274,7 @@ protected:
 		int vnum = -1, pnum = -1;		/*hits*/
 		MV1_REF_POLYGONLIST RefMesh;	/*hits*/
 
-		bool isUPDate = true;
+		bool isUPDate{ true };
 	public:
 		//初期化
 		void init(void) noexcept {
@@ -1360,7 +1353,6 @@ protected:
 	private:
 		//共通
 		moves move;
-		VECTOR_ref add_vec;
 		MV1 obj;
 		//マガジン専用パラメーター
 		//治療キット専用パラメーター
@@ -1369,59 +1361,26 @@ protected:
 		float del_timer = 0.f;
 		size_t id_t = 0;
 		//マガジン専用パラメーター
-		GUNPARTs* ptr_mag = nullptr;
+		GUNPARTs* ptr_mag{ nullptr };
 		GUNPARTs magazine_param;
 		//治療キット専用パラメーター
-		Meds* ptr_med = nullptr;
+		Meds* ptr_med{ nullptr };
 		Meds medkit;
 		//治療キット専用パラメーター
-		Grenades* ptr_gre = nullptr;
+		Grenades* ptr_gre{ nullptr };
 		Grenades grenades;
 	public:
-		bool flag_canlook_player = true;
+		bool flag_canlook_player{ true };
 		auto& get_ptr_mag(void) const noexcept { return ptr_mag; }
 		auto& get_ptr_med(void) const noexcept { return ptr_med; }
 		auto& get_magazine(void) const noexcept { return magazine_param; }
 		auto& get_pos_(void) const noexcept { return move.pos; }
 	private:
 		//mag
-		void Set_item_1(GUNPARTs*magdata, const moves& move_, const VECTOR_ref& add_) {
+		void Set_item(GUNPARTs*magdata, const moves& move_, size_t dnm = SIZE_MAX) {
 			this->move = move_;
-			this->add_vec = add_;
 			this->ptr_mag = magdata;
 			this->obj = this->ptr_mag->mod.get_model().Duplicate();
-		}
-		//med
-		void Set_item(Meds*meddata, const moves& move_, const VECTOR_ref& add_) {
-			this->move = move_;
-			this->add_vec = add_;
-			this->ptr_med = meddata;
-			this->obj = this->ptr_med->mod.get_model().Duplicate();
-		}
-		//med
-		void Set_item(Grenades*gredata, const moves& move_, const VECTOR_ref& add_) {
-			this->move = move_;
-			this->add_vec = add_;
-			this->ptr_gre = gredata;
-			this->obj = this->ptr_gre->mod.get_model().Duplicate();
-			this->del_timer = this->ptr_gre->time;
-		}
-	public:
-		void set_item_mag(void) noexcept {
-			if (this->ptr_mag != nullptr) {
-				if (this->magazine_param.ammo.size() < this->ptr_mag->ammo.size()) {
-					this->magazine_param.ammo.resize(this->ptr_mag->ammo.size());
-				}
-				this->magazine_param.ammo[0].get_name() = this->ptr_mag->ammo[0].get_name();
-			}
-		}
-		//mag
-		Items(size_t id, GUNPARTs*magdata, const moves& move_, const VECTOR_ref& add_, size_t dnm = SIZE_MAX) {
-			Set_item_magazine(id, magdata, move_, add_, dnm);
-		}
-		void Set_item_magazine(size_t id, GUNPARTs*magdata, const moves& move_, const VECTOR_ref& add_, size_t dnm = SIZE_MAX) {
-			this->id_t = id;
-			this->Set_item_1(magdata, move_, add_);
 			if (dnm == SIZE_MAX) {
 				if (this->ptr_mag != nullptr) {
 					this->magazine_param.mag_cnt = int(this->ptr_mag->mag_cnt);
@@ -1430,36 +1389,60 @@ protected:
 			else {
 				this->magazine_param.mag_cnt = dnm;
 			}
-			set_item_mag();
+			if (this->ptr_mag != nullptr) {
+				if (this->magazine_param.ammo.size() < this->ptr_mag->ammo.size()) {
+					this->magazine_param.ammo.resize(this->ptr_mag->ammo.size());
+				}
+				this->magazine_param.ammo[0].get_name() = this->ptr_mag->ammo[0].get_name();
+			}
 			this->del_timer = (this->magazine_param.mag_cnt == 0) ? 5.f : 20.f;
 		}
-		bool Set_item_magrelease(GUNPARTs*magdata, const moves& move_, const VECTOR_ref& add_, size_t dnm) {
+		//med
+		void Set_item(Meds*meddata, const moves& move_) {
+			this->move = move_;
+			this->ptr_med = meddata;
+			this->obj = this->ptr_med->mod.get_model().Duplicate();
+		}
+		//med
+		void Set_item(Grenades*gredata, const moves& move_) {
+			this->move = move_;
+			this->ptr_gre = gredata;
+			this->obj = this->ptr_gre->mod.get_model().Duplicate();
+			this->del_timer = this->ptr_gre->time;
+		}
+	public:
+		//mag
+		Items(size_t id, GUNPARTs*magdata, const moves& move_, size_t dnm = SIZE_MAX) {
+			this->id_t = id;
+			Set_item(magdata, move_, dnm);
+		}
+		bool Set_item_(GUNPARTs*magdata, const moves& move_, size_t dnm) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
-				this->Set_item_magazine(id_t, magdata, move_, add_, dnm);
+				this->Set_item(magdata, move_, dnm);
 				return true;
 			}
 			return false;
 		}
 		//med
-		Items(size_t id, Meds*meddata, const moves& move_, const VECTOR_ref& add_) {
+		Items(size_t id, Meds*meddata, const moves& move_) {
 			this->id_t = id;
-			this->Set_item(meddata, move_, add_);
+			this->Set_item(meddata, move_);
 		}
-		bool Set_item_med(Meds*meddata, const moves& move_, const VECTOR_ref& add_) {
+		bool Set_item_(Meds*meddata, const moves& move_) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
-				this->Set_item(meddata, move_, add_);
+				this->Set_item(meddata, move_);
 				return true;
 			}
 			return false;
 		}
 		//gre
-		Items(size_t id, Grenades*gredata, const moves& move_, const VECTOR_ref& add_) {
+		Items(size_t id, Grenades*gredata, const moves& move_) {
 			this->id_t = id;
-			this->Set_item(gredata, move_, add_);
+			this->Set_item(gredata, move_);
 		}
-		bool Set_item_gre(Grenades*gredata, const moves& move_, const VECTOR_ref& add_) {
+		bool Set_item_(Grenades*gredata, const moves& move_) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
-				this->Set_item(gredata, move_, add_);
+				this->Set_item(gredata, move_);
 				return true;
 			}
 			return false;
@@ -1470,15 +1453,14 @@ protected:
 			auto old = this->move.pos;
 			if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
 				this->obj.SetMatrix(this->move.mat*MATRIX_ref::Mtrans(this->move.pos));
-				this->move.pos += this->add_vec;
-				this->add_vec.yadd(M_GR / powf(FPS, 2.f));
+				this->move.Update_Physics();
 				for (auto& p : item) {
 					if ((p->ptr_mag != nullptr || p->ptr_med != nullptr || p->ptr_gre != nullptr) && p.get() != this) {
 						if ((p->move.pos - this->move.pos).size() <= 0.35f) {
-							p->add_vec.xadd((p->move.pos - this->move.pos).x()*5.f / FPS);
-							p->add_vec.zadd((p->move.pos - this->move.pos).z()*5.f / FPS);
-							this->add_vec.xadd((this->move.pos - p->move.pos).x()*5.f / FPS);
-							this->add_vec.zadd((this->move.pos - p->move.pos).z()*5.f / FPS);
+							p->move.vec.xadd((p->move.pos - this->move.pos).x()*5.f / FPS);
+							p->move.vec.zadd((p->move.pos - this->move.pos).z()*5.f / FPS);
+							this->move.vec.xadd((this->move.pos - p->move.pos).x()*5.f / FPS);
+							this->move.vec.zadd((this->move.pos - p->move.pos).z()*5.f / FPS);
 						}
 					}
 				}
@@ -1488,9 +1470,9 @@ protected:
 						this->move.pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
 						this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
 
-						auto fvec = this->add_vec.Norm();
+						auto fvec = this->move.vec.Norm();
 						auto nvec = VECTOR_ref(pp.Normal).Norm();
-						this->add_vec = (fvec + nvec * ((fvec*-1.f).dot(nvec)*2.f))*(this->add_vec.size()*0.5f);
+						this->move.vec = (fvec + nvec * ((fvec*-1.f).dot(nvec)*2.f))*(this->move.vec.size()*0.5f);
 					}
 				}
 				else {
@@ -1498,8 +1480,8 @@ protected:
 					if (pp.HitFlag) {
 						this->move.pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
 						this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
-						this->add_vec.clear();
-						//easing_set(&this->add_vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
+						this->move.vec.clear();
+						//easing_set(&this->move.vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
 					}
 				}
 				//

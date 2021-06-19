@@ -356,42 +356,84 @@
     <SFA>
       <FILEPATH>c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker</FILEPATH>
       <FILENAME>map.hpp</FILENAME>
-      <LINE>119</LINE>
+      <LINE>142</LINE>
+      <COLUMN>2</COLUMN>
+    </SFA>
+    <DEFECTCODE>26495</DEFECTCODE>
+    <DESCRIPTION>Variable 'MAPclass::Map::shader' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
+    <FUNCTION>MAPclass::Map::{ctor}</FUNCTION>
+    <DECORATED>??0Map@MAPclass@@QEAA@H@Z</DECORATED>
+    <FUNCLINE>142</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker</FILEPATH>
+      <FILENAME>map.hpp</FILENAME>
+      <LINE>142</LINE>
+      <COLUMN>2</COLUMN>
+    </SFA>
+    <DEFECTCODE>26495</DEFECTCODE>
+    <DESCRIPTION>Variable 'MAPclass::Map::Depth' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
+    <FUNCTION>MAPclass::Map::{ctor}</FUNCTION>
+    <DECORATED>??0Map@MAPclass@@QEAA@H@Z</DECORATED>
+    <FUNCLINE>142</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker</FILEPATH>
+      <FILENAME>map.hpp</FILENAME>
+      <LINE>122</LINE>
       <COLUMN>2</COLUMN>
     </SFA>
     <DEFECTCODE>26495</DEFECTCODE>
     <DESCRIPTION>Variable 'MAPclass::Map::grass_t::RefMesh' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
     <FUNCTION>MAPclass::Map::grass_t::{ctor}</FUNCTION>
     <DECORATED>??0grass_t@Map@MAPclass@@QEAA@XZ</DECORATED>
-    <FUNCLINE>119</FUNCLINE>
+    <FUNCLINE>122</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker</FILEPATH>
+      <FILENAME>scene.hpp</FILENAME>
+      <LINE>113</LINE>
+      <COLUMN>1</COLUMN>
+    </SFA>
+    <DEFECTCODE>26495</DEFECTCODE>
+    <DESCRIPTION>Variable 'Sceneclass::TEMPSCENE::effsorce' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
+    <FUNCTION>Sceneclass::TEMPSCENE::{ctor}</FUNCTION>
+    <DECORATED>??0TEMPSCENE@Sceneclass@@QEAA@XZ</DECORATED>
+    <FUNCLINE>113</FUNCLINE>
     <PATH></PATH>
   </DEFECT>
   <DEFECT>
     <SFA>
       <FILEPATH>c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker</FILEPATH>
       <FILENAME>sub.hpp</FILENAME>
-      <LINE>1223</LINE>
+      <LINE>1264</LINE>
       <COLUMN>1</COLUMN>
     </SFA>
     <DEFECTCODE>26495</DEFECTCODE>
     <DESCRIPTION>Variable 'Mainclass::HIT_PASSIVE::RefMesh' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
     <FUNCTION>Mainclass::HIT_PASSIVE::{ctor}</FUNCTION>
     <DECORATED>??0HIT_PASSIVE@Mainclass@@QEAA@XZ</DECORATED>
-    <FUNCLINE>1223</FUNCLINE>
+    <FUNCLINE>1264</FUNCLINE>
     <PATH></PATH>
   </DEFECT>
   <DEFECT>
     <SFA>
       <FILEPATH>c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker</FILEPATH>
       <FILENAME>sub.hpp</FILENAME>
-      <LINE>1309</LINE>
+      <LINE>1350</LINE>
       <COLUMN>1</COLUMN>
     </SFA>
     <DEFECTCODE>26495</DEFECTCODE>
     <DESCRIPTION>Variable 'Mainclass::HIT_BLOOD_PASSIVE::RefMesh' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
     <FUNCTION>Mainclass::HIT_BLOOD_PASSIVE::{ctor}</FUNCTION>
     <DECORATED>??0HIT_BLOOD_PASSIVE@Mainclass@@QEAA@XZ</DECORATED>
-    <FUNCLINE>1309</FUNCLINE>
+    <FUNCLINE>1350</FUNCLINE>
     <PATH></PATH>
   </DEFECT>
 </DEFECTS>

@@ -11,18 +11,22 @@ enum scenes
 
 class main_c {
 	//終了処理フラグ
-	bool ending = true;
+	bool ending{ true };
 	int sel_scene = scenes::NONE_SCENE;
-	cam_info* cam_t = nullptr;
-	bool update_effect_f = true;
+	cam_info* cam_t{ nullptr };
+	bool update_effect_f{ true };
 	LONGLONG update_effect_was = 0;
 
-	bool selend = true;
-	bool selpause = true;
+	bool selend{ true };
+	bool selpause{ true };
 
 	VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
 
 	std::array<shaders2D, 2> shader2D;
+
+	std::vector<EffekseerEffectHandle> effsorce; /*エフェクトリソース*/
+
+	std::shared_ptr<Sceneclass::TEMPSCENE> scenes_ptr{ nullptr };
 public:
 	main_c(void) noexcept {
 		auto OPTPTs = std::make_unique<OPTION>();																		//設定読み込み
@@ -55,7 +59,24 @@ public:
 			Screen_vertex[4] = Screen_vertex[2];
 			Screen_vertex[5] = Screen_vertex[1];
 		}
-
+		//エフェクト
+		{
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			HANDLE hFind = FindFirstFile("data/effect/*", &win32fdt);
+			if (hFind != INVALID_HANDLE_VALUE) {
+				do {
+					{
+						p = win32fdt.cFileName;
+						if (p.find(".efk") != std::string::npos) {
+							effsorce.resize(effsorce.size() + 1);
+							effsorce.back() = EffekseerEffectHandle::load("data/effect/" + p);
+						}
+					}
+				} while (FindNextFile(hFind, &win32fdt));
+			} //else{ return false; }
+			FindClose(hFind);
+		}
 		//シェーダー
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
 		shader2D[0].init("VS_lens.vso", "PS_lens.pso");																						//レンズ
@@ -70,12 +91,11 @@ public:
 		auto MAINLOOPscene = std::make_shared<Sceneclass::MAINLOOP>(&MAPPTs, &OPTPTs);
 		auto LOADscene = std::make_shared<Sceneclass::LOAD>();
 		auto SELECTscene = std::make_shared<Sceneclass::SELECT>();
-		std::shared_ptr<Sceneclass::TEMPSCENE> scenes_ptr{ nullptr };
 		//
-		UI_LOADPTs->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
-		LOADscene->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
-		SELECTscene->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
-		MAINLOOPscene->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs);
+		UI_LOADPTs->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs,&effsorce);
+		LOADscene->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs, &effsorce);
+		SELECTscene->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs, &effsorce);
+		MAINLOOPscene->Init(&DrawPts, &OPTPTs, &MAPPTs, &MAINLOOPscene, &DebugPTs, &effsorce);
 		//
 		//繰り返し
 		do {

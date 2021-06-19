@@ -30,9 +30,8 @@ public:
 		GraphHandle grass_pic;			/*画像ハンドル*/
 		MV1 grass;						/*grassモデル*/
 
-		int Depth_NormalMeshVS;			// 深度の描画に使用するシェーダー
-		int DepthPS;					// 深度の描画に使用するシェーダー
 		shaders2D shader;				/*シェーダー*/
+		shaders2D Depth;				/*シェーダー*/
 
 		class grass_t {
 		public:
@@ -86,7 +85,7 @@ public:
 			}
 
 			/*視界外か否かを判断*/
-			void Check_CameraViewClip(int x_, int z_, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs, bool use_occlusion) noexcept {
+			void Check_CameraViewClip(int x_, int z_, std::unique_ptr<Map>& MAPPTs, bool use_occlusion) noexcept {
 				int pos_xmax = 100 * 1 / 3;
 				int pos_xmin = 100 * (x_ + 0) / 3 - 50;
 				int pos_zmax = 100 * 1 / 3;
@@ -192,11 +191,8 @@ public:
 				SetDrawValidFloatTypeGraphCreateFlag(FALSE);
 				SetCreateGraphChannelBitDepth(0);
 			}
-			// 深度を描画するためのシェーダーを読み込む
-			Depth_NormalMeshVS = LoadVertexShader("shader/DepthVS.vso");
-			DepthPS = LoadPixelShader("shader/DepthPS.pso");
-
 			shader.init("NormalMesh_PointLightVS.vso", "NormalMesh_PointLightPS.pso");
+			Depth.init("DepthVS.vso", "DepthPS.pso");
 		}
 		void Start(void) noexcept {
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
@@ -482,26 +478,24 @@ public:
 			item_Draw();
 		}
 		//深度値描画
-		void DepthDraw(void) {
+		void DepthDraw(bool ischangescreen) {
 			int handle = GetDrawScreen();
 			DepthScreen.SetDraw_Screen(GetCameraPosition(), GetCameraTarget(), GetCameraUpVector(), GetCameraFov(), GetCameraNear(), GetCameraFar());
 			{
-				SetUsePixelShader(DepthPS);
-				SetUseTextureToShader(0, -1);
-				SetUseVertexShader(Depth_NormalMeshVS);
-				MV1SetUseOrigShader(TRUE);
-				for (int i = 0; i < 3; ++i) {
-					map.DrawMesh(i);
+				Depth.draw_lamda(
+					[&]() {
+					SetUseTextureToShader(0, -1);
+					map.DrawMesh(0);
 				}
-				MV1SetUseOrigShader(FALSE);
-				SetUsePixelShader(-1);
-				SetUseVertexShader(-1);
+				);
 			}
-			GraphHandle::SetDraw_Screen(handle,GetCameraPosition(), GetCameraTarget(), GetCameraUpVector(), GetCameraFov(), GetCameraNear(), GetCameraFar());
+			if (ischangescreen) {
+				GraphHandle::SetDraw_Screen(handle, GetCameraPosition(), GetCameraTarget(), GetCameraUpVector(), GetCameraFov(), GetCameraNear(), GetCameraFar());
+			}
 		}
 		//
 		template<class Chara>
-		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, Chara& chara, std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs) noexcept {
+		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, Chara& chara, std::unique_ptr<Map>& MAPPTs) noexcept {
 			chara.reset_canget_item();
 			for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs); }
 		}
@@ -531,13 +525,13 @@ public:
 			return now;
 		}
 
-		void Check_CameraViewClip(std::unique_ptr<Map, std::default_delete<Map>>& MAPPTs, bool use_occlusion) {
+		void Check_CameraViewClip(std::unique_ptr<Map>& MAPPTs, bool use_occlusion) {
 			for (int x_ = 0; x_ < 3; x_++) {
 				for (int z_ = 0; z_ < 3; z_++) {
 					this->grass__[x_][z_].Check_CameraViewClip(x_, z_, MAPPTs, use_occlusion);
 				}
 			}
-			DepthDraw();
+			DepthDraw(false);
 		}
 	};
 	class MiniMap {
@@ -552,7 +546,7 @@ public:
 		int MaskHandle = -1;
 		bool loadmasks = true;
 		//
-		std::unique_ptr<Map, std::default_delete<Map>>* MAPPTs;
+		std::unique_ptr<Map>* MAPPTs;
 	private:
 		void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp) noexcept {
 			auto x_2 = chara_pos.x() / (*MAPPTs)->map_col_get().mesh_maxpos(0).x() *((*MAPPTs)->get_x_size() / 2)*xcam;
@@ -562,7 +556,7 @@ public:
 			*yp = int(y_2*cos(radp) + x_2 * sin(radp));
 		}
 	public:
-		MiniMap(std::unique_ptr<Map, std::default_delete<Map>>* MAPPTs_t) noexcept {
+		MiniMap(std::unique_ptr<Map>* MAPPTs_t) noexcept {
 			SetUseASyncLoadFlag(FALSE);
 			if (usemasks) {
 				CreateMaskScreen();

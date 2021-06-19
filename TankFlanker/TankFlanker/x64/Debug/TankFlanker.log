@@ -27,5 +27,5 @@ c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(1516): warning C4715: 'PLAYERclass::Chara::calc_gredamage': 値を返さないコントロール パスがあります。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(1517): warning C4715: 'PLAYERclass::Chara::calc_gredamage': 値を返さないコントロール パスがあります。
   TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Debug\FPS_n2.exe

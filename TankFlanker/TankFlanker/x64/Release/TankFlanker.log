@@ -21,16 +21,22 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3727): warni
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(285): warning C4189: 'pps': ローカル変数が初期化されましたが、参照されていません
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(306): warning C4189: 'pps': ローカル変数が初期化されましたが、参照されていません
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(215): warning C4189: 'check_col': ローカル変数が初期化されましたが、参照されていません
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(231): warning C4189: 'check_col': ローカル変数が初期化されましたが、参照されていません
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(19): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
   コード生成しています。
-  12 of 5434 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    5 functions had inline decision re-evaluated but remain unchanged
+  All 5528 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   コード生成が終了しました。
 EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\FPS_n2.exe
+c:\users\yabushita_maki\documents\github\openvr\openvr.h(4856): warning C26495: Variable 'vr::COpenVRContext::m_pVRSystem' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3353): warning C6385: 'p' から無効なデータを読み取っています: 読み取り可能なサイズは '_Old_6`m_size' バイトですが、'4' バイトを読み取る可能性があります。
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3287): warning C26495: Variable 'Effekseer::Model::Vertex::VColor' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(142): warning C26495: Variable 'MAPclass::Map::shader' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\map.hpp(122): warning C26495: Variable 'MAPclass::Map::grass_t::RefMesh' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(113): warning C26495: Variable 'Sceneclass::TEMPSCENE::effsorce' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1264): warning C26495: Variable 'Mainclass::HIT_PASSIVE::RefMesh' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1350): warning C26495: Variable 'Mainclass::HIT_BLOOD_PASSIVE::RefMesh' is uninitialized. Always initialize a member variable (type.6).

@@ -4,11 +4,11 @@ class UIclass : Mainclass {
 public:
 	class UI_TEMP {
 	private:
-		bool first_f = true;
+		bool first_f{ true };
 	protected:
 		//引き継ぐ
-		std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts = nullptr;
-		std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs = nullptr;
+		std::unique_ptr<DXDraw>* DrawPts{ nullptr };
+		std::unique_ptr<MAPclass::Map>* MAPPTs{ nullptr };
 		int t_disp_x = 1920;
 		int t_disp_y = 1080;
 		//font
@@ -24,7 +24,7 @@ public:
 		int font_bighight{ 0 };
 		int fonthight{ 0 };
 	public:
-		void Init(std::unique_ptr<DXDraw, std::default_delete<DXDraw>>* DrawPts_t, std::unique_ptr<MAPclass::Map, std::default_delete<MAPclass::Map>>* MAPPTs_t) noexcept {
+		void Init(std::unique_ptr<DXDraw>* DrawPts_t, std::unique_ptr<MAPclass::Map>* MAPPTs_t) noexcept {
 			if (first_f) {
 				first_f = false;
 
@@ -252,7 +252,7 @@ public:
 		~UI_CUSTOM(void) noexcept {
 		}
 		template<class Y>
-		void UI_Draw(std::shared_ptr<Y>* MAINLOOPscene, size_t& parts_cat, const bool &Rot, std::shared_ptr<PLAYERclass::Chara>* mine, GUNPARTs* parts_p, float& change_per) noexcept {
+		void UI_Draw(std::shared_ptr<Y>* MAINLOOPscene, EnumGunParts parts_cat, const bool &Rot, std::shared_ptr<PLAYERclass::Chara>* mine, GUNPARTs* parts_p, float& change_per) noexcept {
 			set_fonts();
 
 			int xs = 0, ys = 0, xp = 0, yp = 0;
@@ -277,62 +277,62 @@ public:
 				}
 				//*/
 
-				if (parts_cat != SIZE_MAX) {
+				if (parts_cat != PARTS_NONE) {
 					std::string parts_type = "";
 					std::vector<GUNPARTs>* parts_t = nullptr;
 
 					switch (parts_cat) {
-					case EnumGunParts::PARTS_MAZZULE:
+					case PARTS_MAZZULE:
 					{
 						parts_type = "MAZZULE";
 						break;
 					}
-					case EnumGunParts::PARTS_MAGAZINE:
+					case PARTS_MAGAZINE:
 					{
 						parts_type = "MAGAZINE";
 						break;
 					}
-					case EnumGunParts::PARTS_GRIP:
+					case PARTS_GRIP:
 					{
 						parts_type = "GRIP";
 						break;
 					}
-					case EnumGunParts::PARTS_UPER_HGUARD:
+					case PARTS_UPER_HGUARD:
 					{
 						parts_type = "UPER HANDGUARD";
 						break;
 					}
-					case EnumGunParts::PARTS_UNDER_HGUARD:
+					case PARTS_UNDER_HGUARD:
 					{
 						parts_type = "UNDER HANDGUARD";
 						break;
 					}
-					case EnumGunParts::PARTS_DUSTCOVER:
+					case PARTS_DUSTCOVER:
 					{
 						parts_type = "DUSTCOVER";
 						break;
 					}
-					case EnumGunParts::PARTS_STOCK:
+					case PARTS_STOCK:
 					{
 						parts_type = "STOCK";
 						break;
 					}
-					case EnumGunParts::PARTS_LAM:
+					case PARTS_LAM:
 					{
 						parts_type = "LASER/LIGHT";
 						break;
 					}
-					case EnumGunParts::PARTS_FOREGRIP:
+					case PARTS_FOREGRIP:
 					{
 						parts_type = "FOREGRIP";
 						break;
 					}
-					case EnumGunParts::PARTS_MOUNT:
+					case PARTS_MOUNT:
 					{
 						parts_type = "MOUNT";
 						break;
 					}
-					case EnumGunParts::PARTS_SIGHT:
+					case PARTS_SIGHT:
 					{
 						parts_type = "SIGHT";
 						break;
@@ -398,7 +398,7 @@ public:
 		GraphHandle hit_rad;
 		float Ready = 0.f;
 		float timer = 0.f;
-		std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>* RULEparts;
+		std::unique_ptr<RULE_parts>* RULEparts;
 	private:
 		void Draw_HP(int xpos, int ypos, int xsize, int ysize, std::shared_ptr<PLAYERclass::Chara>* mine) noexcept {
 			auto size = y_r(2);
@@ -449,7 +449,7 @@ public:
 			}
 		}
 	public:
-		UI_MAINLOOP(std::unique_ptr<RULE_parts, std::default_delete<RULE_parts>>* RULEparts_t) noexcept {
+		UI_MAINLOOP(std::unique_ptr<RULE_parts>* RULEparts_t) noexcept {
 			RULEparts = RULEparts_t;
 			SetUseASyncLoadFlag(TRUE);
 			this->hit_rad = GraphHandle::Load("data/UI/enemyrad.png");
@@ -600,7 +600,7 @@ public:
 						}
 						//銃
 						{
-							font->DrawString(xp, yp, (*mine)->get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
+							font->DrawString(xp, yp, (*mine)->get_parts(PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
 						}
 						//マガジン関連(仮)
 						{
@@ -709,7 +709,7 @@ public:
 			set_fonts();
 			//弾インジケーター
 			if ((*DrawPts)->use_vr) {
-				auto pos_gun = (*mine)->get_parts(EnumGunParts::PARTS_BASE)->get_objmatrix().pos();
+				auto pos_gun = (*mine)->get_parts(PARTS_BASE)->Get_objmatrix().pos();
 				VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
 					int xp = int(p.x());
