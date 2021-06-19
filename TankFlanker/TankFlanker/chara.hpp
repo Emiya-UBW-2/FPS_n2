@@ -386,8 +386,8 @@ public:
 				if (q.HitFlag) {
 					this->move.pos = q.HitPosition;
 					//hit
-					//(*c)->effcs[ef_reco].set(this->pos, q.Normal, 0.1f / 0.1f);
-					(*c)->effcs[ef_hitblood].set(this->move.pos, q.Normal, 0.1f / 0.1f);
+					//(*c)->effcs[ef_reco].Set(this->pos, q.Normal, 0.1f / 0.1f);
+					(*c)->effcs[ef_hitblood].Set(this->move.pos, q.Normal, 0.1f / 0.1f);
 					//
 					this->hit_Flag = true;
 					this->Flag = false;
@@ -471,9 +471,9 @@ public:
 							if (this->Flag) {
 								this->Flag = false;
 								//弾痕
-								(*c)->effcs_gndhit[(*c)->use_effcsgndhit].set(this->move.pos, p.Normal, 0.025f / 0.1f);
+								(*c)->effcs_gndhit[(*c)->use_effcsgndhit].Set(this->move.pos, p.Normal, 0.025f / 0.1f);
 								++(*c)->use_effcsgndhit %= (*c)->effcs_gndhit.size();
-								hit_obj_p.set(this->spec->get_caliber(), this->move.pos, p.Normal, this->move.mat.zvec());
+								hit_obj_p.Set(this->spec->get_caliber(), this->move.pos, p.Normal, this->move.mat.zvec());
 								return;
 							}
 						}
@@ -484,9 +484,9 @@ public:
 								p = (*MAPPTs)->map_col_line(this->move.pos, this->move.pos + vec * 5.f);
 							}
 							if (p.HitFlag) {
-								(*c)->effcs_gndhit[(*c)->use_effcsgndhit].set(p.HitPosition, p.Normal, 0.025f / 0.1f);
+								(*c)->effcs_gndhit[(*c)->use_effcsgndhit].Set(p.HitPosition, p.Normal, 0.025f / 0.1f);
 								++(*c)->use_effcsgndhit %= (*c)->effcs_gndhit.size();
-								hit_b_obj_p.set(0.35f, p.HitPosition, p.Normal, this->move.mat.zvec());
+								hit_b_obj_p.Set(0.35f, p.HitPosition, p.Normal, this->move.mat.zvec());
 							}
 						}
 						//*/
@@ -643,7 +643,7 @@ public:
 				return this->obj_mag_.frame(this->LEFT_mag_frame.first);
 			}
 
-			void set(GUNPARTs* ptr_mag_t, size_t m_cnt_t) {
+			void Set(GUNPARTs* ptr_mag_t, size_t m_cnt_t) {
 				if (ptr_mag_t != nullptr) {
 					this->m_cnt = m_cnt_t;
 					this->ptr_mag = ptr_mag_t;
@@ -701,12 +701,12 @@ public:
 			//マガジンを1つ追加(装填無し)
 			void magazine_plus(Items* magazine_item) noexcept {
 				this->magazine_in.resize(this->magazine_in.size() + 1);
-				this->magazine_in.back().set(magazine_item->get_ptr_mag(), magazine_item->get_magazine().mag_cnt);
+				this->magazine_in.back().Set(magazine_item->get_ptr_mag(), magazine_item->get_magazine().mag_cnt);
 			}
 			//マガジンを1つ追加
 			void magazine_pushback(GUNPARTs* magazine_parts) noexcept {
 				this->magazine_in.resize(this->magazine_in.size() + 1);
-				this->magazine_in.back().set(magazine_parts, magazine_parts->mag_cnt);
+				this->magazine_in.back().Set(magazine_parts, magazine_parts->mag_cnt);
 
 				if (this->magazine_in.size() == 1) {
 					this->magazine_in.back().m_cnt--;
@@ -2731,13 +2731,9 @@ public:
 					//銃器
 					{
 						this->gun_m.Update_Physics();
-						auto down_y = VECTOR_ref::vget(0, 0.05f, 0);
-						auto pp = (*MAPPTs)->map_col_line(this->gun_m.pos + VECTOR_ref::vget(0, 1.f, 0), this->gun_m.pos - down_y);
+						auto pp = (*MAPPTs)->map_col_line(this->gun_m.pos + VECTOR_ref::vget(0, 1.f, 0), this->gun_m.pos - VECTOR_ref::vget(0, 0.05f, 0));
 						if (pp.HitFlag) {
-							moves tmp;
-							tmp.pos = VECTOR_ref(pp.HitPosition) + down_y;
-							tmp.mat = this->gun_m.mat * MATRIX_ref::RotVec2(this->gun_m.mat.xvec(), pp.Normal);
-							set_gun_pos(tmp);
+							this->gun_m.HitGround(pp, 0.05f);
 							easing_set(&this->gun_m.vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
 						}
 						this->Set_gun();
@@ -2888,19 +2884,19 @@ public:
 			switch (this->mazzule.Get_mazzuletype())
 			{
 			case 0:
-				this->effcs[ef_fire].set(this->get_maz(), this->gun_m.mat.zvec()*-1.f, 0.0025f / 0.1f);//ノーマル
+				this->effcs[ef_fire].Set(this->get_maz(), this->gun_m.mat.zvec()*-1.f, 0.0025f / 0.1f);//ノーマル
 				break;
 			case 1:
-				this->effcs[ef_fire2].set(this->get_maz(), this->gun_m.mat.zvec()*-1.f, 0.0025f / 0.1f);//サプ
+				this->effcs[ef_fire2].Set(this->get_maz(), this->gun_m.mat.zvec()*-1.f, 0.0025f / 0.1f);//サプ
 				break;
 			default:
-				this->effcs[ef_fire].set(this->get_maz(), this->gun_m.mat.zvec()*-1.f, 0.0025f / 0.1f);//何もついてない
+				this->effcs[ef_fire].Set(this->get_maz(), this->gun_m.mat.zvec()*-1.f, 0.0025f / 0.1f);//何もついてない
 				break;
 			}
 		}
 		//爆発エフェクトのセット
 		void calc_gre_effect(const VECTOR_ref& pos) noexcept {
-			this->effcs[ef_greexp].set(pos, VGet(0.f, 0.f, 1.f), 0.1f / 0.1f);
+			this->effcs[ef_greexp].Set(pos, VGet(0.f, 0.f, 1.f), 0.1f / 0.1f);
 		}
 		//薬莢の処理
 		void update_cart(void) noexcept {

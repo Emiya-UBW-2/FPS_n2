@@ -79,8 +79,8 @@ public:
 		}
 		//シェーダー
 		auto HostpassPTs = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
-		shader2D[0].init("VS_lens.vso", "PS_lens.pso");																						//レンズ
-		shader2D[1].init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");															//歪み
+		shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																						//レンズ
+		shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");															//歪み
 		//MAP
 		auto MAPPTs = std::make_unique<MAPclass::Map>(OPTPTs->grass_level);
 		//キー読み込み

@@ -191,8 +191,8 @@ public:
 				SetDrawValidFloatTypeGraphCreateFlag(FALSE);
 				SetCreateGraphChannelBitDepth(0);
 			}
-			shader.init("NormalMesh_PointLightVS.vso", "NormalMesh_PointLightPS.pso");
-			Depth.init("DepthVS.vso", "DepthPS.pso");
+			shader.Init("NormalMesh_PointLightVS.vso", "NormalMesh_PointLightPS.pso");
+			Depth.Init("DepthVS.vso", "DepthPS.pso");
 		}
 		void Start(void) noexcept {
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);

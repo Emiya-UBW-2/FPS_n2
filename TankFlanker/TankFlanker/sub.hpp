@@ -754,11 +754,11 @@ public:
 //
 class shaders2D {
 public:
-	int pshandle, vshandle;
-	int pscbhandle;
-	int pscbhandle2;
+	int pshandle{ -1 }, vshandle{ -1 };
+	int pscbhandle{ -1 };
+	int pscbhandle2{ -1 };
 
-	void init(std::string vs, std::string ps) {
+	void Init(std::string vs, std::string ps) {
 		this->vshandle = LoadVertexShader(("shader/" + vs).c_str());	// 頂点シェーダーバイナリコードの読み込み
 		this->pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
 		this->pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
@@ -1191,14 +1191,14 @@ protected:
 		bool isUPDate{ true };
 	public:
 		//初期化
-		void init(void) noexcept {
+		void Init(void) noexcept {
 			SetUseASyncLoadFlag(FALSE);
 			hits_pic = GraphHandle::Load("data/model/hit/hit.png");		 /*grass*/
 			MV1::Load("data/model/hit/model.mv1", &hits, false);	//弾痕
 			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
 		}
 		//毎回のリセット
-		void clear(void) noexcept {
+		void Clear(void) noexcept {
 			hitss = 0;
 			vnum = 0;
 			pnum = 0;
@@ -1208,7 +1208,7 @@ protected:
 			hitsind.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 		}
 
-		void set(const float &caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
+		void Set(const float &caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
 			hitss++;
 			IndexNum = RefMesh.PolygonNum * 3 * hitss;				/*インデックスの数を取得*/
 			VerNum = RefMesh.VertexNum * hitss;						/*頂点の数を取得*/
@@ -1277,14 +1277,14 @@ protected:
 		bool isUPDate{ true };
 	public:
 		//初期化
-		void init(void) noexcept {
+		void Init(void) noexcept {
 			SetUseASyncLoadFlag(FALSE);
 			hits_pic = GraphHandle::Load("data/model/hit_blood/hit.png");		 /*grass*/
 			MV1::Load("data/model/hit_blood/model.mv1", &hits, false);	//弾痕
 			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
 		}
 		//毎回のリセット
-		void clear(void) noexcept {
+		void Clear(void) noexcept {
 			hitss = 0;
 			vnum = 0;
 			pnum = 0;
@@ -1294,7 +1294,7 @@ protected:
 			hitsind.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 		}
 
-		void set(const float &caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
+		void Set(const float &caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
 			hitss++;
 			IndexNum = RefMesh.PolygonNum * 3 * hitss;				/*インデックスの数を取得*/
 			VerNum = RefMesh.VertexNum * hitss;						/*頂点の数を取得*/
@@ -1354,10 +1354,6 @@ protected:
 		//共通
 		moves move;
 		MV1 obj;
-		//マガジン専用パラメーター
-		//治療キット専用パラメーター
-	private:
-		//共通
 		float del_timer = 0.f;
 		size_t id_t = 0;
 		//マガジン専用パラメーター
@@ -1465,21 +1461,18 @@ protected:
 					}
 				}
 				if (this->ptr_gre != nullptr) {
-					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.0025f, 0));
+					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.005f, 0));
 					if (pp.HitFlag) {
-						this->move.pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
-						this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
-
+						this->move.HitGround(pp, 0.005f);
 						auto fvec = this->move.vec.Norm();
 						auto nvec = VECTOR_ref(pp.Normal).Norm();
 						this->move.vec = (fvec + nvec * ((fvec*-1.f).dot(nvec)*2.f))*(this->move.vec.size()*0.5f);
 					}
 				}
 				else {
-					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.0025f, 0));
+					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.005f, 0));
 					if (pp.HitFlag) {
-						this->move.pos = VECTOR_ref(pp.HitPosition) + VECTOR_ref(pp.Normal)*0.005f;
-						this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.xvec(), VECTOR_ref(pp.Normal)*-1.f);
+						this->move.HitGround(pp, 0.005f);
 						this->move.vec.clear();
 						//easing_set(&this->move.vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
 					}

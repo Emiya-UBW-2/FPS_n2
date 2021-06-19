@@ -102,7 +102,7 @@ public:
 				}
 				if (parts != nullptr) {
 					std::wstring msg = StringToWString(parts->per.info);
-					int i = 0, siz = (xsize - main_siz * 2) / fonthight - 1;
+					int i = 0, siz = (xsize - main_siz * 2) / (fonthight*5/4) - 1;//todo
 					while (true) {
 						if ((title_siz * 2 + font_bighight + fonthight * (i + 1)) > ysize) {
 							break;
@@ -126,7 +126,7 @@ public:
 		~UI_LOAD(void) noexcept {
 		}
 		template<class Y>
-		void UI_Draw(std::shared_ptr<Y>* MAINLOOPscene, std::vector<save_c> save_parts, const std::string& set_name) noexcept {
+		void UI_Draw(std::shared_ptr<Y>* MAINLOOPscene, std::vector<save_c>& save_parts, const std::string& set_name) noexcept {
 			set_fonts();
 
 			DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(192, 192, 192), TRUE);

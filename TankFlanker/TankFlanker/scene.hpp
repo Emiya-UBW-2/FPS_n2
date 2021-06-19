@@ -38,7 +38,7 @@ public:
 		COLOR_F Light_color = GetColorF(0, 0, 0, 0);
 		COLOR_F Light_color_ref = GetColorF(0, 0, 0, 0);
 
-		std::vector<EffekseerEffectHandle>* effsorce;
+		std::vector<EffekseerEffectHandle>* effsorce{ nullptr };
 	public:
 		void Init(
 			std::unique_ptr<DXDraw>* DrawPts_t,
@@ -323,37 +323,39 @@ public:
 					change_select = std::clamp(change_select, 0, change_select_max - 1);
 					parts_p = &(*(*MAINLOOPscene)->get_parts_data(parts_cat))[change_select];
 					/*
-					bool aaa = false;
-					auto total_t = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size();
-					change_select_max = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size();
-					change_select = std::clamp(change_select, 0, total_t - 1);
-					while (true) {
-						auto tmp = &(*(*MAINLOOPscene)->get_parts_data(parts_cat))[change_select];
+					{
+						bool aaa = false;
+						auto total_t = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size();
+						change_select_max = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size();
+						change_select = std::clamp(change_select, 0, total_t - 1);
+						while (true) {
+							auto tmp = &(*(*MAINLOOPscene)->get_parts_data(parts_cat))[change_select];
 
-						aaa = false;
-						for (auto& p : port_ptr->thisparts->can_attach) {
-							if (p == tmp->mod.get_name()) {
-								aaa = true;
+							aaa = false;
+							for (auto& p : port_ptr->thisparts->can_attach) {
+								if (p == tmp->mod.get_name()) {
+									aaa = true;
+									break;
+								}
+							}
+							if (aaa) {
+								//ok
+								parts_p = tmp;
+								change_select_max = total_t;
+								break;
+							}
+							else {
+								//NG
+								total_t--;
+								change_select = std::clamp(change_select++, 0, total_t - 1);
+							}
+							if (total_t == 0) {
+								//NG
 								break;
 							}
 						}
-						if (aaa) {
-							//ok
-							parts_p = tmp;
-							change_select_max = total_t;
-							break;
-						}
-						else {
-							//NG
-							total_t--;
-							change_select = std::clamp(change_select++, 0, total_t - 1);
-						}
-						if (total_t == 0) {
-							//NG
-							break;
-						}
 					}
-					*/
+					//*/
 
 					viewparts_buf = port_ptr->Get_rail_pos(port_cat);
 					(*mine_ptr)->Detach_parts(parts_cat);
@@ -472,7 +474,7 @@ public:
 				SetCreateSoundTimeStretchRate(1.f);
 			}
 			/*パーツデータをロード*/
-			{
+			if(preset!=""){
 				std::fstream file;
 				save_parts.clear();
 				file.open(("data/save/" + preset).c_str(), std::ios::binary | std::ios::in);
@@ -484,56 +486,57 @@ public:
 				}
 				file.close();
 			}
-			/*
+			//*
+			else
 			{
 				save_parts.clear();
 				//magazine
 				save_parts.resize(save_parts.size() + 1);
 				save_parts.back().cang_ = 0;
 				save_parts.back().type_ = PARTS_MAGAZINE;
-				save_parts.back().pt_cat_ = MAGAZINE_BASE;
+				save_parts.back().pt_cat_ = POINTS_MAGAZINE_BASE;
 				save_parts.back().pt_type_ = PARTS_BASE;
 				save_parts.back().pt_sel_ = 0;
 				//grip
 				save_parts.resize(save_parts.size() + 1);
 				save_parts.back().cang_ = 0;
 				save_parts.back().type_ = PARTS_GRIP;
-				save_parts.back().pt_cat_ = GRIP_BASE;
+				save_parts.back().pt_cat_ = POINTS_GRIP_BASE;
 				save_parts.back().pt_type_ = PARTS_BASE;
 				save_parts.back().pt_sel_ = 0;
 				//uperhandguard
 				save_parts.resize(save_parts.size() + 1);
 				save_parts.back().cang_ = 0;
 				save_parts.back().type_ = PARTS_UPER_HGUARD;
-				save_parts.back().pt_cat_ = UPER_HANDGUARD;
+				save_parts.back().pt_cat_ = POINTS_UPER_HANDGUARD;
 				save_parts.back().pt_type_ = PARTS_BASE;
 				save_parts.back().pt_sel_ = 0;
 				//underhandguard
 				save_parts.resize(save_parts.size() + 1);
 				save_parts.back().cang_ = 0;
 				save_parts.back().type_ = PARTS_UNDER_HGUARD;
-				save_parts.back().pt_cat_ = UNDER_HANDGUARD;
+				save_parts.back().pt_cat_ = POINTS_UNDER_HANDGUARD;
 				save_parts.back().pt_type_ = PARTS_BASE;
 				save_parts.back().pt_sel_ = 0;
 				//マズル
 				save_parts.resize(save_parts.size() + 1);
 				save_parts.back().cang_ = 0;
 				save_parts.back().type_ = PARTS_MAZZULE;
-				save_parts.back().pt_cat_ = MAZZULE_BASE;
+				save_parts.back().pt_cat_ = POINTS_MAZZULE_BASE;
 				save_parts.back().pt_type_ = PARTS_BASE;
 				save_parts.back().pt_sel_ = 0;
 				//ダストカバー
 				save_parts.resize(save_parts.size() + 1);
 				save_parts.back().cang_ = 0;
 				save_parts.back().type_ = PARTS_DUSTCOVER;
-				save_parts.back().pt_cat_ = DUSTCOVER_BASE;
+				save_parts.back().pt_cat_ = POINTS_DUSTCOVER_BASE;
 				save_parts.back().pt_type_ = PARTS_BASE;
 				save_parts.back().pt_sel_ = 0;
 				//ストック
 				save_parts.resize(save_parts.size() + 1);
 				save_parts.back().cang_ = 0;
 				save_parts.back().type_ = PARTS_STOCK;
-				save_parts.back().pt_cat_ = STOCK_BASE;
+				save_parts.back().pt_cat_ = POINTS_STOCK_BASE;
 				save_parts.back().pt_type_ = PARTS_BASE;
 				save_parts.back().pt_sel_ = 0;
 			}
@@ -996,8 +999,8 @@ public:
 			set_parts_data_from_folder(&this->magazine_data, "data/mag/", PARTS_MAGAZINE);			//MAGデータ
 			set_mads_data_from_folder(&this->meds_data, "data/medkit/");							//MEDデータ
 			set_gres_data_from_folder(&this->gres_data, "data/grenade/");							//グレネード
-			this->hit_obj_p.init();																	//弾痕
-			this->hit_b_obj_p.init();																//弾痕
+			this->hit_obj_p.Init();																	//弾痕
+			this->hit_b_obj_p.Init();																//弾痕
 		}
 		void Start_After(void) noexcept {
 			for (auto& g : this->mazzule_data) { g.Set(&g - &this->mazzule_data.front()); }					//PARTSデータ2
@@ -1015,8 +1018,8 @@ public:
 			for (auto& g : this->magazine_data) { g.Set(&g - &this->magazine_data.front()); }				//MAGデータ2
 			for (auto& g : this->meds_data) { g.Set(&g - &this->meds_data.front()); }						//MEDデータ2
 			for (auto& g : this->gres_data) { g.Set(&g - &this->gres_data.front()); }						//グレネード2
-			this->hit_obj_p.clear();																		//弾痕
-			this->hit_b_obj_p.clear();																		//弾痕
+			this->hit_obj_p.Clear();																		//弾痕
+			this->hit_b_obj_p.Clear();																		//弾痕
 		}
 		void Set_Charaa(const size_t &spawn_total) noexcept {
 			//キャラ設定
