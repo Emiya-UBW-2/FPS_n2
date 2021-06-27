@@ -10,12 +10,11 @@ public:
 		//
 	protected:
 		//引き継ぐ
-		std::unique_ptr<DXDraw>* DrawPts{ nullptr };
-		std::unique_ptr<OPTION>* OPTPTs{ nullptr };
-		std::unique_ptr<MAPclass::Map>* MAPPTs{ nullptr };
-		std::shared_ptr<MAINLOOP>* MAINLOOPscene{ nullptr };
-		//仮
-		std::unique_ptr<DeBuG>* DebugPTs{ nullptr };
+		std::shared_ptr<DXDraw> DrawPts;
+		std::shared_ptr<OPTION> OPTPTs;
+		std::shared_ptr<MAPclass::Map> MAPPTs;
+		std::shared_ptr<MAINLOOP> MAINLOOPscene;
+		std::shared_ptr<DeBuG> DebugPTs;		//仮
 		//UIsound
 		SoundHandle decision;
 		SoundHandle cancel;
@@ -41,11 +40,11 @@ public:
 		std::vector<EffekseerEffectHandle>* effsorce{ nullptr };
 	public:
 		void Init(
-			std::unique_ptr<DXDraw>* DrawPts_t,
-			std::unique_ptr<OPTION>* OPTPTs_t,
-			std::unique_ptr<MAPclass::Map>* MAPPTs_t,
-			std::shared_ptr<MAINLOOP>* MAINLOOPscene_t,
-			std::unique_ptr<DeBuG>* DebugPTs_t,
+			const std::shared_ptr<DXDraw>& DrawPts_t,
+			const std::shared_ptr<OPTION>& OPTPTs_t,
+			const std::shared_ptr<MAPclass::Map>& MAPPTs_t,
+			const std::shared_ptr<MAINLOOP>& MAINLOOPscene_t,
+			const std::shared_ptr<DeBuG>& DebugPTs_t,
 			std::vector<EffekseerEffectHandle>* effsorce_t
 		) noexcept {
 			DrawPts = DrawPts_t;
@@ -69,7 +68,7 @@ public:
 		cam_info& Get_Camera(void) noexcept { return camera_main; }
 
 		virtual void Set(void) noexcept {
-			fov_base = deg2rad((*DrawPts)->use_vr ? 120 : (*OPTPTs)->Fov);	//fov
+			fov_base = deg2rad(DrawPts->use_vr ? 120 : OPTPTs->Fov);	//fov
 			SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
 			SetMousePoint(deskx / 2, desky / 2);											//
 			camera_main.set_cam_info(fov_base, 0.05f, 200.f);//1P
@@ -151,7 +150,6 @@ public:
 		switchs right;
 		//データ
 		GUNPARTs* temp_p{ nullptr };
-		std::shared_ptr<PLAYERclass::Chara>* mine_ptr{ nullptr };
 		//
 		int preset_select = 0;
 		int preset_select_max = 0;
@@ -172,7 +170,6 @@ public:
 				left.Init(false);
 				right.Init(false);
 			}
-			mine_ptr = (*MAINLOOPscene)->Get_Mine();
 			{
 				save_presets.clear();
 				WIN32_FIND_DATA win32fdt;
@@ -211,8 +208,8 @@ public:
 			//演算
 			{
 				SetMouseDispFlag(TRUE);
-				left.GetInput((*mine_ptr)->get_key_().akey);
-				right.GetInput((*mine_ptr)->get_key_().dkey);
+				left.GetInput(MAINLOOPscene->Get_Mine()->get_key_().akey);
+				right.GetInput(MAINLOOPscene->Get_Mine()->get_key_().dkey);
 				if (left.trigger()) {
 					--preset_select;
 					changef = true;
@@ -240,7 +237,7 @@ public:
 				}
 				//
 			}
-			if ((*mine_ptr)->get_key_().jamp) {
+			if (MAINLOOPscene->Get_Mine()->get_key_().jamp) {
 				return false;
 			}
 			return true;
@@ -289,7 +286,6 @@ public:
 		switchs Rot;
 		bool Start_b{ true };
 		float rate = 1.0f;
-		std::shared_ptr<PLAYERclass::Chara>* mine_ptr{ nullptr };
 		//
 		float change_per = 1.f;
 		//
@@ -315,21 +311,21 @@ public:
 		void set_pts_haveto(EnumGunParts port_type_t, EnumAttachPoint port_cat_t, EnumGunParts parts_cat_t) {
 			if (parts_select == parts_select_max) {
 				port_type = port_type_t;
-				port_ptr = (*mine_ptr)->get_parts(port_type);
+				port_ptr = MAINLOOPscene->Get_Mine()->get_parts(port_type);
 				port_cat = port_cat_t;
 				parts_cat = parts_cat_t;
 				{
-					change_select_max = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size();
+					change_select_max = (int)MAINLOOPscene->get_parts_data(parts_cat)->size();
 					change_select = std::clamp(change_select, 0, change_select_max - 1);
-					parts_p = &(*(*MAINLOOPscene)->get_parts_data(parts_cat))[change_select];
+					parts_p = &(*MAINLOOPscene->get_parts_data(parts_cat))[change_select];
 					/*
 					{
 						bool aaa = false;
-						auto total_t = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size();
-						change_select_max = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size();
+						auto total_t = (int)MAINLOOPscene->get_parts_data(parts_cat)->size();
+						change_select_max = (int)MAINLOOPscene->get_parts_data(parts_cat)->size();
 						change_select = std::clamp(change_select, 0, total_t - 1);
 						while (true) {
-							auto tmp = &(*(*MAINLOOPscene)->get_parts_data(parts_cat))[change_select];
+							auto tmp = &(*MAINLOOPscene->get_parts_data(parts_cat))[change_select];
 
 							aaa = false;
 							for (auto& p : port_ptr->thisparts->can_attach) {
@@ -358,35 +354,35 @@ public:
 					//*/
 
 					viewparts_buf = port_ptr->Get_rail_pos(port_cat);
-					(*mine_ptr)->Detach_parts(parts_cat);
-					(*mine_ptr)->Attach_parts(parts_p, parts_cat, port_ptr, port_cat);
+					MAINLOOPscene->Get_Mine()->Detach_parts(parts_cat);
+					MAINLOOPscene->Get_Mine()->Attach_parts(parts_p, parts_cat, port_ptr, port_cat);
 				}
 				set_pts_save(size_t(change_select));
 			}
 			++parts_select_max;
 
 			//サイト判定
-			if ((*mine_ptr)->get_parts(parts_cat_t)->Set_sight_at(*(*MAINLOOPscene)->get_parts_data(PARTS_SIGHT))) {
-				sight_ptr[sight_p_s] = (*mine_ptr)->get_parts(parts_cat_t); ++sight_p_s;
+			if (MAINLOOPscene->Get_Mine()->get_parts(parts_cat_t)->Set_sight_at(*MAINLOOPscene->get_parts_data(PARTS_SIGHT))) {
+				sight_ptr[sight_p_s] = MAINLOOPscene->Get_Mine()->get_parts(parts_cat_t); ++sight_p_s;
 			}
 		}
 		//非必須品
 		void Set_chang_needs(EnumGunParts pts_cat, EnumAttachPoint pot_cat, int& chang_t, int sel = 0) noexcept {
-			change_select_max = (int)(*MAINLOOPscene)->get_parts_data(parts_cat)->size() + 1;
+			change_select_max = (int)MAINLOOPscene->get_parts_data(parts_cat)->size() + 1;
 			chang_t = std::clamp(chang_t, 0, change_select_max - 1);
 			if (chang_t == 0) { parts_p = nullptr; }
-			else { parts_p = &(*(*MAINLOOPscene)->get_parts_data(pts_cat))[std::max(chang_t - 1, 0)]; }
+			else { parts_p = &(*MAINLOOPscene->get_parts_data(pts_cat))[std::max(chang_t - 1, 0)]; }
 
 			viewparts_buf = port_ptr->Get_rail_pos(pot_cat);
-			(*mine_ptr)->Detach_parts(pts_cat, (sel == 0) ? sel : (sel - 1));
+			MAINLOOPscene->Get_Mine()->Detach_parts(pts_cat, (sel == 0) ? sel : (sel - 1));
 			if (chang_t != 0) {
-				(*mine_ptr)->Attach_parts(parts_p, pts_cat, port_ptr, pot_cat, sel);
+				MAINLOOPscene->Get_Mine()->Attach_parts(parts_p, pts_cat, port_ptr, pot_cat, sel);
 			}
 			set_pts_save(size_t(chang_t) - 1);
 		}
 		void set_pts_need(EnumGunParts port_type_t, EnumAttachPoint port_cat_t, EnumGunParts parts_cat_t) {
 			port_type = port_type_t;
-			port_ptr = (*mine_ptr)->get_parts(port_type);
+			port_ptr = MAINLOOPscene->Get_Mine()->get_parts(port_type);
 			port_cat = port_cat_t;
 			if (port_ptr->Get_rail_f(port_cat).first > 0) {
 				if (parts_select == parts_select_max) {
@@ -396,8 +392,8 @@ public:
 				++parts_select_max;
 			}
 			//サイト判定
-			if ((*mine_ptr)->get_parts(parts_cat_t)->Set_sight_at(*(*MAINLOOPscene)->get_parts_data(PARTS_SIGHT))) {
-				sight_ptr[sight_p_s] = (*mine_ptr)->get_parts(parts_cat_t); ++sight_p_s;
+			if (MAINLOOPscene->Get_Mine()->get_parts(parts_cat_t)->Set_sight_at(*MAINLOOPscene->get_parts_data(PARTS_SIGHT))) {
+				sight_ptr[sight_p_s] = MAINLOOPscene->Get_Mine()->get_parts(parts_cat_t); ++sight_p_s;
 			}
 		}
 		//sight
@@ -464,13 +460,10 @@ public:
 				rate = 0.1f;
 			}
 			{
-				mine_ptr = (*MAINLOOPscene)->Get_Mine();
-			}
-			{
 				SetCreateSoundTimeStretchRate(1.f / std::clamp(rate, 0.9f, 1.1f));
-				shot_se = SoundHandle::Load((*mine_ptr)->get_audio().shot_path);
-				slide_se = SoundHandle::Load((*mine_ptr)->get_audio().slide_path);
-				trigger_se = SoundHandle::Load((*mine_ptr)->get_audio().trigger_path);
+				shot_se = SoundHandle::Load(MAINLOOPscene->Get_Mine()->get_audio().shot_path);
+				slide_se = SoundHandle::Load(MAINLOOPscene->Get_Mine()->get_audio().slide_path);
+				trigger_se = SoundHandle::Load(MAINLOOPscene->Get_Mine()->get_audio().trigger_path);
 				SetCreateSoundTimeStretchRate(1.f);
 			}
 			/*パーツデータをロード*/
@@ -548,7 +541,7 @@ public:
 					GUNPARTs* temp_p = nullptr;
 					PLAYERclass::Chara::g_parts* temp_ptr = nullptr;
 					if (tmp_save.cang_ != SIZE_MAX) {
-						auto vec_data = (*MAINLOOPscene)->get_parts_data(tmp_save.type_);
+						auto vec_data = MAINLOOPscene->get_parts_data(tmp_save.type_);
 						if (vec_data != nullptr) {
 							temp_p = &(*vec_data)[tmp_save.cang_];
 						}
@@ -561,7 +554,7 @@ public:
 						case PARTS_DUSTCOVER:
 						case PARTS_MOUNT_BASE:
 						case PARTS_MOUNT:
-							temp_ptr = (*mine_ptr)->get_parts(tmp_save.pt_type_);
+							temp_ptr = MAINLOOPscene->Get_Mine()->get_parts(tmp_save.pt_type_);
 							break;
 						default:
 							break;
@@ -570,7 +563,7 @@ public:
 					if (tmp_save.type_ == PARTS_SIGHT) {
 						++pppp;
 					}
-					(*mine_ptr)->Attach_parts(temp_p, tmp_save.type_, temp_ptr, tmp_save.pt_cat_, pppp);
+					MAINLOOPscene->Get_Mine()->Attach_parts(temp_p, tmp_save.type_, temp_ptr, tmp_save.pt_cat_, pppp);
 				}
 				//save_parts.clear();
 			}
@@ -588,24 +581,24 @@ public:
 			{
 				{
 					moves tmp;
-					(*mine_ptr)->set_gun_pos(tmp);
-					(*mine_ptr)->Set_gun();
-					(*mine_ptr)->set_mag_pos();
-					(*mine_ptr)->get_parts(PARTS_MAGAZINE)->Setpos_Nomal((*mine_ptr)->Mag_Mat());
+					MAINLOOPscene->Get_Mine()->set_gun_pos(tmp);
+					MAINLOOPscene->Get_Mine()->Set_gun();
+					MAINLOOPscene->Get_Mine()->set_mag_pos();
+					MAINLOOPscene->Get_Mine()->get_parts(PARTS_MAGAZINE)->Setpos_Nomal(MAINLOOPscene->Get_Mine()->Mag_Mat());
 					//キー
-					up.GetInput((*mine_ptr)->get_key_().wkey);
-					down.GetInput((*mine_ptr)->get_key_().skey);
-					left.GetInput((*mine_ptr)->get_key_().akey);
-					right.GetInput((*mine_ptr)->get_key_().dkey);
-					shot.GetInput((*mine_ptr)->get_key_().shoot);
-					Rot.GetInput((*mine_ptr)->get_key_().select);
+					up.GetInput(MAINLOOPscene->Get_Mine()->get_key_().wkey);
+					down.GetInput(MAINLOOPscene->Get_Mine()->get_key_().skey);
+					left.GetInput(MAINLOOPscene->Get_Mine()->get_key_().akey);
+					right.GetInput(MAINLOOPscene->Get_Mine()->get_key_().dkey);
+					shot.GetInput(MAINLOOPscene->Get_Mine()->get_key_().shoot);
+					Rot.GetInput(MAINLOOPscene->Get_Mine()->get_key_().select);
 					//
 					if (Start_b) {
 						Start_b = false;
 						//changef = true;
-						int pp = (*mine_ptr)->get_parts(PARTS_BASE)->thisparts->Select_Chose(EnumSELECTER::SELECT_SEMI);
+						int pp = MAINLOOPscene->Get_Mine()->get_parts(PARTS_BASE)->thisparts->Select_Chose(EnumSELECTER::SELECT_SEMI);
 						if (pp != -1) {
-							(*mine_ptr)->gun_stat_now->selector_set(pp);
+							MAINLOOPscene->Get_Mine()->gun_stat_now->selector_set(pp);
 						}
 					}
 					if (left.trigger()) {
@@ -672,33 +665,33 @@ public:
 					}
 				}
 				//
-				easing_set(&(*mine_ptr)->get_gunanime_trigger()->per, float(shot.press()), 0.5f);
+				easing_set(&MAINLOOPscene->Get_Mine()->get_gunanime_trigger()->per, float(shot.press()), 0.5f);
 				if (shot.trigger()) {
-					if ((*mine_ptr)->set_gunf()) {
+					if (MAINLOOPscene->Get_Mine()->set_gunf()) {
 						//todo ディレイつける
 						{
 							shot_se.play(DX_PLAYTYPE_BACK, TRUE);
 							slide_se.play(DX_PLAYTYPE_BACK, TRUE);
 							trigger_se.play(DX_PLAYTYPE_BACK, TRUE);
 							//薬莢
-							(*mine_ptr)->create_cart();
+							MAINLOOPscene->Get_Mine()->create_cart();
 						}
 						//エフェクト
-						(*mine_ptr)->calc_shot_effect();
+						MAINLOOPscene->Get_Mine()->calc_shot_effect();
 					}
 				}
 				//薬莢
-				(*mine_ptr)->calc_cart(rate);
+				MAINLOOPscene->Get_Mine()->calc_cart(rate);
 				//銃セレクターアニメ
-				(*mine_ptr)->Set_select_anime();
+				MAINLOOPscene->Get_Mine()->Set_select_anime();
 				//銃発砲アニメ
-				(*mine_ptr)->Set_shot_anime(rate, true);
+				MAINLOOPscene->Get_Mine()->Set_shot_anime(rate, true);
 				//銃アニメ更新
-				(*mine_ptr)->get_parts(PARTS_BASE)->updateani();
+				MAINLOOPscene->Get_Mine()->get_parts(PARTS_BASE)->updateani();
 				//薬莢の処理
-				(*mine_ptr)->update_cart();
+				MAINLOOPscene->Get_Mine()->update_cart();
 				//エフェクトの更新
-				(*mine_ptr)->update_effect(effsorce);
+				MAINLOOPscene->Get_Mine()->update_effect(effsorce);
 			}
 			//campos,camvec,camupの指定
 			{}
@@ -722,7 +715,7 @@ public:
 						viewparts = viewparts_buf;
 					}
 				}
-				range_tgt = std::hypotf(sin(deg2rad(yrad_t))*0.25f, cos(deg2rad(yrad_t))*(std::abs((((std::abs(yrad_t) > 90) ? (*mine_ptr)->get_maz().z() : 0.5f) - viewparts.z())) + camera_main.near_ * 2.f));
+				range_tgt = std::hypotf(sin(deg2rad(yrad_t))*0.25f, cos(deg2rad(yrad_t))*(std::abs((((std::abs(yrad_t) > 90) ? MAINLOOPscene->Get_Mine()->get_maz().z() : 0.5f) - viewparts.z())) + camera_main.near_ * 2.f));
 				range_t = (Rot.on() && !changef) ? std::clamp(range_t - float(GetMouseWheelRotVol())*0.1f, range_tgt, 5.f) : range_tgt;
 
 				easing_set(&camparts, VECTOR_ref::vget(range_t*cos(deg2rad(xrad_t))*sin(deg2rad(yrad_t)), range_t*sin(deg2rad(xrad_t)), range_t*cos(deg2rad(xrad_t))*cos(deg2rad(yrad_t))), 0.8f);
@@ -735,10 +728,10 @@ public:
 				cam_info* camp = &this->camera_main;
 				GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), camp->campos, camp->camvec, camp->camup, camp->fov, camp->near_, camp->far_);
 				{
-					(*mine_ptr)->Check_CameraViewClip(false);
+					MAINLOOPscene->Get_Mine()->Check_CameraViewClip(false);
 				}
 			}
-			if ((*mine_ptr)->get_key_().jamp) {
+			if (MAINLOOPscene->Get_Mine()->get_key_().jamp) {
 				return false;
 			}
 			return true;
@@ -754,34 +747,34 @@ public:
 				}
 				file.close();
 			}
-			(*mine_ptr)->gun_stat_now->selector_set(0);
+			MAINLOOPscene->Get_Mine()->gun_stat_now->selector_set(0);
 			shot_se.Dispose();
 			slide_se.Dispose();
 			trigger_se.Dispose();
 		}
 		void UI_Draw(void) noexcept  override {
-			UIparts->UI_Draw(MAINLOOPscene, parts_cat, Rot.on(), mine_ptr, parts_p, change_per);
+			UIparts->UI_Draw(MAINLOOPscene, parts_cat, Rot.on(), MAINLOOPscene->Get_Mine(), parts_p, change_per);
 			easing_set(&change_per, 0.f, 0.5f);
 		}
 		void BG_Draw(void) noexcept override {
 			DrawBox(0, 0, 1920, 1080, GetColor(192, 192, 192), TRUE);
 		}
 		void Shadow_Draw_NearFar(void) noexcept override {
-			(*mine_ptr)->Draw_gun();
+			MAINLOOPscene->Get_Mine()->Draw_gun();
 			{
-				(*mine_ptr)->get_parts(PARTS_MAGAZINE)->Draw();
+				MAINLOOPscene->Get_Mine()->get_parts(PARTS_MAGAZINE)->Draw();
 			}
 		}
 		void Shadow_Draw(void) noexcept override {
-			(*mine_ptr)->Draw_gun();
+			MAINLOOPscene->Get_Mine()->Draw_gun();
 			{
-				(*mine_ptr)->get_parts(PARTS_MAGAZINE)->Draw();
+				MAINLOOPscene->Get_Mine()->get_parts(PARTS_MAGAZINE)->Draw();
 			}
 		}
 		void Main_Draw(void) noexcept override {
-			(*mine_ptr)->Draw_gun();
+			MAINLOOPscene->Get_Mine()->Draw_gun();
 			{
-				(*mine_ptr)->get_parts(PARTS_MAGAZINE)->Draw();
+				MAINLOOPscene->Get_Mine()->get_parts(PARTS_MAGAZINE)->Draw();
 			}
 		}
 	};
@@ -789,7 +782,7 @@ public:
 	class MAINLOOP : public TEMPSCENE {
 		//TPS操作
 		class TPS_parts {
-			std::unique_ptr<MAPclass::Map>* MAPPTs;
+			std::shared_ptr<MAPclass::Map> MAPPTs;
 		public:
 			switchs key_TPS;
 			float xr_cam = 0.f;
@@ -797,7 +790,7 @@ public:
 			int sel_cam = 0;
 			//カメラ
 			cam_info camera_TPS;
-			TPS_parts(std::unique_ptr<MAPclass::Map>* MAPPTs_t) noexcept {
+			TPS_parts(const std::shared_ptr<MAPclass::Map>& MAPPTs_t) noexcept {
 				MAPPTs = MAPPTs_t;
 			}
 			void Set(float& fov_pc) noexcept {
@@ -807,48 +800,46 @@ public:
 			}
 			void Set_info(std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara) noexcept {
 				if (this->key_TPS.on()) {
-					{
-						//cam
-						for (int i = 0; i < std::min<size_t>(chara.size(), 10); ++i) {
-							if (CheckHitKey(KEY_INPUT_1 + i) != 0) {
-								this->sel_cam = i;
-							}
+					//cam
+					for (int i = 0; i < std::min<size_t>(chara.size(), 10); ++i) {
+						if (CheckHitKey(KEY_INPUT_1 + i) != 0) {
+							this->sel_cam = i;
 						}
-						//pos
-						{
-							if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
-								this->camera_TPS.campos.x(this->camera_TPS.campos.x() - 10.f / FPS * cos(this->yr_cam));
-								this->camera_TPS.campos.z(this->camera_TPS.campos.z() + 10.f / FPS * sin(this->yr_cam));
-							}
-							if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
-								this->camera_TPS.campos.x(this->camera_TPS.campos.x() + 10.f / FPS * cos(this->yr_cam));
-								this->camera_TPS.campos.z(this->camera_TPS.campos.z() - 10.f / FPS * sin(this->yr_cam));
-							}
-							if (CheckHitKey(KEY_INPUT_UP) != 0) {
-								this->camera_TPS.campos.z(this->camera_TPS.campos.z() + 10.f / FPS * cos(this->yr_cam));
-								this->camera_TPS.campos.x(this->camera_TPS.campos.x() + 10.f / FPS * sin(this->yr_cam));
-							}
-							if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
-								this->camera_TPS.campos.z(this->camera_TPS.campos.z() - 10.f / FPS * cos(this->yr_cam));
-								this->camera_TPS.campos.x(this->camera_TPS.campos.x() - 10.f / FPS * sin(this->yr_cam));
-							}
-							this->camera_TPS.campos.x(std::clamp(this->camera_TPS.campos.x(), (*MAPPTs)->map_col_get().mesh_minpos(0).x(), (*MAPPTs)->map_col_get().mesh_maxpos(0).x()));
-							this->camera_TPS.campos.z(std::clamp(this->camera_TPS.campos.z(), (*MAPPTs)->map_col_get().mesh_minpos(0).z(), (*MAPPTs)->map_col_get().mesh_maxpos(0).z()));
-						}
-						//rad
-						{
-							VECTOR_ref vec_2 = (chara[this->sel_cam]->get_head_pos() - this->camera_TPS.campos).Norm();
-							VECTOR_ref vec_z = (this->camera_TPS.camvec - this->camera_TPS.campos).Norm();
-							VECTOR_ref vec_x = vec_z.cross(this->camera_TPS.camup);
-
-							this->xr_cam -= deg2rad(int(vec_z.cross(vec_2).dot(vec_x) * 50))*0.1f;
-							this->yr_cam -= deg2rad(int(vec_x.dot(vec_2) * 50))*0.1f;
-							this->xr_cam = std::clamp(this->xr_cam, deg2rad(-89), deg2rad(89));
-						}
-						//
-						this->camera_TPS.camvec = this->camera_TPS.campos + MATRIX_ref::Vtrans(VECTOR_ref::vget(0, 0, 1), MATRIX_ref::RotX(this->xr_cam)*MATRIX_ref::RotY(this->yr_cam));
-						this->camera_TPS.camup = VECTOR_ref::vget(0, 1.f, 0);
 					}
+					//pos
+					{
+						if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
+							this->camera_TPS.campos.x(this->camera_TPS.campos.x() - 10.f / FPS * cos(this->yr_cam));
+							this->camera_TPS.campos.z(this->camera_TPS.campos.z() + 10.f / FPS * sin(this->yr_cam));
+						}
+						if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
+							this->camera_TPS.campos.x(this->camera_TPS.campos.x() + 10.f / FPS * cos(this->yr_cam));
+							this->camera_TPS.campos.z(this->camera_TPS.campos.z() - 10.f / FPS * sin(this->yr_cam));
+						}
+						if (CheckHitKey(KEY_INPUT_UP) != 0) {
+							this->camera_TPS.campos.z(this->camera_TPS.campos.z() + 10.f / FPS * cos(this->yr_cam));
+							this->camera_TPS.campos.x(this->camera_TPS.campos.x() + 10.f / FPS * sin(this->yr_cam));
+						}
+						if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
+							this->camera_TPS.campos.z(this->camera_TPS.campos.z() - 10.f / FPS * cos(this->yr_cam));
+							this->camera_TPS.campos.x(this->camera_TPS.campos.x() - 10.f / FPS * sin(this->yr_cam));
+						}
+						this->camera_TPS.campos.x(std::clamp(this->camera_TPS.campos.x(), MAPPTs->map_col_get().mesh_minpos(0).x(), MAPPTs->map_col_get().mesh_maxpos(0).x()));
+						this->camera_TPS.campos.z(std::clamp(this->camera_TPS.campos.z(), MAPPTs->map_col_get().mesh_minpos(0).z(), MAPPTs->map_col_get().mesh_maxpos(0).z()));
+					}
+					//rad
+					{
+						VECTOR_ref vec_2 = (chara[this->sel_cam]->get_head_pos() - this->camera_TPS.campos).Norm();
+						VECTOR_ref vec_z = (this->camera_TPS.camvec - this->camera_TPS.campos).Norm();
+						VECTOR_ref vec_x = vec_z.cross(this->camera_TPS.camup);
+
+						this->xr_cam -= deg2rad(int(vec_z.cross(vec_2).dot(vec_x) * 50))*0.1f;
+						this->yr_cam -= deg2rad(int(vec_x.dot(vec_2) * 50))*0.1f;
+						this->xr_cam = std::clamp(this->xr_cam, deg2rad(-89), deg2rad(89));
+					}
+					//
+					this->camera_TPS.camvec = this->camera_TPS.campos + MATRIX_ref::Vtrans(VECTOR_ref::vget(0, 0, 1), MATRIX_ref::RotX(this->xr_cam)*MATRIX_ref::RotY(this->yr_cam));
+					this->camera_TPS.camup = VECTOR_ref::vget(0, 1.f, 0);
 				}
 			}
 		};
@@ -877,10 +868,17 @@ public:
 		std::unique_ptr<HostPassEffect> Hostpassparts_TPS;
 		std::unique_ptr<TPS_parts> TPSparts;
 		std::unique_ptr<UIclass::UI_MAINLOOP> UIparts;
-		std::unique_ptr<RULE_parts> RULEparts;
+		std::shared_ptr<RULE_parts> RULEparts;
 		std::unique_ptr<MAPclass::MiniMap> minimapparts;
+
+		EffekseerEffectHandle gndsmkHndle;		     /*エフェクトリソース*/
+		std::vector<Mainclass::Vehcs> vehcs;
+		std::vector<std::shared_ptr<vehicles>> vehicle;
 	public:
-		std::shared_ptr<PLAYERclass::Chara>* Get_Mine(void) noexcept { return &this->chara[0]; }
+		std::unique_ptr<b2World> world;
+
+
+		const std::shared_ptr<PLAYERclass::Chara>& Get_Mine(void) noexcept { return this->chara[0]; }
 		std::vector<GUNPARTs>* get_parts_data(EnumGunParts type_sel) noexcept {
 			switch (type_sel) {
 			case PARTS_MAGAZINE:
@@ -964,15 +962,17 @@ public:
 			FindClose(hFind);
 		}
 	public:
-		MAINLOOP(std::unique_ptr<MAPclass::Map>* MAPPTs_t, std::unique_ptr<OPTION>* OPTPTs_t) noexcept {
+		MAINLOOP(const std::shared_ptr<MAPclass::Map>& MAPPTs_t, const std::shared_ptr<OPTION>& OPTPTs_t) noexcept {
 			//
 			MAPPTs = MAPPTs_t;
 			OPTPTs = OPTPTs_t;
+			/*BOX2D*/
+			world = std::make_unique<b2World>(b2Vec2(0.0f, 0.0f)); /* 剛体を保持およびシミュレートするワールドオブジェクトを構築*/
 			//
-			UIparts = std::make_unique<UIclass::UI_MAINLOOP>(&RULEparts);
+			RULEparts = std::make_shared<RULE_parts>();
+			UIparts = std::make_unique<UIclass::UI_MAINLOOP>(RULEparts);
 			TPSparts = std::make_unique<TPS_parts>(MAPPTs);
-			RULEparts = std::make_unique<RULE_parts>();
-			Hostpassparts_TPS = std::make_unique<HostPassEffect>((*OPTPTs)->DoF, (*OPTPTs)->Bloom, (*OPTPTs)->SSAO, deskx, desky);	//ホストパスエフェクト(フルスクリーン向け、TPS用)
+			Hostpassparts_TPS = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, deskx, desky);	//ホストパスエフェクト(フルスクリーン向け、TPS用)
 			minimapparts = std::make_unique<MAPclass::MiniMap>(MAPPTs);															//ミニマップ
 			//model
 			light = GraphHandle::Load("data/light.png");							//ライト
@@ -984,25 +984,36 @@ public:
 			MV1::Load("data/model/body/model_lag.mv1", &this->body_obj_lag, true);	//身体
 			MV1SetLoadModelPhysicsWorldGravity(-9.8f);
 			//PARTSデータ
-			set_parts_data_from_folder(&this->grip_data, "data/parts/grip/");
-			set_parts_data_from_folder(&this->uperhandguard_data, "data/parts/uper_handguard/");
-			set_parts_data_from_folder(&this->underhandguard_data, "data/parts/under_handguard/");
-			set_parts_data_from_folder(&this->mount_base_data, "data/parts/mount_base/");
-			set_parts_data_from_folder(&this->mount_data, "data/parts/mount/");
-			set_parts_data_from_folder(&this->dustcover_data, "data/parts/dustcover/");
-			set_parts_data_from_folder(&this->foregrip_data, "data/parts/foregrip/");
-			set_parts_data_from_folder(&this->mazzule_data, "data/parts/mazzule/", PARTS_MAZZULE);
-			set_parts_data_from_folder(&this->stock_data, "data/parts/stock/", PARTS_STOCK);
-			set_parts_data_from_folder(&this->sight_data, "data/parts/sight/", PARTS_SIGHT);
-			set_parts_data_from_folder(&this->lam_data, "data/parts/lam/", PARTS_LAM);
-			set_parts_data_from_folder(&this->gun_data, "data/gun/", PARTS_BASE);					//GUNデータ
-			set_parts_data_from_folder(&this->magazine_data, "data/mag/", PARTS_MAGAZINE);			//MAGデータ
-			set_mads_data_from_folder(&this->meds_data, "data/medkit/");							//MEDデータ
-			set_gres_data_from_folder(&this->gres_data, "data/grenade/");							//グレネード
-			this->hit_obj_p.Init();																	//弾痕
-			this->hit_b_obj_p.Init();																//弾痕
+			set_parts_data_from_folder(&this->grip_data, "data/Guns/parts/grip/");
+			set_parts_data_from_folder(&this->uperhandguard_data, "data/Guns/parts/uper_handguard/");
+			set_parts_data_from_folder(&this->underhandguard_data, "data/Guns/parts/under_handguard/");
+			set_parts_data_from_folder(&this->mount_base_data, "data/Guns/parts/mount_base/");
+			set_parts_data_from_folder(&this->mount_data, "data/Guns/parts/mount/");
+			set_parts_data_from_folder(&this->dustcover_data, "data/Guns/parts/dustcover/");
+			set_parts_data_from_folder(&this->foregrip_data, "data/Guns/parts/foregrip/");
+			set_parts_data_from_folder(&this->mazzule_data, "data/Guns/parts/mazzule/", PARTS_MAZZULE);
+			set_parts_data_from_folder(&this->stock_data, "data/Guns/parts/stock/", PARTS_STOCK);
+			set_parts_data_from_folder(&this->sight_data, "data/Guns/parts/sight/", PARTS_SIGHT);
+			set_parts_data_from_folder(&this->lam_data, "data/Guns/parts/lam/", PARTS_LAM);
+			set_parts_data_from_folder(&this->gun_data, "data/Guns/gun/", PARTS_BASE);					//GUNデータ
+			set_parts_data_from_folder(&this->magazine_data, "data/Guns/mag/", PARTS_MAGAZINE);			//MAGデータ
+			set_mads_data_from_folder(&this->meds_data, "data/Items/medkit/");								//MEDデータ
+			set_gres_data_from_folder(&this->gres_data, "data/Items/grenade/");								//グレネード
+			this->hit_obj_p.Init();																		//弾痕
+			this->hit_b_obj_p.Init();																	//弾痕
+
+			Mainclass::Vehcs::set_vehicles_pre("data/tank/", &vehcs, true);		/**/
+			while (ProcessMessage() == 0) {
+				clsDx();
+				printfDx("ss : %d", GetASyncLoadNum());
+				ScreenFlip();
+				if (GetASyncLoadNum() == 0) {
+					break;
+				}
+			}
+			Mainclass::Vehcs::set_vehicles(&vehcs);					//車輛
 		}
-		void Start_After(void) noexcept {
+		void Start(void) noexcept {
 			for (auto& g : this->mazzule_data) { g.Set(&g - &this->mazzule_data.front()); }					//PARTSデータ2
 			for (auto& g : this->grip_data) { g.Set(&g - &this->grip_data.front()); }						//PARTSデータ2
 			for (auto& g : this->uperhandguard_data) { g.Set(&g - &this->uperhandguard_data.front()); }		//PARTSデータ2
@@ -1021,12 +1032,10 @@ public:
 			this->hit_obj_p.Clear();																		//弾痕
 			this->hit_b_obj_p.Clear();																		//弾痕
 		}
-		void Set_Charaa(const size_t &spawn_total) noexcept {
+		void Ready_Chara(const size_t &spawn_total) noexcept {
 			//キャラ設定
-			this->chara.resize(spawn_total);
-			for (auto& c : this->chara) {
-				c = std::make_shared<PLAYERclass::Chara>(MAPPTs, DrawPts, DebugPTs, gun_data, 0, body_obj, body_obj_lag, body_col);
-				c->Init(&c);
+			for (auto i = 0; i < spawn_total; ++i) {
+				this->chara.emplace_back(std::make_shared<PLAYERclass::Chara>(MAPPTs, DrawPts, DebugPTs, gun_data, 0, body_obj, body_obj_lag, body_col));
 			}
 		}
 	public:
@@ -1036,7 +1045,7 @@ public:
 			//
 			for (auto& c : this->chara) {
 				//カスタムattach
-				if (&c != Get_Mine()) {
+				if (c != Get_Mine()) {
 					//magazine
 					c->Attach_parts(&magazine_data[0], PARTS_MAGAZINE);
 					//grip
@@ -1056,7 +1065,7 @@ public:
 				}
 				//初回位置設定スポーン
 				{
-					auto&wp = (*MAPPTs)->get_spawn_point()[&c - &this->chara[0]];
+					auto&wp = MAPPTs->get_spawn_point()[&c - &this->chara[0]];
 					moves tmp;
 					tmp.pos = wp;
 					tmp.mat = MATRIX_ref::RotY(atan2f(wp.x(), wp.z()));
@@ -1065,22 +1074,34 @@ public:
 				//プレイヤー操作変数群
 				c->Start();
 			}
-			TPSparts->Set((*OPTPTs)->Fov);						//TPS
+			TPSparts->Set(OPTPTs->Fov);						//TPS
 			RULEparts->Set();									//ルール
 			//ライティング
-			Shadow_maxpos = (*MAPPTs)->map_col_get().mesh_maxpos(0);
-			Shadow_minpos = (*MAPPTs)->map_col_get().mesh_minpos(0);
+			Shadow_maxpos = MAPPTs->map_col_get().mesh_maxpos(0);
+			Shadow_minpos = MAPPTs->map_col_get().mesh_minpos(0);
 			Light_vec = VECTOR_ref::vget(0.5f, -0.5f, 0.5f);
 			Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
 			Light_color_ref = GetColorF(0.20f, 0.20f, 0.23f, 0.0f);
-			(*MAPPTs)->Set();									//環境
+			MAPPTs->Set();									//環境
+
+			{
+				gndsmkHndle = EffekseerEffectHandle::load("data/effect/gndsmk.efk");
+				//共通
+				vehicle.resize(2);
+				for (auto& v : this->vehicle) {
+					v = std::make_shared<vehicles>();
+					v->reset();
+					//v.use_id = std::min<size_t>(v.use_id, vehcs.size() - 1);
+					v->Set(vehcs[0], world, gndsmkHndle);
+				}
+			}
 		}
 		bool UpDate(void) noexcept override {
 			TEMPSCENE::UpDate();
 			//アイテム演算
 			{
-				auto& item = (*MAPPTs)->item;
-				for (auto& g : item) { g->UpDate((*MAPPTs)->item, (*MAPPTs)); }
+				auto& item = MAPPTs->item;
+				for (auto& g : item) { g->UpDate(MAPPTs->item, MAPPTs); }
 				//時間が経ったマガジンを削除する
 				bool fal = true;
 				while (true) {
@@ -1093,7 +1114,7 @@ public:
 							fal = false;
 							break;
 						}
-						if (i->Detach_gre((*MAPPTs), &this->chara[0], &this->chara)) {
+						if (i->Detach_gre(MAPPTs, this->chara[0], this->chara)) {
 							std::iter_swap(item.begin() + now, item.end() - 1);
 							item.pop_back();
 							fal = false;
@@ -1107,15 +1128,23 @@ public:
 			}
 			//共通演算//2～3ms
 			for (auto& c : this->chara) {
-				c->UpDate_(this->hit_obj_p, this->hit_b_obj_p, RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data, &this->chara, this->Get_Mine(),effsorce);
+				c->UpDate_(this->hit_obj_p, this->hit_b_obj_p, RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data, 
+					this->chara, this->Get_Mine(), vehicle[0], vehicle, effsorce);
+			}
+			for (auto& v : this->vehicle) {
+				v->UpDate(this->camera_main, this->Get_Mine(), this->chara, vehicle, hit_obj_p, hit_b_obj_p, MAPPTs);
+			}
+			world->Step(1.f, 1, 1);
+			for (auto& v : this->vehicle) {
+				v->UpDate_after();
 			}
 			//弾痕の更新
 			this->hit_obj_p.update();
 			this->hit_b_obj_p.update();
 			//campos,camvec,camupの指定
-			(*this->Get_Mine())->Set_cam(this->camera_main, &this->chara, this->fov_base);
-			//this->chara[1]->Set_cam(this->camera_main, &this->chara, this->fov_base);
-
+			this->Get_Mine()->Set_cam(this->camera_main, this->chara, this->fov_base);
+			//this->chara[1]->Set_cam(this->camera_main, this->chara, this->fov_base);
+			//vehicle[0]->Set_cam(MAPPTs,this->camera_main, this->Get_Mine()->GetHMDmat().zvec(), this->fov_base);
 			this->camera_main.camup = MATRIX_ref::Vtrans(this->camera_main.camup, MATRIX_ref::RotAxis(
 				(this->camera_main.camvec - this->camera_main.campos), 
 				deg2rad(20.f*bless_ratio*sin(bless))
@@ -1125,13 +1154,13 @@ public:
 			UIparts->Update();
 			RULEparts->UpDate();
 			//TPS描画
-			TPSparts->key_TPS.GetInput((*this->Get_Mine())->get_key_().TPS);
+			TPSparts->key_TPS.GetInput(this->Get_Mine()->get_key_().TPS);
 			TPSparts->Set_info(this->chara);
 			if (TPSparts->key_TPS.on()) {
 				//影用意
-				(*DrawPts)->Ready_Shadow(TPSparts->camera_TPS.campos, [&] {Shadow_Draw(); }, [&] {Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(15.f, 12.5f, 15.f));
+				DrawPts->Ready_Shadow(TPSparts->camera_TPS.campos, [&] {Shadow_Draw(); }, [&] {Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(15.f, 12.5f, 15.f));
 				//書き込み
-				Hostpassparts_TPS->BUF_draw([&](void) noexcept { BG_Draw(); }, [&] {(*DrawPts)->Draw_by_Shadow([&] {Main_Draw(); }); }, TPSparts->camera_TPS);	//被写体深度描画
+				Hostpassparts_TPS->BUF_draw([&](void) noexcept { BG_Draw(); }, [&] {DrawPts->Draw_by_Shadow([&] {Main_Draw(); }); }, TPSparts->camera_TPS);	//被写体深度描画
 				Hostpassparts_TPS->Set_MAIN_draw();																												//最終描画
 			}
 			//表示の如何
@@ -1142,11 +1171,11 @@ public:
 					for (auto& c : this->chara) {
 						c->Check_CameraViewClip(false);
 					}
-					for (auto& i : (*MAPPTs)->item) {
-						i->Check_CameraViewClip(*MAPPTs, false);
+					for (auto& i : MAPPTs->item) {
+						i->Check_CameraViewClip(MAPPTs, false);
 					}
 
-					(*MAPPTs)->Check_CameraViewClip(*MAPPTs, false);
+					MAPPTs->Check_CameraViewClip(MAPPTs, false);
 				}
 			}
 			//終了判定
@@ -1160,19 +1189,25 @@ public:
 				c->Dispose();
 			}
 			this->chara.clear();
+
+			gndsmkHndle.Dispose();
+			for (auto& v : this->vehicle) {
+				v->Dispose();
+			}
+			vehicle.clear();
 		}
 		void UI_Draw(void) noexcept  override {
 			UIparts->UI_Draw(this->Get_Mine());
 			//ミニマップ
-			minimapparts->UI_Draw(&(this->chara), (TPSparts->key_TPS.on()) ? &this->chara[TPSparts->sel_cam] : this->Get_Mine());
+			minimapparts->UI_Draw(this->chara, (TPSparts->key_TPS.on()) ? this->chara[TPSparts->sel_cam] : this->Get_Mine());
 		}
 		void BG_Draw(void) noexcept override {
 			//map
-			(*MAPPTs)->sky_Draw();
+			MAPPTs->sky_Draw();
 		}
 		void Shadow_Draw_Far(void) noexcept override {
 			//map
-			(*MAPPTs)->Shadow_Draw_Far();
+			MAPPTs->Shadow_Draw_Far();
 		}
 		void Shadow_Draw_NearFar(void) noexcept override {
 			//キャラ
@@ -1181,56 +1216,64 @@ public:
 					c->Draw_chara(0);
 				}
 			}
+			for (auto& v : this->vehicle) {
+				v->Draw();
+			}
 		}
 		void Shadow_Draw(void) noexcept override {
 			//map
-			(*MAPPTs)->item_Draw();
+			MAPPTs->item_Draw();
 			//キャラ
 			for (auto& c : this->chara) {
 				if ((c->get_pos() - GetCameraPosition()).size() <= 2.5f) {
 					c->Draw_chara(1);
 				}
 			}
+			for (auto& v : this->vehicle) {
+				v->Draw();
+			}
 		}
 		void Main_Draw(void) noexcept override {
 			//map
-			(*MAPPTs)->main_Draw();
+			MAPPTs->main_Draw();
 			//命中痕
 			this->hit_obj_p.draw();
 			this->hit_b_obj_p.draw();
 			//キャラ
 			for (auto& c : this->chara) { c->Draw_chara(); }
+			for (auto& v : this->vehicle) { v->Draw(); }
 			//レーザー
-			for (auto& c : this->chara) { c->Draw_LAM_Effect(&this->chara, light); }
+			for (auto& c : this->chara) { c->Draw_LAM_Effect(this->chara, light); }
 			//銃弾
 			SetFogEnable(FALSE);
 			SetUseLighting(FALSE);
 			for (auto& c : this->chara) { c->Draw_ammo(); }
+			for (auto& v : this->vehicle) { v->Draw_ammo(); }
 			SetUseLighting(TRUE);
 			SetFogEnable(TRUE);
 			//
 		}
 		void Item_Draw(void) noexcept override {
 			//
-			lens_zoom = (*this->Get_Mine())->DrawReticle_UI();
-			lens_size = (*this->Get_Mine())->Get_reticle_size();
+			lens_zoom = this->Get_Mine()->DrawReticle_UI();
+			lens_size = this->Get_Mine()->Get_reticle_size();
 			if (lens_zoom > 1.0f) {
-				use_lens = (*this->Get_Mine())->ads_on();
+				use_lens = this->Get_Mine()->ads_on();
 			}
 			else {
 				use_lens = false;
 			}
 
 			//歪み出し
-			if (!use_bless && (*this->Get_Mine())->gre_eff) {
+			if (!use_bless && this->Get_Mine()->gre_eff) {
 				use_bless = true;
 				bless = 0.f;
 				bless_ratio = 0.15f;
 			}
-			(*this->Get_Mine())->gre_eff = false;
+			this->Get_Mine()->gre_eff = false;
 
 			for (auto& c : this->chara) { c->Set_Draw_bullet(); }
-			UIparts->item_Draw(&this->chara, this->Get_Mine());
+			UIparts->item_Draw(this->chara, this->Get_Mine());
 		}
 		void LAST_Draw(void) noexcept override {
 			//TPS視点

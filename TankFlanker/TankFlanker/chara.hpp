@@ -1,16 +1,16 @@
 #pragma once
 
+#include <cassert>
+#include <memory>
+
 #include "sub.hpp"
 
-static const size_t max_bullet{ 32 };
-
-class PLAYERclass : Mainclass {
+class PLAYERclass : Mainclass{
 public:
-	class Chara {
-		std::unique_ptr<MAPclass::Map>* MAPPTs{ nullptr };	//引き継ぐ
-		std::unique_ptr<DXDraw>* DrawPts{ nullptr };		//引き継ぐ
-		std::unique_ptr<DeBuG>* DebugPTs{ nullptr };		//仮
-		std::shared_ptr<PLAYERclass::Chara>* me{ nullptr };	//自分のスマポ
+	class Chara: public std::enable_shared_from_this<Chara> {
+		std::shared_ptr<MAPclass::Map> MAPPTs{ nullptr };	//引き継ぐ
+		std::shared_ptr<DXDraw> DrawPts{ nullptr };		//引き継ぐ
+		std::shared_ptr<DeBuG> DebugPTs{ nullptr };		//仮
 	public:
 		class g_parts {
 		private:
@@ -349,184 +349,6 @@ public:
 			void updateani(void) { this->obj.work_anime(); }
 		};
 	private:
-		//実際に発射される弾
-		class BULLETS {
-		private:
-			//引き継ぐ
-			std::unique_ptr<MAPclass::Map>* MAPPTs{ nullptr };
-			bool hit_Flag{ false };
-			float hit_cnt{ 0.f };
-			bool Flag{ false };
-			bool DrawFlag{ false };
-			float cnt{ 0.f };
-			Ammos* spec{ nullptr };
-			moves move;
-		public:
-			float hit_alpha{ 0.f };
-			int hit_window_x{ 0 };
-			int hit_window_y{ 0 };
-		public:
-			void Set(std::unique_ptr<MAPclass::Map>* MAPPTs_t) noexcept {
-				MAPPTs = MAPPTs_t;
-				this->Flag = false;
-				this->DrawFlag = false;
-			}
-			void Put(Ammos* spec_t, const moves& move_) noexcept {
-				this->hit_Flag = false;
-				this->Flag = true;
-				this->DrawFlag = true;
-				this->cnt = 0.f;
-				this->spec = spec_t;
-				this->move = move_;
-				this->move.repos = this->move.pos;
-			}
-
-			bool subHP(int sel,int damage,std::shared_ptr<PLAYERclass::Chara>*tgt, std::shared_ptr<PLAYERclass::Chara>* c, std::vector<std::shared_ptr<PLAYERclass::Chara>>* chara) {
-				auto q = (*tgt)->obj_col.CollCheck_Line(this->move.repos, this->move.pos, -1, sel);
-				if (q.HitFlag) {
-					this->move.pos = q.HitPosition;
-					//hit
-					//(*c)->effcs[ef_reco].Set(this->pos, q.Normal, 0.1f / 0.1f);
-					(*c)->effcs[ef_hitblood].Set(this->move.pos, q.Normal, 0.1f / 0.1f);
-					//
-					this->hit_Flag = true;
-					this->Flag = false;
-
-					auto old = (*tgt)->HP;
-					(*tgt)->HP = std::clamp((*tgt)->HP - damage, 0, (*tgt)->HP_full);
-					(*tgt)->HP_parts[sel] = std::clamp((*tgt)->HP_parts[sel] - damage, 0, (*tgt)->HP_full);
-					(*tgt)->got_damage = old - (*tgt)->HP;
-					(*tgt)->got_damage_color = GetColor(255, 255, 255);
-
-					if (float((*tgt)->HP) / float((*tgt)->HP_full) <= 0.66) {
-						(*tgt)->got_damage_color = GetColor(255, 255, 0);
-					}
-					if (float((*tgt)->HP) / float((*tgt)->HP_full) <= 0.33) {
-						(*tgt)->got_damage_color = GetColor(255, 128, 0);
-					}
-					if (damage != (*tgt)->got_damage) {
-						(*tgt)->got_damage_color = GetColor(255, 0, 0);
-					}
-					(*tgt)->got_damage_x = -255 + GetRand(255 * 2);
-					(*tgt)->got_damage_f = 1.f;
-					{
-						float x_1 = sinf((*tgt)->body_yrad);
-						float y_1 = cosf((*tgt)->body_yrad);
-						auto vc = ((*c)->get_pos() - (*tgt)->get_pos()).Norm();
-						(*tgt)->got_damage_.resize((*tgt)->got_damage_.size() + 1);
-						(*tgt)->got_damage_.back().alpfa = 1.f;
-						(*tgt)->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
-					}
-					if (!(*tgt)->get_alive()) {
-						(*c)->scores.set_kill(&(*tgt) - &chara->front(), 70);
-						(*tgt)->scores.set_death(&(*c) - &chara->front());
-						(*tgt)->audio.voice_death.play_3D((*tgt)->get_pos(), 10.f);
-					}
-					else {
-						(*tgt)->audio.voice_damage.play_3D((*tgt)->get_pos(), 10.f);
-					}
-					return true;
-				}
-				return false;
-			}
-
-			void UpDate(std::shared_ptr<PLAYERclass::Chara>* c, std::vector<std::shared_ptr<PLAYERclass::Chara>>* chara, HIT_PASSIVE& hit_obj_p, HIT_BLOOD_PASSIVE& hit_b_obj_p) noexcept {
-				if (this->Flag) {
-					this->move.SetPos(this->move.pos + (this->move.mat.zvec() * (this->spec->get_speed() / FPS)));
-					//判定
-					{
-						auto p = (*MAPPTs)->map_col_line(this->move.repos, this->move.pos);
-						if (p.HitFlag) {
-							this->move.pos = p.HitPosition;
-						}
-						//*
-						for (auto& tgt : *chara) {
-							if (tgt == (*c) || !tgt->get_alive()) {
-								continue;
-							}
-							if (tgt->set_ref_col(this->move.repos, this->move.pos)) {
-								//HEAD
-								if (subHP(0, this->spec->get_damage() * 3, &tgt, c, chara)) {
-									break;
-								}
-								//BODY
-								if (subHP(1, this->spec->get_damage(), &tgt, c, chara)) {
-									break;
-								}
-								//LEFTHAND
-								if (subHP(2, this->spec->get_damage() * 2 / 5, &tgt, c, chara)) {
-									break;
-								}
-								//RIGHTHAND
-								if (subHP(3, this->spec->get_damage() * 2 / 5, &tgt, c, chara)) {
-									break;
-								}
-								//LEG
-								if (subHP(4, this->spec->get_damage() * 4 / 5, &tgt, c, chara)) {
-									break;
-								}
-							}
-						}
-						if (p.HitFlag) {
-							if (this->Flag) {
-								this->Flag = false;
-								//弾痕
-								(*c)->effcs_gndhit[(*c)->use_effcsgndhit].Set(this->move.pos, p.Normal, 0.025f / 0.1f);
-								++(*c)->use_effcsgndhit %= (*c)->effcs_gndhit.size();
-								hit_obj_p.Set(this->spec->get_caliber(), this->move.pos, p.Normal, this->move.mat.zvec());
-								return;
-							}
-						}
-						//血痕
-						if (!this->Flag) {
-							if (!p.HitFlag) {
-								auto vec = (this->move.pos - this->move.repos).Norm();
-								p = (*MAPPTs)->map_col_line(this->move.pos, this->move.pos + vec * 5.f);
-							}
-							if (p.HitFlag) {
-								(*c)->effcs_gndhit[(*c)->use_effcsgndhit].Set(p.HitPosition, p.Normal, 0.025f / 0.1f);
-								++(*c)->use_effcsgndhit %= (*c)->effcs_gndhit.size();
-								hit_b_obj_p.Set(0.35f, p.HitPosition, p.Normal, this->move.mat.zvec());
-							}
-						}
-						//*/
-					}
-					//消す(3秒たった、スピードが0以下、貫通が0以下)
-					if (this->cnt >= 3.f || this->spec->get_speed() < 0.f || this->spec->get_pene() <= 0.f) {
-						this->Flag = false;
-					}
-					//
-				}
-			}
-			void Set_Draw(void) noexcept {
-				if (this->hit_Flag) {
-					this->hit_Flag = false;
-					this->hit_cnt = 0.25f;
-					auto p = ConvWorldPosToScreenPos(this->move.pos.get());
-					if (p.z >= 0.f&&p.z <= 1.f) {
-						this->hit_alpha = 1.f;
-						this->hit_window_x = int(p.x);
-						this->hit_window_y = int(p.y);
-					}
-				}
-				if (this->hit_cnt > 0.f) {
-					easing_set(&this->hit_alpha, 2.f, 0.95f);
-					this->hit_cnt -= 1.f / FPS;
-				}
-				else {
-					easing_set(&this->hit_alpha, 0.f, 0.8f);
-					this->hit_cnt = 0.f;
-				}
-			}
-			void Draw(void) noexcept {
-				if (this->DrawFlag) {
-					DXDraw::Capsule3D(this->move.pos, this->move.repos, ((this->spec->get_caliber() - 0.00762f) * 0.1f + 0.00762f), GetColor(255, 255, 172), GetColor(255, 255, 255));
-					if (!this->Flag) {
-						this->DrawFlag = false;
-					}
-				}
-			}
-		};
 		//薬莢
 		class CARTS {
 			MV1 obj;
@@ -580,7 +402,7 @@ public:
 					}
 				}
 			}
-			void UpDate_fall(const MV1_COLL_RESULT_POLY& mapcol, Chara& mine) noexcept {
+			void UpDate_fall(const MV1_COLL_RESULT_POLY& mapcol, const std::shared_ptr<PLAYERclass::Chara>& mine) noexcept {
 				if (this->Flag) {
 					if (this->stay) {
 					}
@@ -591,7 +413,7 @@ public:
 							this->move.vec += map_nomal * (map_nomal.dot(this->move.vec*-1.f)*1.25f);
 							easing_set(&this->move.vec, VECTOR_ref::vget(0, 0, 0), 0.95f);
 							if (!this->se_use) {
-								mine.audio.case_down.play_3D(this->move.pos, 2.f);
+								mine->audio.case_down.play_3D(this->move.pos, 2.f);
 								this->se_use = true;
 							}
 							this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.yvec(), map_nomal);
@@ -987,7 +809,7 @@ public:
 		public:
 			moves move_start;
 		private:
-			std::unique_ptr<DXDraw>* DrawPts{ nullptr };
+			std::shared_ptr<DXDraw> DrawPts{ nullptr };
 			bool oldv_2{ false };
 			bool oldv_2_2{ false };
 		public:
@@ -995,26 +817,26 @@ public:
 			auto get_pos_old_noY() const noexcept { return VECTOR_ref::vget(this->move.repos.x(), 0.f, this->move.repos.z()); }
 			MATRIX_ref get_mat_XZ() const noexcept { return MATRIX_ref::Axis1(this->move.mat.xvec()*-1.f, this->move.mat.yvec(), this->move.mat.zvec()*-1.f); }
 
-			void Set(std::unique_ptr<DXDraw>* DrawPts_t) noexcept {
+			void Set(std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
 				DrawPts = DrawPts_t;
 				oldv_2 = true;
 				oldv_2_2 = true;
 			}
 			void UpDate_none(const char& device_num) noexcept {
-				(*DrawPts)->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
+				DrawPts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
 				this->move.mat = get_mat_XZ();
 			}
 			void UpDate_pos(const char& device_num, const bool flag_start_loop) noexcept {
-				auto ptr_ = &(*(*DrawPts)->get_device())[device_num];
-				(*DrawPts)->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
+				auto ptr_ = &(*DrawPts->get_device())[device_num];
+				DrawPts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
 				if (flag_start_loop || (ptr_->turn && ptr_->now) != this->oldv_2) {
 					this->move_start.SetPos(get_pos_noY());
 				}
 				this->oldv_2 = ptr_->turn && ptr_->now;
 			}
 			void UpDate_mat(const char& device_num, const bool flag_start_loop) noexcept {
-				auto ptr_ = &(*(*DrawPts)->get_device())[device_num];
-				(*DrawPts)->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
+				auto ptr_ = &(*DrawPts->get_device())[device_num];
+				DrawPts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
 				this->move.mat = get_mat_XZ();
 				if ((flag_start_loop || (ptr_->turn && ptr_->now) != this->oldv_2) && this->oldv_2_2) {
 					this->move_start.mat = this->move.mat;
@@ -1089,12 +911,6 @@ public:
 				++this->death_cnt;
 			}
 			bool start_death(void) const noexcept { return death_timer == 3.f; }
-		};
-		//
-		class damage_rad {
-		public:
-			float alpfa{ 1.f };
-			float rad{ 0.f };
 		};
 		//
 		class anime_arm {
@@ -1322,7 +1138,7 @@ public:
 		const bool get_alive(void) const noexcept { return this->HP != 0; }																					//生きているか
 		const VECTOR_ref get_pos(bool no_y = false) const noexcept {
 #ifdef _USE_OPENVR_
-			if ((*DrawPts)->use_vr) {
+			if (DrawPts->use_vr) {
 				if (!no_y) {
 					return this->pos_tt + this->HMD.move.pos - this->HMD.move_start.pos;
 				}
@@ -1354,11 +1170,24 @@ public:
 		const auto& get_canget_med(void) const noexcept { return canget_med; }															//item関連
 	public:
 		//
-		void calc_gredamage(std::shared_ptr<PLAYERclass::Chara>* mine, std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara) {
+		const MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, const int sel) const noexcept {
+			return obj_col.CollCheck_Line(StartPos, EndPos, -1, sel);
+		}
+
+		void Set_eff(Effect ef_,const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale) {
+			this->effcs[ef_].Set(pos_t, nomal_t, scale);
+		}
+
+		void Set_gndhit(const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t,float scale) {
+			this->effcs_gndhit[this->use_effcsgndhit].Set(pos_t, nomal_t, scale);
+			++this->use_effcsgndhit %= this->effcs_gndhit.size();
+		}
+		//
+		void calc_gredamage(const std::shared_ptr<PLAYERclass::Chara>& mine, const std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara) {
 			if (this->get_alive()) {
 				float scale = (this->move.pos - this->get_head_pos()).size();
 				if (scale < 10.f) {
-					if (!(*MAPPTs)->map_col_line(this->move.pos, this->get_head_pos()).HitFlag) {
+					if (!MAPPTs->map_col_line(this->move.pos, this->get_head_pos()).HitFlag) {
 						int damage = int(150.f * (10.f - scale) / 10.f);
 						damage = std::clamp(damage, 0, 100);
 						auto old = this->HP;
@@ -1381,14 +1210,15 @@ public:
 						{
 							float x_1 = sinf(this->body_yrad);
 							float y_1 = cosf(this->body_yrad);
-							auto vc = ((*mine)->get_pos() - this->get_pos()).Norm();
+							auto vc = (mine->get_pos() - this->get_pos()).Norm();
 							this->got_damage_.resize(this->got_damage_.size() + 1);
 							this->got_damage_.back().alpfa = 1.f;
 							this->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
 						}
 						if (!this->get_alive()) {
-							(*mine)->scores.set_kill(me - &(*chara).front(), 70);
-							this->scores.set_death(&(*mine) - &(*chara).front());
+							auto me_ = shared_from_this();
+							mine->scores.set_kill(&me_ - &chara.front(), 70);
+							this->scores.set_death(&mine - &chara.front());
 							this->get_audio().voice_death.play_3D(this->get_pos(), 10.f);
 						}
 						else {
@@ -1401,6 +1231,7 @@ public:
 			}
 			return;
 		}
+
 		//サイトを画面に表示
 		const float DrawReticle_UI(void) noexcept {
 			if (select_sight != SIZE_MAX) {
@@ -1456,6 +1287,7 @@ public:
 		void set_HMDpos(void) noexcept {
 			this->HMD.move.pos = (this->BodyFrame(this->frame_s.RIGHTeye_f.first) + (this->BodyFrame(this->frame_s.LEFTeye_f.first) - this->BodyFrame(this->frame_s.RIGHTeye_f.first))*0.5f) - this->pos_tt;
 		}
+		const auto& GetHMDmat() { return HMD.move.mat; }
 	private:
 		//腕アニメで使う座標の決定
 		void Set_GUN_pos_Anim(void) noexcept {
@@ -1645,7 +1477,7 @@ public:
 		}
 		//アイテムリリース
 		void release(MAG_STATUS* mag) noexcept {
-			auto& item = (*MAPPTs)->item;
+			auto& item = MAPPTs->item;
 			moves tmp = this->mag_m;
 			tmp.vec = (this->base.Get_magf_pos() - this->base.Get_mag2f_pos()).Norm()*1.f / FPS;
 			for (auto& i : item) {
@@ -1656,7 +1488,7 @@ public:
 			item.emplace_back(std::make_shared<Items>(item.size(), mag->ptr_mag, tmp, mag->m_cnt));
 		}
 		void release(Meds*meddata) noexcept {
-			auto& item = (*MAPPTs)->item;
+			auto& item = MAPPTs->item;
 			moves tmp;
 			tmp.pos = this->get_maz();
 			tmp.mat = this->gun_m.mat;
@@ -1669,7 +1501,7 @@ public:
 			item.emplace_back(std::make_shared<Items>(item.size(), meddata, tmp));
 		}
 		void release(Grenades*gredata) noexcept {
-			auto& item = (*MAPPTs)->item;
+			auto& item = MAPPTs->item;
 			moves tmp;
 			tmp.pos = this->LEFTHAND.move.pos;
 			tmp.mat = this->gun_m.mat;
@@ -1813,7 +1645,7 @@ public:
 		//頭の揺れ
 		const auto Head_bobbing(MV1::ani* ani_ptr) noexcept { return sin(DX_PI_F*2.f*(ani_ptr->time / ani_ptr->alltime)) *ani_ptr->per; }
 		//銃器の位置指定(右手が沿うため)
-		void move_nomal_gun(std::shared_ptr<PLAYERclass::Chara>* mine) noexcept {
+		void move_nomal_gun(const std::shared_ptr<PLAYERclass::Chara>& mine) noexcept {
 			{
 				{
 					//サイト位置決定
@@ -1829,7 +1661,7 @@ public:
 					}
 					else {
 						easing_set(&this->gunpos,
-							VECTOR_ref::vget(-0.15f - sightv.x(), -0.07f - sightv.y() + Head_bobbing(this->anime_walk)*0.002f, ((this == (*mine).get()) ? -0.09f : -0.15f)),
+							VECTOR_ref::vget(-0.15f - sightv.x(), -0.07f - sightv.y() + Head_bobbing(this->anime_walk)*0.002f, ((this == mine.get()) ? -0.09f : -0.15f)),
 							0.75f);
 					}
 				}
@@ -1839,7 +1671,7 @@ public:
 				this->gun_m.mat = get_res_blur(1.f)*this->HMD.move.mat;//リコイル
 				this->gun_m.pos = this->get_pos() + MATRIX_ref::Vtrans(this->gunpos, this->gun_m.mat);
 #ifdef _USE_OPENVR_
-				if ((*DrawPts)->use_vr) {
+				if (DrawPts->use_vr) {
 					this->gun_m.pos -= this->HMD.move_start.pos;
 				}
 #endif // _USE_OPENVR_
@@ -1858,7 +1690,7 @@ public:
 					MATRIX_ref mat_gun_old = this->gun_m.mat;
 					while (true) {
 						this->Set_gun(true);//一時的
-						if ((*MAPPTs)->map_col_line(this->RIGHT_pos_gun(0), this->get_maz()).HitFlag) {
+						if (MAPPTs->map_col_line(this->RIGHT_pos_gun(0), this->get_maz()).HitFlag) {
 							tmp.pos = this->gun_m.pos + mat_gun_old.zvec()*0.006f;
 							tmp.mat = MATRIX_ref::RotX(deg2rad(2))* this->gun_m.mat;
 							set_gun_pos(tmp);//ひっこめ(仮)
@@ -1918,14 +1750,14 @@ public:
 		//VR操作
 		void vr_move(void) {
 #ifdef _USE_OPENVR_
-			if ((*DrawPts)->get_hand2_num() != -1) {
-				auto ptr_ = (*DrawPts)->get_device_hand2();
+			if (DrawPts->get_hand2_num() != -1) {
+				auto ptr_ = DrawPts->get_device_hand2();
 				if (ptr_->turn && ptr_->now) {
 					//移動
 					if ((ptr_->on[1] & BUTTON_TOUCHPAD) != 0) {
 						this->speed = (this->key_.running ? 8.f : 6.f) / FPS;
 
-						if ((*DrawPts)->tracker_num.size() > 0) {
+						if (DrawPts->tracker_num.size() > 0) {
 							auto p = this->BodyFrameMatrix(this->frame_s.bodyb_f.first);
 							easing_set(&this->add_vec_buf, (p.zvec()*-ptr_->touch.y() + p.xvec()*-ptr_->touch.x())*this->speed, 0.95f);
 						}
@@ -1950,7 +1782,7 @@ public:
 			SetMouseDispFlag(FALSE);
 		}
 		//AI操作
-		void AI_move(float& x_t, float& y_t, std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara) {
+		void AI_move(float& x_t, float& y_t, std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara) {
 			int32_t x_m, y_m;
 			//AI
 			int turn = -1;
@@ -1980,7 +1812,7 @@ public:
 			VECTOR_ref vec_to;
 			//
 			auto poss = this->get_pos();
-			auto& waypoint = (*MAPPTs)->get_waypoint();
+			auto& waypoint = MAPPTs->get_waypoint();
 			auto vec_mat = this->BodyFrameMatrix(this->frame_s.head_f.first);
 			auto vec_x = vec_mat.xvec();
 			auto vec_y = vec_mat.yvec();
@@ -1991,14 +1823,14 @@ public:
 				{
 					auto StartPos = this->get_head_pos();
 					VECTOR_ref EndPos;
-					for (auto& tgt : (*chara)) {
+					for (auto& tgt : chara) {
 						if (this == tgt.get()) { continue; }
-						const size_t index = &tgt - &(*chara).front();
+						const size_t index = &tgt - &chara.front();
 						if (tgt->gunf) { turn = int(index); }
 						EndPos = (this->cpu_do.ai_time_shoot < 0.f) ? tgt->get_head_pos() : tgt->BodyFrame(tgt->frame_s.bodyb_f.first);
 						if (vec_to == VECTOR_ref::vget(0.f, 0.f, 0.f)) { vec_to = EndPos - StartPos; }//基準の作成
 						if (!tgt->get_alive()) { continue; }
-						if ((*MAPPTs)->map_col_line(StartPos, EndPos).HitFlag) { continue; }
+						if (MAPPTs->map_col_line(StartPos, EndPos).HitFlag) { continue; }
 						EndPos = EndPos - StartPos;
 						if (vec_to.size() >= EndPos.size()) {
 							vec_to = EndPos;
@@ -2012,7 +1844,7 @@ public:
 					this->cpu_do.ai_phase = 0;
 				}
 				else {
-					if (vec_z.dot(vec_to.Norm()) >= 0 && vec_to.size() <= 35.f) {
+					if (vec_z.dot(vec_to.Norm()) >= 0 && vec_to.size() <= 60.f) {
 						this->cpu_do.ai_phase = 1;
 					}
 				}
@@ -2020,7 +1852,7 @@ public:
 					this->cpu_do.ai_phase = 2;
 				}
 				if ((ai_phase_old == 1 && this->cpu_do.ai_phase != 1) || (this->add_vec_real.size() <= this->move.vec.size()*0.8f)) {
-					int now = (*MAPPTs)->get_next_waypoint(this->cpu_do.wayp_pre, poss);
+					int now = MAPPTs->get_next_waypoint(this->cpu_do.wayp_pre, poss);
 					if (now != -1) {
 						this->cpu_do.set_wayp_pre(now);
 					}
@@ -2035,7 +1867,7 @@ public:
 					this->cpu_do.ai_time_e = 0.f;
 				}
 			}
-			for (auto& w : (*MAPPTs)->get_leanpoint_e()) {
+			for (auto& w : MAPPTs->get_leanpoint_e()) {
 				if ((w - poss).size() <= 0.5f) {
 					this->key_.ekey = true;
 					this->key_.qkey = false;
@@ -2050,7 +1882,7 @@ public:
 					this->cpu_do.ai_time_q = 0.f;
 				}
 			}
-			for (auto& w : (*MAPPTs)->get_leanpoint_q()) {
+			for (auto& w : MAPPTs->get_leanpoint_q()) {
 				if ((w - poss).size() <= 0.5f) {
 					this->key_.ekey = false;
 					this->key_.qkey = true;
@@ -2080,7 +1912,7 @@ public:
 				this->cpu_do.ai_time_shoot = 0.f;
 				//向き指定
 				if (turn >= 0) {
-					vec_to = (*chara)[turn]->get_pos() - poss;
+					vec_to = chara[turn]->get_pos() - poss;
 				}
 				else {
 					vec_to = waypoint[this->cpu_do.wayp_pre.front()] - poss;
@@ -2088,7 +1920,7 @@ public:
 				}
 				//到達時に判断
 				if (vec_to.size() <= 0.5f) {
-					int now = (*MAPPTs)->get_next_waypoint(this->cpu_do.wayp_pre, poss);
+					int now = MAPPTs->get_next_waypoint(this->cpu_do.wayp_pre, poss);
 					if (now != -1) {
 						this->cpu_do.set_wayp_pre(now);
 					}
@@ -2184,7 +2016,7 @@ public:
 				vec_to.y(0.f);
 				//到達時
 				if (vec_to.size() <= 0.5f) {
-					int now = (*MAPPTs)->get_next_waypoint(this->cpu_do.wayp_pre, poss);
+					int now = MAPPTs->get_next_waypoint(this->cpu_do.wayp_pre, poss);
 					if (now != -1) {
 						this->cpu_do.set_wayp_pre(now);
 					}
@@ -2205,13 +2037,13 @@ public:
 		}
 	private:
 		//操作
-		void operation(const bool cannotmove, std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara, const float fov_per, uint8_t move_mode) noexcept {
+		void operation(const bool cannotmove, std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara, const float fov_per, uint8_t move_mode) noexcept {
 			float x_m = 0.f, y_m = 0.f;
 			if (this->get_alive()) {
 				if (this->get_alive()) {
 					switch (move_mode) {
 					case 0://player move
-						if ((*DrawPts)->use_vr) {
+						if (DrawPts->use_vr) {
 							vr_move();//player move(VR)
 						}
 						else {
@@ -2233,10 +2065,10 @@ public:
 				easing_set(&this->add_vec_buf, VECTOR_ref::vget(0, 0, 0), 0.95f);
 			}
 #ifdef _USE_OPENVR_
-			if ((*DrawPts)->use_vr) {
+			if (DrawPts->use_vr) {
 				//HMD_mat+視点取得
 				this->HMD.move.repos = this->HMD.move.pos;
-				this->HMD.UpDate_pos((*DrawPts)->get_hmd_num(), flag_start_loop);
+				this->HMD.UpDate_pos(DrawPts->get_hmd_num(), flag_start_loop);
 			}
 			else
 #endif // _USE_OPENVR_
@@ -2312,10 +2144,10 @@ public:
 			VECTOR_ref pos_t2, pos_t;
 			//VR用
 #ifdef _USE_OPENVR_
-			if ((*DrawPts)->use_vr) {
+			if (DrawPts->use_vr) {
 				pos_t2 = this->pos_tt + (this->HMD.get_pos_old_noY() - this->HMD.move_start.pos);
 				pos_t = this->get_pos(true);
-				(*MAPPTs)->map_col_wall(pos_t2, &pos_t);//壁
+				MAPPTs->map_col_wall(pos_t2, &pos_t);//壁
 				this->pos_tt = pos_t - (this->HMD.get_pos_noY() - this->HMD.move_start.pos);
 			}
 #endif // _USE_OPENVR_
@@ -2323,17 +2155,17 @@ public:
 			{
 				pos_t2 = this->pos_tt;
 #ifdef _USE_OPENVR_
-				if ((*DrawPts)->use_vr) {
+				if (DrawPts->use_vr) {
 					pos_t2 -= this->HMD.move_start.pos;
 				}
 #endif // _USE_OPENVR_
 
 				//pos_t = pos_t2 + (this->move.vec / 2);
 				pos_t = pos_t2 + this->move.vec;
-				(*MAPPTs)->map_col_wall(pos_t2, &pos_t);//壁
+				MAPPTs->map_col_wall(pos_t2, &pos_t);//壁
 				//落下
 				{
-					auto pp = (*MAPPTs)->map_col_line(pos_t + VECTOR_ref::vget(0, 1.8f, 0), pos_t + VECTOR_ref::vget(0, -0.01f, 0));
+					auto pp = MAPPTs->map_col_line(pos_t + VECTOR_ref::vget(0, 1.8f, 0), pos_t + VECTOR_ref::vget(0, -0.01f, 0));
 					if (this->add_ypos <= 0.f && pp.HitFlag) {
 						pos_t = pp.HitPosition;
 						this->add_ypos = 0.f;
@@ -2351,7 +2183,7 @@ public:
 				//反映
 				this->pos_tt = pos_t;
 #ifdef _USE_OPENVR_
-				if ((*DrawPts)->use_vr) {
+				if (DrawPts->use_vr) {
 					this->pos_tt += this->HMD.move_start.pos;
 				}
 #endif // _USE_OPENVR_
@@ -2360,15 +2192,15 @@ public:
 		}
 	private:
 		//体の動作を決定
-		void Set_body(std::shared_ptr<PLAYERclass::Chara>* mine) noexcept {
-			bool useVR = (*DrawPts)->use_vr && (this == (*mine).get());
+		void Set_body(const std::shared_ptr<PLAYERclass::Chara>& mine) noexcept {
+			bool useVR = DrawPts->use_vr && (this == mine.get());
 			//
 			if (this->get_alive()) {
 #ifdef _USE_OPENVR_
 				if (useVR) {
 					{
 						auto v_ = this->HMD.move.mat.zvec();
-						if ((*DrawPts)->tracker_num.size() > 0) {
+						if (DrawPts->tracker_num.size() > 0) {
 							v_ = this->WAIST.move.mat.zvec();
 						}
 						float x_1 = -sinf(this->body_yrad);
@@ -2403,11 +2235,11 @@ public:
 			if (useVR) {
 #ifdef _USE_OPENVR_
 				//身体,頭部,腰
-				MATRIX_ref m_inv = MATRIX_ref::RotY(((*DrawPts)->tracker_num.size() > 0) ? DX_PI_F : 0 + this->body_yrad);
+				MATRIX_ref m_inv = MATRIX_ref::RotY((DrawPts->tracker_num.size() > 0) ? DX_PI_F : 0 + this->body_yrad);
 				{
 					if (this->get_alive()) {
 						this->obj_body.SetMatrix(m_inv);
-						if ((*DrawPts)->tracker_num.size() > 0) {
+						if (DrawPts->tracker_num.size() > 0) {
 							//腰
 							this->BodyFrameLocalMatrix(this->frame_s.bodyb_f, this->WAIST.move.mat*m_inv.Inverse());
 							//頭部
@@ -2428,10 +2260,10 @@ public:
 				//手関連
 				if (this->get_alive()) {
 					//右手
-					this->RIGHTHAND.UpDate_none((*DrawPts)->get_hand1_num());
+					this->RIGHTHAND.UpDate_none(DrawPts->get_hand1_num());
 					this->RIGHTHAND.move.mat = this->RIGHTHAND.move.mat*MATRIX_ref::RotAxis(this->RIGHTHAND.move.mat.xvec(), deg2rad(-60));
 					//左手
-					this->LEFTHAND.UpDate_none((*DrawPts)->get_hand2_num());
+					this->LEFTHAND.UpDate_none(DrawPts->get_hand2_num());
 					this->LEFTHAND.move.mat *= MATRIX_ref::RotAxis(this->LEFTHAND.move.mat.xvec(), deg2rad(-60));
 
 					this->RIGHTHAND.move.mat = get_res_blur(1.f) * this->RIGHTHAND.move.mat;//リコイル
@@ -2442,9 +2274,9 @@ public:
 					//足
 					{
 						//左
-						if ((*DrawPts)->tracker_num.size() > 1) {
+						if (DrawPts->tracker_num.size() > 1) {
 
-							LEFTREG.UpDate_mat((*DrawPts)->tracker_num[1], flag_start_loop);
+							LEFTREG.UpDate_mat(DrawPts->tracker_num[1], flag_start_loop);
 							this->LEFTREG.move.mat = MATRIX_ref::RotY(deg2rad(90 + 60 - 10))* this->LEFTREG.move_start.mat.Inverse()*this->LEFTREG.move.mat;
 							this->LEFTREG.move.pos = this->LEFTREG.move.pos + this->pos_tt - this->HMD.move_start.pos;
 							{
@@ -2472,7 +2304,7 @@ public:
 
 							{
 								/*
-								auto pp = (*MAPPTs)->map_col_line(this->BodyFrame(this->frame_s.LEFTreg2_f.first) + VECTOR_ref::vget(0, 1.8f, 0), this->BodyFrame(this->frame_s.LEFTreg2_f.first));
+								auto pp = MAPPTs->map_col_line(this->BodyFrame(this->frame_s.LEFTreg2_f.first) + VECTOR_ref::vget(0, 1.8f, 0), this->BodyFrame(this->frame_s.LEFTreg2_f.first));
 								if (pp.HitFlag) {
 									this->LEFTREG.pos = VECTOR_ref(pp.HitPosition) - (this->BodyFrame(this->frame_s.LEFTreg2_f.first) - this->BodyFrame(this->frame_s.LEFTreg_f.first));
 								}
@@ -2503,8 +2335,8 @@ public:
 							}
 						}
 						//右
-						if ((*DrawPts)->tracker_num.size() > 2) {
-							this->RIGHTREG.UpDate_mat((*DrawPts)->tracker_num[2], flag_start_loop);
+						if (DrawPts->tracker_num.size() > 2) {
+							this->RIGHTREG.UpDate_mat(DrawPts->tracker_num[2], flag_start_loop);
 							this->RIGHTREG.move.mat = MATRIX_ref::RotY(deg2rad(180 - 22 - 10))* this->RIGHTREG.move_start.mat.Inverse()*this->RIGHTREG.move.mat;
 							this->RIGHTREG.move.pos += this->pos_tt - this->HMD.move_start.pos;
 							{
@@ -2532,7 +2364,7 @@ public:
 
 							{
 								/*
-								auto pp = (*MAPPTs)->map_col_line(this->BodyFrame(this->frame_s.RIGHTreg2_f.first) + VECTOR_ref::vget(0, 1.8f, 0), this->BodyFrame(this->frame_s.RIGHTreg2_f.first));
+								auto pp = MAPPTs->map_col_line(this->BodyFrame(this->frame_s.RIGHTreg2_f.first) + VECTOR_ref::vget(0, 1.8f, 0), this->BodyFrame(this->frame_s.RIGHTreg2_f.first));
 								if (pp.HitFlag) {
 									this->RIGHTREG.pos = VECTOR_ref(pp.HitPosition) - (this->BodyFrame(this->frame_s.RIGHTreg2_f.first) - this->BodyFrame(this->frame_s.RIGHTreg_f.first));
 								}
@@ -2569,11 +2401,11 @@ public:
 						this->Set_gun();
 						this->Set_GUN_pos_Anim();
 						//右手
-						move_hand((*DrawPts)->tracker_num.size() > 0, m_inv, true, false);
+						move_hand(DrawPts->tracker_num.size() > 0, m_inv, true, false);
 						//左手
 						this->LEFT_hand = (this->LEFTHAND.move.pos - this->LEFT_pos_Anim(0)).size() <= 0.1f && (!isReload() || !this->key_.have_mag);
 						if (this->LEFT_hand) { this->LEFTHAND.move.pos = this->LEFT_pos_Anim(0); }
-						move_hand((*DrawPts)->tracker_num.size() > 0, m_inv, true, true);
+						move_hand(DrawPts->tracker_num.size() > 0, m_inv, true, true);
 						//指
 						this->anime_hand_nomal->per = 1.f;
 						this->anime_hand_trigger_pull->per = this->gunanime_trigger->per;
@@ -2731,7 +2563,7 @@ public:
 					//銃器
 					{
 						this->gun_m.Update_Physics();
-						auto pp = (*MAPPTs)->map_col_line(this->gun_m.pos + VECTOR_ref::vget(0, 1.f, 0), this->gun_m.pos - VECTOR_ref::vget(0, 0.05f, 0));
+						auto pp = MAPPTs->map_col_line(this->gun_m.pos + VECTOR_ref::vget(0, 1.f, 0), this->gun_m.pos - VECTOR_ref::vget(0, 0.05f, 0));
 						if (pp.HitFlag) {
 							this->gun_m.HitGround(pp, 0.05f);
 							easing_set(&this->gun_m.vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
@@ -2903,7 +2735,7 @@ public:
 			for (auto& a : this->cart) {
 				if (a.Get_Flag()) {
 					a.UpDate_pos();
-					a.UpDate_fall((*MAPPTs)->map_col_line(a.Get_pos() + VECTOR_ref::vget(0, 1.f, 0), a.Get_pos() - VECTOR_ref::vget(0, 0.008f, 0)), *this);
+					a.UpDate_fall(MAPPTs->map_col_line(a.Get_pos() + VECTOR_ref::vget(0, 1.f, 0), a.Get_pos() - VECTOR_ref::vget(0, 0.008f, 0)), shared_from_this());
 				}
 			}
 		}
@@ -2948,10 +2780,10 @@ public:
 	public:
 		/*コンストラクタ*/
 		Chara(
-			std::unique_ptr<MAPclass::Map>* MAPPTs_t,
-			std::unique_ptr<DXDraw>* DrawPts_t,
-			//std::unique_ptr<OPTION>* OPTPTs_t,
-			std::unique_ptr<DeBuG>* DebugPTs_t,
+			std::shared_ptr<MAPclass::Map>& MAPPTs_t,
+			std::shared_ptr<DXDraw>& DrawPts_t,
+			//std::shared_ptr<OPTION>& OPTPTs_t,
+			std::shared_ptr<DeBuG>& DebugPTs_t,
 			std::vector<GUNPARTs>& gun_data, size_t itr, MV1& body_, MV1& bodylag_, MV1& col_
 			) noexcept {
 			DrawPts = DrawPts_t;
@@ -3025,12 +2857,8 @@ public:
 				this->gun_stat_now = &gun_stat[this->base.thisparts->id_t];
 			}
 			for (auto& a : this->cart) { a.Set(); }				//薬莢
-			for (auto& a : this->bullet) { a.Set(MAPPTs); }		//弾
+			for (auto& a : this->bullet) { a.Set(); }			//弾
 			this->audio.Duplicate(this->base.thisparts->audio);	//audio
-		}
-		/*自身のスマポ*/
-		void Init(std::shared_ptr<PLAYERclass::Chara>* me_t) noexcept {
-			me = me_t;
 		}
 		/*キャラスポーン*/
 		void Spawn(const moves& move_) noexcept {
@@ -3088,7 +2916,7 @@ public:
 			this->nearhit = false;
 			//AIの選択をリセット
 			{
-				int now = (*MAPPTs)->get_next_waypoint(this->cpu_do.wayp_pre, this->get_pos());
+				int now = MAPPTs->get_next_waypoint(this->cpu_do.wayp_pre, this->get_pos());
 				this->cpu_do.Spawn((now != -1) ? now : 0);
 			}
 		}
@@ -3129,7 +2957,8 @@ public:
 			const bool playing, const float fov_per,
 			std::vector <Meds>& meds_data,
 			std::vector<Grenades>& gres_data,
-			std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara, std::shared_ptr<PLAYERclass::Chara>*mine,
+			std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara, const std::shared_ptr<PLAYERclass::Chara>&mine,
+			const std::shared_ptr<vehicles>& mine_v, std::vector<std::shared_ptr<vehicles>>& vehicle,
 			std::vector<EffekseerEffectHandle>* effsorce
 		) noexcept {
 			/*
@@ -3198,16 +3027,16 @@ public:
 			}
 			//座標取得
 #ifdef _USE_OPENVR_
-			if (this == (*mine).get()) {
-				if ((*DrawPts)->tracker_num.size() > 0) {
-					this->WAIST.UpDate_pos((*DrawPts)->tracker_num[0], flag_start_loop);
+			if (this == mine.get()) {
+				if (DrawPts->tracker_num.size() > 0) {
+					this->WAIST.UpDate_pos(DrawPts->tracker_num[0], flag_start_loop);
 					this->WAIST.move.pos = this->WAIST.move.pos - this->WAIST.move_start.pos;
 				}
 			}
 #endif // _USE_OPENVR_
 			//p1～p2 0.00ms
 			//プレイヤー操作
-			this->operation(!playing, chara, fov_per, (this == (*mine).get()) ? 0 : 1);
+			this->operation(!playing, chara, fov_per, (this == mine.get()) ? 0 : 1);
 			//p2～p2-1 ～0.11ms
 			//壁その他の判定
 			this->wall_col();
@@ -3227,7 +3056,7 @@ public:
 			}
 			//p4-2～p4-3 0.01ms
 						//
-			if (!((*DrawPts)->use_vr && (this == (*mine).get()))) {
+			if (!(DrawPts->use_vr && (this == mine.get()))) {
 				//視点取得
 				set_HMDpos();
 				//銃器
@@ -3318,7 +3147,7 @@ public:
 				}
 				//マガジン挿入
 				if (isReload()) {
-					if ((*DrawPts)->use_vr && this->reload_cnt < this->base.thisparts->reload_time) {
+					if (DrawPts->use_vr && this->reload_cnt < this->base.thisparts->reload_time) {
 						this->key_.have_mag = false;
 					}
 					if (this->key_.have_mag) {
@@ -3326,7 +3155,7 @@ public:
 							auto mag0 = this->gun_stat_now->get_magazine_in().front().getmagazine_f(0).first;
 							auto mag1 = this->gun_stat_now->get_magazine_in().front().getmagazine_f(1).first;
 							if (
-								((*DrawPts)->use_vr) ?
+								(DrawPts->use_vr) ?
 								((this->mag_obj()->frame(mag1) - this->base.Get_magf_pos()).size() <= 0.1f) :
 								(this->reload_cnt > this->base.thisparts->reload_time)
 								) {
@@ -3341,7 +3170,7 @@ public:
 								this->audio.magazine_Set.play_3D(this->gun_m.pos, 15.f);
 								this->reloadf = false;
 							}
-							if ((*DrawPts)->use_vr) {
+							if (DrawPts->use_vr) {
 								this->mag_m.pos = this->LEFTHAND.move.pos;
 								this->mag_m.mat = this->mag_obj()->GetFrameLocalMatrix(mag1) * this->mag_obj()->GetFrameLocalMatrix(mag0) *
 									(this->LEFTHAND.move.mat* MATRIX_ref::RotVec2(this->LEFTHAND.move.mat.yvec(), this->base.Get_mag2f_pos() - this->LEFTHAND.move.pos));
@@ -3450,7 +3279,7 @@ public:
 				//
 				this->Set_Magazine_Mat();
 				//弾の処理
-				for (auto& a : this->bullet) { a.UpDate(me, chara, hit_obj_p, hit_b_obj_p); }
+				for (auto& a : this->bullet) { a.UpDate(shared_from_this(), chara, mine_v, vehicle, hit_obj_p, hit_b_obj_p, MAPPTs); }
 				//薬莢の処理
 				update_cart();
 				//エフェクトの処理
@@ -3460,7 +3289,7 @@ public:
 			}
 			//p5～p5-2 0.08ms
 						//アイテム拾う
-			(*MAPPTs)->Get_item(this->get_pos_LEFTHAND(), this->get_pos_LEFTHAND() - this->get_mat_LEFTHAND().zvec()*2.6f, *this, *MAPPTs);
+			MAPPTs->Get_item(this->get_pos_LEFTHAND(), this->get_pos_LEFTHAND() - this->get_mat_LEFTHAND().zvec()*2.6f,shared_from_this(), MAPPTs);
 			//p5-2～p5-3 0.01ms
 						//物理演算、アニメーション
 			{
@@ -3488,7 +3317,7 @@ public:
 			}
 			//p5-3～p6 0.04ms
 						//
-			if (this == (*mine).get()) {
+			if (this == mine.get()) {
 				//ライト
 				this->lam.Set_LightHandle(this->base.Get_objmatrix().zvec()*-1.f);
 				//息
@@ -3523,8 +3352,8 @@ public:
 				return;
 			}
 			if (use_occlusion) {
-				if ((*MAPPTs)->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 1.8f, 0)).HitFlag &&
-					(*MAPPTs)->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.f, 0)).HitFlag) {
+				if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 1.8f, 0)).HitFlag &&
+					MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.f, 0)).HitFlag) {
 					this->flag_canlook_player = false;
 					this->flag_calc_body = true;
 					this->distance_to_cam = -1.f;
@@ -3533,16 +3362,16 @@ public:
 			}
 		}
 		/*カメラ指定*/
-		void Set_cam(cam_info& camera_main, std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara, const float fov_) noexcept {
+		void Set_cam(cam_info& camera_main, std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara, const float fov_) noexcept {
 			if (this->get_alive()) {
 				auto mat_T = get_res_blur(0.7f) * this->HMD.move.mat;//リコイル
 
 				auto ppsh = MATRIX_ref::Vtrans(VECTOR_ref::vget(-0.035f, 0, 0), mat_T);
-				if ((*DrawPts)->use_vr) {
+				if (DrawPts->use_vr) {
 					mat_T = this->HMD.move.mat;
 					ppsh.clear();
 				}
-				camera_main.set_cam_pos(this->get_pos() + ppsh, this->get_pos() + ppsh + mat_T.zvec()*((*DrawPts)->use_vr ? 1.f : -1.f), mat_T.yvec());
+				camera_main.set_cam_pos(this->get_pos() + ppsh, this->get_pos() + ppsh + mat_T.zvec()*(DrawPts->use_vr ? 1.f : -1.f), mat_T.yvec());
 				camera_main.near_ = 0.1f;
 				if (this->ads_on()) {
 					easing_set(&camera_main.fov, deg2rad(25), std::min(0.8f + ((0.9f - 0.8f)*(this->per_all.weight - this->base.thisparts->per.weight) / 3.f), 0.925f));
@@ -3553,11 +3382,13 @@ public:
 			}
 			else {
 				//デスカメラ
-				easing_set(&camera_main.camvec, (*chara)[this->scores.death_id]->get_pos(), 0.9f);
+				if (this->scores.death_id < chara.size()) {
+					easing_set(&camera_main.camvec, chara[this->scores.death_id]->get_pos(), 0.9f);
+				}
 				auto rad = atan2f((camera_main.camvec - camera_main.campos).x(), (camera_main.camvec - camera_main.campos).z());
 				easing_set(&camera_main.campos, this->get_pos() + VECTOR_ref::vget(-5.f*sin(rad), 2.f, -5.f*cos(rad)), 0.9f);
 				camera_main.camup = VECTOR_ref::vget(0, 1.f, 0);
-				(*MAPPTs)->map_col_nearest(camera_main.camvec, &camera_main.campos);
+				MAPPTs->map_col_nearest(camera_main.camvec, &camera_main.campos);
 				easing_set(&camera_main.fov, fov_, 0.9f);
 			}
 		}
@@ -3626,14 +3457,14 @@ public:
 			for (auto& a : this->bullet) { a.Draw(); }
 		}
 		/*レーザー、ライト描画*/
-		void Draw_LAM_Effect(std::vector<std::shared_ptr<PLAYERclass::Chara>>*chara, GraphHandle&light_pic) noexcept {
+		void Draw_LAM_Effect(std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara, GraphHandle&light_pic) noexcept {
 			switch (this->lam.Get_lamtype(0)) {
 			case SELECTLAM_LASER:
 			{
 				auto StartPos = this->lam.Get_source_pos();
 				auto EndPos = StartPos - this->base.Get_objmatrix().zvec()*100.f;
-				(*MAPPTs)->map_col_nearest(StartPos, &EndPos);
-				for (auto& tgt : *chara) {
+				MAPPTs->map_col_nearest(StartPos, &EndPos);
+				for (auto& tgt : chara) {
 					if (tgt.get() == this || !tgt->get_alive()) {
 						continue;
 					}

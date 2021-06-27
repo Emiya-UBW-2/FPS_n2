@@ -11,7 +11,7 @@ public:
 	class Map {
 	private:
 		std::string path;
-		MV1 map, map_col;	//地面
+		MV1 map, map_col,mapcol_tank;	//地面
 		MV1 sky;			//空
 		SoundHandle envi;	//
 		std::vector<VECTOR_ref> way_point;
@@ -85,7 +85,7 @@ public:
 			}
 
 			/*視界外か否かを判断*/
-			void Check_CameraViewClip(int x_, int z_, std::unique_ptr<Map>& MAPPTs, bool use_occlusion) noexcept {
+			void Check_CameraViewClip(int x_, int z_, std::shared_ptr<Map>& MAPPTs, bool use_occlusion) noexcept {
 				int pos_xmax = 100 * 1 / 3;
 				int pos_xmin = 100 * (x_ + 0) / 3 - 50;
 				int pos_zmax = 100 * 1 / 3;
@@ -131,6 +131,9 @@ public:
 		std::array<std::array<grass_t, 3>, 3>grass__;
 		std::vector<std::shared_ptr<Items>> item;					//アイテム
 
+
+		std::vector<Mainclass::wallPats> wall;					//壁をセット
+
 	public:
 		std::vector<VECTOR_ref>& get_waypoint(void) noexcept { return way_point; }
 		std::vector<VECTOR_ref>& get_leanpoint_q(void) noexcept { return lean_point_q; }
@@ -166,6 +169,7 @@ public:
 			this->path = dir + "/";
 			MV1::Load(this->path + "model.mv1", &map, true);		   //map
 			MV1::Load(this->path + "col.mv1", &map_col, true);		   //mapコリジョン
+			MV1::Load(this->path + "col_tank.mv1", &mapcol_tank, true);		   //mapコリジョン
 			MV1::Load(this->path + "sky/model.mv1", &sky, true);	 //空
 			SetUseASyncLoadFlag(TRUE);
 			envi = SoundHandle::Load(this->path + "envi.wav");
@@ -194,7 +198,7 @@ public:
 			shader.Init("NormalMesh_PointLightVS.vso", "NormalMesh_PointLightPS.pso");
 			Depth.Init("DepthVS.vso", "DepthPS.pso");
 		}
-		void Start(void) noexcept {
+		void Start(std::unique_ptr<b2World>& world) noexcept {
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			VECTOR_ref size;
 			{
@@ -241,6 +245,53 @@ public:
 					default:
 						break;
 					}
+				}
+			}
+			{
+				MV1SetupReferenceMesh(mapcol_tank.get(), 0, FALSE);
+				MV1_REF_POLYGONLIST p = MV1GetReferenceMesh(mapcol_tank.get(), 0, FALSE);
+
+				for (int i = 0; i < p.PolygonNum; i++) {
+					//壁
+					{
+						wall.resize(wall.size() + 1);
+						wall.back().pos[0] = p.Vertexs[p.Polygons[i].VIndex[0]].Position;
+						wall.back().pos[1] = p.Vertexs[p.Polygons[i].VIndex[1]].Position;
+						if (b2DistanceSquared(b2Vec2(wall.back().pos[0].x(), wall.back().pos[0].z()), b2Vec2(wall.back().pos[1].x(), wall.back().pos[1].z())) <= 0.005f * 0.005f) {
+							wall.pop_back();
+						}
+
+						wall.resize(wall.size() + 1);
+						wall.back().pos[0] = p.Vertexs[p.Polygons[i].VIndex[1]].Position;
+						wall.back().pos[1] = p.Vertexs[p.Polygons[i].VIndex[2]].Position;
+						if (b2DistanceSquared(b2Vec2(wall.back().pos[0].x(), wall.back().pos[0].z()), b2Vec2(wall.back().pos[1].x(), wall.back().pos[1].z())) <= 0.005f * 0.005f) {
+							wall.pop_back();
+						}
+
+						wall.resize(wall.size() + 1);
+						wall.back().pos[0] = p.Vertexs[p.Polygons[i].VIndex[2]].Position;
+						wall.back().pos[1] = p.Vertexs[p.Polygons[i].VIndex[0]].Position;
+						if (b2DistanceSquared(b2Vec2(wall.back().pos[0].x(), wall.back().pos[0].z()), b2Vec2(wall.back().pos[1].x(), wall.back().pos[1].z())) <= 0.005f * 0.005f) {
+							wall.pop_back();
+						}
+					}
+				}
+
+				for (auto& w : wall) {
+					std::array<b2Vec2, 2> vs;
+					vs[0].Set(w.pos[0].x(), w.pos[0].z());
+					vs[1].Set(w.pos[1].x(), w.pos[1].z());
+					b2ChainShape chain;		// This a chain shape with isolated vertices
+					chain.CreateChain(&vs[0], 2);
+					b2FixtureDef fixtureDef;			       /*動的ボディフィクスチャを定義します*/
+					fixtureDef.shape = &chain;			       /**/
+					fixtureDef.density = 1.0f;			       /*ボックス密度をゼロ以外に設定すると、動的になります*/
+					fixtureDef.friction = 0.3f;			       /*デフォルトの摩擦をオーバーライドします*/
+					b2BodyDef bodyDef;				       /*ダイナミックボディを定義します。その位置を設定し、ボディファクトリを呼び出します*/
+					bodyDef.type = b2_staticBody;			       /**/
+					bodyDef.position.Set(0, 0);			       /**/
+					bodyDef.angle = 0.f;				       /**/
+					w.b2.Set(world->CreateBody(&bodyDef), &chain);
 				}
 			}
 			SetFogStartEnd(40.0f - 15.f, 40.f);
@@ -306,6 +357,9 @@ public:
 			item.clear();
 			map.Dispose();		   //map
 			map_col.Dispose();		   //mapコリジョン
+			mapcol_tank.Dispose();
+			for (auto& w : wall) { w.b2.Dispose(); }
+			wall.clear();
 			sky.Dispose();	 //空
 			envi.Dispose();
 			way_point.clear();
@@ -327,13 +381,15 @@ public:
 		}
 		auto& map_get(void) const noexcept { return map; }
 		auto& map_col_get(void) const noexcept { return map_col; }
-		MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) noexcept {
+		const MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) const noexcept {
 			return map_col.CollCheck_Line(StartPos, EndPos, 0, 0);
 		}
-		void map_col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) noexcept {
+		bool map_col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) const noexcept {
+			bool ans = false;
 			while (true) {
-				auto p = this->map_col_line(StartPos, *EndPos);
+				MV1_COLL_RESULT_POLY p = this->map_col_line(StartPos, *EndPos);
 				if (p.HitFlag) {
+					ans = true;
 					if (*EndPos == p.HitPosition) {
 						break;
 					}
@@ -343,6 +399,7 @@ public:
 					break;
 				}
 			}
+			return ans;
 		}
 		void map_col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos) noexcept {
 			auto MoveVector = *NowPos - OldPos;
@@ -495,8 +552,8 @@ public:
 		}
 		//
 		template<class Chara>
-		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, Chara& chara, std::unique_ptr<Map>& MAPPTs) noexcept {
-			chara.reset_canget_item();
+		void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<Chara>& chara, std::shared_ptr<Map>& MAPPTs) noexcept {
+			chara->reset_canget_item();
 			for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs); }
 		}
 		//
@@ -525,7 +582,7 @@ public:
 			return now;
 		}
 
-		void Check_CameraViewClip(std::unique_ptr<Map>& MAPPTs, bool use_occlusion) {
+		void Check_CameraViewClip(std::shared_ptr<Map>& MAPPTs, bool use_occlusion) {
 			for (int x_ = 0; x_ < 3; x_++) {
 				for (int z_ = 0; z_ < 3; z_++) {
 					this->grass__[x_][z_].Check_CameraViewClip(x_, z_, MAPPTs, use_occlusion);
@@ -546,17 +603,17 @@ public:
 		int MaskHandle = -1;
 		bool loadmasks = true;
 		//
-		std::unique_ptr<Map>* MAPPTs;
+		std::shared_ptr<Map> MAPPTs;
 	private:
 		void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp) noexcept {
-			auto x_2 = chara_pos.x() / (*MAPPTs)->map_col_get().mesh_maxpos(0).x() *((*MAPPTs)->get_x_size() / 2)*xcam;
-			auto y_2 = -chara_pos.z() / (*MAPPTs)->map_col_get().mesh_maxpos(0).z() *((*MAPPTs)->get_y_size() / 2)*xcam;
+			auto x_2 = chara_pos.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() *(MAPPTs->get_x_size() / 2)*xcam;
+			auto y_2 = -chara_pos.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() *(MAPPTs->get_y_size() / 2)*xcam;
 
 			*xp = int(x_2*cos(radp) - y_2 * sin(radp));
 			*yp = int(y_2*cos(radp) + x_2 * sin(radp));
 		}
 	public:
-		MiniMap(std::unique_ptr<Map>* MAPPTs_t) noexcept {
+		MiniMap(std::shared_ptr<Map> MAPPTs_t) noexcept {
 			SetUseASyncLoadFlag(FALSE);
 			if (usemasks) {
 				CreateMaskScreen();
@@ -574,23 +631,23 @@ public:
 			MAPPTs = MAPPTs_t;
 		}
 		template<class Chara>
-		void UI_Draw(std::vector<std::shared_ptr<Chara>>*chara, std::shared_ptr<Chara>* mine) noexcept {
+		void UI_Draw(std::vector<std::shared_ptr<Chara>>&chara, const std::shared_ptr<Chara>& mine) noexcept {
 			UI_minimap.SetDraw_Screen(true);
 			{
 				DrawBox(0, 0, x_size, y_size, GetColor(0, 128, 0), TRUE);
 				int xp = 0, yp = 0;
 				float radp = 0.f;
 				{
-					easing_set(&xcam, 1.f + (*mine)->get_pseed_per() * 0.2f, 0.9f);
-					radp = -(*mine)->get_body_yrad();
+					easing_set(&xcam, 1.f + mine->get_pseed_per() * 0.2f, 0.9f);
+					radp = -mine->get_body_yrad();
 					int xpos = 0, ypos = 0;
-					Set_pos_chara(&xpos, &ypos, (*mine)->get_pos(), radp);
+					Set_pos_chara(&xpos, &ypos, mine->get_pos(), radp);
 					xp = x_size / 2 - xpos;
 					yp = y_size / 2 - ypos;
 				}
 
-				(*MAPPTs)->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
-				for (auto& c : *chara) {
+				MAPPTs->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
+				for (auto& c : chara) {
 					int xpos = 0, ypos = 0;
 					Set_pos_chara(&xpos, &ypos, c->get_pos(), radp);
 					int xt = xp + xpos;

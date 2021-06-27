@@ -355,6 +355,20 @@
   <DEFECT>
     <SFA>
       <FILEPATH>c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker</FILEPATH>
+      <FILENAME>sub.hpp</FILENAME>
+      <LINE>1797</LINE>
+      <COLUMN>43</COLUMN>
+    </SFA>
+    <DEFECTCODE>26451</DEFECTCODE>
+    <DESCRIPTION>Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).</DESCRIPTION>
+    <FUNCTION>Mainclass::Vehcs::set_vehicles</FUNCTION>
+    <DECORATED>?set_vehicles@Vehcs@Mainclass@@SAXPEAV?$vector@VVehcs@Mainclass@@V?$allocator@VVehcs@Mainclass@@@std@@@std@@@Z</DECORATED>
+    <FUNCLINE>1762</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker</FILEPATH>
       <FILENAME>map.hpp</FILENAME>
       <LINE>122</LINE>
       <COLUMN>2</COLUMN>
