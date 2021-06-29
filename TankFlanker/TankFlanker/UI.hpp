@@ -710,7 +710,9 @@ public:
 				//終わり
 			}
 		}
-		void item_Draw(std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara, const std::shared_ptr<PLAYERclass::Chara>& mine) noexcept {
+		void item_Draw(std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara,
+			std::vector<std::shared_ptr<vehicles>>& vehicle,
+			const std::shared_ptr<PLAYERclass::Chara>& mine) noexcept {
 			set_fonts();
 			//弾インジケーター
 			if (DrawPts->use_vr) {
@@ -776,6 +778,9 @@ public:
 			{
 				SetCameraNearFar(0.01f, 100.f);
 				for (auto& c : chara) {
+					c->Draw_Hit_UI(hit_Graph);
+				}
+				for (auto& c : vehicle) {
 					c->Draw_Hit_UI(hit_Graph);
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);

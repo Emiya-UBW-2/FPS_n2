@@ -407,7 +407,7 @@ public:
 					if (this->stay) {
 					}
 					else {
-						if (mapcol.HitFlag) {
+						if (mapcol.HitFlag == TRUE) {
 							VECTOR_ref map_nomal = mapcol.Normal;
 							this->move.SetPos(VECTOR_ref(mapcol.HitPosition) + VECTOR_ref::vget(0, 0.008f, 0));
 							this->move.vec += map_nomal * (map_nomal.dot(this->move.vec*-1.f)*1.25f);
@@ -1174,7 +1174,7 @@ public:
 			return obj_col.CollCheck_Line(StartPos, EndPos, -1, sel);
 		}
 
-		void Set_eff(Effect ef_,const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale) {
+		void Set_eff(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) {
 			this->effcs[ef_].Set(pos_t, nomal_t, scale);
 		}
 
@@ -1187,7 +1187,7 @@ public:
 			if (this->get_alive()) {
 				float scale = (this->move.pos - this->get_head_pos()).size();
 				if (scale < 10.f) {
-					if (!MAPPTs->map_col_line(this->move.pos, this->get_head_pos()).HitFlag) {
+					if (!MAPPTs->map_col_line(this->move.pos, this->get_head_pos()).HitFlag == TRUE) {
 						int damage = int(150.f * (10.f - scale) / 10.f);
 						damage = std::clamp(damage, 0, 100);
 						auto old = this->HP;
@@ -1690,7 +1690,7 @@ public:
 					MATRIX_ref mat_gun_old = this->gun_m.mat;
 					while (true) {
 						this->Set_gun(true);//ˆêŽž“I
-						if (MAPPTs->map_col_line(this->RIGHT_pos_gun(0), this->get_maz()).HitFlag) {
+						if (MAPPTs->map_col_line(this->RIGHT_pos_gun(0), this->get_maz()).HitFlag == TRUE) {
 							tmp.pos = this->gun_m.pos + mat_gun_old.zvec()*0.006f;
 							tmp.mat = MATRIX_ref::RotX(deg2rad(2))* this->gun_m.mat;
 							set_gun_pos(tmp);//‚Ð‚Á‚±‚ß(‰¼)
@@ -1830,7 +1830,7 @@ public:
 						EndPos = (this->cpu_do.ai_time_shoot < 0.f) ? tgt->get_head_pos() : tgt->BodyFrame(tgt->frame_s.bodyb_f.first);
 						if (vec_to == VECTOR_ref::vget(0.f, 0.f, 0.f)) { vec_to = EndPos - StartPos; }//Šî€‚Ìì¬
 						if (!tgt->get_alive()) { continue; }
-						if (MAPPTs->map_col_line(StartPos, EndPos).HitFlag) { continue; }
+						if (MAPPTs->map_col_line(StartPos, EndPos).HitFlag == TRUE) { continue; }
 						EndPos = EndPos - StartPos;
 						if (vec_to.size() >= EndPos.size()) {
 							vec_to = EndPos;
@@ -2166,7 +2166,7 @@ public:
 				//—Ž‰º
 				{
 					auto pp = MAPPTs->map_col_line(pos_t + VECTOR_ref::vget(0, 1.8f, 0), pos_t + VECTOR_ref::vget(0, -0.01f, 0));
-					if (this->add_ypos <= 0.f && pp.HitFlag) {
+					if (this->add_ypos <= 0.f && pp.HitFlag == TRUE) {
 						pos_t = pp.HitPosition;
 						this->add_ypos = 0.f;
 					}
@@ -2305,7 +2305,7 @@ public:
 							{
 								/*
 								auto pp = MAPPTs->map_col_line(this->BodyFrame(this->frame_s.LEFTreg2_f.first) + VECTOR_ref::vget(0, 1.8f, 0), this->BodyFrame(this->frame_s.LEFTreg2_f.first));
-								if (pp.HitFlag) {
+								if (pp.HitFlag == TRUE) {
 									this->LEFTREG.pos = VECTOR_ref(pp.HitPosition) - (this->BodyFrame(this->frame_s.LEFTreg2_f.first) - this->BodyFrame(this->frame_s.LEFTreg_f.first));
 								}
 								//*/
@@ -2365,7 +2365,7 @@ public:
 							{
 								/*
 								auto pp = MAPPTs->map_col_line(this->BodyFrame(this->frame_s.RIGHTreg2_f.first) + VECTOR_ref::vget(0, 1.8f, 0), this->BodyFrame(this->frame_s.RIGHTreg2_f.first));
-								if (pp.HitFlag) {
+								if (pp.HitFlag == TRUE) {
 									this->RIGHTREG.pos = VECTOR_ref(pp.HitPosition) - (this->BodyFrame(this->frame_s.RIGHTreg2_f.first) - this->BodyFrame(this->frame_s.RIGHTreg_f.first));
 								}
 								*/
@@ -2564,7 +2564,7 @@ public:
 					{
 						this->gun_m.Update_Physics();
 						auto pp = MAPPTs->map_col_line(this->gun_m.pos + VECTOR_ref::vget(0, 1.f, 0), this->gun_m.pos - VECTOR_ref::vget(0, 0.05f, 0));
-						if (pp.HitFlag) {
+						if (pp.HitFlag == TRUE) {
 							this->gun_m.HitGround(pp, 0.05f);
 							easing_set(&this->gun_m.vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
 						}
@@ -2688,7 +2688,7 @@ public:
 			//’e
 			moves tmp;
 			tmp.pos = this->get_maz();
-			tmp.mat = MATRIX_ref::Axis1(this->gun_m.mat.xvec()*-1.f, this->gun_m.mat.yvec()*-1.f, this->gun_m.mat.zvec()*-1.f);
+			tmp.vec = this->gun_m.mat.zvec()*-1.f;
 			this->bullet[this->use_bullet].Put(&this->base.thisparts->ammo[0], tmp);
 			//–òä°‘Ò‹@
 			this->cart[this->use_bullet].Put_first(this->base.thisparts->ammo[0].get_model(), this->base.Get_cate_pos(), this->gun_m.mat);
@@ -3352,8 +3352,8 @@ public:
 				return;
 			}
 			if (use_occlusion) {
-				if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 1.8f, 0)).HitFlag &&
-					MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.f, 0)).HitFlag) {
+				if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 1.8f, 0)).HitFlag == TRUE &&
+					MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.f, 0)).HitFlag == TRUE) {
 					this->flag_canlook_player = false;
 					this->flag_calc_body = true;
 					this->distance_to_cam = -1.f;
@@ -3471,7 +3471,7 @@ public:
 					if (tgt->set_ref_col(StartPos, EndPos)) {
 						for (int i = 0; i < this->obj_col.mesh_num(); ++i) {
 							auto q = tgt->obj_col.CollCheck_Line(StartPos, EndPos, -1, i);
-							if (q.HitFlag) {
+							if (q.HitFlag == TRUE) {
 								EndPos = q.HitPosition;
 							}
 						}

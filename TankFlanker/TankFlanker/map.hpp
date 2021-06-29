@@ -112,8 +112,8 @@ public:
 				if (use_occlusion) {
 					auto ttt = (max - min)*0.5f + min;
 					ttt.y(0.f);
-					if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 1.8f, 0)).HitFlag &&
-						MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.f, 0)).HitFlag) {
+					if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 1.8f, 0)).HitFlag == TRUE &&
+						MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.f, 0)).HitFlag == TRUE) {
 						this->canlook = false;
 						return;
 					}
@@ -218,28 +218,28 @@ public:
 					{
 						way_point.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
 						pt = map_col_line(way_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), way_point.back() + VECTOR_ref::vget(0, -10.f, 0.f));
-						if (pt.HitFlag) { way_point.back() = pt.HitPosition; }
+						if (pt.HitFlag == TRUE) { way_point.back() = pt.HitPosition; }
 						break;
 					}
 					case 2:
 					{
 						lean_point_e.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
 						pt = map_col_line(lean_point_e.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_e.back() + VECTOR_ref::vget(0, -10.f, 0.f));
-						if (pt.HitFlag) { lean_point_e.back() = pt.HitPosition; }
+						if (pt.HitFlag == TRUE) { lean_point_e.back() = pt.HitPosition; }
 						break;
 					}
 					case 3:
 					{
 						lean_point_q.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
 						pt = map_col_line(lean_point_q.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_q.back() + VECTOR_ref::vget(0, -10.f, 0.f));
-						if (pt.HitFlag) { lean_point_q.back() = pt.HitPosition; }
+						if (pt.HitFlag == TRUE) { lean_point_q.back() = pt.HitPosition; }
 						break;
 					}
 					case 4:
 					{
 						spawn_point.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
 						pt = map_col_line(spawn_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), spawn_point.back() + VECTOR_ref::vget(0, -10.f, 0.f));
-						if (pt.HitFlag) { spawn_point.back() = pt.HitPosition; }
+						if (pt.HitFlag == TRUE) { spawn_point.back() = pt.HitPosition; }
 						break;
 					}
 					default:
@@ -388,7 +388,7 @@ public:
 			bool ans = false;
 			while (true) {
 				MV1_COLL_RESULT_POLY p = this->map_col_line(StartPos, *EndPos);
-				if (p.HitFlag) {
+				if (p.HitFlag == TRUE) {
 					ans = true;
 					if (*EndPos == p.HitPosition) {
 						break;
@@ -572,7 +572,7 @@ public:
 				if (tt) {
 					if (tmp.size() >= (w - poss).size()) {
 						auto p = map_col_line(w + VECTOR_ref::vget(0, 0.5f, 0), poss + VECTOR_ref::vget(0, 0.5f, 0));
-						if (!p.HitFlag) {
+						if (!p.HitFlag == TRUE) {
 							tmp = (w - poss);
 							now = int(id);
 						}

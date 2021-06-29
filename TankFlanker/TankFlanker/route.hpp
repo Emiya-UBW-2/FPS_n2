@@ -180,9 +180,9 @@ public:
 				{
 					//更新
 					KeyBind->reSet_isalways();
-					selpause = false;
 					switch (sel_scene) {
 					case LOAD:
+						selpause = false;
 						if (!selpause) {
 							//キーアクティブ
 							if (DrawPts->use_vr) {
@@ -198,6 +198,7 @@ public:
 						}
 						break;
 					case SELECT:
+						selpause = false;
 						if (!selpause) {
 							//キーアクティブ
 							if (DrawPts->use_vr) {
@@ -218,6 +219,7 @@ public:
 						break;
 					case MAIN_LOOP:
 						selpause = PauseMenu->Pause_key();
+						//selpause ^= 1;
 						if (!selpause) {
 							if (DrawPts->use_vr) {
 								set_key_vr();

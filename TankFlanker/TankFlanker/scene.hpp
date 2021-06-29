@@ -1011,7 +1011,7 @@ public:
 					break;
 				}
 			}
-			Mainclass::Vehcs::set_vehicles(&vehcs);					//車輛
+			for (auto& t : vehcs) { t.Set_after(); }
 		}
 		void Start(void) noexcept {
 			for (auto& g : this->mazzule_data) { g.Set(&g - &this->mazzule_data.front()); }					//PARTSデータ2
@@ -1142,9 +1142,9 @@ public:
 			this->hit_obj_p.update();
 			this->hit_b_obj_p.update();
 			//campos,camvec,camupの指定
-			this->Get_Mine()->Set_cam(this->camera_main, this->chara, this->fov_base);
+			//this->Get_Mine()->Set_cam(this->camera_main, this->chara, this->fov_base);
 			//this->chara[1]->Set_cam(this->camera_main, this->chara, this->fov_base);
-			//vehicle[0]->Set_cam(MAPPTs,this->camera_main, this->Get_Mine()->GetHMDmat().zvec(), this->fov_base);
+			vehicle[0]->Set_cam(MAPPTs,this->camera_main, this->Get_Mine()->GetHMDmat().zvec(), this->fov_base);
 			this->camera_main.camup = MATRIX_ref::Vtrans(this->camera_main.camup, MATRIX_ref::RotAxis(
 				(this->camera_main.camvec - this->camera_main.campos), 
 				deg2rad(20.f*bless_ratio*sin(bless))
@@ -1273,7 +1273,7 @@ public:
 			this->Get_Mine()->gre_eff = false;
 
 			for (auto& c : this->chara) { c->Set_Draw_bullet(); }
-			UIparts->item_Draw(this->chara, this->Get_Mine());
+			UIparts->item_Draw(this->chara,this->vehicle, this->Get_Mine());
 		}
 		void LAST_Draw(void) noexcept override {
 			//TPS視点
