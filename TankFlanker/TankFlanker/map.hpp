@@ -131,8 +131,12 @@ public:
 		std::array<std::array<grass_t, 3>, 3>grass__;
 		std::vector<std::shared_ptr<Items>> item;					//アイテム
 
+		struct wallPats {
+			b2Pats b2;
+			std::array<VECTOR_ref, 2> pos;
+		};
 
-		std::vector<Mainclass::wallPats> wall;					//壁をセット
+		std::vector<wallPats> wall;					//壁をセット
 
 	public:
 		std::vector<VECTOR_ref>& get_waypoint(void) noexcept { return way_point; }

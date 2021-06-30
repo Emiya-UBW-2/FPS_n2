@@ -710,13 +710,14 @@ public:
 				//終わり
 			}
 		}
-		void item_Draw(std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara,
-			std::vector<std::shared_ptr<vehicles>>& vehicle,
+		void item_Draw(
+			const std::vector<std::shared_ptr<PLAYERclass::Chara>>&chara,
+			const std::vector<std::shared_ptr<PLAYERclass::vehicles>>& vehicle,
 			const std::shared_ptr<PLAYERclass::Chara>& mine) noexcept {
 			set_fonts();
 			//弾インジケーター
 			if (DrawPts->use_vr) {
-				auto pos_gun = mine->get_parts(PARTS_BASE)->Get_objmatrix().pos();
+				auto pos_gun = mine->get_parts(PARTS_BASE)->Get_objMatrix().pos();
 				VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 				if (p.z() >= 0.f&&p.z() <= 1.f) {
 					int xp = int(p.x());

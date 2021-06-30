@@ -384,7 +384,7 @@ public:
 			port_type = port_type_t;
 			port_ptr = MAINLOOPscene->Get_Mine()->get_parts(port_type);
 			port_cat = port_cat_t;
-			if (port_ptr->Get_rail_f(port_cat).first > 0) {
+			if (port_ptr->Get_rail_frame(port_cat).first > 0) {
 				if (parts_select == parts_select_max) {
 					parts_cat = parts_cat_t;
 					Set_chang_needs(parts_cat, port_cat, change_select);
@@ -403,7 +403,7 @@ public:
 				port_type = port_ptr->Get_type();
 
 				port_cat = POINTS_UPER_RAIL;
-				if (port_ptr->Get_rail_f(port_cat).first > 0) {
+				if (port_ptr->Get_rail_frame(port_cat).first > 0) {
 					if (parts_select == parts_select_max) {
 						parts_cat = PARTS_SIGHT;
 						Set_chang_needs(parts_cat, port_cat, change_select, sel);
@@ -416,7 +416,7 @@ public:
 				}
 
 				port_cat = POINTS_SIDEMOUNT;
-				if (port_ptr->Get_rail_f(port_cat).first > 0) {
+				if (port_ptr->Get_rail_frame(port_cat).first > 0) {
 					if (parts_select == parts_select_max) {
 						parts_cat = PARTS_SIGHT;
 						Set_chang_needs(parts_cat, port_cat, change_select, sel);
@@ -667,7 +667,7 @@ public:
 				//
 				easing_set(&MAINLOOPscene->Get_Mine()->get_gunanime_trigger()->per, float(shot.press()), 0.5f);
 				if (shot.trigger()) {
-					if (MAINLOOPscene->Get_Mine()->set_gunf()) {
+					if (MAINLOOPscene->Get_Mine()->set_flag_gun()) {
 						//todo ディレイつける
 						{
 							shot_se.play(DX_PLAYTYPE_BACK, TRUE);
@@ -687,7 +687,7 @@ public:
 				//銃発砲アニメ
 				MAINLOOPscene->Get_Mine()->Set_shot_anime(rate, true);
 				//銃アニメ更新
-				MAINLOOPscene->Get_Mine()->get_parts(PARTS_BASE)->updateani();
+				MAINLOOPscene->Get_Mine()->get_parts(PARTS_BASE)->UpDate_Anim();
 				//薬莢の処理
 				MAINLOOPscene->Get_Mine()->update_cart();
 				//エフェクトの更新
@@ -873,7 +873,7 @@ public:
 
 		EffekseerEffectHandle gndsmkHndle;		     /*エフェクトリソース*/
 		std::vector<Mainclass::Vehcs> vehcs;
-		std::vector<std::shared_ptr<vehicles>> vehicle;
+		std::vector<std::shared_ptr<PLAYERclass::vehicles>> vehicle;
 	public:
 		std::unique_ptr<b2World> world;
 
@@ -1089,9 +1089,7 @@ public:
 				//共通
 				vehicle.resize(2);
 				for (auto& v : this->vehicle) {
-					v = std::make_shared<vehicles>();
-					v->reset();
-					//v.use_id = std::min<size_t>(v.use_id, vehcs.size() - 1);
+					v = std::make_shared<PLAYERclass::vehicles>();
 					v->Set(vehcs[0], world, gndsmkHndle);
 				}
 			}
@@ -1185,16 +1183,17 @@ public:
 			return true;
 		}
 		void Dispose(void) noexcept override {
+			gndsmkHndle.Dispose();
+
 			for (auto& c : this->chara) {
 				c->Dispose();
 			}
 			this->chara.clear();
 
-			gndsmkHndle.Dispose();
 			for (auto& v : this->vehicle) {
 				v->Dispose();
 			}
-			vehicle.clear();
+			this->vehicle.clear();
 		}
 		void UI_Draw(void) noexcept  override {
 			UIparts->UI_Draw(this->Get_Mine());

@@ -21,16 +21,10 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.h(3727): warni
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(398): warning C4100: 'commandList': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(415): warning C4100: 'type': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(422): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(215): warning C4189: 'check_col': ローカル変数が初期化されましたが、参照されていません
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(231): warning C4189: 'check_col': ローカル変数が初期化されましたが、参照されていません
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(268): warning C4189: 'check_col': ローカル変数が初期化されましたが、参照されていません
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(286): warning C4189: 'check_col': ローカル変数が初期化されましたが、参照されていません
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(21): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(21): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(21): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(21): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\sub.hpp(1285): warning C4100: 'mine_v': 引数は関数の本体部で 1 度も参照されません。
-  c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(3282): note: コンパイル対象の関数 テンプレート インスタンス化 'void Mainclass::BULLETS::UpDate<_Ty,MAPclass::Map>(const std::shared_ptr<_Ty> &,std::vector<std::shared_ptr<_Ty>,std::allocator<std::shared_ptr<_Ty>>> &,const std::shared_ptr<Mainclass::vehicles> &,std::vector<std::shared_ptr<Mainclass::vehicles>,std::allocator<std::shared_ptr<Mainclass::vehicles>>> &,Mainclass::HIT_PASSIVE &,Mainclass::HIT_BLOOD_PASSIVE &,std::shared_ptr<MAPclass::Map> &) noexcept' のリファレンスを確認してください
-          with
-          [
-              _Ty=PLAYERclass::Chara
-          ]
   TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Debug\FPS_n2.exe

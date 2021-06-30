@@ -363,7 +363,7 @@ public:
 			}
 			//
 			if (!this->ending) {
-				MAINLOOPscene->Dispose();//‰ð•ú
+				//MAINLOOPscene->Dispose();//‰ð•ú
 				MAPPTs->Dispose();
 				break;
 			}
