@@ -111,7 +111,10 @@ public:
 				break;
 			case MAP_LOAD:
 				MAPPTs->Start(MAINLOOPscene->world);
-				MAINLOOPscene->Ready_Chara(MAPPTs->get_spawn_point().size());	//ƒLƒƒƒ‰İ’è
+				MAINLOOPscene->Ready_Chara(
+					1
+					//MAPPTs->get_spawn_point().size()
+				);	//ƒLƒƒƒ‰İ’è
 				sel_scene = LOAD;
 				scenes_ptr = LOADscene;
 				break;

@@ -264,7 +264,7 @@ public:
 					switch (this->type) {
 					case PARTS_SIGHT:
 					{
-						this->reticle = this->thisparts->reticle.Duplicate();
+ 						this->reticle = this->thisparts->reticle.Duplicate();
 						auto check_col = this->obj.SetupCollInfo(1, 1, 1, -1, 1);//
 						break;
 					}
@@ -282,13 +282,16 @@ public:
 				}
 			}
 			const auto Draw_reticle_UI(bool ads) noexcept {
-				if (IsActive() && this->type == PARTS_SIGHT && ads) {
+				if (IsActive() && ads) {
 					auto check_col = this->obj.RefreshCollInfo(-1, 1);
 					VECTOR_ref sightpos = this->obj.frame(3);
-					if (this->obj.CollCheck_Line(GetCameraPosition(), sightpos, -1, 1).HitFlag == TRUE) {
+					if (
+						this->obj.CollCheck_Line(GetCameraPosition(), sightpos, -1, 1).HitFlag == TRUE
+						) {
 						VECTOR_ref tmp = ConvWorldPosToScreenPos(sightpos.get());
 						if (tmp.z() >= 0.f && tmp.z() <= 1.f) {
 							const auto siz = int(this->thisparts->reticle_size / 2.f);
+							DrawLine(int(tmp.x()) - siz, int(tmp.y()) - siz, int(tmp.x()) + siz, int(tmp.y()) + siz, GetColor(255, 0, 0), 3);
 							this->reticle.DrawExtendGraph(int(tmp.x()) - siz, int(tmp.y()) - siz, int(tmp.x()) + siz, int(tmp.y()) + siz, true);
 							return this->thisparts->zoom;
 						}

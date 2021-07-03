@@ -1057,7 +1057,7 @@ public:
 					//sidemount + sight
 					c->Attach_parts(&mount_base_data[0], PARTS_MOUNT_BASE, c->get_parts(PARTS_BASE), POINTS_SIDEMOUNT_BASE);
 					c->Attach_parts(&mount_data[0], PARTS_MOUNT, c->get_parts(PARTS_MOUNT_BASE), POINTS_SIDEMOUNT);
-					c->Attach_parts(&sight_data[0], PARTS_SIGHT, c->get_parts(PARTS_MOUNT), POINTS_UPER_RAIL, 1);
+					//c->Attach_parts(&sight_data[0], PARTS_SIGHT, c->get_parts(PARTS_MOUNT), POINTS_UPER_RAIL, 1);
 					//optional
 					c->Attach_parts(&mazzule_data[0], PARTS_MAZZULE, c->get_parts(PARTS_BASE), POINTS_MAZZULE_BASE);
 					c->Attach_parts(&dustcover_data[0], PARTS_DUSTCOVER, c->get_parts(PARTS_BASE), POINTS_DUSTCOVER_BASE);
@@ -1140,9 +1140,9 @@ public:
 			this->hit_obj_p.update();
 			this->hit_b_obj_p.update();
 			//campos,camvec,camup‚ÌŽw’è
-			//this->Get_Mine()->Set_cam(this->camera_main, this->chara, this->fov_base);
+			this->Get_Mine()->Set_cam(this->camera_main, this->chara, this->fov_base);
 			//this->chara[1]->Set_cam(this->camera_main, this->chara, this->fov_base);
-			vehicle[0]->Set_cam(MAPPTs,this->camera_main, this->Get_Mine()->GetHMDmat().zvec(), this->fov_base);
+			//vehicle[0]->Set_cam(MAPPTs,this->camera_main, this->Get_Mine()->GetHMDmat().zvec(), this->fov_base);
 			this->camera_main.camup = MATRIX_ref::Vtrans(this->camera_main.camup, MATRIX_ref::RotAxis(
 				(this->camera_main.camvec - this->camera_main.campos), 
 				deg2rad(20.f*bless_ratio*sin(bless))
