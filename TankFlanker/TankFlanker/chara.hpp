@@ -172,27 +172,27 @@ public:
 		//銃に着けるパーツ詳細版
 		class g_parts:public GPARTS_COMMON {
 		private:
-			/*専用*/
+			/*汎用的専用*/
 			frames mag_frame;						//マガジン
 			frames cate_frame;						//排莢
-			frames slide_frame;
+			frames slide_frame;						//スライド
 			std::array<frames, 3> RIGHT_frame;		//右手座標
 			std::array<frames, 3> LEFT_frame;		//左手座標
 			std::array<frames, 3> LEFT_mag_frame;	//左手座標(マガジン保持時)
-			/**/
+			/*LAM専用*/
 			frames Lightsource_frame;				//光源
-			int LightHandle{ -1 };					//ライト
-			/**/
+			LightHandle Light;						//ライト
+			/*サイト専用*/
 			VECTOR_ref sight_vec;					//サイトが見ている場所
 			frames sight_frame;						//サイト
 			GraphHandle reticle;					//レティクル
-			/**/
-			std::array<MV1, 2> obj_ammo;			//マガジン用弾
 			/*MV1 obj_col;*/
+			/*マガジン専用*/
+			std::array<MV1, 2> obj_ammo;			//マガジン用弾
 		public:
 			/*getter*/
 			//frame
-			const auto& Get_slide_frame(void) const noexcept		 { return this->slide_frame; }
+			const auto& Get_slide_frame(void) const noexcept		{ return this->slide_frame; }
 			const auto& Get_sight_frame(void) const noexcept		{ return this->sight_frame.second; }
 			//type
 			const auto Get_mazzuletype(void) const noexcept			{ return (IsActive()) ? int(this->thisparts->mazzule_type) : -1; }
@@ -214,7 +214,7 @@ public:
 			const auto Get_reticle_size(void) const noexcept		{ return (IsActive() && this->type == PARTS_SIGHT) ? float(y_r(this->thisparts->zoom_size / 2.f)) : 1.f; }
 			/*コンストラクタ*/
 			g_parts(void) noexcept {
-				this->LightHandle = -1;
+				this->Light.Dispose();
 			}
 
 			void get_frame_(GUNPARTs& parts, EnumGunParts type_t) noexcept override {
@@ -270,10 +270,7 @@ public:
 					}
 					case PARTS_LAM:
 					{
-						if (this->LightHandle != -1) {
-							DeleteLightHandle(this->LightHandle);
-							this->LightHandle = -1;
-						}
+						this->Light.Dispose();
 						break;
 					}
 					default:
@@ -329,10 +326,7 @@ public:
 				if (IsActive()) {
 					GPARTS_COMMON::Detach(per_all);
 					this->reticle.Dispose();
-					if (this->LightHandle != -1) {
-						DeleteLightHandle(this->LightHandle);
-						this->LightHandle = -1;
-					}
+					this->Light.Dispose();
 				}
 			}
 			//ライトの設定
@@ -341,19 +335,14 @@ public:
 				case SELECTLAM_LIGHT:
 				{
 					auto StartPos = this->Get_source_pos();
-					if (this->LightHandle == -1) {
-						this->LightHandle = CreateSpotLightHandle(StartPos.get(), Vec.get(), DX_PI_F / 16.0f, DX_PI_F / 24.0f, 25.0f, 0.1f, 0.35f, 0.0f);
+					if (this->Light.get() == -1) {
+						this->Light = LightHandle::Create(StartPos, Vec, DX_PI_F / 16.0f, DX_PI_F / 24.0f, 25.0f, 0.1f, 0.35f, 0.0f);
 					}
-					SetLightPositionHandle(this->LightHandle, StartPos.get());
-					SetLightDirectionHandle(this->LightHandle, Vec.get());
+					this->Light.SetPos(StartPos, Vec);
 					break;
 				}
-				case SELECTLAM_LASER:
 				default:
-					if (this->LightHandle != -1) {
-						DeleteLightHandle(this->LightHandle);
-						this->LightHandle = -1;
-					}
+					this->Light.Dispose();
 					break;
 				}
 			}
@@ -1735,7 +1724,7 @@ public:
 			}
 		}
 		//自分についているパーツがある場合削除
-		void Detach_child(g_parts* parent_ptr, size_t type_t, int sight_s = 0) noexcept {
+		void Detach_child(GPARTS_COMMON* parent_ptr, size_t type_t, int sight_s = 0) noexcept {
 			if (parent_ptr == nullptr) {
 				return;
 			}
@@ -2658,7 +2647,7 @@ public:
 			}
 		}
 		//パーツアタッチ
-		void Attach_parts(GUNPARTs* partsptr, EnumGunParts type_t, g_parts* parents = nullptr, EnumAttachPoint side = POINTS_NONE, size_t mount_t = 0) noexcept {
+		void Attach_parts(GUNPARTs* partsptr, EnumGunParts type_t, GPARTS_COMMON* parents = nullptr, EnumAttachPoint side = POINTS_NONE, size_t mount_t = 0) noexcept {
 			if (partsptr != nullptr) {
 				switch (type_t) {
 				case PARTS_NONE:
@@ -3605,7 +3594,11 @@ public:
 
 		float body_yrad{ 0.f };							//胴体角度
 
+		Audios_tanks audio;
 	public:
+		const auto& get_audio() const noexcept { return this->audio; }																	//audio(メニューのみ)
+
+
 		unsigned int got_damage_color{ 0 };
 		int got_damage_x{ 0 };
 		float got_damage_f{ 0.f };
@@ -3769,6 +3762,7 @@ public:
 			this->HP_parts.resize(this->col.mesh_num());
 			for (auto& h : this->HP_parts) { h = this->HP_full; }//モジュール耐久
 
+			this->audio.Duplicate(tgt.audio);	//audio
 		}
 		void BodyFrameLocalMatrix(MV1& obj_body, const frames& id, const MATRIX_ref& mat_t = MGetIdent()) const noexcept { obj_body.SetFrameLocalMatrix(id.first, mat_t * MATRIX_ref::Mtrans(id.second)); }
 		template<class Map>
@@ -4078,6 +4072,11 @@ public:
 					}
 				}
 			}
+			//エンジン音
+			if (!this->get_audio().engine.check()) {
+				this->get_audio().engine.vol(64);
+				this->get_audio().engine.play_3D(this->move.pos, 50.f);
+			}
 		}
 		//判定起動
 		const bool set_ref_col(VECTOR_ref& StartPos, VECTOR_ref& EndPos) {
@@ -4117,6 +4116,7 @@ public:
 				}
 			}
 			this->reset();
+			this->audio.Dispose();
 		}
 		void Draw() {
 			MV1SetFrameTextureAddressTransform(this->obj.get(), 0, -this->wheel_Left * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);

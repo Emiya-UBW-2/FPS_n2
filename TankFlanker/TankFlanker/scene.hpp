@@ -54,9 +54,9 @@ public:
 			DebugPTs = DebugPTs_t;
 			effsorce = effsorce_t;
 
-			this->decision = SoundHandle::Load("data/audio/shot_2.wav");//
-			this->cancel = SoundHandle::Load("data/audio/cancel.wav");
-			this->cursor = SoundHandle::Load("data/audio/cursor.wav");
+			this->decision = SoundHandle::Load("data/audio/chara/shot_2.wav");//
+			this->cancel = SoundHandle::Load("data/audio/chara/cancel.wav");
+			this->cursor = SoundHandle::Load("data/audio/chara/cursor.wav");
 		}
 
 
@@ -432,7 +432,7 @@ public:
 	public:
 		SELECT(void) noexcept {
 			UIparts = std::make_unique<UIclass::UI_CUSTOM>();
-			this->assemble = SoundHandle::Load("data/audio/assemble.wav");
+			this->assemble = SoundHandle::Load("data/audio/chara/assemble.wav");
 		}
 		void Set(void) noexcept  override {
 			TEMPSCENE::Set();

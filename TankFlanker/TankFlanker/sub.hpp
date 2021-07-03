@@ -753,7 +753,7 @@ public:
 	size_t pt_sel_ = 0;						//ベースパーツの番号(マウントなど)
 };
 //
-class shaders2D {
+class shaders {
 public:
 	int pshandle{ -1 }, vshandle{ -1 };
 	int pscbhandle{ -1 };
@@ -870,7 +870,7 @@ protected:
 		float rad{ 0.f };
 	};
 
-	//銃用オーディオ
+	//キャラ用オーディオ
 	class Audios {
 	private:
 	public:
@@ -896,23 +896,25 @@ protected:
 		void Set(int mdata) {
 			SetUseASyncLoadFlag(TRUE);
 			SetCreate3DSoundFlag(TRUE);
-			shot_path = "data/audio/shot_" + getparams::_str(mdata) + ".wav";
-			shot = SoundHandle::Load(shot_path);
-			slide_path = "data/audio/slide_" + getparams::_str(mdata) + ".wav";
-			slide = SoundHandle::Load(slide_path);
-			trigger_path = "data/audio/trigger_" + getparams::_str(mdata) + ".wav";
-			trigger = SoundHandle::Load(trigger_path);
-			magazine_down = SoundHandle::Load("data/audio/mag_down_" + getparams::_str(mdata) + ".wav");
-			magazine_Set = SoundHandle::Load("data/audio/mag_set_" + getparams::_str(mdata) + ".wav");
-			case_down = SoundHandle::Load("data/audio/case_2.wav");
-			load_ = SoundHandle::Load("data/audio/load.wav");
-			sort_magazine = SoundHandle::Load("data/audio/sort.wav");
-			foot_ = SoundHandle::Load("data/audio/foot_sand.wav");
-			voice_damage = SoundHandle::Load("data/audio/voice/damage.wav");
-			voice_death = SoundHandle::Load("data/audio/voice/death.wav");
-			voice_breath = SoundHandle::Load("data/audio/voice/breath.wav");
-			voice_breath_run = SoundHandle::Load("data/audio/voice/breath_run.wav");
-			explosion = SoundHandle::Load("data/audio/explosion.wav");
+			shot_path = "data/audio/chara/shot_" + getparams::_str(mdata) + ".wav";
+			shot			 = SoundHandle::Load(shot_path);
+			slide_path = "data/audio/chara/slide_" + getparams::_str(mdata) + ".wav";
+			slide			 = SoundHandle::Load(slide_path);
+			trigger_path = "data/audio/chara/trigger_" + getparams::_str(mdata) + ".wav";
+			trigger			 = SoundHandle::Load(trigger_path);
+			magazine_down	 = SoundHandle::Load("data/audio/chara/mag_down_" + getparams::_str(mdata) + ".wav");
+			magazine_Set	 = SoundHandle::Load("data/audio/chara/mag_set_" + getparams::_str(mdata) + ".wav");
+			case_down		 = SoundHandle::Load("data/audio/chara/case_2.wav");
+			load_			 = SoundHandle::Load("data/audio/chara/load.wav");
+			sort_magazine	 = SoundHandle::Load("data/audio/chara/sort.wav");
+			foot_			 = SoundHandle::Load("data/audio/chara/foot_sand.wav");
+			explosion		 = SoundHandle::Load("data/audio/chara/explosion.wav");
+
+			voice_damage		 = SoundHandle::Load("data/audio/voice/damage.wav");
+			voice_death			 = SoundHandle::Load("data/audio/voice/death.wav");
+			voice_breath		 = SoundHandle::Load("data/audio/voice/breath.wav");
+			voice_breath_run	 = SoundHandle::Load("data/audio/voice/breath_run.wav");
+
 			SetCreate3DSoundFlag(FALSE);
 			SetUseASyncLoadFlag(FALSE);
 
@@ -954,6 +956,44 @@ protected:
 			this->voice_death.Dispose();
 			this->voice_breath.Dispose();
 			this->voice_breath_run.Dispose();
+		}
+	};
+	//戦車用オーディオ
+	class Audios_tanks {
+	private:
+	public:
+		SoundHandle damage;
+		SoundHandle fire;
+		SoundHandle reload;
+		SoundHandle ricochet;
+		SoundHandle engine;
+		//
+		void Set(int mdata) {
+			SetUseASyncLoadFlag(TRUE);
+			SetCreate3DSoundFlag(TRUE);
+			damage = SoundHandle::Load("data/audio/tank/damage/" + getparams::_str(mdata) + ".wav");
+			fire = SoundHandle::Load("data/audio/tank/fire/" + getparams::_str(mdata) + ".wav");
+			reload = SoundHandle::Load("data/audio/tank/reload/" + getparams::_str(mdata) + ".wav");
+			ricochet = SoundHandle::Load("data/audio/tank/ricochet/" + getparams::_str(mdata) + ".wav");
+			engine = SoundHandle::Load("data/audio/tank/engine.wav");
+			SetCreate3DSoundFlag(FALSE);
+			SetUseASyncLoadFlag(FALSE);
+		}
+		void Duplicate(const Audios_tanks& tgt) {
+			SetCreate3DSoundFlag(TRUE);
+			this->damage = tgt.damage.Duplicate();
+			this->fire = tgt.fire.Duplicate();
+			this->reload = tgt.reload.Duplicate();
+			this->ricochet = tgt.ricochet.Duplicate();
+			this->engine = tgt.engine.Duplicate();
+			SetCreate3DSoundFlag(FALSE);
+		}
+		void Dispose(void) noexcept {
+			this->damage.Dispose();
+			this->fire.Dispose();
+			this->reload.Dispose();
+			this->ricochet.Dispose();
+			this->engine.Dispose();
 		}
 	};
 	//弾データ
@@ -2168,6 +2208,9 @@ protected:
 				this->rounds = std::max<uint16_t>(this->rounds - 1, 0);
 				this->fired = 1.f;
 				mine->Set_eff(ef_fire, pos_t, vec_t, 0.1f / 0.1f);//ノーマル
+
+				mine_v->get_audio().fire.vol(128);
+				mine_v->get_audio().fire.play_3D(mine_v->move.pos, 250.f);
 			}
 			this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
 			this->fired = std::max(this->fired - 1.f / FPS, 0.f);
@@ -2268,6 +2311,8 @@ protected:
 		std::array<int, 4> square{ 0 };//車輛の四辺
 		std::array<std::vector<frames>, 2> b2upsideframe; /*履帯上*/
 		std::array<std::vector<cat_frame>, 2> b2downsideframe; /*履帯*/
+
+
 		void copy(const Vehcs& t) {
 			this->wheelframe.clear();
 			for (auto& p : t.wheelframe) {
@@ -2303,6 +2348,7 @@ protected:
 			this->pic_y = t.pic_y;
 		}
 	public:
+		Audios_tanks audio;
 		//
 		auto& Get_name() { return name; }
 		const auto& Get_obj()const { return obj; }
@@ -2546,6 +2592,7 @@ protected:
 						g.useammo.emplace_back(getparams::getright(stp));
 					}
 				}
+				this->audio.Set(mdata);						//サウンド
 				FileRead_close(mdata);
 				for (auto& g : this->gunframe) {
 					g.Set_Ammos_after();

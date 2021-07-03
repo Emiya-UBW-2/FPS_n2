@@ -8,8 +8,8 @@ gun_0_name=D-10TG
 gun_0_loadcnt=6.0
 gun_0_round=100
 gun_0_useammo0=BR412D
-gun_1_name=DShK38
-gun_1_loadcnt=0.35
-gun_1_round=1000
-gun_1_useammo0=12.7x108
 end
+damage_sound=0
+fire_sound=0
+reload_sound=0
+ricochet_sound=0

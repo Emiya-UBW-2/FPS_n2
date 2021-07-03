@@ -30,8 +30,8 @@ public:
 		GraphHandle grass_pic;			/*画像ハンドル*/
 		MV1 grass;						/*grassモデル*/
 
-		shaders2D shader;				/*シェーダー*/
-		shaders2D Depth;				/*シェーダー*/
+		shaders shader;				/*シェーダー*/
+		shaders Depth;				/*シェーダー*/
 
 		class grass_t {
 		public:

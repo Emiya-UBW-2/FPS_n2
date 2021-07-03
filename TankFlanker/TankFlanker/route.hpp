@@ -21,7 +21,7 @@ class main_c {
 
 	VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
 
-	std::array<shaders2D, 2> shader2D;
+	std::array<shaders, 2> shader2D;
 
 	std::vector<EffekseerEffectHandle> effsorce; /*エフェクトリソース*/
 
@@ -112,8 +112,8 @@ public:
 			case MAP_LOAD:
 				MAPPTs->Start(MAINLOOPscene->world);
 				MAINLOOPscene->Ready_Chara(
-					1
-					//MAPPTs->get_spawn_point().size()
+					//1
+					MAPPTs->get_spawn_point().size()
 				);	//キャラ設定
 				sel_scene = LOAD;
 				scenes_ptr = LOADscene;
