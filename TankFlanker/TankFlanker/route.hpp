@@ -81,7 +81,7 @@ public:
 		shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																						//レンズ
 		shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");															//歪み
 		//MAP
-		auto MAPPTs = std::make_shared<MAPclass::Map>(OPTPTs->grass_level);
+		auto MAPPTs = std::make_shared<MAPclass::Map>(OPTPTs->grass_level, DrawPts->disp_x, DrawPts->disp_y);
 		//キー読み込み
 		auto KeyBind = std::make_shared<key_bind>();
 		auto PauseMenu = std::make_shared<pause_menu>(KeyBind);
@@ -105,21 +105,18 @@ public:
 				scenes_ptr = UI_LOADPTs;
 				break;
 			case ITEM_LOAD:
-				MAINLOOPscene->Start();
+				MAINLOOPscene->Start();											//メインループ開始読み込み
 				sel_scene = MAP_LOAD;
 				scenes_ptr = UI_LOADPTs;
 				break;
 			case MAP_LOAD:
-				MAPPTs->Start(MAINLOOPscene->world);
-				MAINLOOPscene->Ready_Chara(
-					//1
-					MAPPTs->get_spawn_point().size()
-				);	//キャラ設定
+				MAPPTs->Start();												//マップパーツ生成
+				MAINLOOPscene->Ready_Chara(MAPPTs->get_spawn_point().size());	//キャラ設定
 				sel_scene = LOAD;
 				scenes_ptr = LOADscene;
 				break;
 			case LOAD:
-				SELECTscene->preset = LOADscene->putout_preset();
+				SELECTscene->Start(LOADscene->putout_preset());					//プリセットを指定
 				sel_scene = SELECT;
 				scenes_ptr = SELECTscene;
 				break;
@@ -128,7 +125,7 @@ public:
 				scenes_ptr = MAINLOOPscene;
 				break;
 			case MAIN_LOOP:
-				MAPPTs->Dispose();
+				MAPPTs->Dispose();												//マップを消去
 				sel_scene = MAP_LOAD;
 				scenes_ptr = UI_LOADPTs;
 				break;
@@ -136,8 +133,8 @@ public:
 			//開始
 			{
 				if (sel_scene == MAP_LOAD) {
-					MAPPTs->Ready_map("data/map", DrawPts->disp_x, DrawPts->disp_y);//マップ読み込み
-					UI_LOADPTs->settitle("マップ");									//マップ読み込み
+					MAPPTs->Ready_map("data/map");	//マップ読み込み
+					UI_LOADPTs->settitle("マップ");	//マップ読み込み
 				}
 				scenes_ptr->Set();
 				DrawPts->Set_Light_Shadow(scenes_ptr->get_Shadow_maxpos(), scenes_ptr->get_Shadow_minpos(), scenes_ptr->get_Light_vec(), [&] {scenes_ptr->Shadow_Draw_Far(); });

@@ -2282,7 +2282,7 @@ protected:
 	//—š‘ÑBOX2D
 	class FootWorld {
 	public:
-		std::unique_ptr<b2World> world{ nullptr };		/*‘«world*/
+		std::shared_ptr<b2World> world{ nullptr };		/*‘«world*/
 		b2RevoluteJointDef f_jointDef;					/*ƒWƒ‡ƒCƒ“ƒg*/
 		std::vector<b2Pats> Foot, Wheel, Yudo;			/**/
 	};

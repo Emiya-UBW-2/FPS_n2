@@ -434,6 +434,11 @@ public:
 			UIparts = std::make_unique<UIclass::UI_CUSTOM>();
 			this->assemble = SoundHandle::Load("data/audio/chara/assemble.wav");
 		}
+
+		void Start(std::string_view set_str) {
+			preset = set_str;
+		}
+
 		void Set(void) noexcept  override {
 			TEMPSCENE::Set();
 			UIparts->Init(DrawPts, MAPPTs);
@@ -875,9 +880,6 @@ public:
 		std::vector<Mainclass::Vehcs> vehcs;
 		std::vector<std::shared_ptr<PLAYERclass::vehicles>> vehicle;
 	public:
-		std::unique_ptr<b2World> world;
-
-
 		const std::shared_ptr<PLAYERclass::Chara>& Get_Mine(void) noexcept { return this->chara[0]; }
 		std::vector<GUNPARTs>* get_parts_data(EnumGunParts type_sel) noexcept {
 			switch (type_sel) {
@@ -966,8 +968,6 @@ public:
 			//
 			MAPPTs = MAPPTs_t;
 			OPTPTs = OPTPTs_t;
-			/*BOX2D*/
-			world = std::make_unique<b2World>(b2Vec2(0.0f, 0.0f)); /* 剛体を保持およびシミュレートするワールドオブジェクトを構築*/
 			//
 			RULEparts = std::make_shared<RULE_parts>();
 			UIparts = std::make_unique<UIclass::UI_MAINLOOP>(RULEparts);
@@ -1035,7 +1035,8 @@ public:
 		void Ready_Chara(const size_t &spawn_total) noexcept {
 			//キャラ設定
 			for (auto i = 0; i < spawn_total; ++i) {
-				this->chara.emplace_back(std::make_shared<PLAYERclass::Chara>(MAPPTs, DrawPts, DebugPTs, gun_data, 0, body_obj, body_obj_lag, body_col));
+				this->chara.emplace_back(std::make_shared<PLAYERclass::Chara>(MAPPTs, DrawPts));
+				this->chara.back()->Set(gun_data, 0, body_obj, body_obj_lag, body_col);
 			}
 		}
 	public:
@@ -1089,8 +1090,8 @@ public:
 				//共通
 				vehicle.resize(2);
 				for (auto& v : this->vehicle) {
-					v = std::make_shared<PLAYERclass::vehicles>();
-					v->Set(vehcs[0], world, gndsmkHndle);
+					v = std::make_shared<PLAYERclass::vehicles>(MAPPTs, DrawPts);
+					v->Set(vehcs[0], gndsmkHndle);
 				}
 			}
 		}
@@ -1132,7 +1133,7 @@ public:
 			for (auto& v : this->vehicle) {
 				v->UpDate(this->camera_main, this->Get_Mine(), this->chara, vehicle, hit_obj_p, hit_b_obj_p, MAPPTs);
 			}
-			world->Step(1.f, 1, 1);
+			MAPPTs->world->Step(1.f, 1, 1);
 			for (auto& v : this->vehicle) {
 				v->UpDate_after();
 			}

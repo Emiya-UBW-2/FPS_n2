@@ -120,7 +120,9 @@ public:
 				}
 			}
 		};
+
 	public:
+		std::shared_ptr<b2World> world;
 
 		GraphHandle DepthScreen;		// 深度を取得するスクリーン
 
@@ -137,7 +139,8 @@ public:
 		};
 
 		std::vector<wallPats> wall;					//壁をセット
-
+		int dispx = 1920;
+		int dispy = 1080;
 	public:
 		std::vector<VECTOR_ref>& get_waypoint(void) noexcept { return way_point; }
 		std::vector<VECTOR_ref>& get_leanpoint_q(void) noexcept { return lean_point_q; }
@@ -146,7 +149,9 @@ public:
 		GraphHandle& get_minmap(void) noexcept { return minmap; }
 		int& get_x_size(void) noexcept { return x_size; }
 		int& get_y_size(void) noexcept { return y_size; }
-		Map(int grass_level) noexcept {
+		Map(int grass_level, int dispx_t, int dispy_t) noexcept {
+			dispx = dispx_t;
+			dispy = dispy_t;
 			switch (grass_level) {
 			case 0:
 				grasss = 0;
@@ -167,9 +172,11 @@ public:
 				grasss = 0;
 				break;
 			}
+
+			this->world = std::make_shared<b2World>(b2Vec2(0.0f, 0.0f)); /* 剛体を保持およびシミュレートするワールドオブジェクトを構築*/
 		}
 		~Map(void) noexcept { }
-		void Ready_map(std::string dir, int dispx,int dispy) noexcept {
+		void Ready_map(std::string dir) noexcept {
 			this->path = dir + "/";
 			MV1::Load(this->path + "model.mv1", &map, true);		   //map
 			MV1::Load(this->path + "col.mv1", &map_col, true);		   //mapコリジョン
@@ -202,7 +209,7 @@ public:
 			shader.Init("NormalMesh_PointLightVS.vso", "NormalMesh_PointLightPS.pso");
 			Depth.Init("DepthVS.vso", "DepthPS.pso");
 		}
-		void Start(std::unique_ptr<b2World>& world) noexcept {
+		void Start() noexcept {
 			//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			VECTOR_ref size;
 			{
@@ -295,7 +302,7 @@ public:
 					bodyDef.type = b2_staticBody;			       /**/
 					bodyDef.position.Set(0, 0);			       /**/
 					bodyDef.angle = 0.f;				       /**/
-					w.b2.Set(world->CreateBody(&bodyDef), &chain);
+					w.b2.Set(this->world->CreateBody(&bodyDef), &chain);
 				}
 			}
 			SetFogStartEnd(40.0f - 15.f, 40.f);

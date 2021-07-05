@@ -12,10 +12,19 @@ public:
 	class vehicles;
 	class Chara;
 
-	class Chara: public std::enable_shared_from_this<Chara> {
+	class PLAYER_COMMON {
+	protected:
 		std::shared_ptr<MAPclass::Map> MAPPTs{ nullptr };	//引き継ぐ
 		std::shared_ptr<DXDraw> DrawPts{ nullptr };		//引き継ぐ
-		std::shared_ptr<DeBuG> DebugPTs{ nullptr };		//仮
+	public:
+		/*コンストラクタ*/
+		PLAYER_COMMON(std::shared_ptr<MAPclass::Map>& MAPPTs_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+			DrawPts = DrawPts_t;
+			MAPPTs = MAPPTs_t;
+		}
+	};
+
+	class Chara : public std::enable_shared_from_this<Chara>, public PLAYER_COMMON {
 	public:
 		//銃に着けるパーツ
 		class GPARTS_COMMON {
@@ -1184,6 +1193,9 @@ public:
 		const auto& get_canget_med(void) const noexcept { return canget_med; }															//item関連
 	public:
 		//
+		void set_basepos(const VECTOR_ref& pos_t) {
+			this->pos_tt = pos_t;
+		}
 		const MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, const int sel) const noexcept {
 			return obj_col.CollCheck_Line(StartPos, EndPos, -1, sel);
 		}
@@ -2041,7 +2053,6 @@ public:
 				break;
 			}
 			//y～z 0.00ms
-			//(*DebugPTs)->end_way();
 			x_m = std::clamp(x_m, -40, 40);
 			y_m = std::clamp(y_m, -40, 40);
 			x_t = float(x_m);
@@ -2790,18 +2801,8 @@ public:
 			for (auto& t : this->effcs_gndhit) { t.put((*effsorce)[ef_gndsmoke]); }
 		}
 	public:
-		/*コンストラクタ*/
-		Chara(
-			std::shared_ptr<MAPclass::Map>& MAPPTs_t,
-			std::shared_ptr<DXDraw>& DrawPts_t,
-			//std::shared_ptr<OPTION>& OPTPTs_t,
-			std::shared_ptr<DeBuG>& DebugPTs_t,
-			std::vector<GUNPARTs>& gun_data, size_t itr, MV1& body_, MV1& bodylag_, MV1& col_
-			) noexcept {
-			DrawPts = DrawPts_t;
-			//OPTPTs = OPTPTs_t;
-			MAPPTs = MAPPTs_t;
-			DebugPTs = DebugPTs_t;
+		using PLAYER_COMMON::PLAYER_COMMON;
+		void Set(std::vector<GUNPARTs>& gun_data, size_t itr, MV1& body_, MV1& bodylag_, MV1& col_) {
 			//身体
 			{
 				//身体
@@ -3560,13 +3561,7 @@ public:
 		}
 	};
 
-	class vehicles : public std::enable_shared_from_this<vehicles> {
-	private:
-		b2Pats b2mine;																/*box2d*/
-		float spd_buf = 0.f;														/*box2d*/
-
-		MV1 obj;																	/**/
-		bool hit_check = false;														//当たり判定を取るかチェック
+	class vehicles : public std::enable_shared_from_this<vehicles>, public PLAYER_COMMON {
 	public:
 		Vehcs use_veh;																/*固有値*/
 		MV1 col;																	/**/
@@ -3574,6 +3569,11 @@ public:
 		std::vector<MV1_COLL_RESULT_POLY> hitres;									/*確保*/
 		std::vector<pair_hit> hitssort;												/*フレームに当たった順番*/
 	private:
+		b2Pats b2mine;																/*box2d*/
+		float spd_buf = 0.f;														/*box2d*/
+		MV1 obj;																	/**/
+		bool hit_check = false;														//当たり判定を取るかチェック
+
 		std::vector<Guns> Gun_;														/**/
 		float speed = 0.f, speed_add = 0.f, speed_sub = 0.f;						/**/
 		float xrad = 0.f, xradadd = 0.f, xradadd_left = 0.f, xradadd_right = 0.f;	/**/
@@ -3596,8 +3596,9 @@ public:
 
 		Audios_tanks audio;
 	public:
-		const auto& get_audio() const noexcept { return this->audio; }																	//audio(メニューのみ)
+		using PLAYER_COMMON::PLAYER_COMMON;
 
+		const auto& get_audio() const noexcept { return this->audio; }																	//audio(メニューのみ)
 
 		unsigned int got_damage_color{ 0 };
 		int got_damage_x{ 0 };
@@ -3615,8 +3616,7 @@ public:
 			return col.CollCheck_Line(StartPos, EndPos, -1, sel);
 		}
 		/*カメラ指定*/
-		template<class Y>
-		void Set_cam(std::shared_ptr<Y>& MAPPTs, cam_info& camera_main, const VECTOR_ref& eyevec, const float fov_) noexcept {
+		void Set_cam(cam_info& camera_main, const VECTOR_ref& eyevec, const float fov_) noexcept {
 			float range = 7.5f;
 			VECTOR_ref eyepos = this->move.pos + (this->move.mat.yvec() * 3.f) + eyevec * range;
 			VECTOR_ref eyetgt = eyepos + eyevec * (-range);
@@ -3663,14 +3663,14 @@ public:
 				f.world.reset();
 			}
 		}
-		static b2Body* CreateBody(std::unique_ptr<b2World>& world, b2BodyType type, float32 x_, float32 y_, float angle = 0) {
+		static b2Body* CreateBody(std::shared_ptr<b2World>& world, b2BodyType type, float32 x_, float32 y_, float angle = 0) {
 			b2BodyDef f_bodyDef;
 			f_bodyDef.type = type;
 			f_bodyDef.position.Set(x_, y_);
 			f_bodyDef.angle = angle;
 			return world->CreateBody(&f_bodyDef);
 		}
-		void Set(const Vehcs& tgt, std::unique_ptr<b2World>& world, const EffekseerEffectHandle& gndsmkHndle) {
+		void Set(const Vehcs& tgt, const EffekseerEffectHandle& gndsmkHndle) {
 			//初期位置
 			this->move.pos = VGet(1.f, 10.f, 0);
 			this->move.mat = MATRIX_ref::RotY(deg2rad(0.f));
@@ -3684,7 +3684,7 @@ public:
 			VECTOR_ref minmaxadd = this->use_veh.Get_minpos() + this->use_veh.Get_maxpos();
 			b2PolygonShape dynamicBox;
 			dynamicBox.SetAsBox(minmaxsub.x() / 2, minmaxsub.z() / 2, b2Vec2(minmaxadd.x() / 2, -minmaxadd.z() / 2), 0.f);	/*ダイナミックボディに別のボックスシェイプを定義します。*/
-			this->b2mine.Set(CreateBody(world, b2_dynamicBody, this->move.pos.x(), this->move.pos.z(), atan2f(-this->move.mat.zvec().x(), -this->move.mat.zvec().z())), &dynamicBox);	/*シェイプをボディに追加*/
+			this->b2mine.Set(CreateBody(MAPPTs->world, b2_dynamicBody, this->move.pos.x(), this->move.pos.z(), atan2f(-this->move.mat.zvec().x(), -this->move.mat.zvec().z())), &dynamicBox);	/*シェイプをボディに追加*/
 			for (auto& f : foot) {
 				f.world = std::make_unique<b2World>(b2Vec2(0.0f, 0.0f));
 				float LorR = ((&f == &foot.front()) ? 1.f : -1.f);
