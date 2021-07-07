@@ -15,12 +15,33 @@ public:
 	class PLAYER_COMMON {
 	protected:
 		std::shared_ptr<MAPclass::Map> MAPPTs{ nullptr };	//引き継ぐ
-		std::shared_ptr<DXDraw> DrawPts{ nullptr };		//引き継ぐ
+		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
+		moves move;											//プレイヤー座標
+		MV1 obj_body;										//本体オブジェ
+		MV1 obj_col;										//本体コリジョン
+		float speed{ 0.f };								//移動速度
 	public:
+		//HPバー
+		unsigned int got_damage_color{ 0 };
+		int got_damage_x{ 0 };
+		float got_damage_f{ 0.f };
+		std::vector<damage_rad> got_damage_;
+		int got_damage{ 0 };
+		int HP{ 100 };
+		float HP_r{ 100.f };
+		int HP_full{ 100 };
+		std::vector<int> HP_parts;
+	public:
+		const auto& get_move() const noexcept { return this->move; }
+
 		/*コンストラクタ*/
 		PLAYER_COMMON(std::shared_ptr<MAPclass::Map>& MAPPTs_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
 			DrawPts = DrawPts_t;
 			MAPPTs = MAPPTs_t;
+		}
+
+		const MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, const int sel) const noexcept {
+			return obj_col.CollCheck_Line(StartPos, EndPos, -1, sel);
 		}
 	};
 
@@ -274,7 +295,7 @@ public:
 					case PARTS_SIGHT:
 					{
  						this->reticle = this->thisparts->reticle.Duplicate();
-						auto check_col = this->obj.SetupCollInfo(1, 1, 1, -1, 1);//
+						this->obj.SetupCollInfo(1, 1, 1, -1, 1);//
 						break;
 					}
 					case PARTS_LAM:
@@ -289,7 +310,7 @@ public:
 			}
 			const auto Draw_reticle_UI(bool ads) noexcept {
 				if (IsActive() && ads) {
-					auto check_col = this->obj.RefreshCollInfo(-1, 1);
+					this->obj.RefreshCollInfo(-1, 1);
 					VECTOR_ref sightpos = this->obj.frame(3);
 					if (
 						this->obj.CollCheck_Line(GetCameraPosition(), sightpos, -1, 1).HitFlag == TRUE
@@ -997,10 +1018,7 @@ public:
 			}
 		};
 	private:
-		MV1 obj_body;									//本体オブジェ
 		MV1 obj_lag;									//ラグドール
-		MV1 obj_col;									//本体コリジョン
-		moves move;										//プレイヤー座標
 		moves spawn;									//プレイヤースポーン座標
 		VECTOR_ref add_vec_buf, add_vec_real;			//移動ベクトルバッファ
 		VECTOR_ref pos_tt;								/*プレイヤー位置*/
@@ -1030,7 +1048,6 @@ public:
 		float reload_cnt{ 0.f };						//リロード開始までのカウント
 		switchs trigger;								//トリガー
 		bool nearhit{ false };							//
-		float speed{ 0.f };								//移動速度
 		MATRIX_ref mat_body;							//位置
 		float xrad_p{ 0.f };							//マウスエイム用変数確保
 		bool sort_ing{ false };							//整頓
@@ -1097,16 +1114,6 @@ public:
 		bool gre_eff{ false };
 		/*所持弾数などの武器データ*/
 		GUN_STATUS* gun_stat_now{ nullptr };
-		//HPバー
-		unsigned int got_damage_color{ 0 };
-		int got_damage_x{ 0 };
-		float got_damage_f{ 0.f };
-		std::vector<damage_rad> got_damage_;
-		int got_damage{ 0 };
-		int HP{ 100 };
-		float HP_r{ 100.f };
-		int HP_full{ 100 };
-		std::vector<int> HP_parts;
 		//スコア
 		score_s scores;
 		bool sort_f{ false };
@@ -1195,9 +1202,6 @@ public:
 		//
 		void set_basepos(const VECTOR_ref& pos_t) {
 			this->pos_tt = pos_t;
-		}
-		const MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, const int sel) const noexcept {
-			return obj_col.CollCheck_Line(StartPos, EndPos, -1, sel);
 		}
 		void Set_eff(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) {
 			this->effcs[ef_].Set(pos_t, nomal_t, scale);
@@ -1836,7 +1840,6 @@ public:
 			VECTOR_ref vec_to;
 			//
 			auto poss = this->get_pos();
-			auto& waypoint = MAPPTs->get_waypoint();
 			auto vec_mat = this->BodyFrameMatrix(this->frame_s.head_f.first);
 			auto vec_x = vec_mat.xvec();
 			auto vec_y = vec_mat.yvec();
@@ -1883,7 +1886,6 @@ public:
 				}
 			}
 			//
-							//*
 			if (this->key_.ekey) {
 				this->cpu_do.ai_time_e += 1.f / FPS;
 				if (this->cpu_do.ai_time_e >= 2) {
@@ -1891,7 +1893,7 @@ public:
 					this->cpu_do.ai_time_e = 0.f;
 				}
 			}
-			for (auto& w : MAPPTs->get_leanpoint_e()) {
+			for (const auto& w : MAPPTs->get_leanpoint_e()) {
 				if ((w - poss).size() <= 0.5f) {
 					this->key_.ekey = true;
 					this->key_.qkey = false;
@@ -1906,7 +1908,7 @@ public:
 					this->cpu_do.ai_time_q = 0.f;
 				}
 			}
-			for (auto& w : MAPPTs->get_leanpoint_q()) {
+			for (const auto& w : MAPPTs->get_leanpoint_q()) {
 				if ((w - poss).size() <= 0.5f) {
 					this->key_.ekey = false;
 					this->key_.qkey = true;
@@ -1914,7 +1916,6 @@ public:
 					break;
 				}
 			}
-			//*/
 			//
 			switch (this->cpu_do.ai_phase) {
 			case 0://通常フェイズ
@@ -1939,7 +1940,7 @@ public:
 					vec_to = chara[turn]->get_pos() - poss;
 				}
 				else {
-					vec_to = waypoint[this->cpu_do.wayp_pre.front()] - poss;
+					vec_to = MAPPTs->get_waypoint()[this->cpu_do.wayp_pre.front()] - poss;
 					vec_to.y(0.f);
 				}
 				//到達時に判断
@@ -2036,7 +2037,7 @@ public:
 					this->cpu_do.ai_reload = false;
 				}
 				//向き指定
-				vec_to = waypoint[this->cpu_do.wayp_pre.front()] - poss;
+				vec_to = MAPPTs->get_waypoint()[this->cpu_do.wayp_pre.front()] - poss;
 				vec_to.y(0.f);
 				//到達時
 				if (vec_to.size() <= 0.5f) {
@@ -3562,20 +3563,47 @@ public:
 	};
 
 	class vehicles : public std::enable_shared_from_this<vehicles>, public PLAYER_COMMON {
+	private:
+		typedef std::pair<size_t, float> pair_hit;
+		class foot_frame {
+		public:
+			frames frame;
+			float will_y = 0.f;
+		};
+		class cat_frame {
+		public:
+			frames frame;
+			float will_y = 0.f;
+			MV1_COLL_RESULT_POLY colres;
+			EffectS gndsmkeffcs;
+			float gndsmksize = 1.f;
+
+			cat_frame() {
+				frame.first = -1;
+				will_y = 0.f;
+				gndsmksize = 1.f;
+			}
+			cat_frame(const cat_frame& tgt) {
+				frame = tgt.frame;
+				will_y = 0.f;
+				gndsmksize = 1.f;
+			}
+			void operator=(const cat_frame& tgt) {
+				frame = tgt.frame;
+			}
+		};
 	public:
-		Vehcs use_veh;																/*固有値*/
-		MV1 col;																	/**/
-		moves move;
+		Vehcs* use_veh;																/*固有値*/
+	private:
 		std::vector<MV1_COLL_RESULT_POLY> hitres;									/*確保*/
 		std::vector<pair_hit> hitssort;												/*フレームに当たった順番*/
-	private:
+
 		b2Pats b2mine;																/*box2d*/
 		float spd_buf = 0.f;														/*box2d*/
-		MV1 obj;																	/**/
 		bool hit_check = false;														//当たり判定を取るかチェック
 
 		std::vector<Guns> Gun_;														/**/
-		float speed = 0.f, speed_add = 0.f, speed_sub = 0.f;						/**/
+		float speed_add = 0.f, speed_sub = 0.f;										/**/
 		float xrad = 0.f, xradadd = 0.f, xradadd_left = 0.f, xradadd_right = 0.f;	/**/
 		float yrad = 0.f, yradadd = 0.f, yradadd_left = 0.f, yradadd_right = 0.f;	/**/
 		float zrad = 0.f, zradadd = 0.f, zradadd_left = 0.f, zradadd_right = 0.f;	/**/
@@ -3595,26 +3623,23 @@ public:
 		float body_yrad{ 0.f };							//胴体角度
 
 		Audios_tanks audio;
+
+		std::vector<foot_frame> wheelframe;						/**/
+		std::array<std::vector<cat_frame>, 2> b2downsideframe; /*履帯*/
 	public:
-		using PLAYER_COMMON::PLAYER_COMMON;
-
-		const auto& get_audio() const noexcept { return this->audio; }																	//audio(メニューのみ)
-
-		unsigned int got_damage_color{ 0 };
-		int got_damage_x{ 0 };
-		float got_damage_f{ 0.f };
-		std::vector<damage_rad> got_damage_;
-		int got_damage{ 0 };
-		int HP{ 100 };
-		float HP_r{ 100.f };
-		int HP_full{ 100 };
-		std::vector<int> HP_parts;
 		float spd_rec;
 
-		const float& get_body_yrad(void) const noexcept { return this->body_yrad; }														//ミニマップ用
-		const MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, const int sel) const noexcept {
-			return col.CollCheck_Line(StartPos, EndPos, -1, sel);
+		using PLAYER_COMMON::PLAYER_COMMON;
+
+		void sort_Hit() {
+			std::sort(this->hitssort.begin(), this->hitssort.end(), [](const pair_hit& x, const pair_hit& y) { return x.second < y.second; });
 		}
+		auto& get_hitssort() noexcept { return this->hitssort; }
+		auto& get_hitres() noexcept { return this->hitres; }
+
+		const auto& get_audio() const noexcept { return this->audio; }																	//audio(メニューのみ)
+		const float& get_body_yrad(void) const noexcept { return this->body_yrad; }														//ミニマップ用
+
 		/*カメラ指定*/
 		void Set_cam(cam_info& camera_main, const VECTOR_ref& eyevec, const float fov_) noexcept {
 			float range = 7.5f;
@@ -3630,8 +3655,8 @@ public:
 			easing_set(&camera_main.fov, fov_, 0.9f);
 		}
 		void reset() {
-			this->obj.Dispose();
-			this->col.Dispose();
+			this->obj_body.Dispose();
+			this->obj_col.Dispose();
 			this->hit_check = false;
 			this->HP = 0;
 			this->HP_parts.clear();
@@ -3670,18 +3695,18 @@ public:
 			f_bodyDef.angle = angle;
 			return world->CreateBody(&f_bodyDef);
 		}
-		void Set(const Vehcs& tgt, const EffekseerEffectHandle& gndsmkHndle) {
+		void Set(Vehcs* tgt, const EffekseerEffectHandle& gndsmkHndle) {
 			//初期位置
 			this->move.pos = VGet(1.f, 10.f, 0);
 			this->move.mat = MATRIX_ref::RotY(deg2rad(0.f));
 			//
 			this->use_veh = tgt;
-			this->obj = tgt.Get_obj().Duplicate();
-			this->col = tgt.Get_col().Duplicate();
-			this->obj.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
+			this->obj_body = this->use_veh->Get_obj().Duplicate();
+			this->obj_col = this->use_veh->Get_col().Duplicate();
+			this->obj_body.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			//戦車物理set
-			VECTOR_ref minmaxsub = this->use_veh.Get_maxpos() - this->use_veh.Get_minpos();
-			VECTOR_ref minmaxadd = this->use_veh.Get_minpos() + this->use_veh.Get_maxpos();
+			VECTOR_ref minmaxsub = this->use_veh->Get_maxpos() - this->use_veh->Get_minpos();
+			VECTOR_ref minmaxadd = this->use_veh->Get_minpos() + this->use_veh->Get_maxpos();
 			b2PolygonShape dynamicBox;
 			dynamicBox.SetAsBox(minmaxsub.x() / 2, minmaxsub.z() / 2, b2Vec2(minmaxadd.x() / 2, -minmaxadd.z() / 2), 0.f);	/*ダイナミックボディに別のボックスシェイプを定義します。*/
 			this->b2mine.Set(CreateBody(MAPPTs->world, b2_dynamicBody, this->move.pos.x(), this->move.pos.z(), atan2f(-this->move.mat.zvec().x(), -this->move.mat.zvec().z())), &dynamicBox);	/*シェイプをボディに追加*/
@@ -3698,7 +3723,7 @@ public:
 					BodyB->CreateFixture(&shape, 0.0f);
 					b2Body* BodyA = BodyB;
 					b2Vec2 anchor;
-					for (auto& w : this->use_veh.Get_b2upsideframe()[&f - &foot.front()]) {
+					for (const auto& w : this->use_veh->Get_b2upsideframe(&f - &foot.front())) {
 						anchor = b2Vec2(w.second.z(), w.second.y());
 						if (w.second.x() * LorR > 0) {
 							f.Foot.resize(f.Foot.size() + 1);
@@ -3715,8 +3740,11 @@ public:
 						f.world->CreateJoint(&f.f_jointDef);
 					}
 				}
-				for (auto& w : this->use_veh.Get_b2downsideframe()) {
-					for (auto& t : w) {
+				for (const auto& w : this->use_veh->Get_b2downsideframe()) {
+					auto& w2 = this->b2downsideframe[&w - &this->use_veh->Get_b2downsideframe().front()];
+					w2.resize(w.size());
+					for (auto& t : w2) {
+						t.frame = w[&t - &w2.front()];
 						t.gndsmkeffcs.set_loop(gndsmkHndle);
 						t.gndsmksize = 0.1f;
 					}
@@ -3726,8 +3754,10 @@ public:
 				f.Yudo.clear();
 				if (!f.Foot.empty()) {
 					//転輪(動く)
-					for (auto& w : this->use_veh.Get_wheelframe()) {
-						VECTOR_ref vects = this->obj.GetFrameLocalMatrix(w.frame.first).pos();
+					for (const auto& w : this->use_veh->Get_wheelframe()) {
+						this->wheelframe.resize(this->wheelframe.size() + 1);
+						this->wheelframe.back().frame = w;
+						VECTOR_ref vects = this->obj_body.GetFrameLocalMatrix(w.first).pos();
 						if (vects.x() * LorR > 0) {
 							f.Wheel.resize(f.Wheel.size() + 1);
 							b2CircleShape shape;
@@ -3736,8 +3766,8 @@ public:
 						}
 					}
 					//誘導輪(動かない)
-					for (auto& w : this->use_veh.Get_wheelframe_nospring()) {
-						VECTOR_ref vects = this->obj.GetFrameLocalMatrix(w.frame.first).pos();
+					for (const auto& w : this->use_veh->Get_wheelframe_nospring()) {
+						VECTOR_ref vects = this->obj_body.GetFrameLocalMatrix(w.first).pos();
 						if (vects.x() * LorR > 0) {
 							f.Yudo.resize(f.Yudo.size() + 1);
 							b2CircleShape shape;
@@ -3748,23 +3778,23 @@ public:
 				}
 			}
 			//コリジョン
-			for (int j = 0; j < this->col.mesh_num(); j++) {
-				this->col.SetupCollInfo(8, 8, 8, -1, j);
+			for (int j = 0; j < this->obj_col.mesh_num(); j++) {
+				this->obj_col.SetupCollInfo(8, 8, 8, -1, j);
 			}
-			this->hitres.resize(this->col.mesh_num());		//モジュールごとの当たり判定結果を確保
-			this->hitssort.resize(this->col.mesh_num());	//モジュールごとの当たり判定順序を確保
+			this->hitres.resize(this->obj_col.mesh_num());		//モジュールごとの当たり判定結果を確保
+			this->hitssort.resize(this->obj_col.mesh_num());	//モジュールごとの当たり判定順序を確保
 			//砲
-			this->Gun_.resize(this->use_veh.Get_gunframe().size());
-			for (auto& g : this->Gun_) { g.Set(this->use_veh.Get_gunframe()[&g - &this->Gun_.front()]); }
-			this->HP_full = this->use_veh.Get_HP();
+			this->Gun_.resize(this->use_veh->Get_gunframe().size());
+			for (auto& g : this->Gun_) { g.Set(this->use_veh->Get_gunframe(&g - &this->Gun_.front())); }
+			this->HP_full = this->use_veh->Get_HP();
 			//ヒットポイント
 			this->HP = this->HP_full;
-			this->HP_parts.resize(this->col.mesh_num());
+			this->HP_parts.resize(this->obj_col.mesh_num());
 			for (auto& h : this->HP_parts) { h = this->HP_full; }//モジュール耐久
 
-			this->audio.Duplicate(tgt.audio);	//audio
+			this->audio.Duplicate(this->use_veh->audio);	//audio
 		}
-		void BodyFrameLocalMatrix(MV1& obj_body, const frames& id, const MATRIX_ref& mat_t = MGetIdent()) const noexcept { obj_body.SetFrameLocalMatrix(id.first, mat_t * MATRIX_ref::Mtrans(id.second)); }
+		static void BodyFrameLocalMatrix(MV1& obj_body_t, const frames& id, const MATRIX_ref& mat_t = MGetIdent()) noexcept { obj_body_t.SetFrameLocalMatrix(id.first, mat_t * MATRIX_ref::Mtrans(id.second)); }
 		template<class Map>
 		void UpDate(const cam_info& cams, const std::shared_ptr<Chara>& mine, const std::vector<std::shared_ptr<Chara>>& chara, const std::vector<std::shared_ptr<vehicles>>& vehicle, HIT_PASSIVE& hit_obj_p, HIT_BLOOD_PASSIVE& hit_b_obj_p, std::shared_ptr<Map>& MAPPTs) {
 			if (vehicle[0] == shared_from_this()) {
@@ -3787,10 +3817,10 @@ public:
 							//マップに当たったか
 							//mapparts->map_col_line_nearest(campos, &endpos);
 
-							vec_a = (this->obj.frame(this->Gun_[0].Getgun_info().frame2.first) - endpos).Norm();
+							vec_a = (this->obj_body.frame(this->Gun_[0].Getgun_info().frame2.first) - endpos).Norm();
 						}
 						//反映
-						auto vec_z = this->obj.frame(this->Gun_[0].Getgun_info().frame3.first) - this->obj.frame(this->Gun_[0].Getgun_info().frame2.first);
+						auto vec_z = this->obj_body.frame(this->Gun_[0].Getgun_info().frame3.first) - this->obj_body.frame(this->Gun_[0].Getgun_info().frame2.first);
 						float z_hyp = std::hypotf(vec_z.x(), vec_z.z());
 						float a_hyp = std::hypotf(vec_a.x(), vec_a.z());
 						float cost = (vec_a.z() * vec_z.x() - vec_a.x() * vec_z.z()) / (a_hyp * z_hyp);
@@ -3812,55 +3842,54 @@ public:
 				//砲塔旋回
 				{
 					//角度指示
-					float limit = deg2rad(this->use_veh.Get_turret_rad_limit()) / FPS;
 					for (auto& g : this->Gun_) {
-						g.SetGunRad(view_xrad, view_yrad, limit);
+						g.SetGunRad(view_xrad, view_yrad, this->use_veh->Get_turret_rad_limit() / FPS);
 					}
 					//反映
 					for (auto& g : this->Gun_) {
 						if (g.Getgun_info().frame1.first > 0) {
-							BodyFrameLocalMatrix(this->obj, g.Getgun_info().frame1, MATRIX_ref::RotY(g.Getgun_info().yrad));
-							BodyFrameLocalMatrix(this->col, g.Getgun_info().frame1, MATRIX_ref::RotY(g.Getgun_info().yrad));
+							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().frame1, MATRIX_ref::RotY(g.Getgun_info().yrad));
+							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().frame1, MATRIX_ref::RotY(g.Getgun_info().yrad));
 						}
 						if (g.Getgun_info().frame2.first > 0) {
-							BodyFrameLocalMatrix(this->obj, g.Getgun_info().frame2, MATRIX_ref::RotX(g.Getgun_info().xrad));
-							BodyFrameLocalMatrix(this->col, g.Getgun_info().frame2, MATRIX_ref::RotX(g.Getgun_info().xrad));
+							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().frame2, MATRIX_ref::RotX(g.Getgun_info().xrad));
+							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().frame2, MATRIX_ref::RotX(g.Getgun_info().xrad));
 						}
 						if (g.Getgun_info().frame3.first > 0) {
-							BodyFrameLocalMatrix(this->obj, g.Getgun_info().frame3, MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
-							BodyFrameLocalMatrix(this->col, g.Getgun_info().frame3, MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
+							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().frame3, MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
+							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().frame3, MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
 						}
 					}
 				}
 				//転輪
 				{
 					auto y_vec = this->move.mat.yvec();
-					for (auto& f : this->use_veh.Get_wheelframe()) {
+					for (auto& f : this->wheelframe) {
 						MATRIX_ref tmp;
-						this->obj.frame_reset(f.frame.first);
-						auto startpos = this->obj.frame(f.frame.first);
+						this->obj_body.frame_reset(f.frame.first);
+						auto startpos = this->obj_body.frame(f.frame.first);
 						auto hp2 = MAPPTs->map_col_line(startpos + y_vec * ((-f.frame.second.y()) + 2.f), startpos + y_vec * ((-f.frame.second.y()) - 0.3f));
 
 						easing_set(&f.will_y, (hp2.HitFlag == TRUE) ? (hp2.HitPosition.y + y_vec.y() * f.frame.second.y() - startpos.y()) : -0.3f, 0.9f);
 						tmp = MATRIX_ref::Mtrans(VGet(0.f, f.will_y, 0.f));
 
-						this->obj.SetFrameLocalMatrix(f.frame.first, MATRIX_ref::RotX((f.frame.second.x() >= 0) ? this->wheel_Left : this->wheel_Right) * tmp * MATRIX_ref::Mtrans(f.frame.second));
+						this->obj_body.SetFrameLocalMatrix(f.frame.first, MATRIX_ref::RotX((f.frame.second.x() >= 0) ? this->wheel_Left : this->wheel_Right) * tmp * MATRIX_ref::Mtrans(f.frame.second));
 					}
-					for (auto& f : this->use_veh.Get_wheelframe_nospring()) {
-						this->obj.SetFrameLocalMatrix(f.frame.first, MATRIX_ref::RotX((f.frame.second.x() >= 0) ? this->wheel_Left : this->wheel_Right) * MATRIX_ref::Mtrans(f.frame.second));
+					for (const auto& f : this->use_veh->Get_wheelframe_nospring()) {
+						this->obj_body.SetFrameLocalMatrix(f.first, MATRIX_ref::RotX((f.second.x() >= 0) ? this->wheel_Left : this->wheel_Right) * MATRIX_ref::Mtrans(f.second));
 					}
 				}
 				easing_set(
 					&wheel_normal,
-					((this->obj.frame(this->use_veh.Get_square()[0]) - this->obj.frame(this->use_veh.Get_square()[3])).cross(this->obj.frame(this->use_veh.Get_square()[1]) - this->obj.frame(this->use_veh.Get_square()[2]))).Norm(),
+					((this->obj_body.frame(this->use_veh->Get_square(0)) - this->obj_body.frame(this->use_veh->Get_square(3))).cross(this->obj_body.frame(this->use_veh->Get_square(1)) - this->obj_body.frame(this->use_veh->Get_square(2)))).Norm(),
 					0.95f);
 				//履帯
 				{
-					for (auto& g : this->use_veh.Get_b2downsideframe()) {
+					for (auto& g : this->b2downsideframe) {
 						for (auto& t : g) {
 							MATRIX_ref tmp;
-							this->obj.frame_reset(t.frame.first);
-							auto startpos = this->obj.frame(t.frame.first);
+							this->obj_body.frame_reset(t.frame.first);
+							auto startpos = this->obj_body.frame(t.frame.first);
 							t.colres = MAPPTs->map_col_line(startpos + this->move.mat.yvec() * ((-t.frame.second.y()) + 2.f), startpos + this->move.mat.yvec() * ((-t.frame.second.y()) - 0.3f));
 							if (t.colres.HitFlag == TRUE) {
 								tmp = MATRIX_ref::Mtrans(VGet(0.f, t.colres.HitPosition.y + this->move.mat.yvec().y() * t.frame.second.y() - startpos.y(), 0.f));
@@ -3868,17 +3897,17 @@ public:
 							else {
 								tmp = MATRIX_ref::Mtrans(VGet(0.f, -0.4f, 0.f));
 							}
-							this->obj.SetFrameLocalMatrix(t.frame.first, tmp * MATRIX_ref::Mtrans(t.frame.second));
+							this->obj_body.SetFrameLocalMatrix(t.frame.first, tmp * MATRIX_ref::Mtrans(t.frame.second));
 						}
 					}
 				}
 				//移動
-				auto isfloat = (this->move.pos.y() == -this->use_veh.Get_down_in_water());
+				auto isfloat = (this->move.pos.y() == -this->use_veh->Get_down_in_water());
 				//行列
 				{
 					//リセット
 					{
-						const auto yvec = (this->use_veh.Get_isfloat() && isfloat) ? VGet(0.f, 1.f, 0.f) : wheel_normal;
+						const auto yvec = (this->use_veh->Get_isfloat() && isfloat) ? VGet(0.f, 1.f, 0.f) : wheel_normal;
 						auto pp = (this->move.mat * MATRIX_ref::RotVec2(VGet(0.f, 1.f, 0.f), yvec).Inverse()).zvec() * -1.f;
 
 						yrad_p = atan2f(pp.x(), pp.z());
@@ -3893,9 +3922,9 @@ public:
 						float hight_t = 0.f;
 						int cnt_t = 0;
 						bool tatch = false;
-						for (auto& g : this->use_veh.Get_b2downsideframe()) {
-							for (auto& t : g) {
-								hight_t += this->obj.frame(t.frame.first).y();
+						for (const auto& g : this->b2downsideframe) {
+							for (const auto& t : g) {
+								hight_t += this->obj_body.frame(t.frame.first).y();
 								cnt_t++;
 								if (t.colres.HitFlag == TRUE) {
 									tatch = true;
@@ -3903,8 +3932,8 @@ public:
 							}
 						}
 						//*
-						for (auto& s : this->use_veh.Get_square()) {
-							auto p_t = this->obj.frame(s);
+						for (const auto& s : this->use_veh->Get_square()) {
+							auto p_t = this->obj_body.frame(s);
 							auto hp2 = MAPPTs->map_col_line(p_t + VGet(0.f, 2.f, 0.f), p_t - VGet(0.f, 0.3f, 0.f));
 							if (hp2.HitFlag == TRUE) {
 								hight_t += hp2.HitPosition.y;
@@ -3919,16 +3948,16 @@ public:
 						this->move.pos.y(yp);
 
 						//地面or水面にいるかどうか
-						if (tatch || (this->use_veh.Get_isfloat() && isfloat)) {
+						if (tatch || (this->use_veh->Get_isfloat() && isfloat)) {
 							//前進後退
 							{
 								const auto old = this->speed_add + this->speed_sub;
 								if (key[2]) {
-									this->speed_add = (this->speed_add < (this->use_veh.Get_flont_speed_limit() / 3.6f)) ? (this->speed_add + (0.06f / 3.6f) * (60.f / FPS)) : this->speed_add;
+									this->speed_add = (this->speed_add < (this->use_veh->Get_flont_speed_limit() / 3.6f)) ? (this->speed_add + (0.06f / 3.6f) * (60.f / FPS)) : this->speed_add;
 									this->speed_sub = (this->speed_sub < 0.f) ? (this->speed_sub + (0.7f / 3.6f) * (60.f / FPS)) : this->speed_sub;
 								}
 								if (key[3]) {
-									this->speed_sub = (this->speed_sub > (this->use_veh.Get_back_speed_limit() / 3.6f)) ? (this->speed_sub - (0.06f / 3.6f) * (60.f / FPS)) : this->speed_sub;
+									this->speed_sub = (this->speed_sub > (this->use_veh->Get_back_speed_limit() / 3.6f)) ? (this->speed_sub - (0.06f / 3.6f) * (60.f / FPS)) : this->speed_sub;
 									this->speed_add = (this->speed_add > 0.f) ? (this->speed_add - (0.7f / 3.6f) * (60.f / FPS)) : this->speed_add;
 								}
 								if (!(key[2]) && !(key[3])) {
@@ -3940,8 +3969,8 @@ public:
 							}
 							//旋回
 							{
-								this->yradadd_left = (key[4]) ? std::max(this->yradadd_left - deg2rad(3.5f * (60.f / FPS)), deg2rad(-this->use_veh.Get_body_rad_limit())) : std::min(this->yradadd_left + deg2rad(2.1f * (60.f / FPS)), 0.f);
-								this->yradadd_right = (key[5]) ? std::min(this->yradadd_right + deg2rad(3.5f * (60.f / FPS)), deg2rad(this->use_veh.Get_body_rad_limit())) : std::max(this->yradadd_right - deg2rad(2.1f * (60.f / FPS)), 0.f);
+								this->yradadd_left = (key[4]) ? std::max(this->yradadd_left - deg2rad(3.5f * (60.f / FPS)), deg2rad(-this->use_veh->Get_body_rad_limit())) : std::min(this->yradadd_left + deg2rad(2.1f * (60.f / FPS)), 0.f);
+								this->yradadd_right = (key[5]) ? std::min(this->yradadd_right + deg2rad(3.5f * (60.f / FPS)), deg2rad(this->use_veh->Get_body_rad_limit())) : std::max(this->yradadd_right - deg2rad(2.1f * (60.f / FPS)), 0.f);
 								this->yradadd = (this->yradadd_left + this->yradadd_right) / FPS;
 							}
 							//慣性
@@ -3973,8 +4002,8 @@ public:
 					}
 				}
 				//浮く
-				if (this->use_veh.Get_isfloat()) {
-					this->move.pos.y(std::max(this->move.pos.y(), -this->use_veh.Get_down_in_water()));
+				if (this->use_veh->Get_isfloat()) {
+					this->move.pos.y(std::max(this->move.pos.y(), -this->use_veh->Get_down_in_water()));
 				}
 				//転輪
 				this->wheel_Leftadd = -(this->speed * 2.f - this->yradadd * 5.f);
@@ -3989,8 +4018,8 @@ public:
 						auto& cg = this->Gun_[i];
 						cg.UpDate(
 							key[(i == 0) ? 0 : 1],
-							this->obj.frame(cg.Getgun_info().frame3.first),
-							(this->obj.frame(cg.Getgun_info().frame3.first) - this->obj.frame(cg.Getgun_info().frame2.first)).Norm(), mine, chara, shared_from_this(), vehicle, hit_obj_p, hit_b_obj_p, MAPPTs);
+							this->obj_body.frame(cg.Getgun_info().frame3.first),
+							(this->obj_body.frame(cg.Getgun_info().frame3.first) - this->obj_body.frame(cg.Getgun_info().frame2.first)).Norm(), mine, chara, shared_from_this(), vehicle, hit_obj_p, hit_b_obj_p, MAPPTs);
 					}
 				}
 				//戦車壁判定
@@ -4013,23 +4042,24 @@ public:
 
 					//転輪
 					b2Vec2 tmpb2 = b2Vec2((M_GR / FPS * 0.5f) * (this->move.mat.zvec().dot(VGet(0, 1.f, 0))), (M_GR / FPS * 0.5f) * (this->move.mat.yvec().dot(VGet(0, 1.f, 0))));
-					int z = 0;
+					int LorR = 0;
 					for (auto& f : foot) {
 						size_t i = 0;
 						VECTOR_ref vects;
+						int LR_t = ((LorR == 0) ? 1 : -1);
 						if (f.Foot.size() != 0) {
 							i = 0;
-							for (auto& w : this->use_veh.Get_wheelframe()) {
-								vects = VECTOR_ref(VTransform(VGet(0, 0, 0), MV1GetFrameLocalMatrix(this->obj.get(), w.frame.first)));
-								if (vects.x() * ((z == 0) ? 1 : -1) > 0) {
-									f.Wheel[i++].SetTransform(b2Vec2(vects.z(), vects.y()), (z == 0) ? this->wheel_Left : this->wheel_Right);
+							for (const auto& w : this->use_veh->Get_wheelframe()) {
+								vects = VECTOR_ref(VTransform(VGet(0, 0, 0), MV1GetFrameLocalMatrix(this->obj_body.get(), w.first)));
+								if (vects.x() * LR_t > 0) {
+									f.Wheel[i++].SetTransform(b2Vec2(vects.z(), vects.y()), (LorR == 0) ? this->wheel_Left : this->wheel_Right);
 								}
 							}
 							i = 0;
-							for (auto& w : this->use_veh.Get_wheelframe_nospring()) {
-								vects = VTransform(VGet(0, 0, 0), MV1GetFrameLocalMatrix(this->obj.get(), w.frame.first));
-								if (vects.x() * ((z == 0) ? 1 : -1) > 0) {
-									f.Yudo[i++].SetTransform(b2Vec2(vects.z(), vects.y()), (z == 0) ? this->wheel_Left : this->wheel_Right);
+							for (const auto& w : this->use_veh->Get_wheelframe_nospring()) {
+								vects = VTransform(VGet(0, 0, 0), MV1GetFrameLocalMatrix(this->obj_body.get(), w.first));
+								if (vects.x() * LR_t > 0) {
+									f.Yudo[i++].SetTransform(b2Vec2(vects.z(), vects.y()), (LorR == 0) ? this->wheel_Left : this->wheel_Right);
 								}
 							}
 							for (auto& t : f.Foot) {
@@ -4044,22 +4074,22 @@ public:
 						}
 						{
 							i = 0;
-							for (auto& w : this->use_veh.Get_b2upsideframe()[z]) {
-								if (w.second.x() * ((z == 0) ? 1 : -1) > 0) {
+							for (const auto& w : this->use_veh->Get_b2upsideframe(LorR)) {
+								if (w.second.x() * LR_t > 0) {
 									auto& t = f.Foot[i++];
 									t.pos = VGet(w.second.x(), t.pos.y(), t.pos.z());
-									this->obj.SetFrameLocalMatrix(w.first, MATRIX_ref::Mtrans(t.pos));
+									this->obj_body.SetFrameLocalMatrix(w.first, MATRIX_ref::Mtrans(t.pos));
 								}
 							}
 						}
-						z++;
+						LorR++;
 					}
 				}
 
-				this->obj.SetMatrix(this->move.mat * MATRIX_ref::Mtrans(this->move.pos));
-				this->col.SetMatrix(this->obj.GetMatrix());
+				this->obj_body.SetMatrix(this->move.mat * MATRIX_ref::Mtrans(this->move.pos));
+				this->obj_col.SetMatrix(this->obj_body.GetMatrix());
 
-				for (auto& g : this->use_veh.Get_b2downsideframe()) {
+				for (auto& g : this->b2downsideframe) {
 					for (auto& t : g) {
 						if (t.colres.HitFlag == TRUE) {
 							easing_set(&t.gndsmksize, 0.1f + std::abs(this->speed - spd_rec) / ((0.01f / 3.6f) / FPS) * 1.f, 0.95f);
@@ -4067,7 +4097,7 @@ public:
 						else {
 							t.gndsmksize = 0.1f;
 						}
-						t.gndsmkeffcs.handle.SetPos(this->obj.frame(t.frame.first) + this->move.mat.yvec() * (-t.frame.second.y()));
+						t.gndsmkeffcs.handle.SetPos(this->obj_body.frame(t.frame.first) + this->move.mat.yvec() * (-t.frame.second.y()));
 						t.gndsmkeffcs.handle.SetScale(t.gndsmksize);
 					}
 				}
@@ -4087,8 +4117,8 @@ public:
 			if (Segment_Point_MinLen(StartPos, EndPos, this->move.pos) <= 10.0f) {
 				//判定起動
 				this->nearhit = true;
-				for (int i = 0; i < this->col.mesh_num(); i++) {
-					this->col.RefreshCollInfo(-1, i);
+				for (int i = 0; i < this->obj_col.mesh_num(); i++) {
+					this->obj_col.RefreshCollInfo(-1, i);
 				}
 				return true;
 			}
@@ -4110,24 +4140,25 @@ public:
 				}
 				t.Yudo.clear();
 			}
-			for (auto& g : this->use_veh.Get_b2downsideframe()) {
+			for (auto& g : this->b2downsideframe) {
 				for (auto& t : g) {
 					t.gndsmkeffcs.handle.Dispose();
 				}
+				g.clear();
 			}
 			this->reset();
 			this->audio.Dispose();
 		}
 		void Draw() {
-			MV1SetFrameTextureAddressTransform(this->obj.get(), 0, -this->wheel_Left * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
-			this->obj.DrawMesh(0);
-			MV1SetFrameTextureAddressTransform(this->obj.get(), 0, -this->wheel_Right * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
-			this->obj.DrawMesh(1);
-			MV1ResetFrameTextureAddressTransform(this->obj.get(), 0);
-			for (int i = 2; i < this->obj.mesh_num(); i++) {
-				this->obj.DrawMesh(i);
+			MV1SetFrameTextureAddressTransform(this->obj_body.get(), 0, -this->wheel_Left * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
+			this->obj_body.DrawMesh(0);
+			MV1SetFrameTextureAddressTransform(this->obj_body.get(), 0, -this->wheel_Right * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
+			this->obj_body.DrawMesh(1);
+			MV1ResetFrameTextureAddressTransform(this->obj_body.get(), 0);
+			for (int i = 2; i < this->obj_body.mesh_num(); i++) {
+				this->obj_body.DrawMesh(i);
 			}
-			//col.DrawModel();
+			//obj_col.DrawModel();
 		}
 		void Draw_ammo() {
 			for (auto& cg : this->Gun_) {

@@ -862,7 +862,6 @@ private:
 		}
 	};
 protected:
-	typedef std::pair<size_t, float> pair_hit;
 
 	class damage_rad {
 	public:
@@ -1311,13 +1310,13 @@ protected:
 
 		template<class vehicles>
 		bool get_coli(const std::shared_ptr<vehicles>&tgt,int m) {
-			tgt->hitres[m] = tgt->map_col_line(this->move.repos, this->move.pos, m);
-			if (tgt->hitres[m].HitFlag == TRUE) {
-				tgt->hitssort[m] = { m, (this->move.repos - tgt->hitres[m].HitPosition).size() };
+			tgt->get_hitres()[m] = tgt->map_col_line(this->move.repos, this->move.pos, m);
+			if (tgt->get_hitres()[m].HitFlag == TRUE) {
+				tgt->get_hitssort()[m] = { m, (this->move.repos - tgt->get_hitres()[m].HitPosition).size() };
 				return true;
 			}
 			else {
-				tgt->hitssort[m] = { m, (std::numeric_limits<float>::max)() };
+				tgt->get_hitssort()[m] = { m, (std::numeric_limits<float>::max)() };
 				return false;
 			}
 		}
@@ -1348,9 +1347,9 @@ protected:
 							is_hit = false;
 							//とりあえず当たったかどうか探す
 							{
-								for (auto& m : tgt->use_veh.Get_module_mesh()) { is_hit |= get_coli(tgt, m); }	//モジュール
-								for (auto& m : tgt->use_veh.Get_space_mesh()) { is_hit |= get_coli(tgt, m); }		//空間装甲
-								for (auto& m : tgt->use_veh.Get_armer_mesh()) { is_hit |= get_coli(tgt, m.first); }		//装甲
+								for (auto& m : tgt->use_veh->Get_module_mesh()) { is_hit |= get_coli(tgt, m); }	//モジュール
+								for (auto& m : tgt->use_veh->Get_space_mesh()) { is_hit |= get_coli(tgt, m); }		//空間装甲
+								for (auto& m : tgt->use_veh->Get_armer_mesh()) { is_hit |= get_coli(tgt, m.first); }		//装甲
 							}
 							//当たってない場合抜ける
 							if (!is_hit) {
@@ -1358,9 +1357,9 @@ protected:
 							}
 							auto old = tgt->HP;
 							//当たり判定を近い順にソート
-							std::sort(tgt->hitssort.begin(), tgt->hitssort.end(), [](const pair_hit& x, const pair_hit& y) { return x.second < y.second; });
+							tgt->sort_Hit();
 							//ダメージ面に届くまで判定
-							for (auto& tt : tgt->hitssort) {
+							for (auto& tt : tgt->get_hitssort()) {
 								//装甲面に当たらなかったならスルー
 								if (tt.second == (std::numeric_limits<float>::max)()) {
 									break;
@@ -1368,20 +1367,20 @@ protected:
 								//AP
 								{
 									//装甲面に当たったのでhitnearに代入して終了
-									for (auto& a : tgt->use_veh.Get_armer_mesh()) {
+									for (auto& a : tgt->use_veh->Get_armer_mesh()) {
 										if (tt.first == a.first) {
 											hitnear = tt.first;
 											//ダメージ面に当たった時に装甲値に勝てるかどうか
 											{
-												VECTOR_ref normal = tgt->hitres[hitnear.value()].Normal;
-												VECTOR_ref position = tgt->hitres[hitnear.value()].HitPosition;
+												VECTOR_ref normal = tgt->get_hitres()[hitnear.value()].Normal;
+												VECTOR_ref position = tgt->get_hitres()[hitnear.value()].HitPosition;
 												//貫通
 												if (this->spec->get_pene() > a.second * (1.0f / std::abs(this->move.vec.Norm().dot(normal)))) {
 													tgt->HP = std::max<int>(tgt->HP - this->spec->get_damage(), 0); //
 													tgt->HP_parts[tt.first] = std::max<int>(tgt->HP_parts[tt.first] - 30, 0); //
 													//撃破時エフェクト
 													if (tgt->HP == 0) {
-														//set_effect(&tgt->effcs[ef_bomb], tgt->obj.frame(tgt->use_veh.gunframe[0].frame1.first), VGet(0, 0, 0));
+														//set_effect(&tgt->effcs[ef_bomb], tgt->obj.frame(tgt->use_veh->gunframe[0].frame1.first), VGet(0, 0, 0));
 													}
 													this->Flag = false;						//弾フラグ削除
 													//tgt->hit_obj[tgt->hitbuf].use = 0;	//弾痕
@@ -1423,25 +1422,25 @@ protected:
 										break;
 									}
 									//空間装甲、モジュールに当たったのでモジュールに30ダメ、貫徹力を1/2に
-									for (auto& a : tgt->use_veh.Get_space_mesh()) {
+									for (auto& a : tgt->use_veh->Get_space_mesh()) {
 										if (tt.first == a) {
 											if (this->spec->get_caliber() >= 0.020f) {
-												mine->Set_eff(ef_reco, VECTOR_ref(tgt->hitres[tt.first].HitPosition) + VECTOR_ref(tgt->hitres[tt.first].Normal) * (0.1f), tgt->hitres[tt.first].Normal);
+												mine->Set_eff(ef_reco, VECTOR_ref(tgt->get_hitres()[tt.first].HitPosition) + VECTOR_ref(tgt->get_hitres()[tt.first].Normal) * (0.1f), tgt->get_hitres()[tt.first].Normal);
 											}
 											else {
-												mine->Set_eff(ef_gndsmoke, VECTOR_ref(tgt->hitres[tt.first].HitPosition) + VECTOR_ref(tgt->hitres[tt.first].Normal) * (0.1f), tgt->hitres[tt.first].Normal, 0.025f / 0.1f);
+												mine->Set_eff(ef_gndsmoke, VECTOR_ref(tgt->get_hitres()[tt.first].HitPosition) + VECTOR_ref(tgt->get_hitres()[tt.first].Normal) * (0.1f), tgt->get_hitres()[tt.first].Normal, 0.025f / 0.1f);
 											}
 											tgt->HP_parts[tt.first] = std::max<int>(tgt->HP_parts[tt.first] - 30, 0); //
 											this->spec->set_pene() /= 2.0f;
 										}
 									}
-									for (auto& a : tgt->use_veh.Get_module_mesh()) {
+									for (auto& a : tgt->use_veh->Get_module_mesh()) {
 										if (tt.first == a) {
 											if (this->spec->get_caliber() >= 0.020f) {
-												mine->Set_eff(ef_reco, VECTOR_ref(tgt->hitres[tt.first].HitPosition) + VECTOR_ref(tgt->hitres[tt.first].Normal) * (0.1f), tgt->hitres[tt.first].Normal);
+												mine->Set_eff(ef_reco, VECTOR_ref(tgt->get_hitres()[tt.first].HitPosition) + VECTOR_ref(tgt->get_hitres()[tt.first].Normal) * (0.1f), tgt->get_hitres()[tt.first].Normal);
 											}
 											else {
-												mine->Set_eff(ef_gndsmoke, VECTOR_ref(tgt->hitres[tt.first].HitPosition) + VECTOR_ref(tgt->hitres[tt.first].Normal) * (0.1f), tgt->hitres[tt.first].Normal, 0.025f / 0.1f);
+												mine->Set_eff(ef_gndsmoke, VECTOR_ref(tgt->get_hitres()[tt.first].HitPosition) + VECTOR_ref(tgt->get_hitres()[tt.first].Normal) * (0.1f), tgt->get_hitres()[tt.first].Normal, 0.025f / 0.1f);
 											}
 											tgt->HP_parts[tt.first] = std::max<int>(tgt->HP_parts[tt.first] - 30, 0); //
 											this->spec->set_pene() /= 2.0f;
@@ -1468,7 +1467,7 @@ protected:
 								{
 									float x_1 = sinf(tgt->get_body_yrad());
 									float y_1 = cosf(tgt->get_body_yrad());
-									auto vc = (mine->get_pos() - tgt->move.pos).Norm();
+									auto vc = (mine->get_pos() - tgt->get_move().pos).Norm();
 									tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
 									tgt->got_damage_.back().alpfa = 1.f;
 									tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
@@ -2077,37 +2076,6 @@ protected:
 		~Items() {}
 	};
 
-	//todo:親クラス作る
-	class b2_frame {
-	public:
-		//変更不可
-		frames frame;
-	};
-	class foot_frame:public b2_frame {
-	public:
-		float will_y = 0.f;
-	};
-	class cat_frame :public b2_frame {
-	public:
-		float will_y = 0.f;
-		MV1_COLL_RESULT_POLY colres;
-		EffectS gndsmkeffcs;
-		float gndsmksize = 1.f;
-
-		cat_frame() {
-			frame.first = -1;
-			will_y = 0.f;
-			gndsmksize = 1.f;
-		}
-		cat_frame(const cat_frame& tgt) {
-			frame = tgt.frame;
-			will_y = 0.f;
-			gndsmksize = 1.f;
-		}
-		void operator=(const cat_frame& tgt) {
-			frame = tgt.frame;
-		}
-	};
 	//戦車砲
 	class gun_frame {
 		int type = 0;
@@ -2210,7 +2178,7 @@ protected:
 				mine->Set_eff(ef_fire, pos_t, vec_t, 0.1f / 0.1f);//ノーマル
 
 				mine_v->get_audio().fire.vol(128);
-				mine_v->get_audio().fire.play_3D(mine_v->move.pos, 250.f);
+				mine_v->get_audio().fire.play_3D(mine_v->get_move().pos, 250.f);
 			}
 			this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
 			this->fired = std::max(this->fired - 1.f / FPS, 0.f);
@@ -2288,41 +2256,40 @@ protected:
 	};
 	//戦車データ
 	class Vehcs {
-		//共通
-		std::string name;								/**/
-		MV1 obj, col;									/**/
-		VECTOR_ref minpos, maxpos;						/**/
-		std::vector<gun_frame> gunframe;				/**/
-		std::vector<foot_frame> wheelframe;				/**/
-		std::vector<foot_frame> wheelframe_nospring;	/*誘導輪回転*/
-		uint16_t HP = 0;								/**/
-		std::vector<std::pair<int, float>> armer_mesh;	/*装甲ID*/
-		std::vector<int> space_mesh;					/*装甲ID*/
-		std::vector<int> module_mesh;					/*装甲ID*/
-		bool isfloat = false;							/*浮くかどうか*/
-		float down_in_water = 0.f;						/*沈む判定箇所*/
-		float flont_speed_limit = 0.f;					/*前進速度(km/h)*/
-		float back_speed_limit = 0.f;					/*後退速度(km/h)*/
-		float body_rad_limit = 0.f;						/*旋回速度(度/秒)*/
-		float turret_rad_limit = 0.f;					/*砲塔駆動速度(度/秒)*/
-		frames fps_view;								//コックピット
-		GraphHandle ui_pic;								//シルエット
-		int pic_x, pic_y;								//サイズ
-		std::array<int, 4> square{ 0 };//車輛の四辺
-		std::array<std::vector<frames>, 2> b2upsideframe; /*履帯上*/
-		std::array<std::vector<cat_frame>, 2> b2downsideframe; /*履帯*/
+		std::string name;									/**/
+		MV1 obj, col;										/**/
+		VECTOR_ref minpos, maxpos;							/**/
+		std::vector<gun_frame> gunframe;					/**/
+		std::vector<frames> wheelframe;						/**/
+		std::vector<frames> wheelframe_nospring;			/*誘導輪回転*/
+		int HP = 0;											/**/
+		std::vector<std::pair<int, float>> armer_mesh;		/*装甲ID*/
+		std::vector<int> space_mesh;						/*装甲ID*/
+		std::vector<int> module_mesh;						/*装甲ID*/
+		bool isfloat = false;								/*浮くかどうか*/
+		float down_in_water = 0.f;							/*沈む判定箇所*/
+		float flont_speed_limit = 0.f;						/*前進速度(km/h)*/
+		float back_speed_limit = 0.f;						/*後退速度(km/h)*/
+		float body_rad_limit = 0.f;							/*旋回速度(度/秒)*/
+		float turret_rad_limit = 0.f;						/*砲塔駆動速度(度/秒)*/
+		frames fps_view;									//コックピット
+		GraphHandle ui_pic;									//シルエット
+		int pic_x, pic_y;									//サイズ
+		std::array<int, 4> square{ 0 };						//車輛の四辺
+		std::array<std::vector<frames>, 2> b2upsideframe;	/*履帯上*/
+		std::array<std::vector<frames>, 2> b2downsideframe;	/*履帯*/
 
 
 		void copy(const Vehcs& t) {
 			this->wheelframe.clear();
 			for (auto& p : t.wheelframe) {
 				this->wheelframe.resize(this->wheelframe.size() + 1);
-				this->wheelframe.back().frame = p.frame;
+				this->wheelframe.back() = p;
 			}
 			this->wheelframe_nospring.clear();
 			for (auto& p : t.wheelframe_nospring) {
 				this->wheelframe_nospring.resize(this->wheelframe_nospring.size() + 1);
-				this->wheelframe_nospring.back().frame = p.frame;
+				this->wheelframe_nospring.back() = p;
 			}
 			this->name = t.name;
 			this->minpos = t.minpos;
@@ -2350,31 +2317,35 @@ protected:
 	public:
 		Audios_tanks audio;
 		//
-		auto& Get_name() { return name; }
-		const auto& Get_obj()const { return obj; }
-		const auto& Get_col()const { return col; }
-		auto& Get_minpos() { return minpos; }
-		auto& Get_maxpos() { return maxpos; }
-		auto& Get_gunframe() { return gunframe; }
-		auto& Get_wheelframe() { return wheelframe; }
-		auto& Get_wheelframe_nospring() { return wheelframe_nospring; }
-		auto& Get_HP() { return HP; }
-		auto& Get_armer_mesh() { return armer_mesh; }
-		auto& Get_space_mesh() { return space_mesh; }
-		auto& Get_module_mesh() { return module_mesh; }
-		auto& Get_isfloat() { return isfloat; }
-		auto& Get_down_in_water() { return down_in_water; }
-		auto& Get_flont_speed_limit() { return flont_speed_limit; }
-		auto& Get_back_speed_limit() { return back_speed_limit; }
-		auto& Get_body_rad_limit() { return body_rad_limit; }
-		auto& Get_turret_rad_limit() { return turret_rad_limit; }
-		auto& Get_fps_view() { return fps_view; }
-		auto& Get_ui_pic() { return ui_pic; }
-		auto& Get_pic_x() { return pic_x; }
-		auto& Get_pic_y() { return pic_y; }
-		auto& Get_square() { return square; }
-		auto& Get_b2upsideframe() { return b2upsideframe; }
-		auto& Get_b2downsideframe() { return b2downsideframe; }
+		const auto& Get_name()const noexcept { return name; }
+
+		const auto& Get_obj()const noexcept { return obj; }
+		const auto& Get_col()const noexcept { return col; }
+		const auto& Get_minpos()const noexcept { return minpos; }
+		const auto& Get_maxpos()const noexcept { return maxpos; }
+		const auto& Get_gunframe(size_t ID_t)const noexcept { return gunframe[ID_t]; }
+		const auto& Get_gunframe()const noexcept { return gunframe; }
+		const auto& Get_wheelframe()const noexcept { return wheelframe; }
+		const auto& Get_wheelframe_nospring()const noexcept { return wheelframe_nospring; }
+		const auto& Get_HP()const noexcept { return HP; }
+		const auto& Get_armer_mesh()const noexcept { return armer_mesh; }
+		const auto& Get_space_mesh()const noexcept { return space_mesh; }
+		const auto& Get_module_mesh()const noexcept { return module_mesh; }
+		const auto& Get_isfloat()const noexcept { return isfloat; }
+		const auto& Get_down_in_water()const noexcept { return down_in_water; }
+		const auto& Get_flont_speed_limit()const noexcept { return flont_speed_limit; }
+		const auto& Get_back_speed_limit()const noexcept { return back_speed_limit; }
+		const auto& Get_body_rad_limit()const noexcept { return body_rad_limit; }
+		const auto& Get_turret_rad_limit()const noexcept { return turret_rad_limit; }
+		const auto& Get_fps_view()const noexcept { return fps_view; }
+		const auto& Get_ui_pic()const noexcept { return ui_pic; }
+		const auto& Get_pic_x()const noexcept { return pic_x; }
+		const auto& Get_pic_y()const noexcept { return pic_y; }
+		const auto& Get_square(size_t ID_t)const noexcept { return square[ID_t]; }
+		const auto& Get_square()const noexcept { return square; }
+		const auto& Get_b2upsideframe(size_t ID_t)const noexcept { return b2upsideframe[ID_t]; }
+		const auto& Get_b2upsideframe()const noexcept { return b2upsideframe; }
+		const auto& Get_b2downsideframe()const noexcept { return b2downsideframe; }
 		//コンストラクタ
 		Vehcs() { }
 		Vehcs(const Vehcs& t) {
@@ -2423,11 +2394,11 @@ protected:
 				std::string p = this->obj.frame_name(i);
 				if (p.find("転輪", 0) != std::string::npos) {
 					this->wheelframe.resize(this->wheelframe.size() + 1);
-					this->wheelframe.back().frame = { i,this->obj.frame(i) };
+					this->wheelframe.back() = { i,this->obj.frame(i) };
 				}
 				else if ((p.find("輪", 0) != std::string::npos) && (p.find("転輪", 0) == std::string::npos)) {
 					this->wheelframe_nospring.resize(this->wheelframe_nospring.size() + 1);
-					this->wheelframe_nospring.back().frame = { i,this->obj.frame(i) };
+					this->wheelframe_nospring.back() = { i,this->obj.frame(i) };
 				}
 				else if (p.find("旋回", 0) != std::string::npos) {
 					this->gunframe.resize(this->gunframe.size() + 1);
@@ -2461,11 +2432,11 @@ protected:
 					for (int z = 0; z < this->obj.frame_child_num(i); z++) {
 						if (this->obj.frame(i + 1 + z).x() > 0) {
 							this->b2downsideframe[0].resize(this->b2downsideframe[0].size() + 1);
-							this->b2downsideframe[0].back().frame = { i + 1 + z, this->obj.frame(i + 1 + z) };
+							this->b2downsideframe[0].back() = { i + 1 + z, this->obj.frame(i + 1 + z) };
 						}
 						else {
 							this->b2downsideframe[1].resize(this->b2downsideframe[1].size() + 1);
-							this->b2downsideframe[1].back().frame = { i + 1 + z, this->obj.frame(i + 1 + z) };
+							this->b2downsideframe[1].back() = { i + 1 + z, this->obj.frame(i + 1 + z) };
 						}
 					}
 				}
@@ -2475,18 +2446,18 @@ protected:
 			{
 				float tmp = 0.f;
 				for (auto& f : this->wheelframe) {
-					if (f.frame.second.x() >= 0) {
-						this->square[0] = f.frame.first;
-						tmp = f.frame.second.z();
+					if (f.second.x() >= 0) {
+						this->square[0] = f.first;
+						tmp = f.second.z();
 						break;
 					}
 				}
 				for (auto& f : this->wheelframe) {
-					if (this->square[0] != f.frame.first) {
-						if (f.frame.second.x() >= 0) {
-							if (tmp < f.frame.second.z()) {
-								this->square[0] = f.frame.first;
-								tmp = f.frame.second.z();
+					if (this->square[0] != f.first) {
+						if (f.second.x() >= 0) {
+							if (tmp < f.second.z()) {
+								this->square[0] = f.first;
+								tmp = f.second.z();
 							}
 						}
 					}
@@ -2496,18 +2467,18 @@ protected:
 			{
 				float tmp = 0.f;
 				for (auto& f : this->wheelframe) {
-					if (f.frame.second.x() >= 0) {
-						this->square[1] = f.frame.first;
-						tmp = f.frame.second.z();
+					if (f.second.x() >= 0) {
+						this->square[1] = f.first;
+						tmp = f.second.z();
 						break;
 					}
 				}
 				for (auto& f : this->wheelframe) {
-					if (this->square[1] != f.frame.first) {
-						if (f.frame.second.x() >= 0) {
-							if (tmp > f.frame.second.z()) {
-								this->square[1] = f.frame.first;
-								tmp = f.frame.second.z();
+					if (this->square[1] != f.first) {
+						if (f.second.x() >= 0) {
+							if (tmp > f.second.z()) {
+								this->square[1] = f.first;
+								tmp = f.second.z();
 							}
 						}
 					}
@@ -2517,18 +2488,18 @@ protected:
 			{
 				float tmp = 0.f;
 				for (auto& f : this->wheelframe) {
-					if (!(f.frame.second.x() >= 0)) {
-						this->square[2] = f.frame.first;
-						tmp = f.frame.second.z();
+					if (!(f.second.x() >= 0)) {
+						this->square[2] = f.first;
+						tmp = f.second.z();
 						break;
 					}
 				}
 				for (auto& f : this->wheelframe) {
-					if (this->square[2] != f.frame.first) {
-						if (!(f.frame.second.x() >= 0)) {
-							if (tmp < f.frame.second.z()) {
-								this->square[2] = f.frame.first;
-								tmp = f.frame.second.z();
+					if (this->square[2] != f.first) {
+						if (!(f.second.x() >= 0)) {
+							if (tmp < f.second.z()) {
+								this->square[2] = f.first;
+								tmp = f.second.z();
 							}
 						}
 					}
@@ -2538,18 +2509,18 @@ protected:
 			{
 				float tmp = 0.f;
 				for (auto& f : this->wheelframe) {
-					if (!(f.frame.second.x() >= 0)) {
-						this->square[3] = f.frame.first;
-						tmp = f.frame.second.z();
+					if (!(f.second.x() >= 0)) {
+						this->square[3] = f.first;
+						tmp = f.second.z();
 						break;
 					}
 				}
 				for (auto& f : this->wheelframe) {
-					if (this->square[3] != f.frame.first) {
-						if (!(f.frame.second.x() >= 0)) {
-							if (tmp > f.frame.second.z()) {
-								this->square[3] = f.frame.first;
-								tmp = f.frame.second.z();
+					if (this->square[3] != f.first) {
+						if (!(f.second.x() >= 0)) {
+							if (tmp > f.second.z()) {
+								this->square[3] = f.first;
+								tmp = f.second.z();
 							}
 						}
 					}
@@ -2575,8 +2546,8 @@ protected:
 				this->flont_speed_limit = getparams::_float(mdata);
 				this->back_speed_limit = getparams::_float(mdata);
 				this->body_rad_limit = getparams::_float(mdata);
-				this->turret_rad_limit = getparams::_float(mdata);
-				this->HP = uint16_t(getparams::_ulong(mdata));
+				this->turret_rad_limit = deg2rad(getparams::_float(mdata));
+				this->HP = getparams::_int(mdata);
 				auto stt = getparams::get_str(mdata);
 				for (auto& g : this->gunframe) {
 					g.name = getparams::getright(stt);

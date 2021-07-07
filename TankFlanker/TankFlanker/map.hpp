@@ -142,10 +142,10 @@ public:
 		int dispx = 1920;
 		int dispy = 1080;
 	public:
-		std::vector<VECTOR_ref>& get_waypoint(void) noexcept { return way_point; }
-		std::vector<VECTOR_ref>& get_leanpoint_q(void) noexcept { return lean_point_q; }
-		std::vector<VECTOR_ref>& get_leanpoint_e(void) noexcept { return lean_point_e; }
-		std::vector<VECTOR_ref>& get_spawn_point(void) noexcept { return spawn_point; }
+		const std::vector<VECTOR_ref>& get_waypoint(void) const noexcept { return way_point; }
+		const std::vector<VECTOR_ref>& get_leanpoint_q(void) const noexcept { return lean_point_q; }
+		const std::vector<VECTOR_ref>& get_leanpoint_e(void) const noexcept { return lean_point_e; }
+		const std::vector<VECTOR_ref>& get_spawn_point(void) const noexcept { return spawn_point; }
 		GraphHandle& get_minmap(void) noexcept { return minmap; }
 		int& get_x_size(void) noexcept { return x_size; }
 		int& get_y_size(void) noexcept { return y_size; }
@@ -583,7 +583,7 @@ public:
 				if (tt) {
 					if (tmp.size() >= (w - poss).size()) {
 						auto p = map_col_line(w + VECTOR_ref::vget(0, 0.5f, 0), poss + VECTOR_ref::vget(0, 0.5f, 0));
-						if (!p.HitFlag == TRUE) {
+						if (!(p.HitFlag == TRUE)) {
 							tmp = (w - poss);
 							now = int(id);
 						}
