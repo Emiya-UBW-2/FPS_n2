@@ -13,6 +13,11 @@ public:
 	class Chara;
 
 	class PLAYER_COMMON {
+		class damage_rad {
+		public:
+			float alpfa{ 1.f };
+			float rad{ 0.f };
+		};
 	protected:
 		std::shared_ptr<MAPclass::Map> MAPPTs{ nullptr };	//引き継ぐ
 		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
@@ -40,7 +45,7 @@ public:
 			MAPPTs = MAPPTs_t;
 		}
 
-		const MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, const int sel) const noexcept {
+		const MV1_COLL_RESULT_POLY col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, const int sel) const noexcept {
 			return obj_col.CollCheck_Line(StartPos, EndPos, -1, sel);
 		}
 	};
@@ -3564,7 +3569,19 @@ public:
 
 	class vehicles : public std::enable_shared_from_this<vehicles>, public PLAYER_COMMON {
 	private:
-		typedef std::pair<size_t, float> pair_hit;
+		//typedef std::pair<size_t, float> pair_hit;
+		class pair_hit {
+		public:
+			size_t first;
+			float second;
+
+			//*
+			void a() {
+
+			}
+
+		};
+
 		class foot_frame {
 		public:
 			frames frame;
@@ -3591,6 +3608,96 @@ public:
 			void operator=(const cat_frame& tgt) {
 				frame = tgt.frame;
 			}
+		};
+		//
+		class Guns {							/**/
+			size_t use_bullet{ 0 };							/*確保する弾*/
+			std::array<BULLETS, max_bullet> bullet;			/*確保する弾*/
+
+			float loadcnt{ 0 };					/*装てんカウンター*/
+			float fired{ 0.f };					/*駐退数*/
+			int16_t rounds{ 0 };				/*弾数*/
+			gun_frame gun_info;					/**/
+			std::vector<Mainclass::Ammos> Spec;	/**/
+		public:
+			float xrad = 0.f, yrad = 0.f;
+
+			const float& Getfired() { return fired; }
+			const gun_frame& Getgun_info() { return gun_info; }
+			const float& Getcaliber(size_t id) { return Spec[id].get_caliber(); }
+
+			void Clear() {
+				this->fired = 0.f;
+				this->loadcnt = 0.f;
+				this->rounds = 0;
+				this->use_bullet = 0;
+				this->Spec.clear();
+			}
+			void Set(const gun_frame& resorce) {
+				this->gun_info = resorce;
+				this->rounds = this->gun_info.get_rounds();
+				//使用砲弾
+				this->Spec = this->gun_info.get_Spec();
+				for (auto& a : this->bullet) { a.Set(); }			//弾
+			}
+			void SetGunRad(const float view_xrad, const float view_yrad, float limit) {
+				this->yrad += std::clamp(view_yrad, -limit, limit);
+				//this->yrad = std::clamp(this->yrad + std::clamp(view_yrad, -limit, limit),deg2rad(-30.0)+yrad,deg2rad(30.0)+yrad);//射界制限
+				this->xrad = std::clamp(this->xrad + std::clamp(view_xrad, -limit, limit), deg2rad(-10), deg2rad(20));
+			}
+			template<class Chara, class Map, class vehicles>
+			void UpDate(bool key, const VECTOR_ref& pos_t, const VECTOR_ref& vec_t,
+				const std::shared_ptr<Chara>& mine, const std::vector<std::shared_ptr<Chara>>& chara,
+				const std::shared_ptr<vehicles>& mine_v, const std::vector<std::shared_ptr<vehicles>>& vehicle,
+				HIT_PASSIVE& hit_obj_p, HIT_BLOOD_PASSIVE& hit_b_obj_p, std::shared_ptr<Map>& MAPPTs) {
+				if (key && this->loadcnt == 0 && this->rounds > 0) {
+					auto& u = this->bullet[this->use_bullet];
+					++this->use_bullet %= this->bullet.size();
+					//ココだけ変化
+					moves tmp;
+					tmp.pos = pos_t;
+					tmp.vec = vec_t.Norm();
+
+					u.Put(&this->Spec[0], tmp);
+					this->loadcnt = this->Getgun_info().get_load_time();
+					this->rounds = std::max<uint16_t>(this->rounds - 1, 0);
+					this->fired = 1.f;
+					mine->Set_eff(ef_fire, pos_t, vec_t, 0.1f / 0.1f);//ノーマル
+
+					mine_v->get_audio().fire.vol(128);
+					mine_v->get_audio().fire.play_3D(mine_v->get_move().pos, 250.f);
+				}
+				this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
+				this->fired = std::max(this->fired - 1.f / FPS, 0.f);
+
+				//弾の処理
+				for (auto& a : this->bullet) { a.UpDate(mine, chara, mine_v, vehicle, hit_obj_p, hit_b_obj_p, MAPPTs); }
+			}
+			/*弾道描画*/
+			void Draw_ammo(void) noexcept {
+				for (auto& a : this->bullet) { a.Draw(); }
+			}
+			/* UI向けにヒット部分を表示*/
+			void Draw_Hit_UI(GraphHandle& hit_Graph) noexcept {
+				for (auto& a : this->bullet) {
+					if (a.hit_alpha >= 10.f / 255.f) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f * a.hit_alpha));
+						hit_Graph.DrawRotaGraph(a.hit_window_x, a.hit_window_y, a.hit_alpha * 0.5f, 0.f, true);//(ismine ? 1.f : 0.5f)
+					}
+				}
+			}
+
+			Guns() {
+			}
+			Guns(const Guns&) {
+			}
+		};										/**/
+		//履帯BOX2D
+		class FootWorld {
+		public:
+			std::shared_ptr<b2World> world{ nullptr };		/*足world*/
+			b2RevoluteJointDef f_jointDef;					/*ジョイント*/
+			std::vector<b2Pats> Foot, Wheel, Yudo;			/**/
 		};
 	public:
 		Vehcs* use_veh;																/*固有値*/
@@ -3634,8 +3741,22 @@ public:
 		void sort_Hit() {
 			std::sort(this->hitssort.begin(), this->hitssort.end(), [](const pair_hit& x, const pair_hit& y) { return x.second < y.second; });
 		}
+
 		auto& get_hitssort() noexcept { return this->hitssort; }
 		auto& get_hitres() noexcept { return this->hitres; }
+		bool HitCheck(int m,moves ray) {
+			this->hitres[m] = this->col_line(ray.repos, ray.pos, m);
+			if (this->hitres[m].HitFlag == TRUE) {
+				this->hitssort[m].first = m;
+				this->hitssort[m].second = (ray.repos - this->hitres[m].HitPosition).size();
+				return true;
+			}
+			else {
+				this->hitssort[m].first = m;
+				this->hitssort[m].second = (std::numeric_limits<float>::max)();
+				return false;
+			}
+		}
 
 		const auto& get_audio() const noexcept { return this->audio; }																	//audio(メニューのみ)
 		const float& get_body_yrad(void) const noexcept { return this->body_yrad; }														//ミニマップ用
@@ -3817,10 +3938,10 @@ public:
 							//マップに当たったか
 							//mapparts->map_col_line_nearest(campos, &endpos);
 
-							vec_a = (this->obj_body.frame(this->Gun_[0].Getgun_info().frame2.first) - endpos).Norm();
+							vec_a = (this->obj_body.frame(this->Gun_[0].Getgun_info().get_frame2().first) - endpos).Norm();
 						}
 						//反映
-						auto vec_z = this->obj_body.frame(this->Gun_[0].Getgun_info().frame3.first) - this->obj_body.frame(this->Gun_[0].Getgun_info().frame2.first);
+						auto vec_z = this->obj_body.frame(this->Gun_[0].Getgun_info().get_frame3().first) - this->obj_body.frame(this->Gun_[0].Getgun_info().get_frame2().first);
 						float z_hyp = std::hypotf(vec_z.x(), vec_z.z());
 						float a_hyp = std::hypotf(vec_a.x(), vec_a.z());
 						float cost = (vec_a.z() * vec_z.x() - vec_a.x() * vec_z.z()) / (a_hyp * z_hyp);
@@ -3847,17 +3968,17 @@ public:
 					}
 					//反映
 					for (auto& g : this->Gun_) {
-						if (g.Getgun_info().frame1.first > 0) {
-							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().frame1, MATRIX_ref::RotY(g.Getgun_info().yrad));
-							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().frame1, MATRIX_ref::RotY(g.Getgun_info().yrad));
+						if (g.Getgun_info().get_frame1().first > 0) {
+							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().get_frame1(), MATRIX_ref::RotY(g.yrad));
+							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().get_frame1(), MATRIX_ref::RotY(g.yrad));
 						}
-						if (g.Getgun_info().frame2.first > 0) {
-							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().frame2, MATRIX_ref::RotX(g.Getgun_info().xrad));
-							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().frame2, MATRIX_ref::RotX(g.Getgun_info().xrad));
+						if (g.Getgun_info().get_frame2().first > 0) {
+							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().get_frame2(), MATRIX_ref::RotX(g.xrad));
+							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().get_frame2(), MATRIX_ref::RotX(g.xrad));
 						}
-						if (g.Getgun_info().frame3.first > 0) {
-							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().frame3, MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
-							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().frame3, MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
+						if (g.Getgun_info().get_frame3().first > 0) {
+							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().get_frame3(), MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
+							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().get_frame3(), MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
 						}
 					}
 				}
@@ -3996,8 +4117,8 @@ public:
 					this->move.pos += this->move.vec;
 					//射撃反動
 					{
-						easing_set(&xrad_shot, deg2rad(-this->Gun_[0].Getfired() * this->Gun_[0].Getcaliber(0) * 50.f) * cos(this->Gun_[0].Getgun_info().yrad), 0.85f);
-						easing_set(&zrad_shot, deg2rad(-this->Gun_[0].Getfired() * this->Gun_[0].Getcaliber(0) * 50.f) * sin(this->Gun_[0].Getgun_info().yrad), 0.85f);
+						easing_set(&xrad_shot, deg2rad(-this->Gun_[0].Getfired() * this->Gun_[0].Getcaliber(0) * 50.f) * cos(this->Gun_[0].yrad), 0.85f);
+						easing_set(&zrad_shot, deg2rad(-this->Gun_[0].Getfired() * this->Gun_[0].Getcaliber(0) * 50.f) * sin(this->Gun_[0].yrad), 0.85f);
 						this->move.mat *= MATRIX_ref::RotAxis(this->move.mat.xvec(), -xrad_shot) * MATRIX_ref::RotAxis(this->move.mat.zvec(), zrad_shot);
 					}
 				}
@@ -4018,8 +4139,8 @@ public:
 						auto& cg = this->Gun_[i];
 						cg.UpDate(
 							key[(i == 0) ? 0 : 1],
-							this->obj_body.frame(cg.Getgun_info().frame3.first),
-							(this->obj_body.frame(cg.Getgun_info().frame3.first) - this->obj_body.frame(cg.Getgun_info().frame2.first)).Norm(), mine, chara, shared_from_this(), vehicle, hit_obj_p, hit_b_obj_p, MAPPTs);
+							this->obj_body.frame(cg.Getgun_info().get_frame3().first),
+							(this->obj_body.frame(cg.Getgun_info().get_frame3().first) - this->obj_body.frame(cg.Getgun_info().get_frame2().first)).Norm(), mine, chara, shared_from_this(), vehicle, hit_obj_p, hit_b_obj_p, MAPPTs);
 					}
 				}
 				//戦車壁判定

@@ -862,13 +862,6 @@ private:
 		}
 	};
 protected:
-
-	class damage_rad {
-	public:
-		float alpfa{ 1.f };
-		float rad{ 0.f };
-	};
-
 	//キャラ用オーディオ
 	class Audios {
 	private:
@@ -995,6 +988,7 @@ protected:
 			this->engine.Dispose();
 		}
 	};
+
 	//弾データ
 	class Ammos {
 	private:
@@ -1260,7 +1254,7 @@ protected:
 
 		template<class Chara>
 		bool subHP(int sel, int damage, const std::shared_ptr<Chara>&tgt, const std::shared_ptr<Chara>& mine, const std::vector<std::shared_ptr<Chara>>& chara) {
-			auto q = tgt->map_col_line(this->move.repos, this->move.pos, sel);
+			auto q = tgt->col_line(this->move.repos, this->move.pos, sel);
 			if (q.HitFlag == TRUE) {
 				this->move.pos = q.HitPosition;
 				//hit
@@ -1308,19 +1302,6 @@ protected:
 			return false;
 		}
 
-		template<class vehicles>
-		bool get_coli(const std::shared_ptr<vehicles>&tgt,int m) {
-			tgt->get_hitres()[m] = tgt->map_col_line(this->move.repos, this->move.pos, m);
-			if (tgt->get_hitres()[m].HitFlag == TRUE) {
-				tgt->get_hitssort()[m] = { m, (this->move.repos - tgt->get_hitres()[m].HitPosition).size() };
-				return true;
-			}
-			else {
-				tgt->get_hitssort()[m] = { m, (std::numeric_limits<float>::max)() };
-				return false;
-			}
-		}
-
 		template<class Chara, class Map, class vehicles>
 		void UpDate(const std::shared_ptr<Chara>& mine, const std::vector<std::shared_ptr<Chara>>& chara,
 			const std::shared_ptr<vehicles>& mine_v, const std::vector<std::shared_ptr<vehicles>>& vehicle,
@@ -1347,9 +1328,9 @@ protected:
 							is_hit = false;
 							//とりあえず当たったかどうか探す
 							{
-								for (auto& m : tgt->use_veh->Get_module_mesh()) { is_hit |= get_coli(tgt, m); }	//モジュール
-								for (auto& m : tgt->use_veh->Get_space_mesh()) { is_hit |= get_coli(tgt, m); }		//空間装甲
-								for (auto& m : tgt->use_veh->Get_armer_mesh()) { is_hit |= get_coli(tgt, m.first); }		//装甲
+								for (auto& m : tgt->use_veh->Get_module_mesh()) { is_hit |= tgt->HitCheck(m, this->move); }	//モジュール
+								for (auto& m : tgt->use_veh->Get_space_mesh()) { is_hit |= tgt->HitCheck(m, this->move); }		//空間装甲
+								for (auto& m : tgt->use_veh->Get_armer_mesh()) { is_hit |= tgt->HitCheck(m.first, this->move); }		//装甲
 							}
 							//当たってない場合抜ける
 							if (!is_hit) {
@@ -2079,17 +2060,25 @@ protected:
 	//戦車砲
 	class gun_frame {
 		int type = 0;
-	public:
-		float xrad = 0.f, yrad = 0.f;
 		uint16_t rounds = 0;
 		std::string name;
-		float load_time = 0.f;
 		std::vector<std::string> useammo;
 		std::vector<Mainclass::Ammos> Spec;	/**/
+		float load_time = 0.f;
 		frames frame1;
 		frames frame2;
 		frames frame3;
 	public:
+		
+		const auto& get_rounds()const noexcept { return rounds; }
+		const auto& get_Spec()const noexcept { return Spec; }
+
+		const auto& get_load_time()const noexcept { return load_time; }
+		const auto& get_frame1()const noexcept { return frame1; }
+		const auto& get_frame2()const noexcept { return frame2; }
+		const auto& get_frame3()const noexcept { return frame3; }
+		//const auto& get_()const noexcept { return; }
+
 		void set(const MV1& obj, int i) {
 			this->frame1 = { i,obj.frame(i) };
 			auto p2 = obj.frame_parent(this->frame1.first);
@@ -2112,10 +2101,20 @@ protected:
 			}
 		}
 
-		void Set_Ammos_data(int mdata) {
+		void Set_performance(int mdata,const std::string& stt) {
+			this->name = getparams::getright(stt);
+			this->load_time = getparams::_float(mdata);
+			this->rounds = uint16_t(getparams::_ulong(mdata));
+
 			this->Spec.resize(this->Spec.size() + 1);
 			this->Spec.back().Set_before("data/ammo/", getparams::_str(mdata));
-
+			while (true) {
+				auto stp = getparams::get_str(mdata);
+				if (stp.find("useammo" + std::to_string(this->useammo.size())) == std::string::npos) {
+					break;
+				}
+				this->useammo.emplace_back(getparams::getright(stp));
+			}
 		}
 
 		void Set_Ammos_after() {
@@ -2123,88 +2122,7 @@ protected:
 				a.Set();
 			}
 		}
-
 	};
-	class Guns {							/**/
-		size_t use_bullet{ 0 };							/*確保する弾*/
-		std::array<BULLETS, max_bullet> bullet;			/*確保する弾*/
-
-		float loadcnt{ 0 };					/*装てんカウンター*/
-		float fired{ 0.f };					/*駐退数*/
-		int16_t rounds{ 0 };				/*弾数*/
-		gun_frame gun_info;					/**/
-		std::vector<Mainclass::Ammos> Spec;	/**/
-	public:
-		const auto& Getfired() { return fired; }
-		const auto& Getgun_info() { return gun_info; }
-		const auto& Getcaliber(size_t id) { return Spec[id].get_caliber(); }
-
-		void Clear() {
-			this->fired = 0.f;
-			this->loadcnt = 0.f;
-			this->rounds = 0;
-			this->use_bullet = 0;
-			this->Spec.clear();
-		}
-		void Set(const gun_frame& resorce) {
-			this->gun_info = resorce;
-			this->rounds = this->gun_info.rounds;
-			//使用砲弾
-			this->Spec = this->gun_info.Spec;
-			for (auto& a : this->bullet) { a.Set(); }			//弾
-		}
-		void SetGunRad(const float view_xrad, const float view_yrad, float limit) {
-			this->gun_info.yrad += std::clamp(view_yrad, -limit, limit);
-			//this->gun_info.yrad = std::clamp(this->gun_info.yrad + std::clamp(view_yrad, -limit, limit),deg2rad(-30.0)+yrad,deg2rad(30.0)+yrad);//射界制限
-			this->gun_info.xrad = std::clamp(this->gun_info.xrad + std::clamp(view_xrad, -limit, limit), deg2rad(-10), deg2rad(20));
-		}
-		template<class Chara, class Map, class vehicles>
-		void UpDate(bool key, const VECTOR_ref& pos_t, const VECTOR_ref& vec_t,
-			const std::shared_ptr<Chara>& mine, const std::vector<std::shared_ptr<Chara>>& chara,
-			const std::shared_ptr<vehicles>& mine_v, const std::vector<std::shared_ptr<vehicles>>& vehicle,
-			HIT_PASSIVE& hit_obj_p, HIT_BLOOD_PASSIVE& hit_b_obj_p, std::shared_ptr<Map>& MAPPTs) {
-			if (key && this->loadcnt == 0 && this->rounds > 0) {
-				auto& u = this->bullet[this->use_bullet];
-				++this->use_bullet %= this->bullet.size();
-				//ココだけ変化
-				moves tmp;
-				tmp.pos = pos_t;
-				tmp.vec = vec_t.Norm();
-
-				u.Put(&this->Spec[0], tmp);
-				this->loadcnt = this->Getgun_info().load_time;
-				this->rounds = std::max<uint16_t>(this->rounds - 1, 0);
-				this->fired = 1.f;
-				mine->Set_eff(ef_fire, pos_t, vec_t, 0.1f / 0.1f);//ノーマル
-
-				mine_v->get_audio().fire.vol(128);
-				mine_v->get_audio().fire.play_3D(mine_v->get_move().pos, 250.f);
-			}
-			this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
-			this->fired = std::max(this->fired - 1.f / FPS, 0.f);
-
-			//弾の処理
-			for (auto& a : this->bullet) { a.UpDate(mine, chara, mine_v, vehicle, hit_obj_p, hit_b_obj_p, MAPPTs); }
-		}
-		/*弾道描画*/
-		void Draw_ammo(void) noexcept {
-			for (auto& a : this->bullet) { a.Draw(); }
-		}
-		/* UI向けにヒット部分を表示*/
-		void Draw_Hit_UI(GraphHandle& hit_Graph) noexcept {
-			for (auto& a : this->bullet) {
-				if (a.hit_alpha >= 10.f / 255.f) {
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f * a.hit_alpha));
-					hit_Graph.DrawRotaGraph(a.hit_window_x, a.hit_window_y, a.hit_alpha * 0.5f, 0.f, true);//(ismine ? 1.f : 0.5f)
-				}
-			}
-		}
-
-		Guns() {
-		}
-		Guns(const Guns&) {
-		}
-	};										/**/
 	//
 	class b2Pats {
 		b2FixtureDef fixtureDef;			/*動的ボディフィクスチャを定義します*/
@@ -2247,13 +2165,7 @@ protected:
 			body->SetTransform(position, angle);
 		}
 	};
-	//履帯BOX2D
-	class FootWorld {
-	public:
-		std::shared_ptr<b2World> world{ nullptr };		/*足world*/
-		b2RevoluteJointDef f_jointDef;					/*ジョイント*/
-		std::vector<b2Pats> Foot, Wheel, Yudo;			/**/
-	};
+
 	//戦車データ
 	class Vehcs {
 		std::string name;									/**/
@@ -2549,25 +2461,10 @@ protected:
 				this->turret_rad_limit = deg2rad(getparams::_float(mdata));
 				this->HP = getparams::_int(mdata);
 				auto stt = getparams::get_str(mdata);
-				for (auto& g : this->gunframe) {
-					g.name = getparams::getright(stt);
-					g.load_time = getparams::_float(mdata);
-					g.rounds = uint16_t(getparams::_ulong(mdata));
-
-					g.Set_Ammos_data(mdata);
-					while (true) {
-						auto stp = getparams::get_str(mdata);
-						if (stp.find("useammo" + std::to_string(g.useammo.size())) == std::string::npos) {
-							break;
-						}
-						g.useammo.emplace_back(getparams::getright(stp));
-					}
-				}
+				for (auto& g : this->gunframe) { g.Set_performance(mdata, stt); }
 				this->audio.Set(mdata);						//サウンド
 				FileRead_close(mdata);
-				for (auto& g : this->gunframe) {
-					g.Set_Ammos_after();
-				}
+				for (auto& g : this->gunframe) { g.Set_Ammos_after(); }
 			}
 		}
 	};
