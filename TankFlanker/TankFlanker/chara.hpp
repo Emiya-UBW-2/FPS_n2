@@ -3691,6 +3691,15 @@ public:
 			}
 			Guns(const Guns&) {
 			}
+
+			void Set_Frame(MV1* obj_body, MV1* obj_col) {
+				BodyFrameLocalMatrix(*obj_body, this->Getgun_info().get_frame1(), MATRIX_ref::RotY(this->yrad));
+				BodyFrameLocalMatrix(*obj_body, this->Getgun_info().get_frame2(), MATRIX_ref::RotX(this->xrad));
+				BodyFrameLocalMatrix(*obj_body, this->Getgun_info().get_frame3(), MATRIX_ref::Mtrans(VGet(0.f, 0.f, this->Getfired() * 0.5f)));
+				BodyFrameLocalMatrix(*obj_col, this->Getgun_info().get_frame1(), MATRIX_ref::RotY(this->yrad));
+				BodyFrameLocalMatrix(*obj_col, this->Getgun_info().get_frame2(), MATRIX_ref::RotX(this->xrad));
+				BodyFrameLocalMatrix(*obj_col, this->Getgun_info().get_frame3(), MATRIX_ref::Mtrans(VGet(0.f, 0.f, this->Getfired() * 0.5f)));
+			}
 		};										/**/
 		//—š‘ÑBOX2D
 		class FootWorld {
@@ -3915,7 +3924,11 @@ public:
 
 			this->audio.Duplicate(this->use_veh->audio);	//audio
 		}
-		static void BodyFrameLocalMatrix(MV1& obj_body_t, const frames& id, const MATRIX_ref& mat_t = MGetIdent()) noexcept { obj_body_t.SetFrameLocalMatrix(id.first, mat_t * MATRIX_ref::Mtrans(id.second)); }
+		static void BodyFrameLocalMatrix(MV1& obj_body_t, const frames& id, const MATRIX_ref& mat_t = MGetIdent()) noexcept {
+			if (id.first >= 0) {
+				obj_body_t.SetFrameLocalMatrix(id.first, mat_t * MATRIX_ref::Mtrans(id.second));
+			}
+		}
 		template<class Map>
 		void UpDate(const cam_info& cams, const std::shared_ptr<Chara>& mine, const std::vector<std::shared_ptr<Chara>>& chara, const std::vector<std::shared_ptr<vehicles>>& vehicle, HIT_PASSIVE& hit_obj_p, HIT_BLOOD_PASSIVE& hit_b_obj_p, std::shared_ptr<Map>& MAPPTs) {
 			if (vehicle[0] == shared_from_this()) {
@@ -3961,26 +3974,11 @@ public:
 				spd_rec = this->speed;
 				this->nearhit = false;
 				//–C“ƒù‰ñ
-				{
+				for (auto& g : this->Gun_) {
 					//Šp“xŽwŽ¦
-					for (auto& g : this->Gun_) {
-						g.SetGunRad(view_xrad, view_yrad, this->use_veh->Get_turret_rad_limit() / FPS);
-					}
+					g.SetGunRad(view_xrad, view_yrad, this->use_veh->Get_turret_rad_limit() / FPS);
 					//”½‰f
-					for (auto& g : this->Gun_) {
-						if (g.Getgun_info().get_frame1().first > 0) {
-							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().get_frame1(), MATRIX_ref::RotY(g.yrad));
-							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().get_frame1(), MATRIX_ref::RotY(g.yrad));
-						}
-						if (g.Getgun_info().get_frame2().first > 0) {
-							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().get_frame2(), MATRIX_ref::RotX(g.xrad));
-							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().get_frame2(), MATRIX_ref::RotX(g.xrad));
-						}
-						if (g.Getgun_info().get_frame3().first > 0) {
-							BodyFrameLocalMatrix(this->obj_body, g.Getgun_info().get_frame3(), MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
-							BodyFrameLocalMatrix(this->obj_col, g.Getgun_info().get_frame3(), MATRIX_ref::Mtrans(VGet(0.f, 0.f, g.Getfired() * 0.5f)));
-						}
-					}
+					g.Set_Frame(&this->obj_body, &this->obj_col);
 				}
 				//“]—Ö
 				{

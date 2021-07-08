@@ -2056,8 +2056,7 @@ protected:
 
 		~Items() {}
 	};
-
-	//戦車砲
+	//戦車砲データ
 	class gun_frame {
 		int type = 0;
 		uint16_t rounds = 0;
@@ -2078,6 +2077,12 @@ protected:
 		const auto& get_frame2()const noexcept { return frame2; }
 		const auto& get_frame3()const noexcept { return frame3; }
 		//const auto& get_()const noexcept { return; }
+
+		gun_frame() {
+			frame1.first = -1;
+			frame2.first = -1;
+			frame3.first = -1;
+		}
 
 		void set(const MV1& obj, int i) {
 			this->frame1 = { i,obj.frame(i) };
@@ -2165,7 +2170,6 @@ protected:
 			body->SetTransform(position, angle);
 		}
 	};
-
 	//戦車データ
 	class Vehcs {
 		std::string name;									/**/

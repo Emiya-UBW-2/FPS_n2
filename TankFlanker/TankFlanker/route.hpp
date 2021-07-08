@@ -359,7 +359,6 @@ public:
 			{
 				//‰ð•ú
 				scenes_ptr->Dispose();
-				DrawPts->Delete_Shadow();
 			}
 			//
 			if (!this->ending) {
@@ -370,5 +369,6 @@ public:
 			//
 		} while (true);
 		//
+		DrawPts->Delete_Shadow();
 	}
 };
