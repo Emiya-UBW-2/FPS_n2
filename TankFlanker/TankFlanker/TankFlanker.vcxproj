@@ -109,6 +109,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="chara.hpp" />
+    <ClInclude Include="Enums.hpp" />
+    <ClInclude Include="Header.hpp" />
     <ClInclude Include="map.hpp" />
     <ClInclude Include="route.hpp" />
     <ClInclude Include="scene.hpp" />
