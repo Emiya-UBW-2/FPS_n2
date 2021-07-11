@@ -883,7 +883,7 @@ namespace MAIN_ {
 			std::vector<Vehcs> vehcs;
 			std::vector<std::shared_ptr<PLAYERclass::vehicles>> vehicle;
 		public:
-			const std::shared_ptr<PLAYERclass::Chara>& Get_Mine(void) noexcept { return this->chara[0]; }
+			std::shared_ptr<PLAYERclass::Chara>& Get_Mine(void) noexcept { return this->chara[0]; }
 			std::vector<GUNPARTs>* get_parts_data(EnumGunParts type_sel) noexcept {
 				switch (type_sel) {
 				case EnumGunParts::PARTS_MAGAZINE:
@@ -1037,9 +1037,11 @@ namespace MAIN_ {
 			}
 			void Ready_Chara(const size_t& spawn_total) noexcept {
 				//キャラ設定
-				for (auto i = 0; i < spawn_total; ++i) {
-					this->chara.emplace_back(std::make_shared<PLAYERclass::Chara>(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p));
-					this->chara.back()->Set(gun_data, 0, body_obj, body_obj_lag, body_col,&this->chara);
+				this->chara.resize(spawn_total);
+				for (auto& c : this->chara) {
+					c = std::make_shared<PLAYERclass::Chara>(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
+					c->Set_Ptr(&this->chara, &c, &this->vehicle, nullptr);
+					c->Set(gun_data, 0, body_obj, body_obj_lag, body_col);
 				}
 			}
 		public:
@@ -1048,7 +1050,7 @@ namespace MAIN_ {
 				UIparts->Init(DrawPts, MAPPTs);
 				//
 				for (auto& c : this->chara) {
-					//カスタムattach
+					//NPCのカスタムattach
 					if (c != Get_Mine()) {
 						//magazine
 						c->Attach_parts(&magazine_data[0], EnumGunParts::PARTS_MAGAZINE);
@@ -1094,8 +1096,20 @@ namespace MAIN_ {
 					vehicle.resize(2);
 					for (auto& v : this->vehicle) {
 						v = std::make_shared<PLAYERclass::vehicles>(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
+						v->Set_Ptr(&this->chara, nullptr, &this->vehicle, &v);
 						v->Set(&vehcs[0], gndsmkHndle);
 					}
+				}
+
+				//乗るときの登録
+				this->Get_Mine()->MINE_v = &this->vehicle[0];
+				this->vehicle[0]->MINE_c = &this->Get_Mine();
+				//
+				for (auto& c : this->chara) {
+					c->Set_bullet();
+				}
+				for (auto& v : this->vehicle) {
+					v->Set_bullet();
 				}
 			}
 			bool UpDate(void) noexcept override {
@@ -1131,10 +1145,10 @@ namespace MAIN_ {
 				//共通演算//2～3ms
 				for (auto& c : this->chara) {
 					c->UpDate_(RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data,
-						this->chara, &c == &this->Get_Mine(), vehicle[0], vehicle, effsorce);
+						&c == &this->Get_Mine(), effsorce);
 				}
 				for (auto& v : this->vehicle) {
-					v->UpDate(this->camera_main, this->Get_Mine(), this->chara, vehicle);
+					v->UpDate(this->camera_main, this->Get_Mine());
 				}
 				MAPPTs->world->Step(1.f, 1, 1);
 				for (auto& v : this->vehicle) {
@@ -1144,8 +1158,8 @@ namespace MAIN_ {
 				this->hit_obj_p.update();
 				this->hit_b_obj_p.update();
 				//campos,camvec,camupの指定
-				this->Get_Mine()->Set_cam(this->camera_main, this->chara, this->fov_base);
-				//this->chara[1]->Set_cam(this->camera_main, this->chara, this->fov_base);
+				this->Get_Mine()->Set_cam(this->camera_main, this->fov_base);
+				//this->chara[1]->Set_cam(this->camera_main, this->fov_base);
 				//vehicle[0]->Set_cam(this->camera_main, this->Get_Mine()->GetHMDmat().zvec(), this->fov_base);
 				this->camera_main.camup = MATRIX_ref::Vtrans(this->camera_main.camup, MATRIX_ref::RotAxis(
 					(this->camera_main.camvec - this->camera_main.campos),
@@ -1246,7 +1260,7 @@ namespace MAIN_ {
 				for (auto& c : this->chara) { c->Draw_chara(); }
 				for (auto& v : this->vehicle) { v->Draw(); }
 				//レーザー
-				for (auto& c : this->chara) { c->Draw_LAM_Effect(this->chara, light); }
+				for (auto& c : this->chara) { c->Draw_LAM_Effect(light); }
 				//銃弾
 				SetFogEnable(FALSE);
 				SetUseLighting(FALSE);
