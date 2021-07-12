@@ -150,7 +150,7 @@ namespace MAIN_ {
 				//‰¼(‹¤’Ê‚Ì‚½‚ß)
 				auto set_key_vr = [&]() {
 #ifdef _USE_OPENVR_
-					auto& mine_k = MAINLOOPscene->Get_Mine()->get_key_();
+					auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
 					if (DrawPts->get_hand1_num() != -1) {
 						auto ptr_ = DrawPts->get_device_hand1();
 						if (ptr_->turn && ptr_->now) {
@@ -192,7 +192,7 @@ namespace MAIN_ {
 									set_key_vr();
 								}
 								else {
-									auto& mine_k = MAINLOOPscene->Get_Mine()->get_key_();
+									auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
 									//İ’è
 									mine_k.dkey = KeyBind->get_key_use(2);
 									mine_k.akey = KeyBind->get_key_use(3);
@@ -208,7 +208,7 @@ namespace MAIN_ {
 									set_key_vr();
 								}
 								else {
-									auto& mine_k = MAINLOOPscene->Get_Mine()->get_key_();
+									auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
 									//İ’è
 									mine_k.wkey = KeyBind->get_key_use(0);
 									mine_k.skey = KeyBind->get_key_use(1);
@@ -228,7 +228,7 @@ namespace MAIN_ {
 									set_key_vr();
 								}
 								else {
-									auto& mine_k = MAINLOOPscene->Get_Mine()->get_key_();
+									auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
 									//İ’è
 									mine_k.have_mag = true;
 									mine_k.wkey = KeyBind->get_key_use(0);

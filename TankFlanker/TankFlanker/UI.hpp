@@ -483,7 +483,7 @@ namespace MAIN_ {
 				{
 					//HP•\Ž¦
 					{
-						auto ratio = (1.f - float(float(mine->HP) / mine->HP_full));
+						auto ratio = (1.f - float(mine->HP) / mine->HP_full);
 						if (ratio > 1.f / 255.f) {
 							if (DrawPts->use_vr) {
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f * ratio), 0, 255));

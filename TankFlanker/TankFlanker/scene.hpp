@@ -726,10 +726,10 @@ namespace MAIN_ {
 					range_tgt = std::hypotf(sin(deg2rad(yrad_t)) * 0.25f, cos(deg2rad(yrad_t)) * (std::abs((((std::abs(yrad_t) > 90) ? MAINLOOPscene->Get_Mine()->get_maz().z() : 0.5f) - viewparts.z())) + camera_main.near_ * 2.f));
 					range_t = (Rot.on() && !changef) ? std::clamp(range_t - float(GetMouseWheelRotVol()) * 0.1f, range_tgt, 5.f) : range_tgt;
 
-					easing_set(&camparts, VECTOR_ref::vget(range_t * cos(deg2rad(xrad_t)) * sin(deg2rad(yrad_t)), range_t * sin(deg2rad(xrad_t)), range_t * cos(deg2rad(xrad_t)) * cos(deg2rad(yrad_t))), 0.8f);
+					easing_set(&camparts, VECTOR_ref::vget(cos(deg2rad(xrad_t))* sin(deg2rad(yrad_t)), sin(deg2rad(xrad_t)), cos(deg2rad(xrad_t))* cos(deg2rad(yrad_t)))* range_t, 0.8f);
 					camera_main.camvec = viewparts;
 					camera_main.campos = camera_main.camvec + camparts;
-					camera_main.camup = VECTOR_ref::vget(0, 1.f, 0);
+					camera_main.camup = VECTOR_ref::up();
 				}
 				//•\Ž¦‚Ì”@‰½
 				{
@@ -846,8 +846,8 @@ namespace MAIN_ {
 							this->xr_cam = std::clamp(this->xr_cam, deg2rad(-89), deg2rad(89));
 						}
 						//
-						this->camera_TPS.camvec = this->camera_TPS.campos + MATRIX_ref::Vtrans(VECTOR_ref::vget(0, 0, 1), MATRIX_ref::RotX(this->xr_cam) * MATRIX_ref::RotY(this->yr_cam));
-						this->camera_TPS.camup = VECTOR_ref::vget(0, 1.f, 0);
+						this->camera_TPS.camvec = this->camera_TPS.campos + MATRIX_ref::Vtrans(VECTOR_ref::front(), MATRIX_ref::RotX(this->xr_cam) * MATRIX_ref::RotY(this->yr_cam));
+						this->camera_TPS.camup = VECTOR_ref::up();
 					}
 				}
 			};
@@ -1041,7 +1041,7 @@ namespace MAIN_ {
 				for (auto& c : this->chara) {
 					c = std::make_shared<PLAYERclass::Chara>(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
 					c->Set_Ptr(&this->chara, &c, &this->vehicle, nullptr);
-					c->Set(gun_data, 0, body_obj, body_obj_lag, body_col);
+					c->Set(gun_data, 0, body_obj, body_obj_lag, body_col,effsorce);
 				}
 			}
 		public:
@@ -1069,14 +1069,15 @@ namespace MAIN_ {
 						c->Attach_parts(&dustcover_data[0], EnumGunParts::PARTS_DUSTCOVER, c->get_parts(EnumGunParts::PARTS_BASE), EnumAttachPoint::POINTS_DUSTCOVER_BASE);
 						c->Attach_parts(&stock_data[0], EnumGunParts::PARTS_STOCK, c->get_parts(EnumGunParts::PARTS_BASE), EnumAttachPoint::POINTS_STOCK_BASE);
 					}
-					//‰‰ñˆÊ’uÝ’èƒXƒ|[ƒ“
+					//‰‰ñƒXƒ|[ƒ“ˆÊ’uÝ’è
 					{
 						auto& wp = MAPPTs->get_spawn_point()[&c - &this->chara[0]];
 						moves tmp;
 						tmp.pos = wp;
 						tmp.mat = MATRIX_ref::RotY(atan2f(wp.x(), wp.z()));
-						c->Spawn(tmp);
+						c->SetSpawnPos(tmp);
 					}
+					c->Spawn();
 					//ƒvƒŒƒCƒ„[‘€ì•Ï”ŒQ
 					c->Start();
 				}
@@ -1089,18 +1090,19 @@ namespace MAIN_ {
 				Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
 				Light_color_ref = GetColorF(0.20f, 0.20f, 0.23f, 0.0f);
 				MAPPTs->Set();									//ŠÂ‹«
-
-				{
-					gndsmkHndle = EffekseerEffectHandle::load("data/effect/gndsmk.efk");
-					//‹¤’Ê
-					vehicle.resize(2);
-					for (auto& v : this->vehicle) {
-						v = std::make_shared<PLAYERclass::vehicles>(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
-						v->Set_Ptr(&this->chara, nullptr, &this->vehicle, &v);
-						v->Set(&vehcs[0], gndsmkHndle);
-					}
+				//íŽÔ—p
+				gndsmkHndle = EffekseerEffectHandle::load("data/effect/gndsmk.efk");
+				//‹¤’Ê
+				vehicle.resize(2);
+				moves temp;
+				for (auto& v : this->vehicle) {
+					v = std::make_shared<PLAYERclass::vehicles>(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
+					v->Set_Ptr(&this->chara, nullptr, &this->vehicle, &v);
+					temp.pos = VECTOR_ref::vget(1.f, 10.f, 0);
+					temp.mat = MATRIX_ref::RotY(deg2rad(0.f));
+					v->SetSpawnPos(temp);
+					v->Set(&vehcs[0], gndsmkHndle);
 				}
-
 				//æ‚é‚Æ‚«‚Ì“o˜^
 				this->Get_Mine()->MINE_v = &this->vehicle[0];
 				this->vehicle[0]->MINE_c = &this->Get_Mine();
@@ -1144,11 +1146,10 @@ namespace MAIN_ {
 				}
 				//‹¤’Ê‰‰ŽZ//2`3ms
 				for (auto& c : this->chara) {
-					c->UpDate_(RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data,
-						&c == &this->Get_Mine(), effsorce);
+					c->UpDate_(RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data, &c == &this->Get_Mine());
 				}
 				for (auto& v : this->vehicle) {
-					v->UpDate(this->camera_main, this->Get_Mine());
+					v->UpDate(this->camera_main);
 				}
 				MAPPTs->world->Step(1.f, 1, 1);
 				for (auto& v : this->vehicle) {
@@ -1207,7 +1208,6 @@ namespace MAIN_ {
 					c->Dispose();
 				}
 				this->chara.clear();
-
 				for (auto& v : this->vehicle) {
 					v->Dispose();
 				}

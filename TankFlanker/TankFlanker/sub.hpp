@@ -1494,7 +1494,7 @@ namespace MAIN_ {
 					if (pp.HitFlag == TRUE) {
 						this->move.HitGround(pp, 0.005f);
 						this->move.vec.clear();
-						//easing_set(&this->move.vec, VECTOR_ref::vget(0, 0, 0), 0.8f);
+						//easing_set(&this->move.vec, VECTOR_ref::zero(), 0.8f);
 					}
 				}
 				//
@@ -1672,7 +1672,7 @@ namespace MAIN_ {
 	//íÔ–Cƒf[ƒ^
 	class gun_frame {
 		int type = 0;
-		uint16_t rounds = 0;
+		int rounds = 0;
 		std::string name;
 		std::vector<std::string> useammo;
 		std::vector<Ammos> Spec;	/**/
@@ -1722,7 +1722,7 @@ namespace MAIN_ {
 		void Set_performance(int mdata,const std::string& stt) {
 			this->name = getparams::getright(stt);
 			this->load_time = getparams::_float(mdata);
-			this->rounds = uint16_t(getparams::_ulong(mdata));
+			this->rounds = getparams::_int(mdata);
 
 			this->Spec.resize(this->Spec.size() + 1);
 			this->Spec.back().Set_before("data/ammo/", getparams::_str(mdata));
