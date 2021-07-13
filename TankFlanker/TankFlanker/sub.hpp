@@ -1204,7 +1204,7 @@ namespace MAIN_ {
 		float recoil_yup = 0.f;				//反動
 		float recoil_ydn = 0.f;				//反動
 		float reload_time = 1.f;			//再装填時間
-		std::vector <uint8_t> select;		//セレクター
+		std::vector <EnumSELECTER> select;			//セレクター
 		std::vector <EnumSELECT_LAM> select_lam;	//ライト・レーザー
 		performance per;					//common
 		size_t mazzule_type = 0;			//mazzule
@@ -1221,6 +1221,24 @@ namespace MAIN_ {
 	public:
 		//setter
 		void Set_type(EnumGunParts type_t) { this->type = type_t; }
+		//
+		static void Set_Pre(std::vector<GUNPARTs>* data, std::string file_name, EnumGunParts type_t = EnumGunParts::PARTS_NONE) noexcept {
+			data->clear();
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			HANDLE hFind;
+			hFind = FindFirstFile((file_name + "*").c_str(), &win32fdt);
+			if (hFind != INVALID_HANDLE_VALUE) {
+				do {
+					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
+						data->resize(data->size() + 1);
+						data->back().mod.Ready(file_name, win32fdt.cFileName);
+						data->back().Set_type(type_t);
+					}
+				} while (FindNextFile(hFind, &win32fdt));
+			} //else{ return false; }
+			FindClose(hFind);
+		}
 		//
 		void Set(size_t id_) {
 			BASE_Obj::Set(id_);
@@ -1246,19 +1264,19 @@ namespace MAIN_ {
 							break;
 						}
 						else if (getparams::getright(p.c_str()) == "semi") {
-							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_SEMI));	//セミオート=1
+							this->select.emplace_back(EnumSELECTER::SELECT_SEMI);	//セミオート=1
 						}
 						else if (getparams::getright(p.c_str()) == "full") {
-							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_FULL));	//フルオート=2
+							this->select.emplace_back(EnumSELECTER::SELECT_FULL);	//フルオート=2
 						}
 						else if (getparams::getright(p.c_str()) == "3b") {
-							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_3B));	//3連バースト=3
+							this->select.emplace_back(EnumSELECTER::SELECT_3B);	//3連バースト=3
 						}
 						else if (getparams::getright(p.c_str()) == "2b") {
-							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_2B));	//2連バースト=4
+							this->select.emplace_back(EnumSELECTER::SELECT_2B);	//2連バースト=4
 						}
 						else {
-							this->select.emplace_back(uint8_t(EnumSELECTER::SELECT_SEMI));
+							this->select.emplace_back(EnumSELECTER::SELECT_SEMI);
 						}
 					}
 					this->audio.Set(this->mod.mdata);						//サウンド
@@ -1333,13 +1351,13 @@ namespace MAIN_ {
 				}
 			}
 		}
-		uint8_t Select_Chose(uint8_t sel_chose) {
+		int Select_Chose(EnumSELECTER sel_chose) {
 			auto ans = std::find(this->select.begin(), this->select.end(), sel_chose);
-			return uint8_t((ans != this->select.end()) ? (ans - this->select.begin()) : -1);
+			return int((ans != this->select.end()) ? (ans - this->select.begin()) : -1);
 		}
-		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, int selecting) {
+		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, EnumSELECTER selecting) {
 			for (auto& sel : this->select) {
-				easing_set(&gunanime_sel[&sel - &this->select[0]]->per, float(int(sel == this->select[selecting])), 0.5f);
+				easing_set(&gunanime_sel[&sel - &this->select[0]]->per, float(int(sel == this->select[(int)selecting])), 0.5f);
 			}
 		}
 	};
@@ -1347,6 +1365,22 @@ namespace MAIN_ {
 	class Meds :public BASE_Obj {
 	public:
 		int repair = 0;
+		static void Set_Pre(std::vector<Meds>* data, std::string file_name) noexcept {
+			data->clear();
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			HANDLE hFind;
+			hFind = FindFirstFile((file_name + "*").c_str(), &win32fdt);
+			if (hFind != INVALID_HANDLE_VALUE) {
+				do {
+					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
+						data->resize(data->size() + 1);
+						data->back().mod.Ready(file_name, win32fdt.cFileName);
+					}
+				} while (FindNextFile(hFind, &win32fdt));
+			} //else{ return false; }
+			FindClose(hFind);
+		}
 		void Set(size_t id_) {
 			BASE_Obj::Set(id_);
 			//テキスト
@@ -1359,6 +1393,22 @@ namespace MAIN_ {
 	class Grenades :public BASE_Obj {
 	public:
 		float time = 0;
+		static void Set_Pre(std::vector<Grenades>* data, std::string file_name) noexcept {
+			data->clear();
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			HANDLE hFind;
+			hFind = FindFirstFile((file_name + "*").c_str(), &win32fdt);
+			if (hFind != INVALID_HANDLE_VALUE) {
+				do {
+					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
+						data->resize(data->size() + 1);
+						data->back().mod.Ready(file_name, win32fdt.cFileName);
+					}
+				} while (FindNextFile(hFind, &win32fdt));
+			} //else{ return false; }
+			FindClose(hFind);
+		}
 		void Set(size_t id_) {
 			BASE_Obj::Set(id_);
 			//テキスト
@@ -1504,8 +1554,8 @@ namespace MAIN_ {
 				this->del_timer -= 1.f / FPS;
 			}
 		}
-		template<class Y, class Chara>
-		void Get_item_2(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<Chara>& chara, std::shared_ptr<Y>& MAPPTs) {
+		template<class Y, class PLAYER_CHARA>
+		void Get_item_2(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<PLAYER_CHARA>& chara, std::shared_ptr<Y>& MAPPTs) {
 			if (this->flag_canlook_player) {
 				bool zz = false;
 				if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
@@ -1594,11 +1644,11 @@ namespace MAIN_ {
 			}
 			return false;
 		}
-		template<class Y, class Chara>
-		bool Detach_gre(std::shared_ptr<Y>& MAPPTs, std::shared_ptr<Chara>& killer, std::vector<std::shared_ptr<Chara>>& chara) noexcept {
+		template<class Y, class PLAYER_CHARA>
+		bool Detach_gre(std::shared_ptr<Y>& MAPPTs, std::shared_ptr<PLAYER_CHARA>& killer, std::vector<std::shared_ptr<PLAYER_CHARA>>& chara) noexcept {
 			if (this->ptr_gre != nullptr && this->del_timer <= 0.f) {
 				//effect
-				killer->calc_gre_effect(this->move.pos);
+				killer->Set_eff(Effect::ef_greexp, this->move.pos, VECTOR_ref::front(), 0.1f / 0.1f);
 				//
 				killer->get_audio().explosion.vol(255);
 				killer->get_audio().explosion.play_3D(this->move.pos, 100.f);
@@ -1884,7 +1934,7 @@ namespace MAIN_ {
 			this->copy(t);
 		}
 		//事前読み込み
-		static void set_vehicles_pre(const char* name, std::vector<Vehcs>* veh_, const bool& Async) {
+		static void Set_Pre(std::vector<Vehcs>* veh_, const char* name) {
 			WIN32_FIND_DATA win32fdt;
 			HANDLE hFind;
 			hFind = FindFirstFile((std::string(name) + "*").c_str(), &win32fdt);
@@ -1898,13 +1948,13 @@ namespace MAIN_ {
 			} //else{ return false; }
 			FindClose(hFind);
 			for (auto& t : *veh_) {
-				MV1::Load(std::string(name) + t.name + "/model.mv1", &t.obj, Async);
-				MV1::Load(std::string(name) + t.name + "/col.mv1", &t.col, Async);
+				MV1::Load(std::string(name) + t.name + "/model.mv1", &t.obj, true);
+				MV1::Load(std::string(name) + t.name + "/col.mv1", &t.col, true);
 				t.ui_pic = GraphHandle::Load(std::string(name) + t.name + "/pic.png");
 			}
 		}
 		//メイン読み込み
-		void Set_after() {
+		void Set() {
 			using namespace std::literals;
 
 			//αテスト

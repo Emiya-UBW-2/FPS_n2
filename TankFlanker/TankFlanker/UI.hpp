@@ -259,7 +259,7 @@ namespace MAIN_ {
 			~UI_CUSTOM(void) noexcept {
 			}
 			template<class Y>
-			void UI_Draw(std::shared_ptr<Y>& MAINLOOPscene, EnumGunParts parts_cat, const bool& Rot, const std::shared_ptr<PLAYERclass::Chara>& mine, GUNPARTs* parts_p, float& change_per) noexcept {
+			void UI_Draw(std::shared_ptr<Y>& MAINLOOPscene, EnumGunParts parts_cat, const bool& Rot, const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine, GUNPARTs* parts_p, float& change_per) noexcept {
 				set_fonts();
 
 				int xs = 0, ys = 0, xp = 0, yp = 0;
@@ -407,7 +407,7 @@ namespace MAIN_ {
 			float timer = 0.f;
 			std::shared_ptr<RULE_parts> RULEparts{ nullptr };
 		private:
-			void Draw_HP(int xpos, int ypos, int xsize, int ysize, const std::shared_ptr<PLAYERclass::Chara>& mine) noexcept {
+			void Draw_HP(int xpos, int ypos, int xsize, int ysize, const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine) noexcept {
 				auto size = y_r(2);
 				int x1 = xpos - xsize / 2;
 				float size_y = float(ysize - size) / Small.hight;
@@ -477,7 +477,7 @@ namespace MAIN_ {
 				this->Ready = RULEparts->get_Ready();
 				this->timer = std::max(RULEparts->get_timer(), 0.f);
 			}
-			void UI_Draw(const std::shared_ptr<PLAYERclass::Chara>& mine) noexcept {
+			void UI_Draw(const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine) noexcept {
 				set_fonts();
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{
@@ -713,9 +713,9 @@ namespace MAIN_ {
 				}
 			}
 			void item_Draw(
-				const std::vector<std::shared_ptr<PLAYERclass::Chara>>& chara,
-				const std::vector<std::shared_ptr<PLAYERclass::vehicles>>& vehicle,
-				const std::shared_ptr<PLAYERclass::Chara>& mine) noexcept {
+				const std::vector<std::shared_ptr<PLAYERclass::PLAYER_CHARA>>& chara,
+				const std::vector<std::shared_ptr<PLAYERclass::PLAYER_VEHICLE>>& vehicle,
+				const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine) noexcept {
 				set_fonts();
 				//弾インジケーター
 				if (DrawPts->use_vr) {

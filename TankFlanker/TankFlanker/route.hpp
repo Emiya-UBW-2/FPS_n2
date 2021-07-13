@@ -13,21 +13,16 @@ namespace MAIN_ {
 	};
 
 	class main_c {
-		//終了処理フラグ
-		bool ending{ true };
-		scenes sel_scene{ scenes::NONE_SCENE };
-		bool update_effect_f{ true };
+	private:
+		bool ending{ true };							//終了処理フラグ
+		scenes sel_scene{ scenes::NONE_SCENE };			//現在のシーン
+		bool update_effect_f{ true };					//エフェクトのアップデートたイミング
 		LONGLONG update_effect_was = 0;
-
 		bool selend{ true };
 		bool selpause{ true };
-
 		VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
-
 		std::array<shaders, 2> shader2D;
-
-		std::vector<EffekseerEffectHandle> effsorce; /*エフェクトリソース*/
-
+		std::vector<EffekseerEffectHandle> effsorce;	/*エフェクトリソース*/
 		std::shared_ptr<Sceneclass::TEMPSCENE> scenes_ptr{ nullptr };
 	public:
 		main_c(void) noexcept {
@@ -78,6 +73,8 @@ namespace MAIN_ {
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
 				FindClose(hFind);
+				effsorce.resize(effsorce.size() + 1);
+				effsorce.back() = EffekseerEffectHandle::load("data/effect/gndsmk.efk");							//戦車用エフェクト
 			}
 			//シェーダー
 			auto HostpassPTs = std::make_shared<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)

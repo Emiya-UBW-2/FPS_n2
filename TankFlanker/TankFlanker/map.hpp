@@ -9,8 +9,7 @@
 #define PLAYER_HIT_SLIDE_LENGTH		0.015f	// 一度の壁押し出し処理でスライドさせる距離
 
 namespace MAIN_ {
-	class MAPclass {
-	public:
+	namespace MAPclass {
 		class Map {
 		private:
 			std::string path;
@@ -565,8 +564,8 @@ namespace MAIN_ {
 				}
 			}
 			//
-			template<class Chara>
-			void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<Chara>& chara, std::shared_ptr<Map>& MAPPTs) noexcept {
+			template<class PLAYER_CHARA>
+			void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<PLAYER_CHARA>& chara, std::shared_ptr<Map>& MAPPTs) noexcept {
 				chara->reset_canget_item();
 				for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs); }
 			}
@@ -644,8 +643,8 @@ namespace MAIN_ {
 				UI_player = GraphHandle::Load("data/UI/player.bmp");
 				MAPPTs = MAPPTs_t;
 			}
-			template<class Chara>
-			void UI_Draw(std::vector<std::shared_ptr<Chara>>& chara, const std::shared_ptr<Chara>& mine) noexcept {
+			template<class PLAYER_CHARA>
+			void UI_Draw(std::vector<std::shared_ptr<PLAYER_CHARA>>& chara, const std::shared_ptr<PLAYER_CHARA>& mine) noexcept {
 				UI_minimap.SetDraw_Screen(true);
 				{
 					DrawBox(0, 0, x_size, y_size, GetColor(0, 128, 0), TRUE);
@@ -691,5 +690,5 @@ namespace MAIN_ {
 				}
 			}
 		};
-	};
+	}
 };
