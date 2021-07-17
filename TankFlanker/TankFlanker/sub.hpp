@@ -3,9 +3,6 @@
 
 
 #define FRAME_RATE 90.f
-//リサイズ
-#define x_r(p1) (int(p1) * deskx / 1920)
-#define y_r(p1) (int(p1) * desky / 1080)
 
 namespace std {
 	template <>
@@ -17,7 +14,7 @@ namespace std {
 }; // namespace std
 //
 namespace FPS_n2 {
-	static const size_t max_bullet{ 32 };
+	static const size_t max_bullet{ 64 };
 
 	//option
 	class OPTION {
@@ -96,7 +93,7 @@ namespace FPS_n2 {
 			key_pair* use_part{ nullptr };
 		};
 		FontHandle font24;
-		int font24size = 24;
+		int font24size = y_r(24);
 		std::vector<keyhandle> keyg;
 		std::vector<keyhandle> keyg2;
 
@@ -119,6 +116,7 @@ namespace FPS_n2 {
 		//
 		key_bind(void) noexcept {
 			SetUseASyncLoadFlag(FALSE);
+			font24size = y_r(24);
 			font24 = FontHandle::Create(font24size, DX_FONTTYPE_EDGE);
 			mousehandle = GraphHandle::Load("data/key/mouse.png");
 			SetTransColor(0, 255, 0);
@@ -337,9 +335,9 @@ namespace FPS_n2 {
 			noF1_f = std::max(noF1_f - 1.f / FPS, 0.f);
 			//インフォ
 			if (F1_f > 0.1f) {
-				int xp_t = 100, yp_t = 300;
-				int xp_sk = xp_t, yp_sk = yp_t, y_size_k = 48;
-				int xp_s = 1500, yp_s = 200, y_size = 32;
+				int xp_t = y_r(100), yp_t = y_r(300);
+				int xp_sk = xp_t, yp_sk = yp_t, y_size_k = y_r(48);
+				int xp_s = y_r(1500), yp_s = y_r(200), y_size = y_r(32);
 				//背景
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * F1_f));
 				DrawBox(0, 0, deskx, desky, GetColor(0, 0, 0), TRUE);
@@ -354,28 +352,28 @@ namespace FPS_n2 {
 					{
 						for (auto& m : this->keyg) {
 							if (m.use_part != nullptr) {
-								xp_sk = xp_t + m.key.px;
-								yp_sk = yp_t + m.key.py;
+								xp_sk = xp_t + y_r(m.key.px);
+								yp_sk = yp_t + y_r(m.key.py);
 								if (m.use_part->get_key(0)) {//keyboad
-									m.onhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - 4) / 26.f, 0.f, false);
+									m.onhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - y_r(4)) / 26.f, 0.f, false);
 								}
 								else {
-									m.offhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - 4) / 26.f, 0.f, false);
+									m.offhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - y_r(4)) / 26.f, 0.f, false);
 								}
 							}
 						}
 						int yss = 0;
-						xp_sk = 1100;
-						yp_sk = 800;
+						xp_sk = y_r(1100);
+						yp_sk = y_r(800);
 						for (auto& m : this->keyg2) {
 							if (m.use_part != nullptr) {
 								if (m.use_part->get_key(3)) {
 									m.onhandle.GetSize(nullptr, &yss);
-									m.onhandle.DrawRotaGraph(xp_sk, yp_sk, float(256) / yss, 0.f, true);
+									m.onhandle.DrawRotaGraph(xp_sk, yp_sk, float(y_r(float(256) / yss * 100)) / 100.f, 0.f, true);
 								}
 								else {
 									m.offhandle.GetSize(nullptr, &yss);
-									m.offhandle.DrawRotaGraph(xp_sk, yp_sk, float(256) / yss, 0.f, true);
+									m.offhandle.DrawRotaGraph(xp_sk, yp_sk, float(y_r(float(256) / yss * 100)) / 100.f, 0.f, true);
 								}
 							}
 						}
@@ -383,19 +381,20 @@ namespace FPS_n2 {
 					//詳細
 					{
 						int xss = 0, yss = 0;
+						float siz_t = float(y_size - 4) / 25.f;
 						for (auto& i : this->key_use_ID) {
 							if (i.isalways && i.use_handle != nullptr) {
 								if (i.get_key(0)) {
 									i.use_handle->onhandle.GetSize(&xss, &yss);
-									xss = int(float(xss) * float(y_size - 4) / 25.f);
-									yss = int(float(yss) * float(y_size - 4) / 25.f);
-									i.use_handle->onhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
+									xss = int(float(xss) * siz_t);
+									yss = int(float(yss) * siz_t);
+									i.use_handle->onhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, siz_t, 0.f, false);
 								}
 								else {
 									i.use_handle->offhandle.GetSize(&xss, &yss);
-									xss = int(float(xss) * float(y_size - 4) / 25.f);
-									yss = int(float(yss) * float(y_size - 4) / 25.f);
-									i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
+									xss = int(float(xss) * siz_t);
+									yss = int(float(yss) * siz_t);
+									i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, siz_t, 0.f, false);
 								}
 								font24.DrawString(xp_s, yp_s + (y_size - font24size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
 							}
@@ -426,6 +425,7 @@ namespace FPS_n2 {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * std::clamp(noF1_f, 0.f, 1.f)));
 					int xp_s = deskx - y_r(700), yp_s = desky - y_r(28), x_size = y_r(26), y_size = y_r(24);
 					int xss = 0, yss = 0;
+					float siz_t = float(y_size - 4) / 25.f;
 					for (auto& i : this->key_use_ID) {
 						if (i.isalways) {
 							for (auto& m : this->keyg) {
@@ -433,15 +433,15 @@ namespace FPS_n2 {
 									if (i.get_key(0)) {
 										noF1_f = 3.f;
 										m.onhandle.GetSize(&xss, &yss);
-										xss = int(float(xss) * float(y_size - 4) / 25.f);
-										yss = int(float(yss) * float(y_size - 4) / 25.f);
-										m.onhandle.DrawRotaGraph(xp_s + (x_size - y_size + xss) / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
+										xss = int(float(xss) * siz_t);
+										yss = int(float(yss) * siz_t);
+										m.onhandle.DrawRotaGraph(xp_s + (x_size - y_size + xss) / 2, yp_s + yss / 2, siz_t, 0.f, false);
 									}
 									else {
 										m.offhandle.GetSize(&xss, &yss);
-										xss = int(float(xss) * float(y_size - 4) / 25.f);
-										yss = int(float(yss) * float(y_size - 4) / 25.f);
-										m.offhandle.DrawRotaGraph(xp_s + (x_size - y_size + xss) / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
+										xss = int(float(xss) * siz_t);
+										yss = int(float(yss) * siz_t);
+										m.offhandle.DrawRotaGraph(xp_s + (x_size - y_size + xss) / 2, yp_s + yss / 2, siz_t, 0.f, false);
 									}
 									xp_s += (x_size - y_size + xss);
 								}
@@ -501,114 +501,6 @@ namespace FPS_n2 {
 				noF1_f = 3.f;
 			}
 			//
-		}
-		void draw_botsu(void) noexcept {
-			auto tmp_f1 = this->key_use_ID[16].get_key(1);
-			easing_set(&F1_f, float(tmp_f1), 0.9f);
-			//インフォ
-			if (F1_f > 0.1f) {
-				int xp_t = 100, yp_t = 300;
-				int xp_sk = xp_t, yp_sk = yp_t, y_size_k = 48;
-				int xp_s = 1500, yp_s = 200, y_size = 32;
-				//背景
-				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * F1_f));
-				DrawBox(0, 0, deskx, desky, GetColor(0, 0, 0), TRUE);
-				//前面
-				if (F1_f > 0.9f) {
-					//キーボード＋マウス全部
-					{
-						bool use = true;
-						for (auto& m : this->keyg) {
-							use = true;
-							if (m.use_part != nullptr) {
-								use = false;
-								SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-								{
-									xp_sk = xp_t + m.key.px;
-									yp_sk = yp_t + m.key.py;
-									if (m.use_part->get_key(0)) {
-										m.onhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - 4) / 26.f, 0.f, false);
-									}
-									else {
-										m.offhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - 4) / 26.f, 0.f, false);
-									}
-								}
-							}
-							if (use) {
-								SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
-								xp_sk = xp_t + m.key.px;
-								yp_sk = yp_t + m.key.py;
-								m.offhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - 4) / 26.f, 0.f, false);
-							}
-						}
-						int xss = 0, yss = 0;
-						int y_size_k2 = 256;
-						xp_sk = 1100;
-						yp_sk = 800;
-						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-						{
-							mousehandle.GetSize(&xss, &yss);
-							mousehandle.DrawRotaGraph(xp_sk, yp_sk, float(y_size_k2) / yss, 0.f, true);
-						}
-						for (auto& m : this->keyg2) {
-							use = true;
-							if (m.use_part != nullptr) {
-								use = false;
-								if (m.use_part->get_key(3)) {
-									m.onhandle.GetSize(&xss, &yss);
-									m.onhandle.DrawRotaGraph(xp_sk, yp_sk, float(y_size_k2) / yss, 0.f, true);
-								}
-								else {
-									m.offhandle.GetSize(&xss, &yss);
-									m.offhandle.DrawRotaGraph(xp_sk, yp_sk, float(y_size_k2) / yss, 0.f, true);
-								}
-							}
-							if (use) {
-								xp_sk = xp_t;
-								yp_sk = yp_t;
-								m.offhandle.DrawRotaGraph(xp_sk, yp_sk, float(y_size_k2 - 4) / 26.f, 0.f, true);
-							}
-						}
-					}
-					//詳細
-					int xss = 0, yss = 0;
-					for (auto& i : this->key_use_ID) {
-						if (i.isalways && i.use_handle != nullptr) {
-							if (i.get_key(0)) {
-								i.use_handle->onhandle.GetSize(&xss, &yss);
-								xss = int(float(xss) * float(y_size - 4) / 25.f);
-								yss = int(float(yss) * float(y_size - 4) / 25.f);
-								i.use_handle->onhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
-							}
-							else {
-								i.use_handle->offhandle.GetSize(&xss, &yss);
-								xss = int(float(xss) * float(y_size - 4) / 25.f);
-								yss = int(float(yss) * float(y_size - 4) / 25.f);
-								i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, float(y_size - 4) / 25.f, 0.f, false);
-							}
-							font24.DrawString(xp_s, yp_s + (y_size - font24size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
-						}
-					}
-					for (auto& i : this->mouse_use_ID) {
-						if (i.isalways && i.use_handle != nullptr) {
-							{
-								mousehandle.GetSize(nullptr, &yss);
-								mousehandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
-							}
-							if (i.get_key(3)) {
-								i.use_handle->onhandle.GetSize(nullptr, &yss);
-								i.use_handle->onhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
-							}
-							else {
-								i.use_handle->offhandle.GetSize(nullptr, &yss);
-								i.use_handle->offhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
-							}
-							font24.DrawString(xp_s, yp_s + (y_size - font24size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
-						}
-					}
-				}
-				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-			}
 		}
 		//
 	};

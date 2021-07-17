@@ -224,8 +224,21 @@ namespace FPS_n2 {
 			std::vector<std::shared_ptr<PLAYER_VEHICLE>>* ALL_v{ nullptr };
 		public:
 			void Ride_on(std::shared_ptr<PLAYER_VEHICLE>* MINE_v_t) {
-				this->MINE_v = MINE_v_t;
-				(*MINE_v_t)->MINE_c = this->MINE_c;
+				if (MINE_v_t != nullptr) {
+					this->MINE_v = MINE_v_t;
+					(*this->MINE_v)->MINE_c = this->MINE_c;
+
+					//íeñÚê›íË
+					(*this->MINE_c)->Set_bullet_Ptr();
+					(*this->MINE_v)->Set_bullet_Ptr();
+				}
+				else {
+					(*this->MINE_v)->MINE_c = nullptr;
+					(*this->MINE_v)->Set_bullet_Ptr();
+					this->MINE_v = nullptr;
+					//íeñÚê›íË
+					(*this->MINE_c)->Set_bullet_Ptr();
+				}
 			}
 
 			void Set_eff(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) noexcept { this->effcs[(int)ef_].Set(pos_t, nomal_t, scale); }
@@ -342,13 +355,15 @@ namespace FPS_n2 {
 				//public:
 				std::shared_ptr<PLAYER_CHARA>* MINE_c{ nullptr };
 				std::shared_ptr<PLAYER_VEHICLE>* MINE_v{ nullptr };
+				bool First_Flag{ false };
 				bool Hit_Flag{ false };
 				float Hit_cnt{ 0.f };
 				bool Flag{ false };
 				bool DrawFlag{ false };
-				float cnt{ 0.f };
+				int cnt{ 0 };
 				Ammos* spec{ nullptr };
 				moves move;
+				VECTOR_ref base_pos;
 			public:
 				float Hit_alpha{ 0.f };
 				int Hit_window_x{ 0 };
@@ -360,6 +375,7 @@ namespace FPS_n2 {
 						tgt->Damage.SubHP(this->spec->get_damage(), 0);	//É_ÉÅÅ[ÉW
 						tgt->Damage.SubHP_Parts(this->spec->get_damage(), a.first);
 						this->Flag = false;									//íeÉtÉâÉOçÌèú
+
 						//tgt->Hit_obj[tgt->Hitbuf].use = 0;				//íeç≠
 					}
 					//ÇÕÇ∂Ç≠
@@ -391,7 +407,8 @@ namespace FPS_n2 {
 						(*this->MINE_c)->Set_eff(Effect::ef_reco, pos + nomal * 0.1f, nomal);
 					}
 					else {
-						(*this->MINE_c)->Set_eff(Effect::ef_gndsmoke, pos + nomal * 0.1f, nomal, 0.025f / 0.1f);
+						(*this->MINE_c)->Set_gndhit(this->move.pos, nomal, 0.025f / 0.1f);
+						//(*this->MINE_c)->Set_eff(Effect::ef_gndsmoke, pos + nomal * 0.1f, nomal, 0.025f / 0.1f);
 					}
 					this->spec->set_pene() /= 2.0f;//ÉqÉbÉgÇµÇΩÇÁä—í óÕîºå∏
 				}
@@ -400,16 +417,19 @@ namespace FPS_n2 {
 					MINE_c = mine_c;
 					MINE_v = mine_v;
 					this->Flag = false;
+					this->First_Flag = false;
 					this->DrawFlag = false;
 				}
 				void Put(Ammos* spec_t, const moves& move_) noexcept {
 					this->Hit_Flag = false;
 					this->Flag = true;
+					this->First_Flag = true;
 					this->DrawFlag = true;
-					this->cnt = 0.f;
+					this->cnt = 0;
 					this->spec = spec_t;
 					this->move = move_;
 					this->move.repos = this->move.pos;
+					this->base_pos = this->move.pos;
 				}
 			private:
 				bool subHP(int sel, int damage, const std::shared_ptr<PLAYER_CHARA>& tgt) {
@@ -446,7 +466,13 @@ namespace FPS_n2 {
 						this->move.SetPos(this->move.pos + (this->move.vec * (this->spec->get_speed() / FPS)));
 						//îªíË
 						{
-							auto ColResGround = MAPPTs->map_col_line(this->move.repos, this->move.pos);
+							float range = ((this->move.repos - this->move.pos).size()*FPS / 60.f);
+							VECTOR_ref repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range;
+							if (this->First_Flag) {
+								float range_base = (this->base_pos - this->move.pos).size();
+								repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range_base;
+							}
+							auto ColResGround = MAPPTs->map_col_line(repos, this->move.pos);
 							if (ColResGround.HitFlag == TRUE) {
 								this->move.pos = ColResGround.HitPosition;
 							}
@@ -458,8 +484,7 @@ namespace FPS_n2 {
 								if (&tgt == MINE_v) {
 									continue;
 								}
-								if (tgt->set_ref_col(this->move.repos, this->move.pos, 10.0f)) {
-									is_Hitall |= is_Hit;
+								if (tgt->set_ref_col(repos, this->move.pos, 10.0f)) {
 									is_Hit = false;
 									//Ç∆ÇËÇ†Ç¶Ç∏ìñÇΩÇ¡ÇΩÇ©Ç«Ç§Ç©íTÇ∑
 									{
@@ -467,6 +492,7 @@ namespace FPS_n2 {
 										for (auto& m : tgt->use_veh->Get_space_mesh()) { is_Hit |= tgt->HitCheck(m, this->move); }		//ãÛä‘ëïçb
 										for (auto& m : tgt->use_veh->Get_armer_mesh()) { is_Hit |= tgt->HitCheck(m.first, this->move); }		//ëïçb
 									}
+									is_Hitall |= is_Hit;
 									//ìñÇΩÇ¡ÇƒÇ»Ç¢èÍçáî≤ÇØÇÈ
 									if (!is_Hit) {
 										continue;
@@ -487,7 +513,7 @@ namespace FPS_n2 {
 								if (&tgt == MINE_c || !tgt->Damage.get_alive()) {
 									continue;
 								}
-								if (tgt->set_ref_col(this->move.repos, this->move.pos, 2.f)) {
+								if (tgt->set_ref_col(repos, this->move.pos, 2.f)) {
 									//HEAD
 									if (subHP(0, this->spec->get_damage() * 3, tgt)) {
 										break;
@@ -522,7 +548,7 @@ namespace FPS_n2 {
 							//ååç≠
 							if (!this->Flag && !is_Hitall) {
 								if (!(ColResGround.HitFlag == TRUE)) {
-									auto vec = (this->move.pos - this->move.repos).Norm();
+									auto vec = (this->move.pos - repos).Norm();
 									ColResGround = MAPPTs->map_col_line(this->move.pos, this->move.pos + vec * 5.f);
 								}
 								if (ColResGround.HitFlag == TRUE) {
@@ -532,9 +558,9 @@ namespace FPS_n2 {
 							}
 							//*/
 						}
-						//è¡Ç∑(3ïbÇΩÇ¡ÇΩÅAÉXÉsÅ[ÉhÇ™0à»â∫ÅAä—í Ç™0à»â∫)
-						if (this->cnt >= 3.f || this->spec->get_speed() < 0.f || this->spec->get_pene() <= 0.f) {
-							this->Flag = false;
+						//è¡Ç∑(ÉXÉsÅ[ÉhÇ™0à»â∫ÅAä—í Ç™0à»â∫)
+						if (this->spec->get_speed() < 0.f || this->spec->get_pene() <= 0.f) {
+							//this->Flag = false;
 						}
 						//
 					}
@@ -561,7 +587,17 @@ namespace FPS_n2 {
 				}
 				void Draw(void) noexcept {
 					if (this->DrawFlag) {
-						DXDraw::Capsule3D(this->move.pos, this->move.repos, ((this->spec->get_caliber() - 0.00762f) * 0.1f + 0.00762f), GetColor(255, 255, 172), GetColor(255, 255, 255));
+						
+						float range = ((this->move.repos - this->move.pos).size()*FPS / 60.f);
+						VECTOR_ref repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range; 
+						if (this->First_Flag) {
+							float range_base = (this->base_pos - this->move.pos).size();
+							repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range_base;
+							if (range_base > range) {
+								this->First_Flag = false;
+							}
+						}
+						DXDraw::Capsule3D(this->move.pos, repos, ((this->spec->get_caliber() - 0.00762f) * 0.1f + 0.00762f), GetColor(255, 255, 172), GetColor(255, 255, 255));
 						if (!this->Flag) {
 							this->DrawFlag = false;
 						}
@@ -592,9 +628,13 @@ namespace FPS_n2 {
 				++this->use_bullet %= this->bullet.size();
 			}
 			//íe
-			virtual void SetUp_bullet(std::shared_ptr<MAPclass::Map>& MAPPTs_t, std::shared_ptr<DXDraw>& DrawPts_t, HIT_PASSIVE* hit_obj_p_t, HIT_BLOOD_PASSIVE* hit_b_obj_p_t, std::shared_ptr<PLAYER_CHARA>* mine_c, std::shared_ptr<PLAYER_VEHICLE>* mine_v) {
+			virtual void SetUp_bullet(std::shared_ptr<MAPclass::Map>& MAPPTs_t, std::shared_ptr<DXDraw>& DrawPts_t, HIT_PASSIVE* hit_obj_p_t, HIT_BLOOD_PASSIVE* hit_b_obj_p_t) {
 				for (auto& a : this->bullet) {
 					a.Set_Ptr_Common(MAPPTs_t, DrawPts_t, hit_obj_p_t, hit_b_obj_p_t);
+				}
+			}
+			virtual void SetUp_bullet_Ptr(std::shared_ptr<PLAYER_CHARA>* mine_c, std::shared_ptr<PLAYER_VEHICLE>* mine_v) {
+				for (auto& a : this->bullet) {
 					a.Set(mine_c, mine_v);
 				}
 			}
@@ -1578,6 +1618,7 @@ namespace FPS_n2 {
 			MV1::ani* gunanime_trigger{ nullptr };			//èeanime
 			MV1::ani* gunanime_magcatch{ nullptr };			//èeanime
 			std::vector<MV1::ani*>gunanime_sel{ nullptr };	//èeanime
+			MV1::ani* gunanime_Changesel{ nullptr };		//èeanime
 			MV1::ani* anime_walk{ nullptr };				//ãranime
 			MV1::ani* anime_swalk{ nullptr };				//ãranime
 			MV1::ani* anime_run{ nullptr };					//ãranime
@@ -1854,6 +1895,7 @@ namespace FPS_n2 {
 
 				this->ani_timeline[11].total = 0.4f;//ç∂òrÇ™óéÇøÇÈ
 				this->ani_timeline[12].total = 0.8f;//ÉOÉåìäù±
+				this->ani_timeline[13].total = 0.8f;//ÉZÉåÉNÉ^Å[ÉZÉbÉg
 	//
 				{
 					if (this->key_.running && !isReload() && !this->sort_ing && !this->view_ing) {
@@ -1956,6 +1998,12 @@ namespace FPS_n2 {
 							default:
 								break;
 							}
+						}
+						if (this->gunanime_Changesel->per == 1.f) {
+							if (Func_Set_LEFT_pos_Anim(&this->ani_timeline[13], &this->ani_lefthand[0], VECTOR_ref::vget(0.f, -0.75f, 0.9f), VECTOR_ref::vget(0.05f, -0.0025f, -0.075f), -60.f)) {
+								this->gunanime_Changesel->reset();
+							}
+							return;
 						}
 						//ÉmÅ[É}Éã
 						if (this->Damage.get_HP_parts()[2] == 0) {
@@ -3282,7 +3330,7 @@ namespace FPS_n2 {
 					this->per_all.recoil = 0.f;
 					this->per_all.weight = 0.f;
 					//òrÉAÉjÉÅ
-					this->ani_timeline.resize(13);
+					this->ani_timeline.resize(14);
 					this->ani_lefthand.resize(3);
 					this->throw_gre_ings = 0;
 					this->view_ings = 0;
@@ -3304,6 +3352,7 @@ namespace FPS_n2 {
 					this->gunanime_sel.resize(this->base.thisparts->select.size());
 					this->gunanime_sel[0] = this->base.Get_Anim(5);
 					this->gunanime_sel[1] = this->base.Get_Anim(6);
+					this->gunanime_Changesel = this->base.Get_Anim(7);
 					//gunstat
 					for (size_t i = 0; i < gun_data.size(); ++i) {
 						this->gun_stat.emplace_back(GUN_STATUS());
@@ -3315,7 +3364,11 @@ namespace FPS_n2 {
 			}
 			//íe
 			void Set_bullet() {
-				SetUp_bullet(MAPPTs, DrawPts, Hit_obj_p, Hit_b_obj_p, MINE_c, (*MINE_c)->MINE_v);
+				SetUp_bullet(MAPPTs, DrawPts, Hit_obj_p, Hit_b_obj_p);
+				Set_bullet_Ptr();
+			}
+			void Set_bullet_Ptr() {
+				SetUp_bullet_Ptr(MINE_c, (*MINE_c)->MINE_v);
 			}
 			/*ÉLÉÉÉâÉXÉ|Å[Éì*/
 			void Spawn() noexcept override {
@@ -3354,6 +3407,7 @@ namespace FPS_n2 {
 				this->gunanime_first->reset();
 				this->gunanime_sel[0]->reset();
 				this->gunanime_sel[1]->reset();
+				this->gunanime_Changesel->reset();
 
 				this->prev_ani_lefthand = &this->ani_lefthand[0];
 				this->next_ani_lefthand = &this->ani_lefthand[0];
@@ -3612,11 +3666,22 @@ namespace FPS_n2 {
 					}
 					//ÉZÉåÉNÉ^Å[
 					Set_select_anime();
-					if (this->key_.select) {
+					if (this->key_.select && this->gunanime_Changesel->per == 0.0f) {
+						this->gunanime_Changesel->per = 1.0f;
+
+
 						size_t tmp = (size_t)this->gun_stat_now->get_selecter();
 						++tmp %= this->base.thisparts->select.size();
 						this->gun_stat_now->selector_set((EnumSELECTER)tmp);
 					}
+
+					if (this->gunanime_Changesel->per == 1.f) {
+						this->gunanime_Changesel->update(false, 0.5f);
+						if (this->gunanime_Changesel->time >= this->gunanime_Changesel->alltime) {
+							this->gunanime_Changesel->reset();
+						}
+					}
+
 					//éÀåÇ
 					if (!this->flag_gun && this->gun_stat_now->not_chamber_EMPTY()) {
 						if (this->base.thisparts->Select_Chose(EnumSELECTER::SELECT_FULL) == int(this->gun_stat_now->get_selecter())) {
@@ -4063,8 +4128,13 @@ namespace FPS_n2 {
 				}
 				//íe
 				void Set_bullet(std::shared_ptr<MAPclass::Map>& MAPPTs_t, std::shared_ptr<DXDraw>& DrawPts_t, HIT_PASSIVE* hit_obj_p_t, HIT_BLOOD_PASSIVE* hit_b_obj_p_t) {
-					SetUp_bullet(MAPPTs_t, DrawPts_t, hit_obj_p_t, hit_b_obj_p_t, (*MINE_v)->MINE_c, MINE_v);
+					SetUp_bullet(MAPPTs_t, DrawPts_t, hit_obj_p_t, hit_b_obj_p_t);
+					Set_bullet_Ptr();
 				}
+				void Set_bullet_Ptr() {
+					SetUp_bullet_Ptr((*MINE_v)->MINE_c, MINE_v);
+				}
+
 				void SetGunRad(const float view_xrad, const float view_yrad, float limit) {
 					this->yrad += std::clamp(view_yrad, -limit, limit);
 					//this->yrad = std::clamp(this->yrad + std::clamp(view_yrad, -limit, limit),deg2rad(-30.0)+yrad,deg2rad(30.0)+yrad);//éÀäEêßå¿
@@ -4285,6 +4355,9 @@ namespace FPS_n2 {
 			}
 			void Set_bullet() {
 				for (auto& g : this->Gun_) { g.Set_bullet(MAPPTs, DrawPts, Hit_obj_p, Hit_b_obj_p); }
+			}
+			void Set_bullet_Ptr() {
+				for (auto& g : this->Gun_) { g.Set_bullet_Ptr(); }
 			}
 			void UpDate(const cam_info& cams) {
 				if (MINE_v != nullptr && MINE_c != nullptr) {

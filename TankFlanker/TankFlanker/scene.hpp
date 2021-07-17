@@ -972,9 +972,6 @@ namespace FPS_n2 {
 					v->Spawn();
 					v->Start();
 				}
-
-				this->Get_Mine()->Ride_on(&this->vehicle[0]);				//æ‚é‚Æ‚«‚Ì“o˜^
-
 				//’e–òÝ’è
 				for (auto& c : this->chara) {
 					c->Set_bullet();
@@ -982,6 +979,11 @@ namespace FPS_n2 {
 				for (auto& v : this->vehicle) {
 					v->Set_bullet();
 				}
+
+				this->Get_Mine()->Ride_on(&this->vehicle[0]);	//æ‚é‚Æ‚«‚Ì“o˜^
+
+				this->Get_Mine()->Ride_on(nullptr);				//æ‚é‚Æ‚«‚Ì“o˜^
+
 				//UI
 				UIparts->Init(DrawPts, MAPPTs);
 				//
