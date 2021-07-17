@@ -8,14 +8,35 @@
 #define PLAYER_HIT_TRYNUM			16		// 壁押し出し処理の最大試行回数
 #define PLAYER_HIT_SLIDE_LENGTH		0.015f	// 一度の壁押し出し処理でスライドさせる距離
 
-namespace MAIN_ {
-	namespace MAPclass {
+namespace FPS_n2 {
+	class MAPclass {
+	public:
+		static const int grassDiv = 3;
+
+		class Map;
+		class MiniMap;
+
+		static VECTOR_ref Get_Chunk(int x_, int z_, int x_t, int z_t, bool ismini) {
+			int pos_x = 0, pos_z = 0;
+			if (ismini) {
+				pos_x = 100 * x_ / grassDiv - 50;
+				pos_z = 100 * z_ / grassDiv - 50;
+			}
+			else {
+				pos_x = 100 * (x_ + 1) / grassDiv - 50;
+				pos_z = 100 * (z_ + 1) / grassDiv - 50;
+			}
+			return VECTOR_ref::vget((float)(x_t * pos_x) / 100.0f, 0.f, (float)(z_t * pos_z) / 100.0f);
+		}
+
 		class Map {
 		private:
+			std::shared_ptr<Map> MAPPTs{ nullptr };
+		private:
 			std::string path;
-			MV1 map, map_col, mapcol_tank;	//地面
-			MV1 sky;			//空
-			SoundHandle envi;	//
+			MV1 map, map_col, mapcol_tank;		//地面
+			MV1 sky;							//空
+			SoundHandle envi;					//
 			std::vector<VECTOR_ref> way_point;
 			std::vector<VECTOR_ref> lean_point_q;
 			std::vector<VECTOR_ref> lean_point_e;
@@ -25,17 +46,19 @@ namespace MAIN_ {
 			int x_size = 0;
 			int y_size = 0;
 			//太陽
-			GraphHandle sun_pic;			/*画像ハンドル*/
+			GraphHandle sun_pic;				/*画像ハンドル*/
 			VECTOR_ref sun_pos;
 			//kusa
-			int grasss = 2000;				/*grassの数*/
-			GraphHandle grass_pic;			/*画像ハンドル*/
-			MV1 grass;						/*grassモデル*/
+			int grasss = 2000;					/*grassの数*/
+			GraphHandle grass_pic;				/*画像ハンドル*/
+			MV1 grass;							/*grassモデル*/
 
-			shaders shader;				/*シェーダー*/
-			shaders Depth;				/*シェーダー*/
+			shaders shader;						/*シェーダー*/
+			shaders Depth;						/*シェーダー*/
 
 			class grass_t {
+			private:
+				std::shared_ptr<Map> MAPPTs{ nullptr };
 			public:
 				bool canlook = true;
 
@@ -46,7 +69,10 @@ namespace MAIN_ {
 				int vnum = -1, pnum = -1;		/*grass*/
 				MV1_REF_POLYGONLIST RefMesh;	/*grass*/
 
-				void put_start(const MV1& grass, int total) {
+				void put_start(const MV1& grass, int total, std::shared_ptr<Map>& MAPPTs_t) {
+
+					MAPPTs = MAPPTs_t;
+
 					MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
 					this->RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
 					this->IndexNum = this->RefMesh.PolygonNum * 3 * total; /*インデックスの数を取得*/
@@ -86,22 +112,23 @@ namespace MAIN_ {
 					SetIndexBufferData(0, this->grassind.data(), this->IndexNum, this->IndexBuf);
 				}
 
+				void Dispose() {
+
+					MAPPTs.reset();
+					this->grassver.clear();
+					this->grassind.clear();
+				}
+
 				/*視界外か否かを判断*/
-				void Check_CameraViewClip(int x_, int z_, std::shared_ptr<Map>& MAPPTs, bool use_occlusion) noexcept {
-					int pos_xmax = 100 * 1 / 3;
-					int pos_xmin = 100 * (x_ + 0) / 3 - 50;
-					int pos_zmax = 100 * 1 / 3;
-					int pos_zmin = 100 * (z_ + 0) / 3 - 50;
-					float x_tmax = (float)((int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmax) + int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmin) / 100.0f;
-					float z_tmax = (float)((int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmax) + int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmin) / 100.0f;
-					float x_tmin = (float)(int(MAPPTs->x_max - MAPPTs->x_min) * pos_xmin) / 100.0f;
-					float z_tmin = (float)(int(MAPPTs->z_max - MAPPTs->z_min) * pos_zmin) / 100.0f;
-					VECTOR_ref min = VECTOR_ref::vget(x_tmin, -5.f, z_tmin);
-					VECTOR_ref max = VECTOR_ref::vget(x_tmax, 5.f, z_tmax);
+				void Check_CameraViewClip(int x_, int z_, bool use_occlusion) noexcept {
+					VECTOR_ref min = Get_Chunk(x_, z_, int(MAPPTs->x_max - MAPPTs->x_min), int(MAPPTs->z_max - MAPPTs->z_min), true);
+					VECTOR_ref max = Get_Chunk(x_, z_, int(MAPPTs->x_max - MAPPTs->x_min), int(MAPPTs->z_max - MAPPTs->z_min), false);
+					min.y(-5.f);
+					max.y(5.f);
 
 					this->canlook = true;
 
-					float range = std::hypotf((MAPPTs->x_max - MAPPTs->x_min) / 3.f, (MAPPTs->z_max - MAPPTs->z_min) / 3.f);
+					float range = std::hypotf((MAPPTs->x_max - MAPPTs->x_min) / grassDiv, (MAPPTs->z_max - MAPPTs->z_min) / grassDiv);
 
 					if ((min - GetCameraPosition()).size() > range && (max - GetCameraPosition()).size() > range) {
 						this->canlook = false;
@@ -132,7 +159,7 @@ namespace MAIN_ {
 			float z_max = 0.f;
 			float x_min = 0.f;
 			float z_min = 0.f;
-			std::array<std::array<grass_t, 3>, 3>grass__;
+			std::array<std::array<grass_t, grassDiv>, grassDiv>grass__;
 			std::vector<std::shared_ptr<Items>> item;					//アイテム
 
 			struct wallPats {
@@ -141,9 +168,13 @@ namespace MAIN_ {
 			};
 
 			std::vector<wallPats> wall;					//壁をセット
-			int dispx = 1920;
-			int dispy = 1080;
+			int dispx = deskx;
+			int dispy = desky;
 		public:
+			void Set_mine(std::shared_ptr<Map>& MAPPTs_t) {
+				MAPPTs = MAPPTs_t;
+			}
+
 			const std::vector<VECTOR_ref>& get_waypoint(void) const noexcept { return way_point; }
 			const std::vector<VECTOR_ref>& get_leanpoint_q(void) const noexcept { return lean_point_q; }
 			const std::vector<VECTOR_ref>& get_leanpoint_e(void) const noexcept { return lean_point_e; }
@@ -159,16 +190,16 @@ namespace MAIN_ {
 					grasss = 0;
 					break;
 				case 1:
-					grasss = 500 / 9;
+					grasss = 500 / (grassDiv * grassDiv);
 					break;
 				case 2:
-					grasss = 1000 / 9;
+					grasss = 1000 / (grassDiv * grassDiv);
 					break;
 				case 3:
-					grasss = 2000 / 9;
+					grasss = 2000 / (grassDiv * grassDiv);
 					break;
 				case 4:
-					grasss = 4000 / 9;
+					grasss = 4000 / (grassDiv * grassDiv);
 					break;
 				default:
 					grasss = 0;
@@ -224,39 +255,36 @@ namespace MAIN_ {
 				{
 					MV1SetupReferenceMesh(map_col.get(), 0, FALSE);
 					auto p = MV1GetReferenceMesh(map_col.get(), 0, FALSE);
-					MV1_COLL_RESULT_POLY pt;
 					for (int i = 0; i < p.PolygonNum; ++i) {
-						switch (p.Polygons[i].MaterialIndex) {
-						case 1:
-						{
-							way_point.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
-							pt = map_col_line(way_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), way_point.back() + VECTOR_ref::vget(0, -10.f, 0.f));
-							if (pt.HitFlag == TRUE) { way_point.back() = pt.HitPosition; }
-							break;
-						}
-						case 2:
-						{
-							lean_point_e.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
-							pt = map_col_line(lean_point_e.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_e.back() + VECTOR_ref::vget(0, -10.f, 0.f));
-							if (pt.HitFlag == TRUE) { lean_point_e.back() = pt.HitPosition; }
-							break;
-						}
-						case 3:
-						{
-							lean_point_q.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
-							pt = map_col_line(lean_point_q.back() + VECTOR_ref::vget(0, 10.f, 0.f), lean_point_q.back() + VECTOR_ref::vget(0, -10.f, 0.f));
-							if (pt.HitFlag == TRUE) { lean_point_q.back() = pt.HitPosition; }
-							break;
-						}
-						case 4:
-						{
-							spawn_point.emplace_back((VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f));
-							pt = map_col_line(spawn_point.back() + VECTOR_ref::vget(0, 10.f, 0.f), spawn_point.back() + VECTOR_ref::vget(0, -10.f, 0.f));
-							if (pt.HitFlag == TRUE) { spawn_point.back() = pt.HitPosition; }
-							break;
-						}
-						default:
-							break;
+						if (p.Polygons[i].MaterialIndex >= 1 && p.Polygons[i].MaterialIndex <= 4) {
+							//
+							auto points = (VECTOR_ref(p.Vertexs[p.Polygons[i].VIndex[0]].Position) + p.Vertexs[p.Polygons[i].VIndex[1]].Position + p.Vertexs[p.Polygons[i].VIndex[2]].Position) * (1.f / 3.f);
+							MV1_COLL_RESULT_POLY colres = map_col_line(points + VECTOR_ref::vget(0, 10.f, 0.f), points + VECTOR_ref::vget(0, -10.f, 0.f));
+							if (colres.HitFlag == TRUE) { points = colres.HitPosition; }
+							//
+							switch (p.Polygons[i].MaterialIndex) {
+							case 1:
+							{
+								way_point.emplace_back(points);
+								break;
+							}
+							case 2:
+							{
+								lean_point_e.emplace_back(points);
+								break;
+							}
+							case 3:
+							{
+								lean_point_q.emplace_back(points);
+								break;
+							}
+							case 4:
+							{
+								spawn_point.emplace_back(points);
+								break;
+							}
+							default: break;
+							}
 						}
 					}
 				}
@@ -321,27 +349,30 @@ namespace MAIN_ {
 					x_min = map_col.mesh_minpos(0).x();
 					z_min = map_col.mesh_minpos(0).z();
 
-					for (int x_ = 0; x_ < 3; x_++) {
-						for (int z_ = 0; z_ < 3; z_++) {
+					for (int x_ = 0; x_ < grassDiv; x_++) {
+						for (int z_ = 0; z_ < grassDiv; z_++) {
 							auto& tgt_g = grass__[x_][z_];
-							int pos_xmax = 100 * 1 / 3;
-							int pos_xmin = 100 * (x_ + 0) / 3 - 50;
-							int pos_zmax = 100 * 1 / 3;
-							int pos_zmin = 100 * (z_ + 0) / 3 - 50;
 
-							tgt_g.put_start(grass, grasss);
+							tgt_g.put_start(grass, grasss,MAPPTs);
 							for (int i = 0; i < grasss; ++i) {
-								float x_t = (float)(GetRand(int((x_max - x_min)) * pos_xmax) + int(x_max - x_min) * pos_xmin) / 100.0f;
-								float z_t = (float)(GetRand(int((z_max - z_min)) * pos_zmax) + int(z_max - z_min) * pos_zmin) / 100.0f;
+								VECTOR_ref min = Get_Chunk(x_, z_, int(x_max - x_min), int(z_max - z_min), true);
+								VECTOR_ref max = Get_Chunk(x_, z_, int(x_max - x_min), int(z_max - z_min), false);
+								float x_t = (float)(GetRand(int(max.x() - min.x()) * 100) + int(min.x()) * 100) / 100.0f;
+								float z_t = (float)(GetRand(int(max.z() - min.z()) * 100) + int(min.z()) * 100) / 100.0f;
 								int _r_, _g_, _b_, _a_;
+								int cnt = 0;
 								while (true) {
 									GetPixelSoftImage(grass_pos, int((x_t - x_min) / (x_max - x_min) * float(xs)), int((z_t - z_min) / (z_max - z_min) * float(ys)), &_r_, &_g_, &_b_, &_a_);
 									if (_r_ <= 128) {
 										break;
 									}
 									else {
-										x_t = (float)(GetRand(int((x_max - x_min)) * pos_xmax) + int(x_max - x_min) * pos_xmin) / 100.0f;
-										z_t = (float)(GetRand(int((z_max - z_min)) * pos_zmax) + int(z_max - z_min) * pos_zmin) / 100.0f;
+										x_t = (float)(GetRand(int(max.x() - min.x()) * 100) + int(min.x()) * 100) / 100.0f;
+										z_t = (float)(GetRand(int(max.z() - min.z()) * 100) + int(min.z()) * 100) / 100.0f;
+									}
+									cnt++;
+									if (cnt >= 100) {
+										break;
 									}
 								}
 								auto tmpvect2 = VECTOR_ref::vget(x_t, -5.f, z_t);
@@ -349,7 +380,7 @@ namespace MAIN_ {
 								map_col_nearest(tmpvect2, &tmpvect);
 								//
 								grass.SetMatrix((MATRIX_ref::RotY(deg2rad(GetRand(90))) * MATRIX_ref::GetScale(VECTOR_ref::vget(1.f, float(100 - 20 + GetRand(20 * 2)) / 100.f, 1.f))) * MATRIX_ref::Mtrans(tmpvect));
-								//上省
+								//
 								tgt_g.set_one(grass);
 							}
 							tgt_g.put();
@@ -384,10 +415,9 @@ namespace MAIN_ {
 				if (grasss != 0) {
 					grass_pic.Dispose();
 					grass.Dispose();
-					for (int x_ = 0; x_ < 3; x_++) {
-						for (int z_ = 0; z_ < 3; z_++) {
-							grass__[x_][z_].grassver.clear();
-							grass__[x_][z_].grassind.clear();
+					for (int x_ = 0; x_ < grassDiv; x_++) {
+						for (int z_ = 0; z_ < grassDiv; z_++) {
+							grass__[x_][z_].Dispose();
 						}
 					}
 				}
@@ -397,16 +427,20 @@ namespace MAIN_ {
 			const MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) const noexcept {
 				return map_col.CollCheck_Line(StartPos, EndPos, 0, 0);
 			}
+			//関数オブジェ版
+			std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> Map_col_line = [&](const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) {return map_col_line(StartPos, EndPos);};
+			//
 			bool map_col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) const noexcept {
 				bool ans = false;
+				MV1_COLL_RESULT_POLY colres;
 				while (true) {
-					MV1_COLL_RESULT_POLY p = this->map_col_line(StartPos, *EndPos);
-					if (p.HitFlag == TRUE) {
+					colres = this->map_col_line(StartPos, *EndPos);
+					if (colres.HitFlag == TRUE) {
 						ans = true;
-						if (*EndPos == p.HitPosition) {
+						if (*EndPos == colres.HitPosition) {
 							break;
 						}
-						*EndPos = p.HitPosition;
+						*EndPos = colres.HitPosition;
 					}
 					else {
 						break;
@@ -414,10 +448,15 @@ namespace MAIN_ {
 				}
 				return ans;
 			}
+			//マップ壁判定
 			void map_col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos) noexcept {
+				col_wall(OldPos, NowPos, this->map_col);
+			}
+			//壁判定ユニバーサル
+			static void col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos,MV1& col_obj_t) noexcept {
 				auto MoveVector = *NowPos - OldPos;
 				// プレイヤーの周囲にあるステージポリゴンを取得する( 検出する範囲は移動距離も考慮する )
-				auto HitDim = map_col.CollCheck_Sphere(OldPos, PLAYER_ENUM_DEFAULT_SIZE + MoveVector.size(), 0, 0);
+				auto HitDim = col_obj_t.CollCheck_Sphere(OldPos, PLAYER_ENUM_DEFAULT_SIZE + MoveVector.size(), 0, 0);
 				std::vector<MV1_COLL_RESULT_POLY*> kabe_;// 壁ポリゴンと判断されたポリゴンの構造体のアドレスを保存しておく
 				// 検出されたポリゴンが壁ポリゴン( ＸＺ平面に垂直なポリゴン )か床ポリゴン( ＸＺ平面に垂直ではないポリゴン )かを判断する
 				for (int i = 0; i < HitDim.HitNum; ++i) {
@@ -511,10 +550,11 @@ namespace MAIN_ {
 					SetDrawAlphaTest(DX_CMP_GREATER, 128);
 					//SetUseLighting(FALSE);
 					{
-						for (int x_ = 0; x_ < 3; x_++) {
-							for (int z_ = 0; z_ < 3; z_++) {
-								if (grass__[x_][z_].canlook) {
-									DrawPolygonIndexed3D_UseVertexBuffer(grass__[x_][z_].VerBuf, grass__[x_][z_].IndexBuf, grass_pic.get(), TRUE);
+						for (int x_ = 0; x_ < grassDiv; x_++) {
+							for (int z_ = 0; z_ < grassDiv; z_++) {
+								auto& tgt_g = grass__[x_][z_];
+								if (tgt_g.canlook) {
+									DrawPolygonIndexed3D_UseVertexBuffer(tgt_g.VerBuf, tgt_g.IndexBuf, grass_pic.get(), TRUE);
 								}
 							}
 						}
@@ -565,13 +605,12 @@ namespace MAIN_ {
 			}
 			//
 			template<class PLAYER_CHARA>
-			void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<PLAYER_CHARA>& chara, std::shared_ptr<Map>& MAPPTs) noexcept {
+			void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<PLAYER_CHARA>& chara) noexcept {
 				chara->reset_canget_item();
-				for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs); }
+				for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs->Map_col_line); }
 			}
 			//
-			template<size_t T>
-			int get_next_waypoint(std::array<int, T> wayp_pre, VECTOR_ref poss) {
+			int get_next_waypoint(std::vector<int> wayp_pre, VECTOR_ref poss) {
 				int now = -1;
 				auto tmp = VECTOR_ref::vget(0, 100.f, 0);
 				for (auto& w : way_point) {
@@ -584,8 +623,8 @@ namespace MAIN_ {
 					}
 					if (tt) {
 						if (tmp.size() >= (w - poss).size()) {
-							auto p = map_col_line(w + VECTOR_ref::vget(0, 0.5f, 0), poss + VECTOR_ref::vget(0, 0.5f, 0));
-							if (!(p.HitFlag == TRUE)) {
+							auto colres = map_col_line(w + VECTOR_ref::vget(0, 0.5f, 0), poss + VECTOR_ref::vget(0, 0.5f, 0));
+							if (!(colres.HitFlag == TRUE)) {
 								tmp = (w - poss);
 								now = int(id);
 							}
@@ -595,10 +634,10 @@ namespace MAIN_ {
 				return now;
 			}
 
-			void Check_CameraViewClip(std::shared_ptr<Map>& MAPPTs, bool use_occlusion) {
-				for (int x_ = 0; x_ < 3; x_++) {
-					for (int z_ = 0; z_ < 3; z_++) {
-						this->grass__[x_][z_].Check_CameraViewClip(x_, z_, MAPPTs, use_occlusion);
+			void Check_CameraViewClip(bool use_occlusion) {
+				for (int x_ = 0; x_ < grassDiv; x_++) {
+					for (int z_ = 0; z_ < grassDiv; z_++) {
+						this->grass__[x_][z_].Check_CameraViewClip(x_, z_, use_occlusion);
 					}
 				}
 				DepthDraw(false);
@@ -619,8 +658,8 @@ namespace MAIN_ {
 			std::shared_ptr<Map> MAPPTs;
 		private:
 			void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp) noexcept {
-				auto x_2 = chara_pos.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() * (MAPPTs->get_x_size() / 2) * xcam;
-				auto y_2 = -chara_pos.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() * (MAPPTs->get_y_size() / 2) * xcam;
+				auto x_2 = chara_pos.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() * (float)(MAPPTs->get_x_size() / 2) * xcam;
+				auto y_2 = -chara_pos.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() * (float)(MAPPTs->get_y_size() / 2) * xcam;
 
 				*xp = int(x_2 * cos(radp) - y_2 * sin(radp));
 				*yp = int(y_2 * cos(radp) + x_2 * sin(radp));
@@ -690,5 +729,5 @@ namespace MAIN_ {
 				}
 			}
 		};
-	}
+	};
 };

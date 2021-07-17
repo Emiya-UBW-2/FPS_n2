@@ -16,7 +16,7 @@ namespace std {
 	};
 }; // namespace std
 //
-namespace MAIN_ {
+namespace FPS_n2 {
 	static const size_t max_bullet{ 32 };
 
 	//option
@@ -342,10 +342,10 @@ namespace MAIN_ {
 				int xp_s = 1500, yp_s = 200, y_size = 32;
 				//背景
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * F1_f));
-				DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
+				DrawBox(0, 0, deskx, desky, GetColor(0, 0, 0), TRUE);
 				if (F1_f > 0.9f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
-					keyboad.DrawExtendGraph(0, 0, 1920, 1080, true);
+					keyboad.DrawExtendGraph(0, 0, deskx, desky, true);
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				//前面
@@ -424,7 +424,7 @@ namespace MAIN_ {
 			if (!tmp_f1) {
 				if (noF1_f >= 0.1f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * std::clamp(noF1_f, 0.f, 1.f)));
-					int xp_s = 1920 - 700, yp_s = 1080 - 28, x_size = 26, y_size = 24;
+					int xp_s = deskx - y_r(700), yp_s = desky - y_r(28), x_size = y_r(26), y_size = y_r(24);
 					int xss = 0, yss = 0;
 					for (auto& i : this->key_use_ID) {
 						if (i.isalways) {
@@ -512,7 +512,7 @@ namespace MAIN_ {
 				int xp_s = 1500, yp_s = 200, y_size = 32;
 				//背景
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * F1_f));
-				DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
+				DrawBox(0, 0, deskx, desky, GetColor(0, 0, 0), TRUE);
 				//前面
 				if (F1_f > 0.9f) {
 					//キーボード＋マウス全部
@@ -654,7 +654,7 @@ namespace MAIN_ {
 				int yp_t = 100;
 				//背景
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * P_f));
-				DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
+				DrawBox(0, 0, deskx, desky, GetColor(0, 0, 0), TRUE);
 				if (P_f > 0.9f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 					//背景画像
@@ -664,11 +664,11 @@ namespace MAIN_ {
 				if (P_f > 0.9f) {
 					yp_t = 100;
 					//
-					font24.DrawString_RIGHT(1920 - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += font24size + 30;
+					font24.DrawString_RIGHT(deskx - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += font24size + 30;
 					//
-					font24.DrawString_RIGHT(1920 - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += font24size + 30;
+					font24.DrawString_RIGHT(deskx - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += font24size + 30;
 					//
-					font24.DrawString_RIGHT(1920 - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += font24size + 30;
+					font24.DrawString_RIGHT(deskx - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += font24size + 30;
 					//
 				}
 			}
@@ -711,11 +711,10 @@ namespace MAIN_ {
 	};
 	//
 	class shaders {
-	public:
 		int pshandle{ -1 }, vshandle{ -1 };
 		int pscbhandle{ -1 };
 		int pscbhandle2{ -1 };
-
+	public:
 		void Init(std::string vs, std::string ps) {
 			this->vshandle = LoadVertexShader(("shader/" + vs).c_str());	// 頂点シェーダーバイナリコードの読み込み
 			this->pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
@@ -788,19 +787,19 @@ namespace MAIN_ {
 			for (int i = 0; i < int(this->model.frame_num()); ++i) {
 				std::string p = this->model.frame_name(i);
 				if (p == std::string("ammo1")) {
-					this->magazine_ammo_f[0] = { int(i),this->model.frame(i) };
+					this->magazine_ammo_f[0].Set_World(i, this->model);
 				}
 				if (p == std::string("ammo2")) {
-					this->magazine_ammo_f[1] = { int(i),this->model.frame(i) };
+					this->magazine_ammo_f[1].Set_World(i, this->model);
 				}
 				if (p == std::string("LEFT_mag")) {
-					this->LEFT_mag_frame[0] = { int(i),this->model.frame(i) };
-					this->LEFT_mag_frame[1] = { int(i + 1),this->model.GetFrameLocalMatrix(i + 1).pos() };
-					this->LEFT_mag_frame[2] = { int(i + 2),this->model.GetFrameLocalMatrix(i + 2).pos() };
+					this->LEFT_mag_frame[0].Set_World(i, this->model);
+					this->LEFT_mag_frame[1].Set_Local(i + 1, this->model);
+					this->LEFT_mag_frame[2].Set_Local(i + 2, this->model);
 				}
 				if (p == std::string("magazine_fall")) {
-					this->magazine_f[0] = { int(i),this->model.frame(i) };
-					this->magazine_f[1] = { int(i + 1),this->model.GetFrameLocalMatrix(i + 1).pos() };
+					this->magazine_f[0].Set_World(i, this->model);
+					this->magazine_f[1].Set_Local(i + 1, this->model);
 				}
 			}
 			this->mdata = FileRead_open((this->path + "/data.txt").c_str(), FALSE);
@@ -969,7 +968,7 @@ namespace MAIN_ {
 		}
 		void Set(void) noexcept {
 			int mdata = FileRead_open((this->path + "/data.txt").c_str(), FALSE);
-			this->caliber = getparams::_float(mdata)*0.001f;//口径
+			this->caliber = getparams::_float(mdata) * 0.001f;//口径
 			this->speed = getparams::_float(mdata);	//弾速
 			this->pene = getparams::_float(mdata);	//貫通
 			this->damage = getparams::_int(mdata);//ダメージ
@@ -1028,21 +1027,21 @@ namespace MAIN_ {
 			hitsind.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 		}
 
-		void Set(const float &caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
+		void Set(const float& caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
 			hitss++;
 			IndexNum = RefMesh.PolygonNum * 3 * hitss;				/*インデックスの数を取得*/
 			VerNum = RefMesh.VertexNum * hitss;						/*頂点の数を取得*/
 			hitsver.resize(VerNum);									/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 			hitsind.resize(IndexNum);								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 			{
-				float asize = 200.f*caliber;
+				float asize = 200.f * caliber;
 				const auto& y_vec = Normal;
 				auto z_vec = y_vec.cross(Zvec).Norm();
 				auto scale = VECTOR_ref::vget(asize / std::abs(y_vec.dot(Zvec)), asize, asize);
 				auto pos = Position + y_vec * 0.02f;
-				MATRIX_ref mat = MATRIX_ref::GetScale(scale)*  MATRIX_ref::Axis1_YZ(y_vec, z_vec);
+				MATRIX_ref mat = MATRIX_ref::GetScale(scale) * MATRIX_ref::Axis1_YZ(y_vec, z_vec);
 
-				hits.SetMatrix(mat*MATRIX_ref::Mtrans(pos));
+				hits.SetMatrix(mat * MATRIX_ref::Mtrans(pos));
 			}
 			MV1RefreshReferenceMesh(hits.get(), -1, TRUE);			/*参照用メッシュの更新*/
 			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
@@ -1113,21 +1112,21 @@ namespace MAIN_ {
 			hitsind.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 		}
 
-		void Set(const float &caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
+		void Set(const float& caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
 			hitss++;
 			IndexNum = RefMesh.PolygonNum * 3 * hitss;				/*インデックスの数を取得*/
 			VerNum = RefMesh.VertexNum * hitss;						/*頂点の数を取得*/
 			hitsver.resize(VerNum);									/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 			hitsind.resize(IndexNum);								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 			{
-				float asize = 200.f*caliber;
+				float asize = 200.f * caliber;
 				const auto& y_vec = Normal;
 				auto z_vec = y_vec.cross(Zvec).Norm();
 				auto scale = VECTOR_ref::vget(asize, asize, asize);
 				auto pos = Position + y_vec * 0.02f;
-				MATRIX_ref mat = MATRIX_ref::GetScale(scale)*  MATRIX_ref::Axis1_YZ(y_vec, z_vec);
+				MATRIX_ref mat = MATRIX_ref::GetScale(scale) * MATRIX_ref::Axis1_YZ(y_vec, z_vec);
 
-				hits.SetMatrix(mat*MATRIX_ref::Mtrans(pos));
+				hits.SetMatrix(mat * MATRIX_ref::Mtrans(pos));
 			}
 			MV1RefreshReferenceMesh(hits.get(), -1, TRUE);			/*参照用メッシュの更新*/
 			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
@@ -1325,7 +1324,7 @@ namespace MAIN_ {
 						}
 					}
 				}
-			});
+				});
 			if (this->type == EnumGunParts::PARTS_SIGHT) {
 				SetUseASyncLoadFlag(FALSE);
 				this->reticle = GraphHandle::Load(this->mod.get_path() + "/reticle.png");
@@ -1355,7 +1354,7 @@ namespace MAIN_ {
 			auto ans = std::find(this->select.begin(), this->select.end(), sel_chose);
 			return int((ans != this->select.end()) ? (ans - this->select.begin()) : -1);
 		}
-		void Set_gun_select(std::vector<MV1::ani*>&gunanime_sel, EnumSELECTER selecting) {
+		void Set_gun_select(std::vector<MV1::ani*>& gunanime_sel, EnumSELECTER selecting) {
 			for (auto& sel : this->select) {
 				easing_set(&gunanime_sel[&sel - &this->select[0]]->per, float(int(sel == this->select[(int)selecting])), 0.5f);
 			}
@@ -1386,7 +1385,7 @@ namespace MAIN_ {
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				this->repair = getparams::_long(this->mod.mdata);//
-			});
+				});
 		}
 	};
 	//薬品データ
@@ -1414,7 +1413,7 @@ namespace MAIN_ {
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				this->time = getparams::_float(this->mod.mdata);//
-			});
+				});
 		}
 	};
 
@@ -1443,7 +1442,7 @@ namespace MAIN_ {
 		auto& get_pos_(void) const noexcept { return move.pos; }
 	private:
 		//mag
-		void Set_item(GUNPARTs*magdata, const moves& move_, size_t dnm = SIZE_MAX) {
+		void Set_item(GUNPARTs* magdata, const moves& move_, size_t dnm = SIZE_MAX) {
 			this->move = move_;
 			this->ptr_mag = magdata;
 			this->obj = this->ptr_mag->mod.get_model().Duplicate();
@@ -1464,13 +1463,13 @@ namespace MAIN_ {
 			this->del_timer = (this->magazine_param.mag_cnt == 0) ? 5.f : 20.f;
 		}
 		//med
-		void Set_item(Meds*meddata, const moves& move_) {
+		void Set_item(Meds* meddata, const moves& move_) {
 			this->move = move_;
 			this->ptr_med = meddata;
 			this->obj = this->ptr_med->mod.get_model().Duplicate();
 		}
 		//med
-		void Set_item(Grenades*gredata, const moves& move_) {
+		void Set_item(Grenades* gredata, const moves& move_) {
 			this->move = move_;
 			this->ptr_gre = gredata;
 			this->obj = this->ptr_gre->mod.get_model().Duplicate();
@@ -1478,11 +1477,11 @@ namespace MAIN_ {
 		}
 	public:
 		//mag
-		Items(size_t id, GUNPARTs*magdata, const moves& move_, size_t dnm = SIZE_MAX) {
+		Items(size_t id, GUNPARTs* magdata, const moves& move_, size_t dnm = SIZE_MAX) {
 			this->id_t = id;
 			Set_item(magdata, move_, dnm);
 		}
-		bool Set_item_(GUNPARTs*magdata, const moves& move_, size_t dnm) {
+		bool Set_item_(GUNPARTs* magdata, const moves& move_, size_t dnm) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
 				this->Set_item(magdata, move_, dnm);
 				return true;
@@ -1490,11 +1489,11 @@ namespace MAIN_ {
 			return false;
 		}
 		//med
-		Items(size_t id, Meds*meddata, const moves& move_) {
+		Items(size_t id, Meds* meddata, const moves& move_) {
 			this->id_t = id;
 			this->Set_item(meddata, move_);
 		}
-		bool Set_item_(Meds*meddata, const moves& move_) {
+		bool Set_item_(Meds* meddata, const moves& move_) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
 				this->Set_item(meddata, move_);
 				return true;
@@ -1502,11 +1501,11 @@ namespace MAIN_ {
 			return false;
 		}
 		//gre
-		Items(size_t id, Grenades*gredata, const moves& move_) {
+		Items(size_t id, Grenades* gredata, const moves& move_) {
 			this->id_t = id;
 			this->Set_item(gredata, move_);
 		}
-		bool Set_item_(Grenades*gredata, const moves& move_) {
+		bool Set_item_(Grenades* gredata, const moves& move_) {
 			if (this->ptr_mag == nullptr && this->ptr_med == nullptr && this->ptr_gre == nullptr) {
 				this->Set_item(gredata, move_);
 				return true;
@@ -1514,35 +1513,34 @@ namespace MAIN_ {
 			return false;
 		}
 		//
-		template<class Y>
-		void UpDate(std::vector<std::shared_ptr<Items>>& item, std::shared_ptr<Y>& MAPPTs) {
+		void UpDate(std::vector<std::shared_ptr<Items>>& item, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) {
 			auto old = this->move.pos;
 			if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
-				this->obj.SetMatrix(this->move.mat*MATRIX_ref::Mtrans(this->move.pos));
+				this->obj.SetMatrix(this->move.mat * MATRIX_ref::Mtrans(this->move.pos));
 				this->move.Update_Physics();
 				for (auto& p : item) {
 					if ((p->ptr_mag != nullptr || p->ptr_med != nullptr || p->ptr_gre != nullptr) && p.get() != this) {
 						if ((p->move.pos - this->move.pos).size() <= 0.35f) {
-							p->move.vec.xadd((p->move.pos - this->move.pos).x()*5.f / FPS);
-							p->move.vec.zadd((p->move.pos - this->move.pos).z()*5.f / FPS);
-							this->move.vec.xadd((this->move.pos - p->move.pos).x()*5.f / FPS);
-							this->move.vec.zadd((this->move.pos - p->move.pos).z()*5.f / FPS);
+							p->move.vec.xadd((p->move.pos - this->move.pos).x() * 5.f / FPS);
+							p->move.vec.zadd((p->move.pos - this->move.pos).z() * 5.f / FPS);
+							this->move.vec.xadd((this->move.pos - p->move.pos).x() * 5.f / FPS);
+							this->move.vec.zadd((this->move.pos - p->move.pos).z() * 5.f / FPS);
 						}
 					}
 				}
 				if (this->ptr_gre != nullptr) {
-					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.005f, 0));
-					if (pp.HitFlag == TRUE) {
-						this->move.HitGround(pp, 0.005f);
+					auto ColResGround = map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.005f, 0));
+					if (ColResGround.HitFlag == TRUE) {
+						this->move.HitGround(ColResGround, 0.005f);
 						auto fvec = this->move.vec.Norm();
-						auto nvec = VECTOR_ref(pp.Normal).Norm();
-						this->move.vec = (fvec + nvec * ((fvec*-1.f).dot(nvec)*2.f))*(this->move.vec.size()*0.5f);
+						auto nvec = VECTOR_ref(ColResGround.Normal).Norm();
+						this->move.vec = (fvec + nvec * ((fvec * -1.f).dot(nvec) * 2.f)) * (this->move.vec.size() * 0.5f);
 					}
 				}
 				else {
-					auto pp = MAPPTs->map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.005f, 0));
-					if (pp.HitFlag == TRUE) {
-						this->move.HitGround(pp, 0.005f);
+					auto ColResGround = map_col_line(old - VECTOR_ref::vget(0, 0.0025f, 0), this->move.pos - VECTOR_ref::vget(0, 0.005f, 0));
+					if (ColResGround.HitFlag == TRUE) {
+						this->move.HitGround(ColResGround, 0.005f);
 						this->move.vec.clear();
 						//easing_set(&this->move.vec, VECTOR_ref::zero(), 0.8f);
 					}
@@ -1554,14 +1552,14 @@ namespace MAIN_ {
 				this->del_timer -= 1.f / FPS;
 			}
 		}
-		template<class Y, class PLAYER_CHARA>
-		void Get_item_2(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<PLAYER_CHARA>& chara, std::shared_ptr<Y>& MAPPTs) {
+		template<class PLAYER_CHARA>
+		void Get_item_2(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<PLAYER_CHARA>& chara, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) {
 			if (this->flag_canlook_player) {
 				bool zz = false;
 				if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
-					auto p = MAPPTs->map_col_line(StartPos, EndPos);
-					if (p.HitFlag == TRUE) {
-						EndPos = p.HitPosition;
+					auto ColResGround = map_col_line(StartPos, EndPos);
+					if (ColResGround.HitFlag == TRUE) {
+						EndPos = ColResGround.HitPosition;
 					}
 					zz = (Segment_Point_MinLength(StartPos.get(), EndPos.get(), this->move.pos.get()) <= 0.4f);
 				}
@@ -1586,7 +1584,7 @@ namespace MAIN_ {
 					if (zz) {
 						chara->set_canget_med(this->id_t, this->ptr_med->mod.get_name());
 						if (chara->getmagazine_push()) {
-							chara->HP = std::clamp<int>(chara->HP + this->ptr_med->repair, 0, chara->HP_full);
+							chara->Damage.AddHP(this->ptr_med->repair);
 							this->Detach_item();
 						}
 					}
@@ -1607,8 +1605,7 @@ namespace MAIN_ {
 				//
 			}
 		}
-		template<class Y>
-		void Check_CameraViewClip(std::shared_ptr<Y>& MAPPTs, bool use_occlusion) noexcept {
+		void Check_CameraViewClip(bool use_occlusion, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) noexcept {
 			this->flag_canlook_player = true;
 			auto ttt = this->move.pos;
 			if (CheckCameraViewClip_Box((ttt + VECTOR_ref::vget(-0.3f, 0, -0.3f)).get(), (ttt + VECTOR_ref::vget(0.3f, 0.3f, 0.3f)).get())) {
@@ -1616,8 +1613,8 @@ namespace MAIN_ {
 				return;
 			}
 			if (use_occlusion) {
-				if (MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.3f, 0)).HitFlag == TRUE &&
-					MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.0f, 0)).HitFlag == TRUE) {
+				if (map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.3f, 0)).HitFlag == TRUE &&
+					map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.0f, 0)).HitFlag == TRUE) {
 					this->flag_canlook_player = false;
 					return;
 				}
@@ -1644,8 +1641,8 @@ namespace MAIN_ {
 			}
 			return false;
 		}
-		template<class Y, class PLAYER_CHARA>
-		bool Detach_gre(std::shared_ptr<Y>& MAPPTs, std::shared_ptr<PLAYER_CHARA>& killer, std::vector<std::shared_ptr<PLAYER_CHARA>>& chara) noexcept {
+		template<class PLAYER_CHARA>
+		bool Detach_gre(std::shared_ptr<PLAYER_CHARA>& killer, std::vector<std::shared_ptr<PLAYER_CHARA>>& chara, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) noexcept {
 			if (this->ptr_gre != nullptr && this->del_timer <= 0.f) {
 				//effect
 				killer->Set_eff(Effect::ef_greexp, this->move.pos, VECTOR_ref::front(), 0.1f / 0.1f);
@@ -1656,38 +1653,19 @@ namespace MAIN_ {
 				this->Detach_item();
 				for (auto& tgt : chara) {
 					tgt->calc_gredamage(killer);
-					if (tgt->get_alive()) {
+					if (tgt->Damage.get_alive()) {
 						float scale = (this->move.pos - tgt->get_head_pos()).size();
 						if (scale < 10.f) {
-							if (!MAPPTs->map_col_line(this->move.pos, tgt->get_head_pos()).HitFlag == TRUE) {
+							if (!(map_col_line(this->move.pos, tgt->get_head_pos()).HitFlag == TRUE)) {
 								int damage = int(150.f * (10.f - scale) / 10.f);
 								damage = std::clamp(damage, 0, 100);
-								auto old = tgt->HP;
-								tgt->HP = std::clamp(tgt->HP - damage, 0, tgt->HP_full);
-								tgt->HP_parts[0] = std::clamp(tgt->HP_parts[0] - damage, 0, tgt->HP_full);
-								tgt->got_damage = old - tgt->HP;
-								tgt->got_damage_color = GetColor(255, 255, 255);
 
-								if (float(tgt->HP) / float(tgt->HP_full) <= 0.66) {
-									tgt->got_damage_color = GetColor(255, 255, 0);
-								}
-								if (float(tgt->HP) / float(tgt->HP_full) <= 0.33) {
-									tgt->got_damage_color = GetColor(255, 128, 0);
-								}
-								if ((damage) != tgt->got_damage) {
-									tgt->got_damage_color = GetColor(255, 0, 0);
-								}
-								tgt->got_damage_x = -255 + GetRand(255 * 2);
-								tgt->got_damage_f = 1.f;
-								{
-									float x_1 = sinf(tgt->get_body_yrad());
-									float y_1 = cosf(tgt->get_body_yrad());
-									auto vc = (killer->get_pos() - tgt->get_pos()).Norm();
-									tgt->got_damage_.resize(tgt->got_damage_.size() + 1);
-									tgt->got_damage_.back().alpfa = 1.f;
-									tgt->got_damage_.back().rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
-								}
-								if (!tgt->get_alive()) {
+								float x_1 = sinf(tgt->get_body_yrad());
+								float y_1 = cosf(tgt->get_body_yrad());
+								auto vc = (killer->get_pos() - tgt->get_pos()).Norm();
+								tgt->Damage.SubHP(damage, atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z()));
+								tgt->Damage.SubHP_Parts(damage, 0);
+								if (!tgt->Damage.get_alive()) {
 									killer->scores.set_kill(&tgt - &chara.front(), 70);
 									tgt->scores.set_death(&killer - &chara.front());
 									tgt->get_audio().voice_death.play_3D(tgt->get_pos(), 10.f);
@@ -1731,7 +1709,7 @@ namespace MAIN_ {
 		frames frame2;
 		frames frame3;
 	public:
-		
+
 		const auto& get_rounds()const noexcept { return rounds; }
 		const auto& get_Spec()const noexcept { return Spec; }
 
@@ -1747,29 +1725,33 @@ namespace MAIN_ {
 			frame3.first = -1;
 		}
 
-		void set(const MV1& obj, int i) {
-			this->frame1 = { i,obj.frame(i) };
+		void Set(const MV1& obj, int i) {
+			this->frame1.Set_World(i,obj);
+			this->frame3.first = -1;
+			this->frame2.first = -1;
 			auto p2 = obj.frame_parent(this->frame1.first);
 			if (p2 >= 0) {
 				this->frame1.second -= obj.frame(int(p2)); //親がいる時引いとく
 			}
-			if (obj.frame_child_num(this->frame1.first) > 0) {
-				if (obj.frame_name(this->frame1.first + 1).find("仰角", 0) != std::string::npos) {
-					this->frame2 = { this->frame1.first + 1,obj.frame(this->frame1.first + 1) - obj.frame(this->frame1.first) };
-					if (obj.frame_child_num(this->frame1.first) > 0) {
-						this->frame3 = { this->frame2.first + 1,obj.frame(this->frame2.first + 1) - obj.frame(this->frame2.first) };
-					}
-					else {
-						this->frame3.first = -1;
-					}
-				}
+			if (obj.frame_child_num(this->frame1.first) <= 0) {
+				return;
 			}
-			else {
-				this->frame2.first = -1;
+			int child_num = (int)obj.frame_child(this->frame1.first, 0);
+			if (obj.frame_name(child_num).find("仰角", 0) != std::string::npos) {
+				this->frame2.Set_Local(child_num, obj);
+			}
+			if (this->frame2.first == -1) {
+				return;
+			}
+			if (obj.frame_child_num(this->frame2.first) <= 0) {
+				return;
+			}
+			{
+				this->frame3.Set_Local((int)obj.frame_child(this->frame2.first, 0), obj);
 			}
 		}
 
-		void Set_performance(int mdata,const std::string& stt) {
+		void Set_performance(int mdata, const std::string& stt) {
 			this->name = getparams::getright(stt);
 			this->load_time = getparams::_float(mdata);
 			this->rounds = getparams::_int(mdata);
@@ -1973,15 +1955,15 @@ namespace MAIN_ {
 				std::string p = this->obj.frame_name(i);
 				if (p.find("転輪", 0) != std::string::npos) {
 					this->wheelframe.resize(this->wheelframe.size() + 1);
-					this->wheelframe.back() = { i,this->obj.frame(i) };
+					this->wheelframe.back().Set_World(i, this->obj);
 				}
 				else if ((p.find("輪", 0) != std::string::npos) && (p.find("転輪", 0) == std::string::npos)) {
 					this->wheelframe_nospring.resize(this->wheelframe_nospring.size() + 1);
-					this->wheelframe_nospring.back() = { i,this->obj.frame(i) };
+					this->wheelframe_nospring.back().Set_World(i, this->obj);
 				}
 				else if (p.find("旋回", 0) != std::string::npos) {
 					this->gunframe.resize(this->gunframe.size() + 1);
-					this->gunframe.back().set(this->obj, i);
+					this->gunframe.back().Set(this->obj, i);
 				}
 				else if (p == "min") {
 					this->minpos = this->obj.frame(i);
@@ -1995,11 +1977,11 @@ namespace MAIN_ {
 					for (int z = 0; z < this->obj.frame_child_num(i); z++) {
 						if (this->obj.frame(i + 1 + z).x() > 0) {
 							this->b2upsideframe[0].resize(this->b2upsideframe[0].size() + 1);
-							this->b2upsideframe[0].back() = { i + 1 + z, this->obj.frame(i + 1 + z) };
+							this->b2upsideframe[0].back().Set_World(i + 1 + z, this->obj);
 						}
 						else {
 							this->b2upsideframe[1].resize(this->b2upsideframe[1].size() + 1);
-							this->b2upsideframe[1].back() = { i + 1 + z, this->obj.frame(i + 1 + z) };
+							this->b2upsideframe[1].back().Set_World(i + 1 + z, this->obj);
 						}
 					}
 					std::sort(this->b2upsideframe[0].begin(), this->b2upsideframe[0].end(), [](const frames& x, const frames& y) { return x.second.z() < y.second.z(); }); //ソート
@@ -2011,11 +1993,11 @@ namespace MAIN_ {
 					for (int z = 0; z < this->obj.frame_child_num(i); z++) {
 						if (this->obj.frame(i + 1 + z).x() > 0) {
 							this->b2downsideframe[0].resize(this->b2downsideframe[0].size() + 1);
-							this->b2downsideframe[0].back() = { i + 1 + z, this->obj.frame(i + 1 + z) };
+							this->b2downsideframe[0].back().Set_World(i + 1 + z, this->obj);
 						}
 						else {
 							this->b2downsideframe[1].resize(this->b2downsideframe[1].size() + 1);
-							this->b2downsideframe[1].back() = { i + 1 + z, this->obj.frame(i + 1 + z) };
+							this->b2downsideframe[1].back().Set_World(i + 1 + z, this->obj);
 						}
 					}
 				}
@@ -2133,6 +2115,96 @@ namespace MAIN_ {
 				FileRead_close(mdata);
 				for (auto& g : this->gunframe) { g.Set_Ammos_after(); }
 			}
+		}
+	};
+
+	//パーツデータ管理
+	class GUNPARTS_Control {
+	private:
+		std::vector<GUNPARTs> magazine_data;		//GUNデータ
+		std::vector<GUNPARTs> mazzule_data;			//GUNデータ
+		std::vector<GUNPARTs> grip_data;			//GUNデータ
+		std::vector<GUNPARTs> uperhandguard_data;	//GUNデータ
+		std::vector<GUNPARTs> underhandguard_data;	//GUNデータ
+		std::vector<GUNPARTs> stock_data;			//GUNデータ
+		std::vector<GUNPARTs> dustcover_data;		//GUNデータ
+		std::vector<GUNPARTs> sight_data;			//GUNデータ
+		std::vector<GUNPARTs> foregrip_data;		//GUNデータ
+		std::vector<GUNPARTs> lam_data;				//GUNデータ
+		std::vector<GUNPARTs> mount_base_data;		//GUNデータ
+		std::vector<GUNPARTs> mount_data;			//GUNデータ
+		std::vector<GUNPARTs> gun_data;				//GUNデータ
+	public:
+		std::vector<GUNPARTs>* Get_Parts_Data_Ptr(EnumGunParts type_sel) noexcept {
+			switch (type_sel) {
+			case EnumGunParts::PARTS_MAGAZINE:
+				return &this->magazine_data;
+			case EnumGunParts::PARTS_MAZZULE:
+				return &this->mazzule_data;
+			case EnumGunParts::PARTS_GRIP:
+				return &this->grip_data;
+			case EnumGunParts::PARTS_UPER_HGUARD:
+				return &this->uperhandguard_data;
+			case EnumGunParts::PARTS_UNDER_HGUARD:
+				return &this->underhandguard_data;
+			case EnumGunParts::PARTS_DUSTCOVER:
+				return &this->dustcover_data;
+			case EnumGunParts::PARTS_STOCK:
+				return &this->stock_data;
+			case EnumGunParts::PARTS_LAM:
+				return &this->lam_data;
+			case EnumGunParts::PARTS_MOUNT_BASE:
+				return &this->mount_base_data;
+			case EnumGunParts::PARTS_MOUNT:
+				return &this->mount_data;
+			case EnumGunParts::PARTS_SIGHT:
+				return &this->sight_data;
+			case EnumGunParts::PARTS_FOREGRIP:
+				return &this->foregrip_data;
+			case EnumGunParts::PARTS_GUN:
+				return &this->gun_data;
+			default:
+				/*
+				PARTS_NONE,
+				PARTS_BASE,
+				*/
+				return nullptr;
+			}
+		}
+		std::vector<GUNPARTs>& Get_Parts_Data(EnumGunParts type_sel) noexcept {
+			auto ptr = Get_Parts_Data_Ptr(type_sel);
+			return *ptr;
+		}
+		void Set_Pre() {
+			GUNPARTs::Set_Pre(&this->grip_data, "data/Guns/parts/grip/");
+			GUNPARTs::Set_Pre(&this->uperhandguard_data, "data/Guns/parts/uper_handguard/");
+			GUNPARTs::Set_Pre(&this->underhandguard_data, "data/Guns/parts/under_handguard/");
+			GUNPARTs::Set_Pre(&this->mount_base_data, "data/Guns/parts/mount_base/");
+			GUNPARTs::Set_Pre(&this->mount_data, "data/Guns/parts/mount/");
+			GUNPARTs::Set_Pre(&this->dustcover_data, "data/Guns/parts/dustcover/");
+			GUNPARTs::Set_Pre(&this->foregrip_data, "data/Guns/parts/foregrip/");
+			GUNPARTs::Set_Pre(&this->mazzule_data, "data/Guns/parts/mazzule/", EnumGunParts::PARTS_MAZZULE);
+			GUNPARTs::Set_Pre(&this->stock_data, "data/Guns/parts/stock/", EnumGunParts::PARTS_STOCK);
+			GUNPARTs::Set_Pre(&this->sight_data, "data/Guns/parts/sight/", EnumGunParts::PARTS_SIGHT);
+			GUNPARTs::Set_Pre(&this->lam_data, "data/Guns/parts/lam/", EnumGunParts::PARTS_LAM);
+			GUNPARTs::Set_Pre(&this->gun_data, "data/Guns/gun/", EnumGunParts::PARTS_BASE);					//GUNデータ
+			GUNPARTs::Set_Pre(&this->magazine_data, "data/Guns/mag/", EnumGunParts::PARTS_MAGAZINE);		//MAGデータ
+		}
+
+		void Set() {
+			for (auto& g : this->mazzule_data) { g.Set(&g - &this->mazzule_data.front()); }
+			for (auto& g : this->grip_data) { g.Set(&g - &this->grip_data.front()); }
+			for (auto& g : this->uperhandguard_data) { g.Set(&g - &this->uperhandguard_data.front()); }
+			for (auto& g : this->underhandguard_data) { g.Set(&g - &this->underhandguard_data.front()); }
+			for (auto& g : this->mount_base_data) { g.Set(&g - &this->mount_base_data.front()); }
+			for (auto& g : this->mount_data) { g.Set(&g - &this->mount_data.front()); }
+			for (auto& g : this->stock_data) { g.Set(&g - &this->stock_data.front()); }
+			for (auto& g : this->dustcover_data) { g.Set(&g - &this->dustcover_data.front()); }
+			for (auto& g : this->lam_data) { g.Set(&g - &this->lam_data.front()); }
+			for (auto& g : this->foregrip_data) { g.Set(&g - &this->foregrip_data.front()); }
+			for (auto& g : this->sight_data) { g.Set(&g - &this->sight_data.front()); }
+			for (auto& g : this->gun_data) { g.Set(&g - &this->gun_data.front()); }							//GUNデータ2
+			for (auto& g : this->magazine_data) { g.Set(&g - &this->magazine_data.front()); }				//MAGデータ2
 		}
 	};
 };

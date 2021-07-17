@@ -1,16 +1,8 @@
 #pragma once
 #include"Header.hpp"
 
-namespace MAIN_ {
-	enum class scenes
-	{
-		NONE_SCENE,
-		ITEM_LOAD,
-		MAP_LOAD,
-		LOAD,
-		SELECT,
-		MAIN_LOOP
-	};
+namespace FPS_n2 {
+
 
 	class main_c {
 	private:
@@ -82,6 +74,7 @@ namespace MAIN_ {
 			shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");															//歪み
 			//MAP
 			auto MAPPTs = std::make_shared<MAPclass::Map>(OPTPTs->grass_level, DrawPts->disp_x, DrawPts->disp_y);
+			MAPPTs->Set_mine(MAPPTs);
 			//キー読み込み
 			auto KeyBind = std::make_shared<key_bind>();
 			auto PauseMenu = std::make_shared<pause_menu>(KeyBind);
@@ -95,51 +88,55 @@ namespace MAIN_ {
 			LOADscene->Init(DrawPts, OPTPTs, MAPPTs, MAINLOOPscene, DebugPTs, &effsorce);
 			SELECTscene->Init(DrawPts, OPTPTs, MAPPTs, MAINLOOPscene, DebugPTs, &effsorce);
 			MAINLOOPscene->Init(DrawPts, OPTPTs, MAPPTs, MAINLOOPscene, DebugPTs, &effsorce);
+			//遷移先指定
+			LOADscene->Set_Next(SELECTscene, scenes::SELECT);
+			SELECTscene->Set_Next(MAINLOOPscene, scenes::MAIN_LOOP);
+			MAINLOOPscene->Set_Next(UI_LOADPTs, scenes::MAP_LOAD);
 			//繰り返し
 			do {
 				//遷移
-				switch (sel_scene) {
-				default:
-					UI_LOADPTs->settitle("アイテムデータ");							//アイテム読み込み
-					sel_scene = scenes::ITEM_LOAD;
-					scenes_ptr = UI_LOADPTs;
-					break;
-				case scenes::ITEM_LOAD:
-					MAINLOOPscene->Start();											//メインループ開始読み込み
-					sel_scene = scenes::MAP_LOAD;
-					scenes_ptr = UI_LOADPTs;
-					break;
-				case scenes::MAP_LOAD:
-					MAPPTs->Start();												//マップパーツ生成
-					MAINLOOPscene->Ready_Chara(MAPPTs->get_spawn_point().size());	//キャラ設定
-					sel_scene = scenes::LOAD;
-					scenes_ptr = LOADscene;
-					break;
-				case scenes::LOAD:
-					SELECTscene->Start(LOADscene->putout_preset());					//プリセットを指定
-					sel_scene = scenes::SELECT;
-					scenes_ptr = SELECTscene;
-					break;
-				case scenes::SELECT:
-					sel_scene = scenes::MAIN_LOOP;
-					scenes_ptr = MAINLOOPscene;
-					break;
-				case scenes::MAIN_LOOP:
-					MAPPTs->Dispose();												//マップを消去
-					sel_scene = scenes::MAP_LOAD;
-					scenes_ptr = UI_LOADPTs;
-					break;
+				{
+					//遷移前処理
+					switch (sel_scene) {
+					case scenes::ITEM_LOAD:
+						scenes_ptr->Set_Next(UI_LOADPTs, scenes::MAP_LOAD);
+						break;
+					case scenes::MAP_LOAD:
+						scenes_ptr->Set_Next(LOADscene, scenes::LOAD);
+						break;
+					default: break;
+					}
+					//遷移処理
+					switch (sel_scene) {
+					case scenes::NONE_SCENE://start
+						sel_scene = scenes::ITEM_LOAD;
+						scenes_ptr = UI_LOADPTs;
+						break;
+					default:
+						sel_scene = scenes_ptr->Next_scene;
+						scenes_ptr = scenes_ptr->Next_scenes_ptr;
+						break;
+					}
+					//遷移後処理
+					switch (sel_scene) {
+					case scenes::ITEM_LOAD:
+						UI_LOADPTs->settitle("アイテムデータ");	//アイテム読み込み
+						break;
+					case scenes::MAP_LOAD:
+						UI_LOADPTs->settitle("マップ");				//マップ読み込み
+						MAPPTs->Ready_map("data/map");				//マップ読み込み
+						break;
+					default: break;
+					}
 				}
 				//開始
 				{
-					if (sel_scene == scenes::MAP_LOAD) {
-						MAPPTs->Ready_map("data/map");	//マップ読み込み
-						UI_LOADPTs->settitle("マップ");	//マップ読み込み
-					}
 					scenes_ptr->Set();
 					DrawPts->Set_Light_Shadow(scenes_ptr->get_Shadow_maxpos(), scenes_ptr->get_Shadow_minpos(), scenes_ptr->get_Light_vec(), [&] {scenes_ptr->Shadow_Draw_Far(); });
 					SetGlobalAmbientLight(scenes_ptr->get_Light_color());
-					if (sel_scene == scenes::MAIN_LOOP) { MAPPTs->Start_Ray(scenes_ptr->get_Light_vec()); }
+					if (sel_scene == scenes::MAIN_LOOP) {
+						MAPPTs->Start_Ray(scenes_ptr->get_Light_vec());
+					}
 					selend = true;
 					selpause = false;
 					update_effect_was = GetNowHiPerformanceCount();
@@ -264,7 +261,7 @@ namespace MAIN_ {
 							//音位置指定
 							Set3DSoundListenerPosAndFrontPosAndUpVec(scenes_ptr->Get_Camera().campos.get(), scenes_ptr->Get_Camera().camvec.get(), scenes_ptr->Get_Camera().camup.get());
 							//影用意
-							DrawPts->Ready_Shadow(scenes_ptr->Get_Camera().campos, [&] { scenes_ptr->Shadow_Draw(); }, [&] { scenes_ptr->Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.5f, 2.5f, 2.5f), VECTOR_ref::vget(15.f, 2.5f, 15.f));//MAIN_LOOPのnearはこれ (scenes_ptr->Get_Mine()->get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
+							DrawPts->Ready_Shadow(scenes_ptr->Get_Camera().campos, [&] { scenes_ptr->Shadow_Draw(); }, [&] { scenes_ptr->Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.5f, 2.5f, 2.5f), VECTOR_ref::vget(15.f, 2.5f, 15.f));//MAIN_LOOPのnearはこれ (scenes_ptr->Get_Mine()->Damage.get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
 							//エフェクシアのアプデを60FPS相当に変更
 							{
 								update_effect_f = (!selpause && (GetNowHiPerformanceCount() - update_effect_was) >= 1000000 / 60);
@@ -275,7 +272,7 @@ namespace MAIN_ {
 							//VRに移す
 							DrawPts->draw_VR([&] {
 								auto tmp = GetDrawScreen();
-								auto tmp_cam = scenes_ptr->Get_Camera();
+								cam_info tmp_cam = scenes_ptr->Get_Camera();
 								tmp_cam.campos = GetCameraPosition();
 								tmp_cam.camvec = GetCameraTarget();
 								{
@@ -359,6 +356,23 @@ namespace MAIN_ {
 				{
 					//解放
 					scenes_ptr->Dispose();
+					//次ループの処理
+					switch (sel_scene) {
+					default: break;
+					case scenes::ITEM_LOAD:
+						MAINLOOPscene->Start();											//メインループ開始読み込み
+						break;
+					case scenes::MAP_LOAD:
+						MAPPTs->Start();												//マップパーツ生成
+						MAINLOOPscene->Ready_Chara(MAPPTs->get_spawn_point().size());	//キャラ設定
+						break;
+					case scenes::LOAD:
+						SELECTscene->Start(LOADscene->putout_preset());					//プリセットを指定
+						break;
+					case scenes::MAIN_LOOP:
+						MAPPTs->Dispose();												//マップを消去
+						break;
+					}
 				}
 				//
 				if (!this->ending) {

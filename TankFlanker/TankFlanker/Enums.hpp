@@ -1,6 +1,6 @@
 #pragma once
 
-namespace MAIN_ {
+namespace FPS_n2 {
 	enum class Effect {
 		ef_fire,	//î≠ñCâä
 		ef_reco,	//è¨å˚åaíµíe
@@ -26,7 +26,7 @@ namespace MAIN_ {
 		PARTS_MOUNT,
 		PARTS_SIGHT,
 		PARTS_FOREGRIP,
-		PARTS_NUM,
+		PARTS_GUN,
 	};
 	enum class EnumAttachPoint {
 		POINTS_NONE,
@@ -56,5 +56,15 @@ namespace MAIN_ {
 		SELECTLAM_LASER,
 		SELECTLAM_LIGHT,
 		SELECTLAM_NUM,
+	};
+
+	enum class scenes
+	{
+		NONE_SCENE,
+		ITEM_LOAD,
+		MAP_LOAD,
+		LOAD,
+		SELECT,
+		MAIN_LOOP
 	};
 }
