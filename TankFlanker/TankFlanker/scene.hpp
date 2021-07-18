@@ -982,7 +982,7 @@ namespace FPS_n2 {
 
 				this->Get_Mine()->Ride_on(&this->vehicle[0]);	//æ‚é‚Æ‚«‚Ì“o˜^
 
-				this->Get_Mine()->Ride_on(nullptr);				//æ‚é‚Æ‚«‚Ì“o˜^
+				//this->Get_Mine()->Ride_on(nullptr);				//æ‚é‚Æ‚«‚Ì“o˜^
 
 				//UI
 				UIparts->Init(DrawPts, MAPPTs);
@@ -1043,13 +1043,9 @@ namespace FPS_n2 {
 				this->hit_obj_p.update();
 				this->hit_b_obj_p.update();
 				//campos,camvec,camup‚ÌŽw’è
-				this->Get_Mine()->Set_cam(this->camera_main, this->fov_base);
+				this->Get_Mine()->Setcamera(this->camera_main, this->fov_base);
 				//this->chara[1]->Set_cam(this->camera_main, this->fov_base);
-				//vehicle[0]->Set_cam(this->camera_main, this->Get_Mine()->GetHMDmat().zvec(), this->fov_base);
-				this->camera_main.camup = MATRIX_ref::Vtrans(this->camera_main.camup, MATRIX_ref::RotAxis(
-					(this->camera_main.camvec - this->camera_main.campos),
-					deg2rad(20.f * bless_ratio * sin(bless))
-				));
+				this->camera_main.camup = MATRIX_ref::Vtrans(this->camera_main.camup, MATRIX_ref::RotAxis((this->camera_main.camvec - this->camera_main.campos), deg2rad(20.f * bless_ratio * sin(bless))));
 
 				//ƒ‹[ƒ‹•Û‘¶
 				UIparts->Update();

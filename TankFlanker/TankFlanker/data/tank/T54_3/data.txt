@@ -1,5 +1,5 @@
 isfloat=false
-speed_flont=20
+speed_flont=15
 speed_back=-5
 body_rad=27
 turret_rad=25

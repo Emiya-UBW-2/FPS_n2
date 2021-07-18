@@ -216,6 +216,7 @@ namespace FPS_n2 {
 			std::array<EffectS, 12> effcs_gndhit;				/*エフェクト*/
 			size_t use_effcsgndhit{ 0 };						/*エフェクト*/
 			std::vector<EffekseerEffectHandle>* effsorce{ nullptr };
+			VECTOR_ref add_vec_real;						//移動ベクトルバッファ
 		public:
 			Damages Damage;
 			std::shared_ptr<PLAYER_CHARA>* MINE_c{ nullptr };
@@ -223,6 +224,15 @@ namespace FPS_n2 {
 			std::shared_ptr<PLAYER_VEHICLE>* MINE_v{ nullptr };
 			std::vector<std::shared_ptr<PLAYER_VEHICLE>>* ALL_v{ nullptr };
 		public:
+			const auto get_pseed_per(void) const noexcept {
+				if (MINE_v == nullptr) {
+					return add_vec_real.size() / speed;
+				}
+				else {
+					return (*MINE_v)->add_vec_real.size() / (*MINE_v)->use_veh->Get_flont_speed_limit() / 3.6f;
+				}
+			}//移動速度のパーセンテージ
+
 			void Ride_on(std::shared_ptr<PLAYER_VEHICLE>* MINE_v_t) {
 				if (MINE_v_t != nullptr) {
 					this->MINE_v = MINE_v_t;
@@ -404,7 +414,8 @@ namespace FPS_n2 {
 				}
 				void hit_effect(const VECTOR_ref& pos, const VECTOR_ref& nomal) {
 					if (this->spec->get_caliber() >= 0.020f) {
-						(*this->MINE_c)->Set_eff(Effect::ef_reco, pos + nomal * 0.1f, nomal);
+						(*this->MINE_c)->Set_gndhit(this->move.pos, nomal, this->spec->get_caliber() / 0.1f);
+						//(*this->MINE_c)->Set_eff(Effect::ef_reco, pos + nomal * 0.1f, nomal);
 					}
 					else {
 						(*this->MINE_c)->Set_gndhit(this->move.pos, nomal, 0.025f / 0.1f);
@@ -466,11 +477,14 @@ namespace FPS_n2 {
 						this->move.SetPos(this->move.pos + (this->move.vec * (this->spec->get_speed() / FPS)));
 						//判定
 						{
-							float range = ((this->move.repos - this->move.pos).size()*FPS / 60.f);
-							VECTOR_ref repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range;
+							VECTOR_ref repos;
 							if (this->First_Flag) {
 								float range_base = (this->base_pos - this->move.pos).size();
 								repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range_base;
+							}
+							else {
+								float range = ((this->move.repos - this->move.pos).size()*FPS / 60.f);
+								repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range;
 							}
 							auto ColResGround = MAPPTs->map_col_line(repos, this->move.pos);
 							if (ColResGround.HitFlag == TRUE) {
@@ -510,7 +524,7 @@ namespace FPS_n2 {
 								}
 							}
 							for (auto& tgt : *(*MINE_c)->ALL_c) {
-								if (&tgt == MINE_c || !tgt->Damage.get_alive()) {
+								if (&tgt == MINE_c || !tgt->Damage.get_alive() || tgt->MINE_v != nullptr) {
 									continue;
 								}
 								if (tgt->set_ref_col(repos, this->move.pos, 2.f)) {
@@ -1609,7 +1623,7 @@ namespace FPS_n2 {
 			std::vector<g_parts> sight_;
 		private:
 			MV1 obj_lag;									//ラグドール
-			VECTOR_ref add_vec_buf, add_vec_real;			//移動ベクトルバッファ
+			VECTOR_ref add_vec_buf;							//移動ベクトルバッファ
 			VECTOR_ref pos_tt;								/*プレイヤー位置*/
 			Audios audio;									/*音声*/
 			MV1::ani* gunanime_shot{ nullptr };				//銃anime
@@ -1708,24 +1722,38 @@ namespace FPS_n2 {
 			const auto& get_key_(void) const noexcept { return key_; }																										//key
 			const auto Get_reticle_size(void) const noexcept { return (select_sight != SIZE_MAX) ? this->sight_[select_sight].Get_reticle_size() : 1.f; }					//
 			const auto get_maz(void) const noexcept { return (mazzule.Get_mazzuletype() > 0) ? mazzule.Get_mazzule_pos() : base.Get_mazzule_pos(); }						//
-			const VECTOR_ref get_pos(bool no_y = false) const noexcept {
-#ifdef _USE_OPENVR_
-				if (DrawPts->use_vr) {
-					return (!no_y) ? (this->pos_tt + this->HMD.move.pos - this->HMD.move_start.pos) : (this->pos_tt + this->HMD.get_pos_noY() - this->HMD.move_start.pos);
-				}
-#endif // _USE_OPENVR_
-				return (!no_y) ? this->pos_tt + this->HMD.move.pos : this->pos_tt;
-			}		//pos
 			const auto ads_on(void) const noexcept { return this->key_.aim && !this->view_ing; }																			//ADS中
 			const auto get_jamping(void) const noexcept { return this->add_ypos != 0.f; }																					//ジャンプ中
 			const auto get_head_pos(void) const noexcept { return this->BodyFrame(this->frame_s.head_f.first); }															//頭部座標
-			const auto get_pseed_per(void) const noexcept { return add_vec_real.size() / speed; }																			//移動速度のパーセンテージ
+
+			const VECTOR_ref get_pos(bool no_y = false) const noexcept {
+				if (MINE_v == nullptr) {
+#ifdef _USE_OPENVR_
+					if (DrawPts->use_vr) {
+						return (!no_y) ? (this->pos_tt + this->HMD.move.pos - this->HMD.move_start.pos) : (this->pos_tt + this->HMD.get_pos_noY() - this->HMD.move_start.pos);
+					}
+#endif // _USE_OPENVR_
+					return (!no_y) ? this->pos_tt + this->HMD.move.pos : this->pos_tt;
+				}
+				else {
+					return (*MINE_v)->get_move().pos;
+				}
+			}
+			const float& get_body_yrad(void) const noexcept {
+				if (MINE_v == nullptr) {
+					return this->body_yrad;
+				}
+				else {
+					return (*MINE_v)->get_body_yrad();
+				}
+			}//ミニマップ用
+
 			//参照getter
+
 			const auto& get_now_selector(void) const noexcept { return this->base.thisparts->select[(int)this->gun_stat_now->get_selecter()]; }								//
 			const Audios& get_audio() const noexcept { return this->audio; }																								//audio(メニューのみ)
 			const auto& get_gunanime_trigger(void) const noexcept { return gunanime_trigger; }																				//トリガーアニメーション取り出し(メニューのみ)
 			const auto& get_mat_gun(void) const noexcept { return gun_m.mat; }																								//
-			const float& get_body_yrad(void) const noexcept { return this->body_yrad; }																						//ミニマップ用
 			const auto& get_per_all(void) const noexcept { return per_all; }																								//性能(UI表示用)
 			const auto& getmagazine_push(void) const noexcept { return this->key_.have_item; }																				//item関連
 			const auto& get_pos_LEFTHAND(void) const noexcept { return LEFTHAND.move.pos; }																					//item関連
@@ -2364,7 +2392,7 @@ namespace FPS_n2 {
 						auto StartPos = this->get_head_pos();
 						VECTOR_ref EndPos;
 						for (auto& tgt : *ALL_c) {
-							if (this == tgt.get()) { continue; }
+							if (this == tgt.get() || tgt->MINE_v != nullptr) { continue; }
 							const size_t index = &tgt - &ALL_c->front();
 							if (tgt->flag_gun) { turn = int(index); }
 							EndPos = (this->cpu_do.ai_time_shoot < 0.f) ? tgt->get_head_pos() : tgt->BodyFrame(tgt->frame_s.bodyb_f.first);
@@ -2673,6 +2701,43 @@ namespace FPS_n2 {
 					easing_set(&this->gunanime_magcatch->per, float(this->key_.reload), 0.5f);
 				}
 				//
+			}
+
+			void operation_tank(const bool cannotmove, const float fov_per, int move_mode) {
+				float x_m = 0.f, y_m = 0.f;
+				if (this->Damage.get_alive()) {
+					switch (move_mode) {
+					case 0://player move
+						if (DrawPts->use_vr) {
+							vr_move();//player move(VR)
+						}
+						else {
+							key_move(x_m, y_m, fov_per);//player move
+						}
+						break;
+					case 1://AI move
+						AI_move(x_m, y_m);
+						break;
+					default://cannot move
+						this->key_.ReSet_();
+						break;
+					}
+				}
+				{
+					this->key_.rule_();
+					if (this->Damage.get_alive()) {
+						easing_set(&this->body_ztrun, -deg2rad(x_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f);
+						easing_set(&this->body_xtrun, -deg2rad(y_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f);
+						//y軸回転(旋回)
+						this->HMD.mat_notlean = MATRIX_ref::RotX(-this->xrad_p) * this->HMD.mat_notlean;
+						this->xrad_p = std::clamp(this->xrad_p - deg2rad(y_m) * 0.1f, deg2rad(-80), deg2rad(60));
+						this->HMD.mat_notlean *= MATRIX_ref::RotY(deg2rad(x_m) * 0.1f);
+						//x軸回転(仰俯)
+						this->HMD.mat_notlean = MATRIX_ref::RotX(this->xrad_p) * this->HMD.mat_notlean;
+						//anser
+						this->HMD.move.mat = this->HMD.mat_notlean;
+					}
+				}
 			}
 			//壁、床判定
 			void wall_col() noexcept {
@@ -3118,6 +3183,43 @@ namespace FPS_n2 {
 					}
 				}
 			}
+
+			void Set_body_tank(bool ismine) noexcept {
+				bool useVR = DrawPts->use_vr && ismine;
+				if (true/*this->Damage.get_alive()*/) {
+#ifdef _USE_OPENVR_
+					if (useVR) {
+						{
+							auto v_ = (*MINE_v)->get_move().mat.zvec();
+							float x_1 = -sinf(this->body_yrad);
+							float y_1 = cosf(this->body_yrad);
+							float x_2 = v_.x();
+							float y_2 = -v_.z();
+							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * FRAME_RATE / FPS / 10.f;
+						}
+					}
+					else
+#endif // _USE_OPENVR_
+					{
+						{
+							auto v_ = (*MINE_v)->get_move().mat.zvec();
+							float x_1 = -sinf(this->body_yrad);
+							float y_1 = cosf(this->body_yrad);
+							float x_2 = v_.x();
+							float y_2 = -v_.z();
+							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * FRAME_RATE / FPS / 2.5f;
+						}
+						{
+							auto v_ = this->mat_body.zvec();
+							float x_1 = sinf(this->body_xrad);
+							float y_1 = -cosf(this->body_xrad);
+							float x_2 = -v_.y();
+							float y_2 = -std::hypotf(v_.x(), v_.z());
+							this->body_xrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2);
+						}
+					}
+				}
+			}
 		public:
 			//銃座標指定
 			void set_gun_pos(const moves& move_t) noexcept {
@@ -3517,13 +3619,24 @@ namespace FPS_n2 {
 #endif // _USE_OPENVR_
 				//p1～p2 0.00ms
 				//プレイヤー操作
-				this->operation(!playing, fov_per, ismine ? 0 : 1);
+				if (MINE_v == nullptr) {
+					this->operation(!playing, fov_per, ismine ? 0 : 1);
+				}
+				else {
+					this->operation_tank(!playing, fov_per, ismine ? 0 : 1);
+				}
 				//p2～p2-1 ～0.11ms
 				//壁その他の判定
 				this->wall_col();
 				//p2-1～p3 ～0.04ms
 				//obj演算
-				this->Set_body(ismine);
+				if (MINE_v == nullptr) {
+					this->Set_body(ismine);
+				}
+				else {
+					this->Set_body_tank(ismine);
+				}
+
 				//p3～p4 0.15～0.25ms
 							//lag演算
 							//if (!this->Damage.get_alive()) {
@@ -3822,6 +3935,10 @@ namespace FPS_n2 {
 			}
 			/*視界外か否かを判断*/
 			void Check_CameraViewClip(bool use_occlusion) noexcept {
+				if (MINE_v != nullptr) {
+					this->flag_canlook_player = false;
+					return;
+				}
 				this->flag_canlook_player = true;
 				auto ttt = this->get_pos();
 
@@ -3871,6 +3988,15 @@ namespace FPS_n2 {
 					camera_main.camup = VECTOR_ref::up();
 					MAPPTs->map_col_nearest(camera_main.camvec, &camera_main.campos);
 					easing_set(&camera_main.fov, fov_, 0.9f);
+				}
+			}
+
+			void Setcamera(cam_info& camera_main, const float fov_) {
+				if (this->MINE_v == nullptr) {
+					this->Set_cam(camera_main, fov_);
+				}
+				else {
+					(*this->MINE_v)->Set_cam(camera_main, this->HMD.move.mat.zvec(), fov_);
 				}
 			}
 			/*キャラ+銃描画*/
@@ -4632,8 +4758,11 @@ namespace FPS_n2 {
 						}
 					}
 
+					auto pos_t2 = this->obj_body.GetMatrix().pos();
+
 					this->obj_body.SetMatrix(this->move.mat * MATRIX_ref::Mtrans(this->move.pos));
 					this->obj_col.SetMatrix(this->obj_body.GetMatrix());
+					this->add_vec_real = this->move.pos - pos_t2;
 
 					for (auto& g : this->b2downsideframe) {
 						for (auto& t : g) {
