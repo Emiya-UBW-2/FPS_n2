@@ -982,7 +982,7 @@ namespace FPS_n2 {
 
 				this->Get_Mine()->Ride_on(&this->vehicle[0]);	//æ‚é‚Æ‚«‚Ì“o˜^
 
-				//this->Get_Mine()->Ride_on(nullptr);				//æ‚é‚Æ‚«‚Ì“o˜^
+				this->Get_Mine()->Ride_on(nullptr);				//æ‚é‚Æ‚«‚Ì“o˜^
 
 				//UI
 				UIparts->Init(DrawPts, MAPPTs);
