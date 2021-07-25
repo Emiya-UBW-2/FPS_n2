@@ -245,6 +245,7 @@ namespace FPS_n2 {
 									mine_k.shoot = KeyBind->get_mouse_use(0);
 									mine_k.select = KeyBind->get_mouse_use(1);
 									mine_k.aim = KeyBind->get_mouse_use(2);
+									mine_k.ride = KeyBind->get_key_use(20);
 								}
 							}
 							break;

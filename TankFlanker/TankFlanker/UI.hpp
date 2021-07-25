@@ -593,6 +593,10 @@ namespace FPS_n2 {
 						if (mine->get_canget_med_f()) {
 							Small.ptr->DrawString_MID(xp, yp, mine->get_canget_med() + "ÇèEÇ§", GetColor(255, 255, 0)); yp += Small.hight;
 						}
+
+						if (mine->get_canride_f()) {
+							Small.ptr->DrawString_MID(xp, yp, "èÊÇÈ", GetColor(255, 255, 0)); yp += Small.hight;
+						}
 					}
 					//íeñÚ
 					{

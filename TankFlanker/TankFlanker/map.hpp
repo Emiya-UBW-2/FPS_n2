@@ -50,8 +50,6 @@ namespace FPS_n2 {
 			VECTOR_ref sun_pos;
 			//kusa
 			int grasss = 2000;					/*grassの数*/
-			GraphHandle grass_pic;				/*画像ハンドル*/
-			MV1 grass;							/*grassモデル*/
 
 			shaders shader;						/*シェーダー*/
 			shaders Depth;						/*シェーダー*/
@@ -59,64 +57,39 @@ namespace FPS_n2 {
 			class grass_t {
 			private:
 				std::shared_ptr<Map> MAPPTs{ nullptr };
-			public:
 				bool canlook = true;
 
-				std::vector<VERTEX3D> grassver; /*grass*/
-				std::vector<DWORD> grassind;    /*grass*/
-				int VerBuf = -1, IndexBuf = -1;	/*grass*/
-				int IndexNum = -1, VerNum = -1;	/*grass*/
-				int vnum = -1, pnum = -1;		/*grass*/
-				MV1_REF_POLYGONLIST RefMesh;	/*grass*/
+			public:
+				Model_Instance inst;
+			public:
 
-				void put_start(const MV1& grass, int total, std::shared_ptr<Map>& MAPPTs_t) {
-
+				void Init(int total ,std::shared_ptr<Map>& MAPPTs_t) {
 					MAPPTs = MAPPTs_t;
 
-					MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
-					this->RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
-					this->IndexNum = this->RefMesh.PolygonNum * 3 * total; /*インデックスの数を取得*/
-					this->VerNum = this->RefMesh.VertexNum * total;	/*頂点の数を取得*/
-					this->grassver.resize(this->VerNum);   /*頂点データとインデックスデータを格納するメモリ領域の確保*/
-					this->grassind.resize(this->IndexNum); /*頂点データとインデックスデータを格納するメモリ領域の確保*/
-					this->vnum = 0;
-					this->pnum = 0;
+					this->inst.Init("data/model/grass/grass.png", "data/model/grass/model.mv1");
+
+					this->inst.Clear();
+					this->inst.hitss = total;
+
+					this->inst.Set_start();
 				}
 
-				void set_one(const MV1& grass) {
-					MV1RefreshReferenceMesh(grass.get(), -1, TRUE);       /*参照用メッシュの更新*/
-					this->RefMesh = MV1GetReferenceMesh(grass.get(), -1, TRUE); /*参照用メッシュの取得*/
-					for (size_t j = 0; j < size_t(this->RefMesh.VertexNum); ++j) {
-						auto& g = this->grassver[j + this->vnum];
-						g.pos = this->RefMesh.Vertexs[j].Position;
-						g.norm = this->RefMesh.Vertexs[j].Normal;
-						g.dif = this->RefMesh.Vertexs[j].DiffuseColor;
-						g.spc = this->RefMesh.Vertexs[j].SpecularColor;
-						g.u = this->RefMesh.Vertexs[j].TexCoord[0].u;
-						g.v = this->RefMesh.Vertexs[j].TexCoord[0].v;
-						g.su = this->RefMesh.Vertexs[j].TexCoord[1].u;
-						g.sv = this->RefMesh.Vertexs[j].TexCoord[1].v;
-					}
-					for (size_t j = 0; j < size_t(this->RefMesh.PolygonNum); ++j) {
-						for (size_t k = 0; k < std::size(this->RefMesh.Polygons[j].VIndex); ++k)
-							this->grassind[j * 3 + k + this->pnum] = WORD(this->RefMesh.Polygons[j].VIndex[k] + this->vnum);
-					}
-					this->vnum += this->RefMesh.VertexNum;
-					this->pnum += this->RefMesh.PolygonNum * 3;
+				void set_one() {
+					this->inst.Set_one();
 				}
 				void put() {
 					canlook = true;
-					this->VerBuf = CreateVertexBuffer(this->VerNum, DX_VERTEX_TYPE_NORMAL_3D);
-					this->IndexBuf = CreateIndexBuffer(this->IndexNum, DX_INDEX_TYPE_32BIT);
-					SetVertexBufferData(0, this->grassver.data(), this->VerNum, this->VerBuf);
-					SetIndexBufferData(0, this->grassind.data(), this->IndexNum, this->IndexBuf);
+					this->inst.update();
 				}
 
 				void Dispose() {
 
 					MAPPTs.reset();
-					this->grassver.clear();
-					this->grassind.clear();
+					this->inst.hitsver.clear();
+					this->inst.hitsind.clear();
+
+					this->inst.hits.Dispose();
+					this->inst.hits_pic.Dispose();
 				}
 
 				/*視界外か否かを判断*/
@@ -146,6 +119,12 @@ namespace FPS_n2 {
 							this->canlook = false;
 							return;
 						}
+					}
+				}
+
+				void Draw() {
+					if (this->canlook) {
+						this->inst.draw();
 					}
 				}
 			};
@@ -221,14 +200,6 @@ namespace FPS_n2 {
 
 				this->sun_pic = GraphHandle::Load("data/sun.png");					/*sun*/
 				SetUseASyncLoadFlag(FALSE);
-				if (grasss != 0) {
-					SetUseASyncLoadFlag(TRUE);
-					grass_pic = GraphHandle::Load("data/model/grass/grass.png");		 /*grass*/
-					SetUseASyncLoadFlag(FALSE);
-					MV1::Load("data/model/grass/model.mv1", &grass, true);		/*grass*/
-					grass_pos = LoadSoftImage((this->path + "grassput.bmp").c_str());
-				}
-
 				// 深度を描画するテクスチャの作成( １チャンネル浮動小数点１６ビットテクスチャ )
 				{
 					SetCreateDrawValidGraphChannelNum(1);
@@ -340,7 +311,7 @@ namespace FPS_n2 {
 				item.clear();
 				/*minimap*/
 				minmap.GetSize(&x_size, &y_size);
-				/*grass*/
+				/*grass_*/
 				if (grasss != 0) {
 					int xs = 0, ys = 0;
 					GetSoftImageSize(grass_pos, &xs, &ys);
@@ -352,17 +323,16 @@ namespace FPS_n2 {
 					for (int x_ = 0; x_ < grassDiv; x_++) {
 						for (int z_ = 0; z_ < grassDiv; z_++) {
 							auto& tgt_g = grass__[x_][z_];
-
-							tgt_g.put_start(grass, grasss,MAPPTs);
+							tgt_g.Init(grasss,MAPPTs);
 							for (int i = 0; i < grasss; ++i) {
 								VECTOR_ref min = Get_Chunk(x_, z_, int(x_max - x_min), int(z_max - z_min), true);
 								VECTOR_ref max = Get_Chunk(x_, z_, int(x_max - x_min), int(z_max - z_min), false);
 								float x_t = (float)(GetRand(int(max.x() - min.x()) * 100) + int(min.x()) * 100) / 100.0f;
 								float z_t = (float)(GetRand(int(max.z() - min.z()) * 100) + int(min.z()) * 100) / 100.0f;
-								int _r_, _g_, _b_, _a_;
+								int _r_;
 								int cnt = 0;
 								while (true) {
-									GetPixelSoftImage(grass_pos, int((x_t - x_min) / (x_max - x_min) * float(xs)), int((z_t - z_min) / (z_max - z_min) * float(ys)), &_r_, &_g_, &_b_, &_a_);
+									GetPixelSoftImage(grass_pos, int((x_t - x_min) / (x_max - x_min) * float(xs)), int((z_t - z_min) / (z_max - z_min) * float(ys)), &_r_, nullptr, nullptr, nullptr);
 									if (_r_ <= 128) {
 										break;
 									}
@@ -379,9 +349,9 @@ namespace FPS_n2 {
 								auto tmpvect = VECTOR_ref::vget(x_t, 5.f, z_t);
 								map_col_nearest(tmpvect2, &tmpvect);
 								//
-								grass.SetMatrix((MATRIX_ref::RotY(deg2rad(GetRand(90))) * MATRIX_ref::GetScale(VECTOR_ref::vget(1.f, float(100 - 20 + GetRand(20 * 2)) / 100.f, 1.f))) * MATRIX_ref::Mtrans(tmpvect));
+								tgt_g.inst.hits.SetMatrix((MATRIX_ref::RotY(deg2rad(GetRand(90))) * MATRIX_ref::GetScale(VECTOR_ref::vget(1.f, float(100 - 20 + GetRand(20 * 2)) / 100.f, 1.f))) * MATRIX_ref::Mtrans(tmpvect));
 								//
-								tgt_g.set_one(grass);
+								tgt_g.set_one();
 							}
 							tgt_g.put();
 						}
@@ -413,11 +383,10 @@ namespace FPS_n2 {
 				minmap.Dispose();
 				this->sun_pic.Dispose();
 				if (grasss != 0) {
-					grass_pic.Dispose();
-					grass.Dispose();
 					for (int x_ = 0; x_ < grassDiv; x_++) {
 						for (int z_ = 0; z_ < grassDiv; z_++) {
-							grass__[x_][z_].Dispose();
+							auto& tgt_g = grass__[x_][z_];
+							tgt_g.Dispose();
 						}
 					}
 				}
@@ -553,9 +522,7 @@ namespace FPS_n2 {
 						for (int x_ = 0; x_ < grassDiv; x_++) {
 							for (int z_ = 0; z_ < grassDiv; z_++) {
 								auto& tgt_g = grass__[x_][z_];
-								if (tgt_g.canlook) {
-									DrawPolygonIndexed3D_UseVertexBuffer(tgt_g.VerBuf, tgt_g.IndexBuf, grass_pic.get(), TRUE);
-								}
+								tgt_g.Draw();
 							}
 						}
 					}

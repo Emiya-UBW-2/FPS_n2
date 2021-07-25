@@ -980,10 +980,6 @@ namespace FPS_n2 {
 					v->Set_bullet();
 				}
 
-				this->Get_Mine()->Ride_on(&this->vehicle[0]);	//æ‚é‚Æ‚«‚Ì“o˜^
-
-				this->Get_Mine()->Ride_on(nullptr);				//æ‚é‚Æ‚«‚Ì“o˜^
-
 				//UI
 				UIparts->Init(DrawPts, MAPPTs);
 				//
@@ -1031,6 +1027,26 @@ namespace FPS_n2 {
 				//‹¤’Ê‰‰ŽZ//2`3ms
 				for (auto& c : this->chara) {
 					c->UpDate_(RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data, &c == &this->Get_Mine());
+				}
+				{
+					auto& c = this->Get_Mine();
+					c->set_canride_f() = false;
+					if (!c->isRide()) {
+						for (auto& v : this->vehicle) {
+							auto range = c->get_pos() - v->get_pos();
+							if (range.size() < 3.f) {
+								c->set_canride_f() = true;
+								if (this->Get_Mine()->get_key_().ride) {
+									c->Ride_on(&v);	//æ‚é‚Æ‚«‚Ì“o˜^
+								}
+							}
+						}
+					}
+					else {
+						if (this->Get_Mine()->get_key_().ride) {
+							this->Get_Mine()->Ride_on(nullptr);				//æ‚é‚Æ‚«‚Ì“o˜^
+						}
+					}
 				}
 				for (auto& v : this->vehicle) {
 					v->UpDate(this->camera_main);

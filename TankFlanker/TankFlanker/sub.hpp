@@ -205,6 +205,10 @@ namespace FPS_n2 {
 				tmp_k.second = "治療キット排出";
 				tmp_k.use_mode = 2;
 				this->key_use_ID.emplace_back(tmp_k);//19
+				tmp_k.first = KEY_INPUT_B;
+				tmp_k.second = "乗車";
+				tmp_k.use_mode = 2;
+				this->key_use_ID.emplace_back(tmp_k);//20
 				//
 				tmp_k.first = MOUSE_INPUT_LEFT;
 				tmp_k.second = "射撃";
@@ -886,9 +890,9 @@ namespace FPS_n2 {
 			this->damage = tgt_minimam.damage;
 		}
 	};
-	//命中根
-	class HIT_PASSIVE {
-		//雲
+	//インスタシング
+	class Model_Instance {
+	public:
 		int hitss = 0;					/*hitsの数*/
 		std::vector<VERTEX3D> hitsver;	/*hits*/
 		std::vector<DWORD> hitsind;	    /*hits*/
@@ -898,33 +902,31 @@ namespace FPS_n2 {
 		int IndexNum = -1, VerNum = -1;	/*hits*/
 		int vnum = -1, pnum = -1;		/*hits*/
 		MV1_REF_POLYGONLIST RefMesh;	/*hits*/
-
-		bool isUPDate{ true };
-	public:
 		//初期化
-		void Init(void) noexcept {
+		void Init(std::string pngpath, std::string mv1path) noexcept {
 			SetUseASyncLoadFlag(FALSE);
-			hits_pic = GraphHandle::Load("data/model/hit/hit.png");		 /*grass*/
-			MV1::Load("data/model/hit/model.mv1", &hits, false);	//弾痕
-			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
+			this->hits_pic = GraphHandle::Load(pngpath);		 /*grass*/
+			MV1::Load(mv1path, &this->hits, false);	//弾痕
+			Init_one();
+		}
+		void Init_one() {
+			MV1RefreshReferenceMesh(this->hits.get(), -1, TRUE);			/*参照用メッシュの更新*/
+			this->RefMesh = MV1GetReferenceMesh(this->hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
 		}
 		//毎回のリセット
 		void Clear(void) noexcept {
-			hitss = 0;
-			vnum = 0;
-			pnum = 0;
-			hitsver.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
-			hitsind.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
-			hitsver.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
-			hitsind.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			this->hitss = 0;
+			this->vnum = 0;
+			this->pnum = 0;
+			this->hitsver.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			this->hitsind.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			this->hitsver.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			this->hitsind.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 		}
 
 		void Set(const float& caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
-			hitss++;
-			IndexNum = RefMesh.PolygonNum * 3 * hitss;				/*インデックスの数を取得*/
-			VerNum = RefMesh.VertexNum * hitss;						/*頂点の数を取得*/
-			hitsver.resize(VerNum);									/*頂点データとインデックスデータを格納するメモリ領域の確保*/
-			hitsind.resize(IndexNum);								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			this->hitss++;
+			Set_start();
 			{
 				float asize = 200.f * caliber;
 				const auto& y_vec = Normal;
@@ -933,129 +935,106 @@ namespace FPS_n2 {
 				auto pos = Position + y_vec * 0.02f;
 				MATRIX_ref mat = MATRIX_ref::GetScale(scale) * MATRIX_ref::Axis1_YZ(y_vec, z_vec);
 
-				hits.SetMatrix(mat * MATRIX_ref::Mtrans(pos));
+				this->hits.SetMatrix(mat * MATRIX_ref::Mtrans(pos));
 			}
-			MV1RefreshReferenceMesh(hits.get(), -1, TRUE);			/*参照用メッシュの更新*/
-			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
-			for (size_t j = 0; j < size_t(RefMesh.VertexNum); ++j) {
-				auto& g = hitsver[j + vnum];
-				g.pos = RefMesh.Vertexs[j].Position;
-				g.norm = RefMesh.Vertexs[j].Normal;
-				g.dif = RefMesh.Vertexs[j].DiffuseColor;
-				g.spc = RefMesh.Vertexs[j].SpecularColor;
-				g.u = RefMesh.Vertexs[j].TexCoord[0].u;
-				g.v = RefMesh.Vertexs[j].TexCoord[0].v;
-				g.su = RefMesh.Vertexs[j].TexCoord[1].u;
-				g.sv = RefMesh.Vertexs[j].TexCoord[1].v;
-			}
-			for (size_t j = 0; j < size_t(RefMesh.PolygonNum); ++j) {
-				for (size_t k = 0; k < std::size(RefMesh.Polygons[j].VIndex); ++k)
-					hitsind[j * 3 + k + pnum] = WORD(RefMesh.Polygons[j].VIndex[k] + vnum);
-			}
-			vnum += RefMesh.VertexNum;
-			pnum += RefMesh.PolygonNum * 3;
-			isUPDate = true;
+			Set_one();
 		}
-		void update(void) noexcept {
-			if (isUPDate) {
-				isUPDate = false;
-				VerBuf = CreateVertexBuffer(VerNum, DX_VERTEX_TYPE_NORMAL_3D);
-				IndexBuf = CreateIndexBuffer(IndexNum, DX_INDEX_TYPE_32BIT);
-				SetVertexBufferData(0, hitsver.data(), VerNum, VerBuf);
-				SetIndexBufferData(0, hitsind.data(), IndexNum, IndexBuf);
+		void Set_start() {
+			this->IndexNum = this->RefMesh.PolygonNum * 3 * this->hitss;				/*インデックスの数を取得*/
+			this->VerNum = this->RefMesh.VertexNum * this->hitss;						/*頂点の数を取得*/
+			this->hitsver.resize(this->VerNum);									/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			this->hitsind.resize(this->IndexNum);								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+		}
+		void Set_one() {
+			Init_one();
+			for (size_t j = 0; j < size_t(this->RefMesh.VertexNum); ++j) {
+				auto& g = this->hitsver[j + this->vnum];
+				g.pos = this->RefMesh.Vertexs[j].Position;
+				g.norm = this->RefMesh.Vertexs[j].Normal;
+				g.dif = this->RefMesh.Vertexs[j].DiffuseColor;
+				g.spc = this->RefMesh.Vertexs[j].SpecularColor;
+				g.u = this->RefMesh.Vertexs[j].TexCoord[0].u;
+				g.v = this->RefMesh.Vertexs[j].TexCoord[0].v;
+				g.su = this->RefMesh.Vertexs[j].TexCoord[1].u;
+				g.sv = this->RefMesh.Vertexs[j].TexCoord[1].v;
 			}
+			for (size_t j = 0; j < size_t(this->RefMesh.PolygonNum); ++j) {
+				for (size_t k = 0; k < std::size(this->RefMesh.Polygons[j].VIndex); ++k)
+					this->hitsind[j * 3 + k + this->pnum] = WORD(this->RefMesh.Polygons[j].VIndex[k] + this->vnum);
+			}
+			this->vnum += this->RefMesh.VertexNum;
+			this->pnum += this->RefMesh.PolygonNum * 3;
+		}
+
+		void update(void) noexcept {
+			this->VerBuf = CreateVertexBuffer(this->VerNum, DX_VERTEX_TYPE_NORMAL_3D);
+			this->IndexBuf = CreateIndexBuffer(this->IndexNum, DX_INDEX_TYPE_32BIT);
+			SetVertexBufferData(0, this->hitsver.data(), this->VerNum, this->VerBuf);
+			SetIndexBufferData(0, this->hitsind.data(), this->IndexNum, this->IndexBuf);
 		}
 		void draw(void) noexcept {
 			//SetDrawAlphaTest(DX_CMP_GREATER, 128);
 			{
-				DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, hits_pic.get(), TRUE);
+				DrawPolygonIndexed3D_UseVertexBuffer(this->VerBuf, this->IndexBuf, this->hits_pic.get(), TRUE);
 			}
 			//SetDrawAlphaTest(-1, 0);
 		}
 	};
-	class HIT_BLOOD_PASSIVE {
+	//命中根
+	class HIT_PASSIVE {
 		//雲
-		int hitss = 0;					/*hitsの数*/
-		std::vector<VERTEX3D> hitsver;	/*hits*/
-		std::vector<DWORD> hitsind;	    /*hits*/
-		int VerBuf = -1, IndexBuf = -1;	/*hits*/
-		MV1 hits;						/*hitsモデル*/
-		GraphHandle hits_pic;			/*画像ハンドル*/
-		int IndexNum = -1, VerNum = -1;	/*hits*/
-		int vnum = -1, pnum = -1;		/*hits*/
-		MV1_REF_POLYGONLIST RefMesh;	/*hits*/
+		Model_Instance inst;
 		bool isUPDate{ true };
 	public:
 		//初期化
 		void Init(void) noexcept {
-			SetUseASyncLoadFlag(FALSE);
-			hits_pic = GraphHandle::Load("data/model/hit_blood/hit.png");		 /*grass*/
-			MV1::Load("data/model/hit_blood/model.mv1", &hits, false);	//弾痕
-			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
+			inst.Init("data/model/hit/hit.png", "data/model/hit/model.mv1");
 		}
 		//毎回のリセット
 		void Clear(void) noexcept {
-			hitss = 0;
-			vnum = 0;
-			pnum = 0;
-			hitsver.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
-			hitsind.clear();								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
-			hitsver.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
-			hitsind.reserve(2000);							/*頂点データとインデックスデータを格納するメモリ領域の確保*/
+			inst.Clear();
 		}
 
 		void Set(const float& caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
-			hitss++;
-			IndexNum = RefMesh.PolygonNum * 3 * hitss;				/*インデックスの数を取得*/
-			VerNum = RefMesh.VertexNum * hitss;						/*頂点の数を取得*/
-			hitsver.resize(VerNum);									/*頂点データとインデックスデータを格納するメモリ領域の確保*/
-			hitsind.resize(IndexNum);								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
-			{
-				float asize = 200.f * caliber;
-				const auto& y_vec = Normal;
-				auto z_vec = y_vec.cross(Zvec).Norm();
-				auto scale = VECTOR_ref::vget(asize, asize, asize);
-				auto pos = Position + y_vec * 0.02f;
-				MATRIX_ref mat = MATRIX_ref::GetScale(scale) * MATRIX_ref::Axis1_YZ(y_vec, z_vec);
-
-				hits.SetMatrix(mat * MATRIX_ref::Mtrans(pos));
-			}
-			MV1RefreshReferenceMesh(hits.get(), -1, TRUE);			/*参照用メッシュの更新*/
-			RefMesh = MV1GetReferenceMesh(hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
-			for (size_t j = 0; j < size_t(RefMesh.VertexNum); ++j) {
-				auto& g = hitsver[j + vnum];
-				g.pos = RefMesh.Vertexs[j].Position;
-				g.norm = RefMesh.Vertexs[j].Normal;
-				g.dif = RefMesh.Vertexs[j].DiffuseColor;
-				g.spc = RefMesh.Vertexs[j].SpecularColor;
-				g.u = RefMesh.Vertexs[j].TexCoord[0].u;
-				g.v = RefMesh.Vertexs[j].TexCoord[0].v;
-				g.su = RefMesh.Vertexs[j].TexCoord[1].u;
-				g.sv = RefMesh.Vertexs[j].TexCoord[1].v;
-			}
-			for (size_t j = 0; j < size_t(RefMesh.PolygonNum); ++j) {
-				for (size_t k = 0; k < std::size(RefMesh.Polygons[j].VIndex); ++k)
-					hitsind[j * 3 + k + pnum] = WORD(RefMesh.Polygons[j].VIndex[k] + vnum);
-			}
-			vnum += RefMesh.VertexNum;
-			pnum += RefMesh.PolygonNum * 3;
+			inst.Set(caliber, Position, Normal, Zvec);
 			isUPDate = true;
 		}
 		void update(void) noexcept {
 			if (isUPDate) {
 				isUPDate = false;
-				VerBuf = CreateVertexBuffer(VerNum, DX_VERTEX_TYPE_NORMAL_3D);
-				IndexBuf = CreateIndexBuffer(IndexNum, DX_INDEX_TYPE_32BIT);
-				SetVertexBufferData(0, hitsver.data(), VerNum, VerBuf);
-				SetIndexBufferData(0, hitsind.data(), IndexNum, IndexBuf);
+				inst.update();
 			}
 		}
 		void draw(void) noexcept {
-			//SetDrawAlphaTest(DX_CMP_GREATER, 128);
-			{
-				DrawPolygonIndexed3D_UseVertexBuffer(VerBuf, IndexBuf, hits_pic.get(), TRUE);
+			inst.draw();
+		}
+	};
+	class HIT_BLOOD_PASSIVE {
+		//雲
+		Model_Instance inst;
+		bool isUPDate{ true };
+	public:
+		//初期化
+		void Init(void) noexcept {
+			inst.Init("data/model/hit_blood/hit.png", "data/model/hit_blood/model.mv1");
+		}
+		//毎回のリセット
+		void Clear(void) noexcept {
+			inst.Clear();
+		}
+
+		void Set(const float& caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
+			inst.Set(caliber, Position, Normal, Zvec);
+			isUPDate = true;
+		}
+		void update(void) noexcept {
+			if (isUPDate) {
+				isUPDate = false;
+				inst.update();
 			}
-			//SetDrawAlphaTest(-1, 0);
+		}
+		void draw(void) noexcept {
+			inst.draw();
 		}
 	};
 	//パフォーマンス
