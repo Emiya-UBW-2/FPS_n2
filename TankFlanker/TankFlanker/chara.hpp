@@ -4445,6 +4445,7 @@ namespace FPS_n2 {
 						for (auto& t : w2) {
 							t.frame = w[&t - &w2.front()];
 							t.gndsmkeffcs.set_loop(effsorce->back());
+							t.gndsmkeffcs.put_loop(VGet(0, -1, 0), VGet(0, 0, 1), 0.1f);
 							t.gndsmksize = 0.1f;
 						}
 					}
@@ -4837,7 +4838,9 @@ namespace FPS_n2 {
 					t.Yudo.clear();
 				}
 				for (auto& g : this->b2downsideframe) {
-					for (auto& t : g) { t.gndsmkeffcs.handle.Dispose(); }
+					for (auto& t : g) {
+						t.gndsmkeffcs.handle.Dispose();
+					}
 					g.clear();
 				}
 				this->audio.Dispose();

@@ -370,6 +370,9 @@ namespace FPS_n2 {
 					case scenes::LOAD:
 						SELECTscene->Start(LOADscene->putout_preset());					//プリセットを指定
 						break;
+					case scenes::SELECT:
+						MAINLOOPscene->Ready_Tank();									//戦車指定
+						break;
 					case scenes::MAIN_LOOP:
 						MAPPTs->Dispose();												//マップを消去
 						break;

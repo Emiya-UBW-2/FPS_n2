@@ -922,6 +922,8 @@ namespace FPS_n2 {
 					c->Set_Ptr(&this->chara, &c, &this->vehicle, nullptr, effsorce);
 					c->Set(GunPartses->Get_Parts_Data(EnumGunParts::PARTS_GUN), 0, body_obj, body_obj_lag, body_col);
 				}
+			}
+			void Ready_Tank() {
 				//íŽÔÝ’è
 				vehicle.resize(2);
 				for (auto& v : this->vehicle) {
@@ -1027,9 +1029,7 @@ namespace FPS_n2 {
 				//‹¤’Ê‰‰ŽZ//2`3ms
 				for (auto& c : this->chara) {
 					c->UpDate_(RULEparts->get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data, &c == &this->Get_Mine());
-				}
-				{
-					auto& c = this->Get_Mine();
+					//æ‚è~‚è
 					c->set_canride_f() = false;
 					if (!c->isRide()) {
 						for (auto& v : this->vehicle) {
