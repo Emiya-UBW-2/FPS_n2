@@ -63,7 +63,7 @@ namespace FPS_n2 {
 				Model_Instance inst;
 			public:
 
-				void Init(int total ,std::shared_ptr<Map>& MAPPTs_t) {
+				void Init(int total, std::shared_ptr<Map>& MAPPTs_t) {
 					MAPPTs = MAPPTs_t;
 
 					this->inst.Init("data/model/grass/grass.png", "data/model/grass/model.mv1");
@@ -190,10 +190,10 @@ namespace FPS_n2 {
 			~Map(void) noexcept { }
 			void Ready_map(std::string dir) noexcept {
 				this->path = dir + "/";
-				MV1::Load(this->path + "model.mv1", &map, true);		   //map
-				MV1::Load(this->path + "col.mv1", &map_col, true);		   //mapコリジョン
-				MV1::Load(this->path + "col_tank.mv1", &mapcol_tank, true);		   //mapコリジョン
-				MV1::Load(this->path + "sky/model.mv1", &sky, true);	 //空
+				MV1::Load(this->path + "model.mv1", &map, true);					//map
+				MV1::Load(this->path + "col.mv1", &map_col, true);					//mapコリジョン
+				MV1::Load(this->path + "col_tank.mv1", &mapcol_tank, true);			//mapコリジョン
+				MV1::Load(this->path + "sky/model.mv1", &sky, true);				//空
 				SetUseASyncLoadFlag(TRUE);
 				envi = SoundHandle::Load(this->path + "envi.wav");
 				minmap = GraphHandle::Load(this->path + "minimap.png");
@@ -323,7 +323,7 @@ namespace FPS_n2 {
 					for (int x_ = 0; x_ < grassDiv; x_++) {
 						for (int z_ = 0; z_ < grassDiv; z_++) {
 							auto& tgt_g = grass__[x_][z_];
-							tgt_g.Init(grasss,MAPPTs);
+							tgt_g.Init(grasss, MAPPTs);
 							for (int i = 0; i < grasss; ++i) {
 								VECTOR_ref min = Get_Chunk(x_, z_, int(x_max - x_min), int(z_max - z_min), true);
 								VECTOR_ref max = Get_Chunk(x_, z_, int(x_max - x_min), int(z_max - z_min), false);
@@ -422,7 +422,7 @@ namespace FPS_n2 {
 				col_wall(OldPos, NowPos, this->map_col);
 			}
 			//壁判定ユニバーサル
-			static void col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos,MV1& col_obj_t) noexcept {
+			static void col_wall(const VECTOR_ref& OldPos, VECTOR_ref* NowPos, MV1& col_obj_t) noexcept {
 				auto MoveVector = *NowPos - OldPos;
 				// プレイヤーの周囲にあるステージポリゴンを取得する( 検出する範囲は移動距離も考慮する )
 				auto HitDim = col_obj_t.CollCheck_Sphere(OldPos, PLAYER_ENUM_DEFAULT_SIZE + MoveVector.size(), 0, 0);

@@ -1,6 +1,10 @@
 #pragma once
 
 namespace FPS_n2 {
+	//’è”
+	static const float Frame_Rate{ 90.f };
+	static const size_t max_bullet{ 64 };
+
 	enum class Effect {
 		ef_fire,	//”­–C‰Š
 		ef_reco,	//¬ŒûŒa’µ’e

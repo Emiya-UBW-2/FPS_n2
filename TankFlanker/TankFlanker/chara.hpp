@@ -489,11 +489,11 @@ namespace FPS_n2 {
 							VECTOR_ref repos;
 							if (this->First_Flag) {
 								float range_base = (this->base_pos - this->move.pos).size();
-								repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range_base;
+								repos = this->move.pos + (this->move.repos - this->move.pos).Norm() * range_base;
 							}
 							else {
-								float range = ((this->move.repos - this->move.pos).size()*FPS / 60.f);
-								repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range;
+								float range = ((this->move.repos - this->move.pos).size() * FPS / 60.f);
+								repos = this->move.pos + (this->move.repos - this->move.pos).Norm() * range;
 							}
 							auto ColResGround = MAPPTs->map_col_line(repos, this->move.pos);
 							if (ColResGround.HitFlag == TRUE) {
@@ -610,12 +610,12 @@ namespace FPS_n2 {
 				}
 				void Draw(void) noexcept {
 					if (this->DrawFlag) {
-						
-						float range = ((this->move.repos - this->move.pos).size()*FPS / 60.f);
-						VECTOR_ref repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range; 
+
+						float range = ((this->move.repos - this->move.pos).size() * FPS / 60.f);
+						VECTOR_ref repos = this->move.pos + (this->move.repos - this->move.pos).Norm() * range;
 						if (this->First_Flag) {
 							float range_base = (this->base_pos - this->move.pos).size();
-							repos = this->move.pos + (this->move.repos - this->move.pos).Norm()*range_base;
+							repos = this->move.pos + (this->move.repos - this->move.pos).Norm() * range_base;
 							if (range_base > range) {
 								this->First_Flag = false;
 							}
@@ -670,7 +670,7 @@ namespace FPS_n2 {
 				for (auto& a : this->bullet) {
 					if (a.Hit_alpha >= 10.f / 255.f) {
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f * a.Hit_alpha));
-						Hit_Graph.DrawRotaGraph(a.Hit_window_x, a.Hit_window_y, (float)y_r(a.Hit_alpha * 0.5f*100.0f)/100.f, 0.f, true);
+						Hit_Graph.DrawRotaGraph(a.Hit_window_x, a.Hit_window_y, (float)y_r(a.Hit_alpha * 0.5f * 100.0f) / 100.f, 0.f, true);
 					}
 				}
 			}
@@ -1265,12 +1265,17 @@ namespace FPS_n2 {
 			AI cpu_do;										//AI用
 			//銃に着けるパーツ
 			class GPARTS_COMMON {
+				class PointFrame {
+				public:
+					frames first;
+					frames second;
+				};
 			protected:
 				//共通
 				bool attach{ false };										//取り付いているか
 				EnumGunParts type{ EnumGunParts::PARTS_NONE };				//パーツの種類
 				VECTOR_ref vec_parts;										//根元からのベクトル
-				std::array<std::array<frames, 2>, int(EnumAttachPoint::POINTS_NUM)> rail_frame;	//アタッチできるポイント
+				std::array<PointFrame, int(EnumAttachPoint::POINTS_NUM)> rail_frame;	//アタッチできるポイント
 				frames rad_parts_frame;										//傾き
 				frames attach_frame;										//根元
 				MV1 obj;													//モデル
@@ -1280,14 +1285,14 @@ namespace FPS_n2 {
 			public:
 				const auto& IsActive(void) const noexcept { return this->attach; }
 				const auto& Get_type(void) const noexcept { return this->type; }
-				const auto& Get_rail_frame(EnumAttachPoint sel_t) const noexcept { return this->rail_frame[(int)sel_t][0]; }
+				const auto& Get_rail_frame(EnumAttachPoint sel_t) const noexcept { return this->rail_frame[(int)sel_t].first; }
 				const auto& Get_attach_frame(void) const noexcept { return this->attach_frame.second; }
-				const auto Get_rail_pos(EnumAttachPoint sel_t) const noexcept { return (IsActive()) ? this->obj.frame(this->rail_frame[(int)sel_t][0].first) : VECTOR_ref::zero(); }
+				const auto Get_rail_pos(EnumAttachPoint sel_t) const noexcept { return (IsActive()) ? this->obj.frame(this->rail_frame[(int)sel_t].first.first) : VECTOR_ref::zero(); }
 				//フレームリセット
 				virtual void ReSet_frame(void) noexcept {
 					for (auto& r : this->rail_frame) {
-						r[0].first = -1;
-						r[1].first = -1;
+						r.first.first = -1;
+						r.first.first = -1;
 					}
 					this->rad_parts_frame.first = -1;
 					this->attach_frame.first = -1;
@@ -1307,59 +1312,59 @@ namespace FPS_n2 {
 						for (int i = 0; i < this->obj.frame_num(); ++i) {
 							std::string p = this->obj.frame_name(i);
 							if (p == "rail") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_UPER_RAIL][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_UPER_RAIL][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_UPER_RAIL].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_UPER_RAIL].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "underrail") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_UNDER_RAIL][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_UNDER_RAIL][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_UNDER_RAIL].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_UNDER_RAIL].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "siderail") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_LEFTSIDE_RAIL][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_LEFTSIDE_RAIL][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_LEFTSIDE_RAIL].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_LEFTSIDE_RAIL].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "rightrail") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_RIGHTSIDE_RAIL][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_RIGHTSIDE_RAIL][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_RIGHTSIDE_RAIL].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_RIGHTSIDE_RAIL].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "sidemount") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_SIDEMOUNT][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_SIDEMOUNT][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_SIDEMOUNT].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_SIDEMOUNT].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "sidemount_base") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_SIDEMOUNT_BASE][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_SIDEMOUNT_BASE][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_SIDEMOUNT_BASE].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_SIDEMOUNT_BASE].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "stock") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_STOCK_BASE][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_STOCK_BASE][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_STOCK_BASE].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_STOCK_BASE].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "dustcover") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_DUSTCOVER_BASE][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_DUSTCOVER_BASE][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_DUSTCOVER_BASE].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_DUSTCOVER_BASE].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "uper_handguard") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_UPER_HANDGUARD][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_UPER_HANDGUARD][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_UPER_HANDGUARD].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_UPER_HANDGUARD].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "under_handguard") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_UNDER_HANDGUARD][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_UNDER_HANDGUARD][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_UNDER_HANDGUARD].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_UNDER_HANDGUARD].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "mazzule") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_MAZZULE_BASE][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_MAZZULE_BASE][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_MAZZULE_BASE].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_MAZZULE_BASE].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "grip") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_GRIP_BASE][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_GRIP_BASE][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_GRIP_BASE].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_GRIP_BASE].second.Set_Local(i + 1, this->obj);
 							}
 							else if (p == "rad_parts") {
 								this->rad_parts_frame.Set_World(i, this->obj);
 							}
 							else if (p == "magazine_fall") {
-								this->rail_frame[(int)EnumAttachPoint::POINTS_MAGAZINE_BASE][0].Set_World(i, this->obj);
-								this->rail_frame[(int)EnumAttachPoint::POINTS_MAGAZINE_BASE][1].Set_Local(i + 1, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_MAGAZINE_BASE].first.Set_World(i, this->obj);
+								this->rail_frame[(int)EnumAttachPoint::POINTS_MAGAZINE_BASE].second.Set_Local(i + 1, this->obj);
 							}
 						}
 					}
@@ -1404,8 +1409,8 @@ namespace FPS_n2 {
 				//親を設定する
 				void set_parent(GPARTS_COMMON* parents, EnumAttachPoint side) {
 					this->parent = parents;
-					this->attach_frame = parents->rail_frame[(int)side][0];
-					this->vec_parts = parents->rail_frame[(int)side][1].second.Norm();
+					this->attach_frame = parents->rail_frame[(int)side].first;
+					this->vec_parts = parents->rail_frame[(int)side].second.second.Norm();
 				}
 				//親の座標を探す
 				void search_parts(EnumGunParts PARTS_, VECTOR_ref* pv, const GPARTS_COMMON* ptr) noexcept {
@@ -2697,7 +2702,7 @@ namespace FPS_n2 {
 				{
 					if (!this->get_jamping()) {
 						if (this->key_.jamp && alive) {
-							this->add_ypos = 0.05f * FRAME_RATE / FPS;
+							this->add_ypos = 0.05f * Frame_Rate / FPS;
 						}
 						this->move.vec = this->add_vec_buf;
 					}
@@ -2826,7 +2831,7 @@ namespace FPS_n2 {
 							float y_1 = cosf(this->body_yrad);
 							float x_2 = v_.x();
 							float y_2 = -v_.z();
-							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * FRAME_RATE / FPS / 10.f;
+							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * Frame_Rate / FPS / 10.f;
 						}
 					}
 					else
@@ -2838,7 +2843,7 @@ namespace FPS_n2 {
 							float y_1 = cosf(this->body_yrad);
 							float x_2 = v_.x();
 							float y_2 = -v_.z();
-							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * FRAME_RATE / FPS / 2.5f;
+							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * Frame_Rate / FPS / 2.5f;
 						}
 						{
 							auto v_ = this->mat_body.zvec();
@@ -3214,7 +3219,7 @@ namespace FPS_n2 {
 							float y_1 = cosf(this->body_yrad);
 							float x_2 = v_.x();
 							float y_2 = -v_.z();
-							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * FRAME_RATE / FPS / 10.f;
+							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * Frame_Rate / FPS / 10.f;
 						}
 					}
 					else
@@ -3226,7 +3231,7 @@ namespace FPS_n2 {
 							float y_1 = cosf(this->body_yrad);
 							float x_2 = v_.x();
 							float y_2 = -v_.z();
-							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * FRAME_RATE / FPS / 2.5f;
+							this->body_yrad += std::atan2f(x_1 * y_2 - x_2 * y_1, x_1 * x_2 + y_1 * y_2) * Frame_Rate / FPS / 2.5f;
 						}
 						{
 							auto v_ = this->mat_body.zvec();
@@ -3398,7 +3403,7 @@ namespace FPS_n2 {
 				if (isNotLast) {
 					this->gunanime_shot->per = 1.f;
 					if (this->flag_gun) {
-						this->gunanime_shot->update(true, rate * 2.f * this->gunanime_shot->alltime / (FRAME_RATE / (600.f / 60.f)));
+						this->gunanime_shot->update(true, rate * 2.f * this->gunanime_shot->alltime / (Frame_Rate / (600.f / 60.f)));
 						if (this->gunanime_shot->time == 0.f) {
 							this->flag_gun = false;
 						}
@@ -3406,7 +3411,7 @@ namespace FPS_n2 {
 				}
 				else {
 					this->gunanime_shot_last->per = 1.f;
-					this->gunanime_shot_last->update(false, rate * 2.f * this->gunanime_shot_last->alltime / (FRAME_RATE / (600.f / 60.f)));
+					this->gunanime_shot_last->update(false, rate * 2.f * this->gunanime_shot_last->alltime / (Frame_Rate / (600.f / 60.f)));
 					if (this->gunanime_shot_last->time == 0.f) {
 						this->flag_gun = false;
 					}

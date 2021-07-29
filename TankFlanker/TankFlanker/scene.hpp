@@ -26,11 +26,11 @@ namespace FPS_n2 {
 			cam_info camera_main;
 			float fov_base = DX_PI_F / 2;
 			//
-			bool use_lens = false;
+			bool use_lens{ false };
 			float lens_zoom = 1.f;
 			float lens_size = 1.f;
 			//
-			bool use_bless = false;
+			bool use_bless{ false };
 			float bless_ratio = 0.5f;
 			float bless = 0.f;
 			//
@@ -76,15 +76,15 @@ namespace FPS_n2 {
 			cam_info& Get_Camera(void) noexcept { return camera_main; }
 
 			virtual void Set(void) noexcept {
-				fov_base = deg2rad(DrawPts->use_vr ? 120 : OPTPTs->Fov);	//fov
+				fov_base = deg2rad(DrawPts->use_vr ? 120 : OPTPTs->Get_Fov());	//fov
 				SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
 				SetMousePoint(deskx / 2, desky / 2);											//
 				camera_main.set_cam_info(fov_base, 0.05f, 200.f);//1P
 			}
 			virtual bool UpDate(void) noexcept {
 				if (use_bless) {
-					bless += deg2rad(float(100 + GetRand(600)) / 100.f * FRAME_RATE / GetFPS());
-					bless_ratio -= (0.03f / 90.f) * FRAME_RATE / GetFPS();
+					bless += deg2rad(float(100 + GetRand(600)) / 100.f * Frame_Rate / GetFPS());
+					bless_ratio -= (0.03f / 90.f) * Frame_Rate / GetFPS();
 					if (bless_ratio <= 0.f) {
 						use_bless = false;
 					}
@@ -130,7 +130,7 @@ namespace FPS_n2 {
 				UIparts = std::make_unique<UIclass::UI_LOADING>();
 			}
 
-			void settitle(const std::string_view mes ) {
+			void settitle(const std::string_view mes) {
 				title = mes;
 			}
 
@@ -213,11 +213,13 @@ namespace FPS_n2 {
 			bool UpDate(void) noexcept override {
 				TEMPSCENE::UpDate();
 				bool changef = false;
+
+				std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine = MAINLOOPscene->Get_Mine();
 				//演算
 				{
 					SetMouseDispFlag(TRUE);
-					left.GetInput(MAINLOOPscene->Get_Mine()->get_key_().akey);
-					right.GetInput(MAINLOOPscene->Get_Mine()->get_key_().dkey);
+					left.GetInput(mine->get_key_().akey);
+					right.GetInput(mine->get_key_().dkey);
 					if (left.trigger()) {
 						--preset_select;
 						changef = true;
@@ -245,7 +247,7 @@ namespace FPS_n2 {
 					}
 					//
 				}
-				if (MAINLOOPscene->Get_Mine()->get_key_().jamp) {
+				if (mine->get_key_().jamp) {
 					return false;
 				}
 				return true;
@@ -301,6 +303,8 @@ namespace FPS_n2 {
 			std::string save_tgt = "1";
 			//そのまま
 			std::unique_ptr<UIclass::UI_CUSTOM> UIparts;
+
+			std::shared_ptr<PLAYERclass::PLAYER_CHARA>* chara;
 		public:
 			std::string preset;
 		private:
@@ -319,7 +323,7 @@ namespace FPS_n2 {
 			void set_pts_haveto(EnumGunParts port_type_t, EnumAttachPoint port_cat_t, EnumGunParts parts_cat_t) {
 				if (parts_select == parts_select_max) {
 					port_type = port_type_t;
-					port_ptr = MAINLOOPscene->Get_Mine()->get_parts(port_type);
+					port_ptr = (*chara)->get_parts(port_type);
 					port_cat = port_cat_t;
 					parts_cat = parts_cat_t;
 					{
@@ -361,16 +365,16 @@ namespace FPS_n2 {
 						}
 						//*/
 						viewparts_buf = port_ptr->Get_rail_pos(port_cat);
-						MAINLOOPscene->Get_Mine()->Detach_parts(parts_cat);
-						MAINLOOPscene->Get_Mine()->Attach_parts(parts_p, parts_cat, port_ptr, port_cat);
+						(*chara)->Detach_parts(parts_cat);
+						(*chara)->Attach_parts(parts_p, parts_cat, port_ptr, port_cat);
 					}
 					set_pts_save(size_t(change_select));
 				}
 				++parts_select_max;
 
 				//サイト判定
-				if (MAINLOOPscene->Get_Mine()->get_parts(parts_cat_t)->Set_sight_at(MAINLOOPscene->GetGunPartsControl()->Get_Parts_Data(EnumGunParts::PARTS_SIGHT))) {
-					sight_ptr[sight_p_s] = MAINLOOPscene->Get_Mine()->get_parts(parts_cat_t); ++sight_p_s;
+				if ((*chara)->get_parts(parts_cat_t)->Set_sight_at(MAINLOOPscene->GetGunPartsControl()->Get_Parts_Data(EnumGunParts::PARTS_SIGHT))) {
+					sight_ptr[sight_p_s] = (*chara)->get_parts(parts_cat_t); ++sight_p_s;
 				}
 			}
 			//非必須品
@@ -382,15 +386,15 @@ namespace FPS_n2 {
 				else { parts_p = &MAINLOOPscene->GetGunPartsControl()->Get_Parts_Data(port_type_t)[std::max(change_select - 1, 0)]; }
 
 				viewparts_buf = port_ptr->Get_rail_pos(pot_cat);
-				MAINLOOPscene->Get_Mine()->Detach_parts(port_type_t, (sel == 0) ? sel : (sel - 1));
+				(*chara)->Detach_parts(port_type_t, (sel == 0) ? sel : (sel - 1));
 				if (change_select != 0) {
-					MAINLOOPscene->Get_Mine()->Attach_parts(parts_p, port_type_t, port_ptr, pot_cat, sel);
+					(*chara)->Attach_parts(parts_p, port_type_t, port_ptr, pot_cat, sel);
 				}
 				set_pts_save(size_t(change_select) - 1);
 			}
 			void set_pts_need(EnumGunParts port_type_t, EnumAttachPoint port_cat_t, EnumGunParts parts_cat_t) {
 				port_type = port_type_t;
-				port_ptr = MAINLOOPscene->Get_Mine()->get_parts(port_type);
+				port_ptr = (*chara)->get_parts(port_type);
 				port_cat = port_cat_t;
 				if (port_ptr->Get_rail_frame(port_cat).first > 0) {
 					if (parts_select == parts_select_max) {
@@ -399,8 +403,8 @@ namespace FPS_n2 {
 					++parts_select_max;
 				}
 				//サイト判定
-				if (MAINLOOPscene->Get_Mine()->get_parts(parts_cat_t)->Set_sight_at(MAINLOOPscene->GetGunPartsControl()->Get_Parts_Data(EnumGunParts::PARTS_SIGHT))) {
-					sight_ptr[sight_p_s] = MAINLOOPscene->Get_Mine()->get_parts(parts_cat_t); ++sight_p_s;
+				if ((*chara)->get_parts(parts_cat_t)->Set_sight_at(MAINLOOPscene->GetGunPartsControl()->Get_Parts_Data(EnumGunParts::PARTS_SIGHT))) {
+					sight_ptr[sight_p_s] = (*chara)->get_parts(parts_cat_t); ++sight_p_s;
 				}
 			}
 			//sight
@@ -445,6 +449,7 @@ namespace FPS_n2 {
 			}
 
 			void Set(void) noexcept  override {
+				chara = &MAINLOOPscene->Get_Mine();
 				TEMPSCENE::Set();
 				UIparts->Init(DrawPts, MAPPTs);
 				{
@@ -471,9 +476,9 @@ namespace FPS_n2 {
 				}
 				{
 					SetCreateSoundTimeStretchRate(1.f / std::clamp(rate, 0.9f, 1.1f));
-					shot_se = SoundHandle::Load(MAINLOOPscene->Get_Mine()->get_audio().shot_path);
-					slide_se = SoundHandle::Load(MAINLOOPscene->Get_Mine()->get_audio().slide_path);
-					trigger_se = SoundHandle::Load(MAINLOOPscene->Get_Mine()->get_audio().trigger_path);
+					shot_se = SoundHandle::Load((*chara)->get_audio().shot_path);
+					slide_se = SoundHandle::Load((*chara)->get_audio().slide_path);
+					trigger_se = SoundHandle::Load((*chara)->get_audio().trigger_path);
 					SetCreateSoundTimeStretchRate(1.f);
 				}
 				/*パーツデータをロード*/
@@ -564,7 +569,7 @@ namespace FPS_n2 {
 							case EnumGunParts::PARTS_DUSTCOVER:
 							case EnumGunParts::PARTS_MOUNT_BASE:
 							case EnumGunParts::PARTS_MOUNT:
-								temp_ptr = MAINLOOPscene->Get_Mine()->get_parts(tmp_save.pt_type_);
+								temp_ptr = (*chara)->get_parts(tmp_save.pt_type_);
 								break;
 							default:
 								break;
@@ -573,7 +578,7 @@ namespace FPS_n2 {
 						if (tmp_save.type_ == EnumGunParts::PARTS_SIGHT) {
 							++pppp;
 						}
-						MAINLOOPscene->Get_Mine()->Attach_parts(temp_p, tmp_save.type_, temp_ptr, tmp_save.pt_cat_, pppp);
+						(*chara)->Attach_parts(temp_p, tmp_save.type_, temp_ptr, tmp_save.pt_cat_, pppp);
 					}
 					//save_parts.clear();
 				}
@@ -591,24 +596,24 @@ namespace FPS_n2 {
 				{
 					{
 						moves tmp;
-						MAINLOOPscene->Get_Mine()->set_gun_pos(tmp);
-						MAINLOOPscene->Get_Mine()->Set_gun();
-						MAINLOOPscene->Get_Mine()->set_mag_pos();
-						MAINLOOPscene->Get_Mine()->get_parts(EnumGunParts::PARTS_MAGAZINE)->Setpos_Nomal(MAINLOOPscene->Get_Mine()->Mag_Mat());
+						(*chara)->set_gun_pos(tmp);
+						(*chara)->Set_gun();
+						(*chara)->set_mag_pos();
+						(*chara)->get_parts(EnumGunParts::PARTS_MAGAZINE)->Setpos_Nomal((*chara)->Mag_Mat());
 						//キー
-						up.GetInput(MAINLOOPscene->Get_Mine()->get_key_().wkey);
-						down.GetInput(MAINLOOPscene->Get_Mine()->get_key_().skey);
-						left.GetInput(MAINLOOPscene->Get_Mine()->get_key_().akey);
-						right.GetInput(MAINLOOPscene->Get_Mine()->get_key_().dkey);
-						shot.GetInput(MAINLOOPscene->Get_Mine()->get_key_().shoot);
-						Rot.GetInput(MAINLOOPscene->Get_Mine()->get_key_().select);
+						up.GetInput((*chara)->get_key_().wkey);
+						down.GetInput((*chara)->get_key_().skey);
+						left.GetInput((*chara)->get_key_().akey);
+						right.GetInput((*chara)->get_key_().dkey);
+						shot.GetInput((*chara)->get_key_().shoot);
+						Rot.GetInput((*chara)->get_key_().select);
 						//
 						if (Start_b) {
 							Start_b = false;
 							//changef = true;
-							int pp = MAINLOOPscene->Get_Mine()->get_parts(EnumGunParts::PARTS_BASE)->thisparts->Select_Chose(EnumSELECTER::SELECT_SEMI);
+							int pp = (*chara)->get_parts(EnumGunParts::PARTS_BASE)->thisparts->Select_Chose(EnumSELECTER::SELECT_SEMI);
 							if (pp != -1) {
-								MAINLOOPscene->Get_Mine()->gun_stat_now->selector_set((EnumSELECTER)pp);
+								(*chara)->gun_stat_now->selector_set((EnumSELECTER)pp);
 							}
 						}
 						if (left.trigger()) {
@@ -675,33 +680,33 @@ namespace FPS_n2 {
 						}
 					}
 					//
-					easing_set(&MAINLOOPscene->Get_Mine()->get_gunanime_trigger()->per, float(shot.press()), 0.5f);
+					easing_set(&(*chara)->get_gunanime_trigger()->per, float(shot.press()), 0.5f);
 					if (shot.trigger()) {
-						if (MAINLOOPscene->Get_Mine()->set_flag_gun()) {
+						if ((*chara)->set_flag_gun()) {
 							//todo ディレイつける
 							{
 								shot_se.play(DX_PLAYTYPE_BACK, TRUE);
 								slide_se.play(DX_PLAYTYPE_BACK, TRUE);
 								trigger_se.play(DX_PLAYTYPE_BACK, TRUE);
 								//薬莢
-								MAINLOOPscene->Get_Mine()->create_cart();
+								(*chara)->create_cart();
 							}
 							//エフェクト
-							MAINLOOPscene->Get_Mine()->calc_shot_effect();
+							(*chara)->calc_shot_effect();
 						}
 					}
 					//薬莢
-					MAINLOOPscene->Get_Mine()->calc_cart(rate);
+					(*chara)->calc_cart(rate);
 					//銃セレクターアニメ
-					MAINLOOPscene->Get_Mine()->Set_select_anime();
+					(*chara)->Set_select_anime();
 					//銃発砲アニメ
-					MAINLOOPscene->Get_Mine()->Set_shot_anime(rate, true);
+					(*chara)->Set_shot_anime(rate, true);
 					//銃アニメ更新
-					MAINLOOPscene->Get_Mine()->get_parts(EnumGunParts::PARTS_BASE)->UpDate_Anim();
+					(*chara)->get_parts(EnumGunParts::PARTS_BASE)->UpDate_Anim();
 					//薬莢の処理
-					MAINLOOPscene->Get_Mine()->update_cart();
+					(*chara)->update_cart();
 					//エフェクトの更新
-					MAINLOOPscene->Get_Mine()->update_effect(effsorce);
+					(*chara)->update_effect(effsorce);
 				}
 				//campos,camvec,camupの指定
 				{}
@@ -725,10 +730,10 @@ namespace FPS_n2 {
 							viewparts = viewparts_buf;
 						}
 					}
-					range_tgt = std::hypotf(sin(deg2rad(yrad_t)) * 0.25f, cos(deg2rad(yrad_t)) * (std::abs((((std::abs(yrad_t) > 90) ? MAINLOOPscene->Get_Mine()->get_maz().z() : 0.5f) - viewparts.z())) + camera_main.near_ * 2.f));
+					range_tgt = std::hypotf(sin(deg2rad(yrad_t)) * 0.25f, cos(deg2rad(yrad_t)) * (std::abs((((std::abs(yrad_t) > 90) ? (*chara)->get_maz().z() : 0.5f) - viewparts.z())) + camera_main.near_ * 2.f));
 					range_t = (Rot.on() && !changef) ? std::clamp(range_t - float(GetMouseWheelRotVol()) * 0.1f, range_tgt, 5.f) : range_tgt;
 
-					easing_set(&camparts, VECTOR_ref::vget(cos(deg2rad(xrad_t))* sin(deg2rad(yrad_t)), sin(deg2rad(xrad_t)), cos(deg2rad(xrad_t))* cos(deg2rad(yrad_t)))* range_t, 0.8f);
+					easing_set(&camparts, VECTOR_ref::vget(cos(deg2rad(xrad_t)) * sin(deg2rad(yrad_t)), sin(deg2rad(xrad_t)), cos(deg2rad(xrad_t)) * cos(deg2rad(yrad_t))) * range_t, 0.8f);
 					camera_main.camvec = viewparts;
 					camera_main.campos = camera_main.camvec + camparts;
 					camera_main.camup = VECTOR_ref::up();
@@ -738,10 +743,10 @@ namespace FPS_n2 {
 					cam_info* camp = &this->camera_main;
 					GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), camp->campos, camp->camvec, camp->camup, camp->fov, camp->near_, camp->far_);
 					{
-						MAINLOOPscene->Get_Mine()->Check_CameraViewClip(false);
+						(*chara)->Check_CameraViewClip(false);
 					}
 				}
-				if (MAINLOOPscene->Get_Mine()->get_key_().jamp) {
+				if ((*chara)->get_key_().jamp) {
 					return false;
 				}
 				return true;
@@ -757,34 +762,34 @@ namespace FPS_n2 {
 					}
 					file.close();
 				}
-				MAINLOOPscene->Get_Mine()->gun_stat_now->selector_set(EnumSELECTER::SELECT_SEMI);
+				(*chara)->gun_stat_now->selector_set(EnumSELECTER::SELECT_SEMI);
 				shot_se.Dispose();
 				slide_se.Dispose();
 				trigger_se.Dispose();
 			}
 			void UI_Draw(void) noexcept  override {
-				UIparts->UI_Draw(MAINLOOPscene->GetGunPartsControl(), parts_cat, Rot.on(), MAINLOOPscene->Get_Mine(), parts_p, change_per);
+				UIparts->UI_Draw(MAINLOOPscene->GetGunPartsControl(), parts_cat, Rot.on(), (*chara), parts_p, change_per);
 				easing_set(&change_per, 0.f, 0.5f);
 			}
 			void BG_Draw(void) noexcept override {
 				DrawBox(0, 0, deskx, desky, GetColor(192, 192, 192), TRUE);
 			}
 			void Shadow_Draw_NearFar(void) noexcept override {
-				MAINLOOPscene->Get_Mine()->Draw_gun();
+				(*chara)->Draw_gun();
 				{
-					MAINLOOPscene->Get_Mine()->get_parts(EnumGunParts::PARTS_MAGAZINE)->Draw();
+					(*chara)->get_parts(EnumGunParts::PARTS_MAGAZINE)->Draw();
 				}
 			}
 			void Shadow_Draw(void) noexcept override {
-				MAINLOOPscene->Get_Mine()->Draw_gun();
+				(*chara)->Draw_gun();
 				{
-					MAINLOOPscene->Get_Mine()->get_parts(EnumGunParts::PARTS_MAGAZINE)->Draw();
+					(*chara)->get_parts(EnumGunParts::PARTS_MAGAZINE)->Draw();
 				}
 			}
 			void Main_Draw(void) noexcept override {
-				MAINLOOPscene->Get_Mine()->Draw_gun();
+				(*chara)->Draw_gun();
 				{
-					MAINLOOPscene->Get_Mine()->get_parts(EnumGunParts::PARTS_MAGAZINE)->Draw();
+					(*chara)->get_parts(EnumGunParts::PARTS_MAGAZINE)->Draw();
 				}
 			}
 		};
@@ -803,7 +808,7 @@ namespace FPS_n2 {
 				TPS_parts(const std::shared_ptr<MAPclass::Map>& MAPPTs_t) noexcept {
 					MAPPTs = MAPPTs_t;
 				}
-				void Set(float& fov_pc) noexcept {
+				void Set(const float& fov_pc) noexcept {
 					this->key_TPS.Init(false);
 					this->camera_TPS.campos = VECTOR_ref::vget(0, 1.8f, -10);
 					this->camera_TPS.set_cam_info(deg2rad(fov_pc), 0.1f, 200.f);
@@ -885,18 +890,15 @@ namespace FPS_n2 {
 				RULEparts = std::make_shared<RULE_parts>();
 				UIparts = std::make_unique<UIclass::UI_MAINLOOP>(RULEparts);
 				TPSparts = std::make_unique<TPS_parts>(MAPPTs);
-				Hostpassparts_TPS = std::make_unique<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, deskx, desky);	//ホストパスエフェクト(フルスクリーン向け、TPS用)
-				MiniMAPPTs = std::make_unique<MAPclass::MiniMap>(MAPPTs);															//ミニマップ
-				GunPartses = std::make_unique<GUNPARTS_Control>();
+				Hostpassparts_TPS = std::make_unique<HostPassEffect>(OPTPTs, deskx, desky);	//ホストパスエフェクト(フルスクリーン向け、TPS用)
+				MiniMAPPTs = std::make_unique<MAPclass::MiniMap>(MAPPTs);					//ミニマップ
+				GunPartses = std::make_unique<GUNPARTS_Control>();							//銃パーツ
 				//model
-				light = GraphHandle::Load("data/light.png");							//ライト
-				MV1::Load("data/model/hit/model.mv1", &this->hit_pic, true);			//弾痕
-				//body
-				MV1::Load("data/model/body/model.mv1", &this->body_obj, true);			//身体
-				MV1::Load("data/model/body/col.mv1", &this->body_col, true);			//身体col
-				MV1SetLoadModelPhysicsWorldGravity(-1.f);
-				MV1::Load("data/model/body/model_lag.mv1", &this->body_obj_lag, true);	//身体
-				MV1SetLoadModelPhysicsWorldGravity(-9.8f);
+				light = GraphHandle::Load("data/light.png");								//ライト
+				MV1::Load("data/model/hit/model.mv1", &this->hit_pic, true);				//弾痕
+				MV1::Load("data/model/body/model.mv1", &this->body_obj, true);				//身体
+				MV1::Load("data/model/body/col.mv1", &this->body_col, true);				//身体col
+				MV1::Load("data/model/body/model_lag.mv1", &this->body_obj_lag, true, -1.f);//身体
 				//データ
 				GunPartses->Set_Pre();
 				Meds::Set_Pre(&this->meds_data, "data/Items/medkit/");											//MEDデータ
@@ -985,7 +987,7 @@ namespace FPS_n2 {
 				//UI
 				UIparts->Init(DrawPts, MAPPTs);
 				//
-				TPSparts->Set(OPTPTs->Fov);							//TPS
+				TPSparts->Set(OPTPTs->Get_Fov());							//TPS
 				RULEparts->Set();									//ルール
 				//ライティング
 				Shadow_maxpos = MAPPTs->map_col_get().mesh_maxpos(0);

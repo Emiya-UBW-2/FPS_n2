@@ -18,15 +18,10 @@ namespace FPS_n2 {
 		std::shared_ptr<Sceneclass::TEMPSCENE> scenes_ptr{ nullptr };
 	public:
 		main_c(void) noexcept {
-			auto OPTPTs = std::make_shared<OPTION>();																		//設定読み込み
-			auto DrawPts = std::make_shared<DXDraw>("FPS_n2", FRAME_RATE, OPTPTs->useVR, OPTPTs->Shadow, OPTPTs->Vsync);	//汎用
-			auto DebugPTs = std::make_shared<DeBuG>(FRAME_RATE);															//デバッグ
-			if (DrawPts->use_vr) {
-				//VRでは使えない機能
-				OPTPTs->DoF = false;
-				OPTPTs->Bloom = false;
-				OPTPTs->SSAO = false;
-			}
+			auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
+			auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);	//汎用
+			auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
+			OPTPTs->Set_useVR(DrawPts->use_vr);
 			// 頂点データの準備
 			{
 				int xp1 = 0;
@@ -66,14 +61,14 @@ namespace FPS_n2 {
 				} //else{ return false; }
 				FindClose(hFind);
 				effsorce.resize(effsorce.size() + 1);
-				effsorce.back() = EffekseerEffectHandle::load("data/effect/gndsmk.efk");							//戦車用エフェクト
+				effsorce.back() = EffekseerEffectHandle::load("data/effect/gndsmk.efk");								//戦車用エフェクト
 			}
 			//シェーダー
-			auto HostpassPTs = std::make_shared<HostPassEffect>(OPTPTs->DoF, OPTPTs->Bloom, OPTPTs->SSAO, DrawPts->disp_x, DrawPts->disp_y);	//ホストパスエフェクト(VR、フルスクリーン共用)
-			shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																						//レンズ
-			shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");															//歪み
+			auto HostpassPTs = std::make_shared<HostPassEffect>(OPTPTs, DrawPts->disp_x, DrawPts->disp_y);				//ホストパスエフェクト(VR、フルスクリーン共用)
+			shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
+			shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");									//歪み
 			//MAP
-			auto MAPPTs = std::make_shared<MAPclass::Map>(OPTPTs->grass_level, DrawPts->disp_x, DrawPts->disp_y);
+			auto MAPPTs = std::make_shared<MAPclass::Map>(OPTPTs->Get_grass_level(), DrawPts->disp_x, DrawPts->disp_y);
 			MAPPTs->Set_mine(MAPPTs);
 			//キー読み込み
 			auto KeyBind = std::make_shared<key_bind>();

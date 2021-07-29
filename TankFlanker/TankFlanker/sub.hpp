@@ -1,9 +1,7 @@
 #pragma once
 #include"Header.hpp"
 
-
-#define FRAME_RATE 90.f
-
+//Box2D拡張
 namespace std {
 	template <>
 	struct default_delete<b2Body> {
@@ -14,36 +12,38 @@ namespace std {
 }; // namespace std
 //
 namespace FPS_n2 {
-	static const size_t max_bullet{ 64 };
-
-	//option
-	class OPTION {
+	//フォントプール
+	class FontPool {
+		static const int pool_s = 16;
 	public:
-		int grass_level = 4;
-		bool DoF = false;
-		bool Bloom = false;
-		bool Shadow = false;
-		bool useVR{ true };
-		bool SSAO{ true };
-		float Fov = 45.f;
-		bool Vsync = false;
-		OPTION(void)  noexcept {
-			SetOutApplicationLogValidFlag(FALSE);
-			int mdata = FileRead_open("data/Setting.txt", FALSE);
-			grass_level = std::clamp<int>(getparams::_int(mdata), 0, 4);
-			DoF = getparams::_bool(mdata);
-			Bloom = getparams::_bool(mdata);
-			Shadow = getparams::_bool(mdata);
-			useVR = getparams::_bool(mdata);
-			SSAO = getparams::_bool(mdata);
-			Fov = getparams::_float(mdata);
-			Vsync = getparams::_bool(mdata);
-			FileRead_close(mdata);
-			SetOutApplicationLogValidFlag(TRUE);
+		class Fonthave {
+		public:
+			int size = 0;
+			FontHandle handle;
+		public:
+			void Set(int siz_t) {
+				this->size = siz_t;
+				this->handle = FontHandle::Create(siz_t, DX_FONTTYPE_EDGE);
+			}
+		};
+		std::vector<Fonthave> havehandle;
+	public:
+		size_t Add(int siz_t) {
+			for (auto& h : this->havehandle) {
+				if (h.size == siz_t) {
+					return &h - &this->havehandle.front();
+				}
+			}
+			this->havehandle.resize(this->havehandle.size() + 1);
+			this->havehandle.back().Set(siz_t);
+			return this->havehandle.size() - 1;
 		}
-		~OPTION(void) noexcept {
+
+		Fonthave* Get(int siz_t) {
+			return &this->havehandle[Add(siz_t)];
 		}
 	};
+	FontPool Fonts;
 	//キーバインド
 	class key_bind {
 	private:
@@ -54,36 +54,58 @@ namespace FPS_n2 {
 			char onhandle[256] = "", offhandle[256] = "";
 		};
 		class key_pair {
-		public:
 			int first = 0;
-			std::string second;
-			bool isalways = false;
-			switchs on_off;
-			keyhandle* use_handle{ nullptr };
 			int use_mode = 0;
-			bool get_key(int id) {
+		public:
+			std::string second;
+			bool isalways{ false };
+			keyhandle* use_handle{ nullptr };
+			switchs on_off;
+
+			const auto& Get_first()const noexcept { return first; }
+
+			void Set(int first_t, std::string_view second_t, int mode) {
+				first = first_t;
+				second = second_t;
+				use_mode = mode;
+			}
+			bool get_key(int id, bool checkupdate) {
 				switch (id) {
 					//キー
 				case 0:
 					return CheckHitKey(this->first) != 0;
 				case 1:
-					on_off.GetInput(CheckHitKey(this->first) != 0);
+					if (checkupdate) {
+						on_off.GetInput(CheckHitKey(this->first) != 0);
+					}
 					return on_off.on();
 				case 2:
-					on_off.GetInput(CheckHitKey(this->first) != 0);
+					if (checkupdate) {
+						on_off.GetInput(CheckHitKey(this->first) != 0);
+					}
 					return on_off.trigger();
 					//マウス
 				case 3:
 					return (GetMouseInput() & this->first) != 0;
 				case 4:
-					on_off.GetInput((GetMouseInput() & this->first) != 0);
+					if (checkupdate) {
+						on_off.GetInput((GetMouseInput() & this->first) != 0);
+					}
 					return on_off.on();
 				case 5:
-					on_off.GetInput((GetMouseInput() & this->first) != 0);
+					if (checkupdate) {
+						on_off.GetInput((GetMouseInput() & this->first) != 0);
+					}
 					return on_off.trigger();
 				default:
 					return CheckHitKey(this->first) != 0;
 				}
+			}
+
+			bool get_key_Auto(bool checkupdate) {
+				this->isalways = true;
+				return this->get_key(this->use_mode, checkupdate);
+
 			}
 		};
 		class keyhandle {
@@ -92,8 +114,9 @@ namespace FPS_n2 {
 			GraphHandle onhandle, offhandle;
 			key_pair* use_part{ nullptr };
 		};
-		FontHandle font24;
-		int font24size = y_r(24);
+
+		FontPool::Fonthave* Font24 = nullptr;
+
 		std::vector<keyhandle> keyg;
 		std::vector<keyhandle> keyg2;
 
@@ -106,18 +129,15 @@ namespace FPS_n2 {
 		std::vector<key_pair> mouse_use_ID;
 		//
 		bool get_key_use(int id_t) {
-			key_use_ID[id_t].isalways = true;
-			return key_use_ID[id_t].get_key(key_use_ID[id_t].use_mode);
+			return key_use_ID[id_t].get_key_Auto(true);
 		}
 		bool get_mouse_use(int id_t) {
-			mouse_use_ID[id_t].isalways = true;
-			return mouse_use_ID[id_t].get_key(mouse_use_ID[id_t].use_mode);
+			return mouse_use_ID[id_t].get_key_Auto(true);
 		}
 		//
 		key_bind(void) noexcept {
 			SetUseASyncLoadFlag(FALSE);
-			font24size = y_r(24);
-			font24 = FontHandle::Create(font24size, DX_FONTTYPE_EDGE);
+			Font24 = Fonts.Get(y_r(24));
 			mousehandle = GraphHandle::Load("data/key/mouse.png");
 			SetTransColor(0, 255, 0);
 			keyboad = GraphHandle::Load("data/key/keyboad.png");
@@ -125,102 +145,54 @@ namespace FPS_n2 {
 			//
 			{
 				key_pair tmp_k;
-				tmp_k.first = KEY_INPUT_W;
-				tmp_k.second = "前進";
-				tmp_k.use_mode = 0;
+				tmp_k.Set(KEY_INPUT_W, "前進", 0);
 				this->key_use_ID.emplace_back(tmp_k);//0
-				tmp_k.first = KEY_INPUT_S;
-				tmp_k.second = "後退";
-				tmp_k.use_mode = 0;
+				tmp_k.Set(KEY_INPUT_S, "後退", 0);
 				this->key_use_ID.emplace_back(tmp_k);//1
-				tmp_k.first = KEY_INPUT_D;
-				tmp_k.second = "右歩き";
-				tmp_k.use_mode = 0;
+				tmp_k.Set(KEY_INPUT_D, "右歩き", 0);
 				this->key_use_ID.emplace_back(tmp_k);//2
-				tmp_k.first = KEY_INPUT_A;
-				tmp_k.second = "左歩き";
-				tmp_k.use_mode = 0;
+				tmp_k.Set(KEY_INPUT_A, "左歩き", 0);
 				this->key_use_ID.emplace_back(tmp_k);//3
-				tmp_k.first = KEY_INPUT_Q;
-				tmp_k.second = "左リーン";
-				tmp_k.use_mode = 0;
+				tmp_k.Set(KEY_INPUT_Q, "左リーン", 0);
 				this->key_use_ID.emplace_back(tmp_k);//4
-				tmp_k.first = KEY_INPUT_E;
-				tmp_k.second = "右リーン";
-				tmp_k.use_mode = 0;
+				tmp_k.Set(KEY_INPUT_E, "右リーン", 0);
 				this->key_use_ID.emplace_back(tmp_k);//5
-				tmp_k.first = KEY_INPUT_R;
-				tmp_k.second = "リロード";
-				tmp_k.use_mode = 0;
+				tmp_k.Set(KEY_INPUT_R, "リロード", 0);
 				this->key_use_ID.emplace_back(tmp_k);//6
-				tmp_k.first = KEY_INPUT_F;
-				tmp_k.second = "アイテム取得";
-				tmp_k.use_mode = 2;
+				tmp_k.Set(KEY_INPUT_F, "アイテム取得", 2);
 				this->key_use_ID.emplace_back(tmp_k);//7
-				tmp_k.first = KEY_INPUT_G;
-				tmp_k.second = "グレネード投擲";
-				tmp_k.use_mode = 2;
+				tmp_k.Set(KEY_INPUT_G, "グレネード投擲", 2);
 				this->key_use_ID.emplace_back(tmp_k);//8
-				tmp_k.first = KEY_INPUT_C;
-				tmp_k.second = "しゃがみ";
-				tmp_k.use_mode = 1;
+				tmp_k.Set(KEY_INPUT_C, "しゃがみ", 1);
 				this->key_use_ID.emplace_back(tmp_k);//9
-				tmp_k.first = KEY_INPUT_O;
-				tmp_k.second = "タイトル画面に戻る";
-				tmp_k.use_mode = 1;
+				tmp_k.Set(KEY_INPUT_O, "タイトル画面に戻る", 1);
 				this->key_use_ID.emplace_back(tmp_k);//10
-				tmp_k.first = KEY_INPUT_ESCAPE;
-				tmp_k.second = "強制終了";
-				tmp_k.use_mode = 1;
+				tmp_k.Set(KEY_INPUT_ESCAPE, "強制終了", 1);
 				this->key_use_ID.emplace_back(tmp_k);//11
-				tmp_k.first = KEY_INPUT_Z;
-				tmp_k.second = "マガジン整理";
-				tmp_k.use_mode = 2;
+				tmp_k.Set(KEY_INPUT_Z, "マガジン整理", 2);
 				this->key_use_ID.emplace_back(tmp_k);//12
-				tmp_k.first = KEY_INPUT_LSHIFT;
-				tmp_k.second = "走る";
-				tmp_k.use_mode = 0;
+				tmp_k.Set(KEY_INPUT_LSHIFT, "走る", 0);
 				this->key_use_ID.emplace_back(tmp_k);//13
-				tmp_k.first = KEY_INPUT_SPACE;
-				tmp_k.second = "ジャンプ";
-				tmp_k.use_mode = 2;
+				tmp_k.Set(KEY_INPUT_SPACE, "ジャンプ", 2);
 				this->key_use_ID.emplace_back(tmp_k);//14
-				tmp_k.first = KEY_INPUT_LCONTROL;
-				tmp_k.second = "視点切替";
-				tmp_k.use_mode = 0;
+				tmp_k.Set(KEY_INPUT_LCONTROL, "視点切替", 0);
 				this->key_use_ID.emplace_back(tmp_k);//15
-				tmp_k.first = KEY_INPUT_F1;
-				tmp_k.second = "キー案内";
-				tmp_k.use_mode = 1;
+				tmp_k.Set(KEY_INPUT_F1, "キー案内", 1);
 				this->key_use_ID.emplace_back(tmp_k);//16
-				tmp_k.first = KEY_INPUT_V;
-				tmp_k.second = "眺める";
-				tmp_k.use_mode = 2;
+				tmp_k.Set(KEY_INPUT_V, "眺める", 2);
 				this->key_use_ID.emplace_back(tmp_k);//17
-				tmp_k.first = KEY_INPUT_P;
-				tmp_k.second = "ポーズ";
-				tmp_k.use_mode = 1;
+				tmp_k.Set(KEY_INPUT_P, "ポーズ", 1);
 				this->key_use_ID.emplace_back(tmp_k);//18
-				tmp_k.first = KEY_INPUT_H;
-				tmp_k.second = "治療キット排出";
-				tmp_k.use_mode = 2;
+				tmp_k.Set(KEY_INPUT_H, "治療キット排出", 2);
 				this->key_use_ID.emplace_back(tmp_k);//19
-				tmp_k.first = KEY_INPUT_B;
-				tmp_k.second = "乗車";
-				tmp_k.use_mode = 2;
+				tmp_k.Set(KEY_INPUT_B, "乗車", 2);
 				this->key_use_ID.emplace_back(tmp_k);//20
 				//
-				tmp_k.first = MOUSE_INPUT_LEFT;
-				tmp_k.second = "射撃";
-				tmp_k.use_mode = 3;
+				tmp_k.Set(MOUSE_INPUT_LEFT, "射撃", 3);
 				this->mouse_use_ID.emplace_back(tmp_k);//0
-				tmp_k.first = MOUSE_INPUT_MIDDLE;
-				tmp_k.second = "セレクター切替";
-				tmp_k.use_mode = 5;
+				tmp_k.Set(MOUSE_INPUT_MIDDLE, "セレクター切替", 5);
 				this->mouse_use_ID.emplace_back(tmp_k);//1
-				tmp_k.first = MOUSE_INPUT_RIGHT;
-				tmp_k.second = "エイム";
-				tmp_k.use_mode = 3;
+				tmp_k.Set(MOUSE_INPUT_RIGHT, "エイム", 3);
 				this->mouse_use_ID.emplace_back(tmp_k);//2
 			}
 			{
@@ -275,7 +247,7 @@ namespace FPS_n2 {
 					}
 					for (auto& m : this->keyg) {
 						for (auto& i : this->key_use_ID) {
-							if (i.first == m.key.mac) {
+							if (i.Get_first() == m.key.mac) {
 								m.use_part = &i;
 								i.use_handle = &m;
 								break;
@@ -307,7 +279,7 @@ namespace FPS_n2 {
 					}
 					for (auto& m : this->keyg2) {
 						for (auto& i : this->mouse_use_ID) {
-							if (i.first == m.key.mac) {
+							if (i.Get_first() == m.key.mac) {
 								m.use_part = &i;
 								i.use_handle = &m;
 								break;
@@ -320,7 +292,7 @@ namespace FPS_n2 {
 			}
 		}
 		//
-		const auto Esc_key(void) noexcept { return this->key_use_ID[11].get_key(0); }
+		const auto Esc_key(void) noexcept { return this->key_use_ID[11].get_key_Auto(true); }
 		//
 		void reSet_isalways(void) noexcept {
 			for (auto& i : this->key_use_ID) {
@@ -329,12 +301,10 @@ namespace FPS_n2 {
 			for (auto& i : this->mouse_use_ID) {
 				i.isalways = false;
 			}
-			this->key_use_ID[11].isalways = true;
-			this->key_use_ID[16].isalways = true;
 		}
 		//
 		void draw(void) noexcept {
-			auto tmp_f1 = this->key_use_ID[16].get_key(1);
+			auto tmp_f1 = this->key_use_ID[16].get_key_Auto(true);
 			easing_set(&F1_f, float(tmp_f1), 0.9f);
 			noF1_f = std::max(noF1_f - 1.f / FPS, 0.f);
 			//インフォ
@@ -358,7 +328,7 @@ namespace FPS_n2 {
 							if (m.use_part != nullptr) {
 								xp_sk = xp_t + y_r(m.key.px);
 								yp_sk = yp_t + y_r(m.key.py);
-								if (m.use_part->get_key(0)) {//keyboad
+								if (m.use_part->get_key(0, false)) {//keyboad
 									m.onhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - y_r(4)) / 26.f, 0.f, false);
 								}
 								else {
@@ -371,7 +341,7 @@ namespace FPS_n2 {
 						yp_sk = y_r(800);
 						for (auto& m : this->keyg2) {
 							if (m.use_part != nullptr) {
-								if (m.use_part->get_key(3)) {
+								if (m.use_part->get_key(3, false)) {
 									m.onhandle.GetSize(nullptr, &yss);
 									m.onhandle.DrawRotaGraph(xp_sk, yp_sk, float(y_r(float(256) / yss * 100)) / 100.f, 0.f, true);
 								}
@@ -388,7 +358,7 @@ namespace FPS_n2 {
 						float siz_t = float(y_size - 4) / 25.f;
 						for (auto& i : this->key_use_ID) {
 							if (i.isalways && i.use_handle != nullptr) {
-								if (i.get_key(0)) {
+								if (i.get_key(0, false)) {
 									i.use_handle->onhandle.GetSize(&xss, &yss);
 									xss = int(float(xss) * siz_t);
 									yss = int(float(yss) * siz_t);
@@ -400,7 +370,7 @@ namespace FPS_n2 {
 									yss = int(float(yss) * siz_t);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, siz_t, 0.f, false);
 								}
-								font24.DrawString(xp_s, yp_s + (y_size - font24size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
+								Font24->handle.DrawString(xp_s, yp_s + (y_size - Font24->size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
 							}
 						}
 						for (auto& i : this->mouse_use_ID) {
@@ -409,7 +379,7 @@ namespace FPS_n2 {
 									mousehandle.GetSize(nullptr, &yss);
 									mousehandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
-								if (i.get_key(3)) {
+								if (i.get_key(3, false)) {
 									i.use_handle->onhandle.GetSize(nullptr, &yss);
 									i.use_handle->onhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
@@ -417,7 +387,7 @@ namespace FPS_n2 {
 									i.use_handle->offhandle.GetSize(nullptr, &yss);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
-								font24.DrawString(xp_s, yp_s + (y_size - font24size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
+								Font24->handle.DrawString(xp_s, yp_s + (y_size - Font24->size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
 							}
 						}
 					}
@@ -433,8 +403,8 @@ namespace FPS_n2 {
 					for (auto& i : this->key_use_ID) {
 						if (i.isalways) {
 							for (auto& m : this->keyg) {
-								if (m.key.mac == i.first) {
-									if (i.get_key(0)) {
+								if (m.key.mac == i.Get_first()) {
+									if (i.get_key(0, false)) {
 										noF1_f = 3.f;
 										m.onhandle.GetSize(&xss, &yss);
 										xss = int(float(xss) * siz_t);
@@ -455,12 +425,12 @@ namespace FPS_n2 {
 					for (auto& i : this->mouse_use_ID) {
 						if (i.isalways) {
 							for (auto& m : this->keyg2) {
-								if (m.key.mac == i.first) {
+								if (m.key.mac == i.Get_first()) {
 									{
 										mousehandle.GetSize(&xss, &yss);
 										mousehandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 									}
-									if (i.get_key(3)) {
+									if (i.get_key(3, false)) {
 										noF1_f = 3.f;
 										m.onhandle.GetSize(&xss, &yss);
 										m.onhandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
@@ -480,8 +450,8 @@ namespace FPS_n2 {
 					for (auto& i : this->key_use_ID) {
 						if (i.isalways) {
 							for (auto& m : this->keyg) {
-								if (m.key.mac == i.first) {
-									if (i.get_key(0)) {
+								if (m.key.mac == i.Get_first()) {
+									if (i.get_key(0, false)) {
 										noF1_f = 3.f;
 									}
 								}
@@ -491,8 +461,8 @@ namespace FPS_n2 {
 					for (auto& i : this->mouse_use_ID) {
 						if (i.isalways) {
 							for (auto& m : this->keyg2) {
-								if (m.key.mac == i.first) {
-									if (i.get_key(3)) {
+								if (m.key.mac == i.Get_first()) {
+									if (i.get_key(3, false)) {
 										noF1_f = 3.f;
 									}
 								}
@@ -513,8 +483,7 @@ namespace FPS_n2 {
 	private:
 		std::shared_ptr<key_bind> KeyBind{ nullptr };
 
-		FontHandle font24;
-		int font24size = 24;
+		FontPool::Fonthave* Font24 = nullptr;
 
 		float P_f = 0.0f;
 	public:
@@ -522,20 +491,19 @@ namespace FPS_n2 {
 		pause_menu(std::shared_ptr<key_bind>& KeyBind_t) noexcept {
 			KeyBind = KeyBind_t;
 			SetUseASyncLoadFlag(FALSE);
-			font24 = FontHandle::Create(font24size, DX_FONTTYPE_EDGE);
+			Font24 = Fonts.Get(y_r(24));
 		}
 		//
-		const auto Pause_key(void) noexcept { return KeyBind->key_use_ID[18].get_key(1); }
+		const auto Pause_key(void) noexcept { return KeyBind->key_use_ID[18].get_key_Auto(true); }
 		//
 		bool Update(void) noexcept {
-			KeyBind->key_use_ID[18].isalways = true;
-			KeyBind->key_use_ID[10].isalways = KeyBind->key_use_ID[18].on_off.on();
+			KeyBind->key_use_ID[10].isalways = KeyBind->key_use_ID[18].get_key_Auto(false);
 
 			SetMouseDispFlag(TRUE);
 
 			bool selend = true;
 			//強制帰還はポーズメニューで
-			if (KeyBind->key_use_ID[10].get_key(0)) {
+			if (KeyBind->key_use_ID[10].get_key(0, false)) {
 				KeyBind->key_use_ID[18].on_off.first = false;
 				selend = false;
 			}
@@ -560,11 +528,11 @@ namespace FPS_n2 {
 				if (P_f > 0.9f) {
 					yp_t = 100;
 					//
-					font24.DrawString_RIGHT(deskx - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += font24size + 30;
+					Font24->handle.DrawString_RIGHT(deskx - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += Font24->size + 30;
 					//
-					font24.DrawString_RIGHT(deskx - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += font24size + 30;
+					Font24->handle.DrawString_RIGHT(deskx - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += Font24->size + 30;
 					//
-					font24.DrawString_RIGHT(deskx - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += font24size + 30;
+					Font24->handle.DrawString_RIGHT(deskx - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += Font24->size + 30;
 					//
 				}
 			}
@@ -634,13 +602,7 @@ namespace FPS_n2 {
 			SetShaderConstantBuffer(this->pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
 		}
 		void draw(VERTEX3DSHADER Screen_vertex[]) {
-			SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
-			SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
-			MV1SetUseOrigShader(TRUE);
-			DrawPolygon3DToShader(Screen_vertex, 2);// 描画
-			MV1SetUseOrigShader(FALSE);
-			SetUseVertexShader(-1);					// 使用する頂点シェーダーをセット
-			SetUsePixelShader(-1);					// 使用するピクセルシェーダーをセット
+			draw_lamda([&] {DrawPolygon3DToShader(Screen_vertex, 2);});
 		}
 		void draw_lamda(std::function<void()> doing) {
 			SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
@@ -1597,7 +1559,7 @@ namespace FPS_n2 {
 		}
 
 		void Set(const MV1& obj, int i) {
-			this->frame1.Set_World(i,obj);
+			this->frame1.Set_World(i, obj);
 			this->frame3.first = -1;
 			this->frame2.first = -1;
 			auto p2 = obj.frame_parent(this->frame1.first);
@@ -1698,7 +1660,7 @@ namespace FPS_n2 {
 		std::vector<std::pair<int, float>> armer_mesh;		/*装甲ID*/
 		std::vector<int> space_mesh;						/*装甲ID*/
 		std::vector<int> module_mesh;						/*装甲ID*/
-		bool isfloat = false;								/*浮くかどうか*/
+		bool isfloat{ false };								/*浮くかどうか*/
 		float down_in_water = 0.f;							/*沈む判定箇所*/
 		float flont_speed_limit = 0.f;						/*前進速度(km/h)*/
 		float back_speed_limit = 0.f;						/*後退速度(km/h)*/

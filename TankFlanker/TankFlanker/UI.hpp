@@ -4,12 +4,6 @@
 namespace FPS_n2 {
 	class UIclass {
 	public:
-		class Font_ptr {
-		public:
-			FontHandle* ptr{ nullptr };
-			int hight{ 0 };
-		};
-
 		class UI_TEMP {
 		private:
 			bool first_f{ true };
@@ -20,16 +14,15 @@ namespace FPS_n2 {
 			int t_disp_x = deskx;
 			int t_disp_y = desky;
 			//font
-			FontHandle font72;
-			FontHandle font48;
-			FontHandle font36;
-			FontHandle font24;
-			FontHandle font18;
+			FontPool::Fonthave* Font72 = nullptr;
+			FontPool::Fonthave* Font48 = nullptr;
+			FontPool::Fonthave* Font36 = nullptr;
+			FontPool::Fonthave* Font24 = nullptr;
+			FontPool::Fonthave* Font18 = nullptr;
 
-
-			Font_ptr Large;
-			Font_ptr Middle;
-			Font_ptr Small;
+			FontPool::Fonthave* Large;
+			FontPool::Fonthave* Middle;
+			FontPool::Fonthave* Small;
 		public:
 			void Init(std::shared_ptr<DXDraw>& DrawPts_t, std::shared_ptr<MAPclass::Map>& MAPPTs_t) noexcept {
 				if (first_f) {
@@ -45,23 +38,18 @@ namespace FPS_n2 {
 						t_disp_y = desky;
 					}
 					SetUseASyncLoadFlag(TRUE);
-
-					this->font72 = FontHandle::Create(y_r(72), DX_FONTTYPE_EDGE);
-					this->font48 = FontHandle::Create(y_r(48), DX_FONTTYPE_EDGE);
-					this->font36 = FontHandle::Create(y_r(36), DX_FONTTYPE_EDGE);
-					this->font24 = FontHandle::Create(y_r(24), DX_FONTTYPE_EDGE);
-					this->font18 = FontHandle::Create(y_r(18), DX_FONTTYPE_EDGE);
-
+					this->Font72 = Fonts.Get(y_r(72));
+					this->Font48 = Fonts.Get(y_r(48));
+					this->Font36 = Fonts.Get(y_r(36));
+					this->Font24 = Fonts.Get(y_r(24));
+					this->Font18 = Fonts.Get(y_r(18));
 					SetUseASyncLoadFlag(FALSE);
 				}
 			}
 			void set_fonts() {
-				Large.ptr = (DrawPts->use_vr) ? &font72 : &font48;
-				Large.hight = (DrawPts->use_vr) ? y_r(72) : y_r(48);
-				Middle.ptr = (DrawPts->use_vr) ? &font36 : &font24;
-				Middle.hight = (DrawPts->use_vr) ? y_r(36) : y_r(24);
-				Small.ptr = (DrawPts->use_vr) ? &font24 : &font18;
-				Small.hight = (DrawPts->use_vr) ? y_r(24) : y_r(18);
+				Large = (DrawPts->use_vr) ? this->Font72 : this->Font48;
+				Middle = (DrawPts->use_vr) ? this->Font36 : this->Font24;
+				Small = (DrawPts->use_vr) ? this->Font24 : this->Font18;
 			}
 			//virtual void UI_Draw(void) noexcept {}
 			//virtual void item_Draw(void) noexcept {}
@@ -100,23 +88,23 @@ namespace FPS_n2 {
 				}
 				{
 					{
-						float siz = float(Middle.ptr->GetDrawWidth((parts != nullptr) ? parts->per.name : "NONE"));
+						float siz = float(Middle->handle.GetDrawWidth((parts != nullptr) ? parts->per.name : "NONE"));
 						int base_siz = (xsize - title_siz * 2);
 						if (siz < base_siz) {
-							Middle.ptr->DrawString(xpos1 + title_siz, ypos1 + title_siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+							Middle->handle.DrawString(xpos1 + title_siz, ypos1 + title_siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
 						}
 						else {
-							Middle.ptr->DrawExtendString(xpos1 + title_siz, ypos1 + title_siz, base_siz / siz, base_siz / siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+							Middle->handle.DrawExtendString(xpos1 + title_siz, ypos1 + title_siz, base_siz / siz, base_siz / siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
 						}
 					}
 					if (parts != nullptr) {
 						std::wstring msg = StringToWString(parts->per.info);
-						int i = 0, siz = (xsize - main_siz * 2) / (Small.hight * 5 / 4) - 1;//todo
+						int i = 0, siz = (xsize - main_siz * 2) / (Small->size * 5 / 4) - 1;//todo
 						while (true) {
-							if ((title_siz * 2 + Middle.hight + Small.hight * (i + 1)) > ysize) {
+							if ((title_siz * 2 + Middle->size + Small->size * (i + 1)) > ysize) {
 								break;
 							}
-							Small.ptr->DrawString(xpos1 + main_siz, ypos1 + title_siz * 2 + Middle.hight + Small.hight * i, WStringToString(msg.substr(0, siz)), GetColor(0, 255, 0));
+							Small->handle.DrawString(xpos1 + main_siz, ypos1 + title_siz * 2 + Middle->size + Small->size * i, WStringToString(msg.substr(0, siz)), GetColor(0, 255, 0));
 							i++;
 							if (msg.length() < siz) {
 								break;
@@ -195,19 +183,19 @@ namespace FPS_n2 {
 							else {
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
 							}
-							Middle.ptr->DrawString(xp, yp, parts_type, GetColor(0, 255, 0));
-							Draw_per_info(xp, yp + Middle.hight, xs, ys - Middle.hight, temp_p);
+							Middle->handle.DrawString(xp, yp, parts_type, GetColor(0, 255, 0));
+							Draw_per_info(xp, yp + Middle->size, xs, ys - Middle->size, temp_p);
 						}
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-					Middle.ptr->DrawString(xp, y_r(25), set_name, GetColor(255, 0, 0));
+					Middle->handle.DrawString(xp, y_r(25), set_name, GetColor(255, 0, 0));
 
 					//
 					if ((GetNowHiPerformanceCount() / 100000) % 10 <= 5) {
-						Small.ptr->DrawString(xp + xs, y_r(50), "→", GetColor(255, 0, 0));
-						Small.ptr->DrawString_RIGHT(xp, y_r(50), "←", GetColor(255, 0, 0));
+						Small->handle.DrawString(xp + xs, y_r(50), "→", GetColor(255, 0, 0));
+						Small->handle.DrawString_RIGHT(xp, y_r(50), "←", GetColor(255, 0, 0));
 					}
-					Small.ptr->DrawString(y_r(100), y_r(575), "SPACE  :GO EDIT", GetColor(255, 0, 0));
+					Small->handle.DrawString(y_r(100), y_r(575), "SPACE  :GO EDIT", GetColor(255, 0, 0));
 				}
 			}
 		};
@@ -225,23 +213,23 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f * (1.f - change_per)));
 				{
 					{
-						float siz = float(Middle.ptr->GetDrawWidth((parts != nullptr) ? parts->per.name : "NONE"));
+						float siz = float(Middle->handle.GetDrawWidth((parts != nullptr) ? parts->per.name : "NONE"));
 						int base_siz = (xsize - title_siz * 2);
 						if (siz < base_siz) {
-							Middle.ptr->DrawString(xpos1 + title_siz, ypos1 + title_siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+							Middle->handle.DrawString(xpos1 + title_siz, ypos1 + title_siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
 						}
 						else {
-							Middle.ptr->DrawExtendString(xpos1 + title_siz, ypos1 + title_siz, base_siz / siz, base_siz / siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+							Middle->handle.DrawExtendString(xpos1 + title_siz, ypos1 + title_siz, base_siz / siz, base_siz / siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
 						}
 					}
 					if (parts != nullptr) {
 						std::wstring msg = StringToWString(parts->per.info);
-						int i = 0, siz = (xsize - main_siz * 2) / Small.hight - 1;
+						int i = 0, siz = (xsize - main_siz * 2) / Small->size - 1;
 						while (true) {
-							if ((title_siz * 2 + Middle.hight + Small.hight * (i + 1)) > ysize * (1.f - change_per)) {
+							if ((title_siz * 2 + Middle->size + Small->size * (i + 1)) > ysize * (1.f - change_per)) {
 								break;
 							}
-							Small.ptr->DrawString(xpos1 + main_siz, ypos1 + title_siz * 2 + Middle.hight + Small.hight * i, WStringToString(msg.substr(0, siz)), GetColor(0, 255, 0));
+							Small->handle.DrawString(xpos1 + main_siz, ypos1 + title_siz * 2 + Middle->size + Small->size * i, WStringToString(msg.substr(0, siz)), GetColor(0, 255, 0));
 							i++;
 							if (msg.length() < siz) {
 								break;
@@ -266,21 +254,21 @@ namespace FPS_n2 {
 				{
 					int i = 0;
 					/*
-					//Small.ptr->DrawStringFormat(100, 300, GetColor(255, 0, 0), "total : %d / %d", sel_p + 1, sel_max);
-					//Small.ptr->DrawStringFormat(100, 350, GetColor(255, 0, 0), "chang : %d / %d", chang + 1, chang_max);
+					//Small->handle.DrawStringFormat(100, 300, GetColor(255, 0, 0), "total : %d / %d", sel_p + 1, sel_max);
+					//Small->handle.DrawStringFormat(100, 350, GetColor(255, 0, 0), "chang : %d / %d", chang + 1, chang_max);
 					i = 0;
 					for (auto& m : mine->mount_) {
-						Small.ptr->DrawString(400, 300 + 25*i, m.name, GetColor(255, 0, 0)); i ++;
+						Small->handle.DrawString(400, 300 + 25*i, m.name, GetColor(255, 0, 0)); i ++;
 					}
 
 					i = 0;
 					for (auto& m : mine->sight_) {
-						Small.ptr->DrawString(700, 300 + 25*i, m.name, GetColor(255, 0, 0)); i ++;
+						Small->handle.DrawString(700, 300 + 25*i, m.name, GetColor(255, 0, 0)); i ++;
 					}
 
 					i = 0;
 					for (auto& m : sight_i) {
-						Small.ptr->DrawStringFormat(1000, 300 + 25*i, GetColor(255, 0, 0), "%d", m); i ++;
+						Small->handle.DrawStringFormat(1000, 300 + 25*i, GetColor(255, 0, 0), "%d", m); i ++;
 					}
 					//*/
 
@@ -355,42 +343,42 @@ namespace FPS_n2 {
 						xs = y_r(500);
 						ys = y_r(175);
 						{
-							Middle.ptr->DrawString(xp, yp, parts_type, GetColor(0, 255, 0));
+							Middle->handle.DrawString(xp, yp, parts_type, GetColor(0, 255, 0));
 							int xs_1 = y_r(250);
 							i = 0;
 							for (auto& p : *parts_t) {
-								auto ytmp = yp + Middle.hight + Small.hight * i;
+								auto ytmp = yp + Middle->size + Small->size * i;
 								std::string strtmp = p.per.name;
-								int base_siz = (xs + y_r(100) - xs_1) / Small.hight;//todo 100で合う?
+								int base_siz = (xs + y_r(100) - xs_1) / Small->size;//todo 100で合う?
 								if (p.per.name.length() > base_siz) {
 									strtmp = p.per.name.substr(0, base_siz) + "…";
 								}
-								Small.ptr->DrawString(xp + xs_1, ytmp, strtmp, (&p == parts_p) ? GetColor(255, 0, 0) : GetColor(128, 0, 0));
+								Small->handle.DrawString(xp + xs_1, ytmp, strtmp, (&p == parts_p) ? GetColor(255, 0, 0) : GetColor(128, 0, 0));
 								if (&p == parts_p) {
-									DrawBox(xp + xs_1, ytmp, xp + xs_1 + Small.ptr->GetDrawWidth(strtmp), ytmp + Small.hight, GetColor(0, 255, 0), FALSE);
+									DrawBox(xp + xs_1, ytmp, xp + xs_1 + Small->handle.GetDrawWidth(strtmp), ytmp + Small->size, GetColor(0, 255, 0), FALSE);
 									Draw_per_info(xp, ytmp, xs_1, ys, parts_p, change_per);
 								}
 								i++;
 							}
 							if (parts_p == nullptr) {
-								Draw_per_info(xp, yp + Middle.hight, xs_1, ys - Middle.hight, parts_p, change_per);
+								Draw_per_info(xp, yp + Middle->size, xs_1, ys - Middle->size, parts_p, change_per);
 							}
 						}
 						//
 						if ((GetNowHiPerformanceCount() / 100000) % 10 <= 5) {
-							Small.ptr->DrawString_MID(xp + xs / 2, yp - Small.hight, "↑", GetColor(255, 0, 0));
-							Small.ptr->DrawString_MID(xp + xs / 2, yp + ys + Middle.hight, "↓", GetColor(255, 0, 0));
-							Small.ptr->DrawString(xp + xs, yp + ys / 2, "→", GetColor(255, 0, 0));
-							Small.ptr->DrawString_RIGHT(xp, yp + ys / 2, "←", GetColor(255, 0, 0));
+							Small->handle.DrawString_MID(xp + xs / 2, yp - Small->size, "↑", GetColor(255, 0, 0));
+							Small->handle.DrawString_MID(xp + xs / 2, yp + ys + Middle->size, "↓", GetColor(255, 0, 0));
+							Small->handle.DrawString(xp + xs, yp + ys / 2, "→", GetColor(255, 0, 0));
+							Small->handle.DrawString_RIGHT(xp, yp + ys / 2, "←", GetColor(255, 0, 0));
 						}
 					}
 
-					Small.ptr->DrawStringFormat(y_r(100), y_r(700), GetColor(255, 0, 0), "weigt  : %5.2f", mine->get_per_all().weight);
-					Small.ptr->DrawStringFormat(y_r(100), y_r(725), GetColor(255, 0, 0), "recoil : %5.2f", mine->get_per_all().recoil);
+					Small->handle.DrawStringFormat(y_r(100), y_r(700), GetColor(255, 0, 0), "weigt  : %5.2f", mine->get_per_all().weight);
+					Small->handle.DrawStringFormat(y_r(100), y_r(725), GetColor(255, 0, 0), "recoil : %5.2f", mine->get_per_all().recoil);
 
 
-					Small.ptr->DrawString(y_r(100), y_r(575), "SPACE  :Go Battle", GetColor(255, 0, 0));
-					Small.ptr->DrawString(y_r(100), y_r(600), (Rot) ? "RANGE  :FREE" : "RANGE  :FIXED", GetColor(255, 0, 0));
+					Small->handle.DrawString(y_r(100), y_r(575), "SPACE  :Go Battle", GetColor(255, 0, 0));
+					Small->handle.DrawString(y_r(100), y_r(600), (Rot) ? "RANGE  :FREE" : "RANGE  :FIXED", GetColor(255, 0, 0));
 				}
 
 			}
@@ -410,9 +398,9 @@ namespace FPS_n2 {
 			void Draw_HP(int xpos, int ypos, int xsize, int ysize, const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine) noexcept {
 				auto size = y_r(2);
 				int x1 = xpos - xsize / 2;
-				float size_y = float(ysize - size) / Small.hight;
+				float size_y = float(ysize - size) / Small->size;
 				int nowHP = (int)(mine->Damage.HP_Per() * (xsize - size * 2));
-				int willHP = (int)(mine->Damage.HP_r_Per() *(xsize - size * 2));
+				int willHP = (int)(mine->Damage.HP_r_Per() * (xsize - size * 2));
 				//back
 				DrawBox(x1, ypos, x1 + xsize, ypos + ysize + size, GetColor(128, 128, 128), FALSE);
 				//
@@ -426,11 +414,11 @@ namespace FPS_n2 {
 				if (nowHP < willHP) {
 					DrawBox(x1 + nowHP, ypos + size, x1 + willHP, ypos + ysize + size, GetColor(255, 255, 0), TRUE);
 				}
-				Small.ptr->DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", mine->Damage.get_HP(), mine->Damage.get_HP_full());
+				Small->handle.DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", mine->Damage.get_HP(), mine->Damage.get_HP_full());
 
 				if (1.f - mine->Damage.get_got_damage_f() >= 0.01f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * (1.f - powf(1.f - mine->Damage.get_got_damage_f(), 5.f))), 0, 255));
-					Small.ptr->DrawExtendStringFormat_MID(xpos + (xsize / 2 * mine->Damage.get_got_damage_x() / 255), ypos + size - int(100 * (1.f - mine->Damage.get_got_damage_f())), size_y, size_y, mine->Damage.get_got_damage_color(), "%d", mine->Damage.get_got_damage());
+					Small->handle.DrawExtendStringFormat_MID(xpos + (xsize / 2 * mine->Damage.get_got_damage_x() / 255), ypos + size - int(100 * (1.f - mine->Damage.get_got_damage_f())), size_y, size_y, mine->Damage.get_got_damage_color(), "%d", mine->Damage.get_got_damage());
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
 			}
@@ -446,12 +434,12 @@ namespace FPS_n2 {
 						int yp3 = int(float(yp) / r_);
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * (1.f / std::max(r_ - 5.f, 1.f))), 0, 255));
 						item.DrawRotaGraph(xp2, yp2, 3.f / r_, 0.f, true);
-						int xs = Middle.ptr->GetDrawWidthFormat(String, args...);
+						int xs = Middle->handle.GetDrawWidthFormat(String, args...);
 						DrawLine(xp2 + xp3, yp2 + yp3, xp2 + xp3 + xs, yp2 + yp3, GetColor(64, 64, 64), 2);
 						DrawLine(xp2, yp2, xp2 + xp3, yp2 + yp3, GetColor(64, 64, 64), 2);
 						DrawLine(xp2 + xp3, yp2 + yp3, xp2 + xp3 + xs, yp2 + yp3, GetColor(0, 255, 0), 2);
 						DrawLine(xp2, yp2, xp2 + xp3, yp2 + yp3, GetColor(0, 255, 0), 2);
-						Middle.ptr->DrawStringFormat(xp2 + xp3, yp2 + yp3 - Middle.hight, GetColor(0, 255, 0), String, args...);
+						Middle->handle.DrawStringFormat(xp2 + xp3, yp2 + yp3 - Middle->size, GetColor(0, 255, 0), String, args...);
 					}
 				}
 			}
@@ -518,7 +506,7 @@ namespace FPS_n2 {
 								xp = t_disp_x / 2;
 								yp = t_disp_y / 2 - t_disp_y / 8;
 							}
-							Large.ptr->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "%02d:%02d", int(this->Ready) / 60, int(this->Ready) % 60); yp += Large.hight;
+							Large->handle.DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "%02d:%02d", int(this->Ready) / 60, int(this->Ready) % 60); yp += Large->size;
 						}
 						else {
 							if (DrawPts->use_vr) {
@@ -527,9 +515,9 @@ namespace FPS_n2 {
 							}
 							else {
 								xp = t_disp_x / 2;
-								yp = Small.hight;
+								yp = Small->size;
 							}
-							Middle.ptr->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "%02d:%02d", int(this->timer) / 60, int(this->timer) % 60); yp += Middle.hight;
+							Middle->handle.DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "%02d:%02d", int(this->timer) / 60, int(this->timer) % 60); yp += Middle->size;
 						}
 					}
 					//警告
@@ -546,7 +534,7 @@ namespace FPS_n2 {
 										xp = t_disp_x / 2;
 										yp = t_disp_y / 2 + t_disp_y / 8;
 									}
-									Small.ptr->DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0));
+									Small->handle.DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0));
 								}
 							}
 						}
@@ -563,16 +551,16 @@ namespace FPS_n2 {
 						}
 						switch ((EnumSELECTER)mine->get_now_selector()) {
 						case EnumSELECTER::SELECT_SEMI:
-							Middle.ptr->DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
+							Middle->handle.DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
 							break;
 						case EnumSELECTER::SELECT_FULL:
-							Middle.ptr->DrawString_MID(xp, yp, "FULL AUTO", GetColor(0, 255, 0));
+							Middle->handle.DrawString_MID(xp, yp, "FULL AUTO", GetColor(0, 255, 0));
 							break;
 						case EnumSELECTER::SELECT_3B:
-							Middle.ptr->DrawString_MID(xp, yp, "3B", GetColor(0, 255, 0));
+							Middle->handle.DrawString_MID(xp, yp, "3B", GetColor(0, 255, 0));
 							break;
 						case EnumSELECTER::SELECT_2B:
-							Middle.ptr->DrawString_MID(xp, yp, "2B", GetColor(0, 255, 0));
+							Middle->handle.DrawString_MID(xp, yp, "2B", GetColor(0, 255, 0));
 							break;
 						}
 					}
@@ -587,15 +575,15 @@ namespace FPS_n2 {
 							yp = t_disp_y / 2 + t_disp_y / 12;
 						}
 						if (mine->get_canget_mag_f()) {
-							Small.ptr->DrawString_MID(xp, yp, mine->get_canget_mag_s() + "を拾う", GetColor(255, 255, 0)); yp += Small.hight;
+							Small->handle.DrawString_MID(xp, yp, mine->get_canget_mag_s() + "を拾う", GetColor(255, 255, 0)); yp += Small->size;
 						}
 
 						if (mine->get_canget_med_f()) {
-							Small.ptr->DrawString_MID(xp, yp, mine->get_canget_med() + "を拾う", GetColor(255, 255, 0)); yp += Small.hight;
+							Small->handle.DrawString_MID(xp, yp, mine->get_canget_med() + "を拾う", GetColor(255, 255, 0)); yp += Small->size;
 						}
 
 						if (mine->get_canride_f()) {
-							Small.ptr->DrawString_MID(xp, yp, "乗る", GetColor(255, 255, 0)); yp += Small.hight;
+							Small->handle.DrawString_MID(xp, yp, "乗る", GetColor(255, 255, 0)); yp += Small->size;
 						}
 					}
 					//弾薬
@@ -611,29 +599,29 @@ namespace FPS_n2 {
 							}
 							//銃
 							{
-								Small.ptr->DrawString(xp, yp, mine->get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
+								Small->handle.DrawString(xp, yp, mine->get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
 							}
 							//マガジン関連(仮)
 							{
 								int size = int(mine->gun_stat_now->get_magazine_in().size());
 								if (DrawPts->use_vr) {
-									xp = t_disp_x / 2 - y_r(140) + Middle.hight;
-									yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20) - Middle.hight * size;
+									xp = t_disp_x / 2 - y_r(140) + Middle->size;
+									yp = t_disp_y / 2 + t_disp_y / 6 + y_r(20) - Middle->size * size;
 								}
 								else {
-									xp = y_r(220) + Middle.hight;
-									yp = t_disp_y - y_r(20) - Middle.hight * size;
+									xp = y_r(220) + Middle->size;
+									yp = t_disp_y - y_r(20) - Middle->size * size;
 								}
 								for (auto& a : mine->gun_stat_now->get_magazine_in()) {
-									Middle.ptr->DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.m_cnt, a.cap);
+									Middle->handle.DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.m_cnt, a.cap);
 									if (&a == &mine->gun_stat_now->get_magazine_in().front()) {
 										if (mine->gun_stat_now->not_chamber_EMPTY()) {
-											Small.ptr->DrawString(xp + Middle.ptr->GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + Middle.hight - Small.hight, " +1", GetColor(255, 0, 0));
+											Small->handle.DrawString(xp + Middle->handle.GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + Middle->size - Small->size, " +1", GetColor(255, 0, 0));
 										}
-										DrawTriangle(xp - y_r(10), yp + 5, xp, yp + Middle.hight / 2, xp - y_r(10), yp + Middle.hight - 5, GetColor(255, 255, 0), FALSE);
-										xp -= Middle.hight / 3;
+										DrawTriangle(xp - y_r(10), yp + 5, xp, yp + Middle->size / 2, xp - y_r(10), yp + Middle->size - 5, GetColor(255, 255, 0), FALSE);
+										xp -= Middle->size / 3;
 									}
-									yp += Middle.hight;
+									yp += Middle->size;
 								}
 							}
 						}
@@ -652,15 +640,15 @@ namespace FPS_n2 {
 						int per = std::clamp(int(255.f * ((killt * 7) / 7.f)) - 255 * 6, 0, 255);
 
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-						DrawBox(xp - int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp, xp + int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp + Middle.hight + 2, GetColor(255, 255, 255), TRUE);
+						DrawBox(xp - int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp, xp + int(pow(per, 2)) * t_disp_x / 2 / int(pow(255, 2)), yp + Middle->size + 2, GetColor(255, 255, 255), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * ((killt * 2) / 7.f)), 0, 255));
-						Middle.ptr->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", mine->scores.kill_id); yp += Middle.hight * 2;	//キル
+						Middle->handle.DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", mine->scores.kill_id); yp += Middle->size * 2;	//キル
 
 						if (mine->scores.kill_streak > 0) {
 							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-							DrawBox(xp - int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp, xp + int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp + Middle.hight + 2, GetColor(255, 255, 255), TRUE);
+							DrawBox(xp - int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp, xp + int(pow(per, 4)) * t_disp_x / 2 / int(pow(255, 4)), yp + Middle->size + 2, GetColor(255, 255, 255), TRUE);
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * ((killt * 2) / 7.f)), 0, 255));
-							Middle.ptr->DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", mine->scores.kill_streak); yp += Middle.hight;			//キルストリーク
+							Middle->handle.DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", mine->scores.kill_streak); yp += Middle->size;			//キルストリーク
 						}
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					}
@@ -690,7 +678,7 @@ namespace FPS_n2 {
 						}
 						else {
 							xp = t_disp_x / 2;
-							yp = t_disp_y - Middle.hight * 2;
+							yp = t_disp_y - Middle->size * 2;
 							xs = y_r(600);
 							ys = y_r(18) + y_r(2);
 						}
@@ -700,17 +688,17 @@ namespace FPS_n2 {
 					{
 						/*
 						if (DrawPts->use_vr) {
-							xp = t_disp_x / 2 + t_disp_y / 6 + Middle.hight;
-							yp = t_disp_y / 2 - t_disp_y / 12 + Middle.hight;
+							xp = t_disp_x / 2 + t_disp_y / 6 + Middle->size;
+							yp = t_disp_y / 2 - t_disp_y / 12 + Middle->size;
 						}
 						else {
-							xp = t_disp_x - Middle.hight;
-							yp = t_disp_y / 2 - t_disp_y / 12 + Middle.hight;
+							xp = t_disp_x - Middle->size;
+							yp = t_disp_y / 2 - t_disp_y / 12 + Middle->size;
 						}
-						Middle.ptr->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", mine->scores.score); yp += Middle.hight;			//スコア
-						Middle.ptr->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", mine->scores.kill_cnt); yp += Middle.hight;			//キルデス
-						Middle.ptr->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", mine->scores.death_cnt); yp += Middle.hight;			//キルデス
-						Middle.ptr->DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float(mine->scores.kill_cnt) / float(std::max(mine->scores.death_cnt, 1))); yp += Middle.hight;			//キルデス
+						Middle->handle.DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", mine->scores.score); yp += Middle->size;			//スコア
+						Middle->handle.DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", mine->scores.kill_cnt); yp += Middle->size;			//キルデス
+						Middle->handle.DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "death      : %d", mine->scores.death_cnt); yp += Middle->size;			//キルデス
+						Middle->handle.DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill/death : %3.1f", float(mine->scores.kill_cnt) / float(std::max(mine->scores.death_cnt, 1))); yp += Middle->size;			//キルデス
 						//*/
 					}
 					//終わり
@@ -733,7 +721,7 @@ namespace FPS_n2 {
 						float rad = deg2rad(90 - per);
 						int col_r = GetColor(std::clamp(int(255.f * sin(rad) * 2.f), 0, 255), std::clamp(int(255.f * cos(rad) * 2.f), 0, 255), 0);
 						if (std::max((pos_gun - GetCameraPosition()).size(), 1.f) <= 10.f) {
-							int siz = Small.ptr->GetDrawWidthFormat("%04d", cnt);
+							int siz = Small->handle.GetDrawWidthFormat("%04d", cnt);
 							for (int i = 0; i < 4; i++) {
 								DrawBox(xp - siz / 2 + siz * i / 4 + 2 + 1, yp - y_r(30) - i * 2 + 1, xp - siz / 2 + siz * (i + 1) / 4 - 2 + 1, yp - y_r(10) + 1, GetColor(128, 128, 128), TRUE);
 							}
@@ -743,11 +731,11 @@ namespace FPS_n2 {
 							if (!mine->gun_stat_now->not_chamber_EMPTY()) {
 								//空警告
 								if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
-									Small.ptr->DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += Small.hight;
+									Small->handle.DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += Small->size;
 								}
 							}
 							else {
-								Small.ptr->DrawStringFormat_MID(xp, yp, col_r, "%04d", cnt);
+								Small->handle.DrawStringFormat_MID(xp, yp, col_r, "%04d", cnt);
 							}
 						}
 					}
@@ -825,8 +813,8 @@ namespace FPS_n2 {
 			void UI_Draw(void) noexcept {
 				set_fonts();
 				DrawBox(0, 0, t_disp_x, t_disp_y, GetColor(0, 0, 0), TRUE);
-				Small.ptr->DrawStringFormat(0, t_disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
-				Small.ptr->DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), GetColor(0, 255, 0), "%s 読み込み中 ", message.c_str());
+				Small->handle.DrawStringFormat(0, t_disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
+				Small->handle.DrawStringFormat_RIGHT(t_disp_x, t_disp_y - y_r(70), GetColor(0, 255, 0), "%s 読み込み中 ", message.c_str());
 				DrawBox(0, t_disp_y - y_r(50), int(float(t_disp_x) * bar / float(all)), t_disp_y - y_r(40), GetColor(0, 255, 0), TRUE);
 			}
 		};
