@@ -1751,7 +1751,7 @@ namespace FPS_n2 {
 					return (!no_y) ? this->pos_tt + this->HMD.move.pos : this->pos_tt;
 				}
 				else {
-					return (*MINE_v)->get_move().pos;
+					return (*MINE_v)->get_pos();
 				}
 			}
 			const float& get_body_yrad(void) const noexcept {
@@ -4305,7 +4305,7 @@ namespace FPS_n2 {
 
 						(*(*MINE_v)->MINE_c)->Set_eff(Effect::ef_fire, pos_t, vec_t, 0.1f / 0.1f);//ノーマル
 						(*MINE_v)->get_audio().fire.vol(128);
-						(*MINE_v)->get_audio().fire.play_3D((*MINE_v)->get_move().pos, 250.f);
+						(*MINE_v)->get_audio().fire.play_3D((*MINE_v)->get_pos(), 250.f);
 					}
 					this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
 					this->fired = std::max(this->fired - 1.f / FPS, 0.f);
@@ -4367,6 +4367,7 @@ namespace FPS_n2 {
 			float spd_rec;
 		public:
 			const VECTOR_ref& get_pos() const noexcept { return this->move.pos; }
+			const float& get_body_yrad(void) const noexcept { return this->body_yrad; }		//ミニマップ用
 
 			void sort_Hit() { std::sort(this->hitssort.begin(), this->hitssort.end(), [](const pair_hit& x, const pair_hit& y) { return x.second < y.second; }); }
 			std::vector<pair_hit>& get_hitssort() noexcept { return this->hitssort; }
@@ -4385,7 +4386,6 @@ namespace FPS_n2 {
 				}
 			}
 			const Audios_tanks& get_audio() const noexcept { return this->audio; }																	//audio(メニューのみ)
-			const float& get_body_yrad(void) const noexcept { return this->body_yrad; }														//ミニマップ用
 		public:
 			using PLAYER_COMMON::PLAYER_COMMON;
 			/*カメラ指定*/
@@ -4450,7 +4450,7 @@ namespace FPS_n2 {
 						for (auto& t : w2) {
 							t.frame = w[&t - &w2.front()];
 							t.gndsmkeffcs.set_loop(effsorce->back());
-							t.gndsmkeffcs.put_loop(VGet(0, -1, 0), VGet(0, 0, 1), 0.1f);
+							t.gndsmkeffcs.put_loop(VECTOR_ref::vget(0, -1, 0), VECTOR_ref::vget(0, 0, 1), 0.1f);
 							t.gndsmksize = 0.1f;
 						}
 					}
@@ -4730,9 +4730,9 @@ namespace FPS_n2 {
 					{
 						//戦車座標反映
 						auto pp = this->move.mat.zvec();
-						this->move.mat *= MATRIX_ref::RotY(-this->b2mine.Rad() - atan2f(-pp.x(), -pp.z()));
-						this->move.pos.x(this->b2mine.Pos().x);
-						this->move.pos.z(this->b2mine.Pos().y);
+						this->body_yrad = -this->b2mine.Rad() - atan2f(-pp.x(), -pp.z());
+						this->move.mat *= MATRIX_ref::RotY(this->body_yrad);
+						this->move.pos = VECTOR_ref::vget(this->b2mine.Pos().x, this->move.pos.y(), this->b2mine.Pos().y);
 						float spdrec = this->spd_buf;
 						easing_set(&this->spd_buf, this->b2mine.Speed() * ((this->spd_buf > 0) ? 1.f : -1.f), 0.99f);
 						this->speed = this->spd_buf - spdrec;

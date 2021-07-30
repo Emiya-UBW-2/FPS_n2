@@ -573,7 +573,33 @@ namespace FPS_n2 {
 		EnumGunParts pt_type_ = EnumGunParts::PARTS_NONE;		//ベースパーツの種類
 		size_t pt_sel_ = 0;						//ベースパーツの番号(マウントなど)
 	};
-	//
+	//シェーダー
+	class shader_Vertex {
+	public:
+		VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
+
+		// 頂点データの準備
+		void Set() {
+			int xp1 = 0;
+			int yp1 = 0;
+			int xp2 = deskx;
+			int yp2 = desky;
+			Screen_vertex[0].pos = VGet(float(xp1), float(desky - yp1), 0.0f);
+			Screen_vertex[1].pos = VGet(float(xp2), float(desky - yp1), 0.0f);
+			Screen_vertex[2].pos = VGet(float(xp1), float(desky - yp2), 0.0f);
+			Screen_vertex[3].pos = VGet(float(xp2), float(desky - yp2), 0.0f);
+			Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
+			Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
+			Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
+			Screen_vertex[3].dif = GetColorU8(255, 255, 255, 255);
+			Screen_vertex[0].u = 0.0f; Screen_vertex[0].v = 0.0f;
+			Screen_vertex[1].u = 1.0f; Screen_vertex[1].v = 0.0f;
+			Screen_vertex[2].u = 0.0f; Screen_vertex[3].v = 1.0f;
+			Screen_vertex[3].u = 1.0f; Screen_vertex[2].v = 1.0f;
+			Screen_vertex[4] = Screen_vertex[2];
+			Screen_vertex[5] = Screen_vertex[1];
+		}
+	};
 	class shaders {
 		int pshandle{ -1 }, vshandle{ -1 };
 		int pscbhandle{ -1 };
@@ -601,9 +627,6 @@ namespace FPS_n2 {
 			UpdateShaderConstantBuffer(this->pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
 			SetShaderConstantBuffer(this->pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
 		}
-		void draw(VERTEX3DSHADER Screen_vertex[]) {
-			draw_lamda([&] {DrawPolygon3DToShader(Screen_vertex, 2);});
-		}
 		void draw_lamda(std::function<void()> doing) {
 			SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
 			SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
@@ -613,9 +636,48 @@ namespace FPS_n2 {
 			SetUseVertexShader(-1);					// 使用する頂点シェーダーをセット
 			SetUsePixelShader(-1);					// 使用するピクセルシェーダーをセット
 		}
+		void draw(shader_Vertex& Screen_vertex) {
+			draw_lamda([&] {DrawPolygon3DToShader(Screen_vertex.Screen_vertex, 2); });
+		}
 	};
 	//
+	class EffectControl {
+	public:
+		LONGLONG update_effect_was = 0;					//エフェクトのアップデートタイミングタイマー
+		bool update_effect_f{ true };					//エフェクトのアップデートタイミングフラグ
+		std::vector<EffekseerEffectHandle> effsorce;	/*エフェクトリソース*/
 
+		void Init() {
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			HANDLE hFind = FindFirstFile("data/effect/*", &win32fdt);
+			if (hFind != INVALID_HANDLE_VALUE) {
+				do {
+					{
+						p = win32fdt.cFileName;
+						if (p.find(".efk") != std::string::npos) {
+							effsorce.resize(effsorce.size() + 1);
+							effsorce.back() = EffekseerEffectHandle::load("data/effect/" + p);
+						}
+					}
+				} while (FindNextFile(hFind, &win32fdt));
+			} //else{ return false; }
+			FindClose(hFind);
+			effsorce.resize(effsorce.size() + 1);
+			effsorce.back() = EffekseerEffectHandle::load("data/effect/gndsmk.efk");								//戦車用エフェクト
+		}
+
+		void Start() {
+			update_effect_was = GetNowHiPerformanceCount();
+		}
+
+		void Calc() {
+			update_effect_f = ((GetNowHiPerformanceCount() - update_effect_was) >= 1000000 / 60);
+			if (update_effect_f) {
+				update_effect_was = GetNowHiPerformanceCount();
+			}
+		}
+	};
 	//銃、マガジン共通モデル
 	class Models {
 	private:
@@ -1026,7 +1088,6 @@ namespace FPS_n2 {
 			this->id_t = id_;
 		}
 	};
-
 	//パーツデータ
 	class GUNPARTs :public BASE_Obj {
 		EnumGunParts type = EnumGunParts::PARTS_NONE;
@@ -1157,7 +1218,7 @@ namespace FPS_n2 {
 						}
 					}
 				}
-				});
+			});
 			if (this->type == EnumGunParts::PARTS_SIGHT) {
 				SetUseASyncLoadFlag(FALSE);
 				this->reticle = GraphHandle::Load(this->mod.get_path() + "/reticle.png");
@@ -1218,7 +1279,7 @@ namespace FPS_n2 {
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				this->repair = getparams::_long(this->mod.mdata);//
-				});
+			});
 		}
 	};
 	//薬品データ
@@ -1246,10 +1307,9 @@ namespace FPS_n2 {
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				this->time = getparams::_float(this->mod.mdata);//
-				});
+			});
 		}
 	};
-
 	//アイテム
 	class Items {
 	private:
@@ -1950,7 +2010,6 @@ namespace FPS_n2 {
 			}
 		}
 	};
-
 	//パーツデータ管理
 	class GUNPARTS_Control {
 	private:

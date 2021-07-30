@@ -10,14 +10,16 @@ namespace FPS_n2 {
 		//
 		class TEMPSCENE {
 		private:
-			//
+			VECTOR_ref Shadow_minpos;
+			VECTOR_ref Shadow_maxpos;
+			VECTOR_ref Light_vec;
+			COLOR_F Light_color = GetColorF(0, 0, 0, 0);
 		protected:
 			//引き継ぐ
 			std::shared_ptr<DXDraw> DrawPts;
 			std::shared_ptr<OPTION> OPTPTs;
 			std::shared_ptr<MAPclass::Map> MAPPTs;
 			std::shared_ptr<MAINLOOP> MAINLOOPscene;
-			std::shared_ptr<DeBuG> DebugPTs;		//仮
 			//UIsound
 			SoundHandle decision;
 			SoundHandle cancel;
@@ -34,13 +36,14 @@ namespace FPS_n2 {
 			float bless_ratio = 0.5f;
 			float bless = 0.f;
 			//
-			VECTOR_ref Shadow_minpos;
-			VECTOR_ref Shadow_maxpos;
-			VECTOR_ref Light_vec;
-			COLOR_F Light_color = GetColorF(0, 0, 0, 0);
-			COLOR_F Light_color_ref = GetColorF(0, 0, 0, 0);
-
 			std::vector<EffekseerEffectHandle>* effsorce{ nullptr };
+			//
+			virtual void Set_EnvLight(VECTOR_ref Shadow_minpos_t, VECTOR_ref Shadow_maxpos_t, VECTOR_ref Light_vec_t, COLOR_F Light_color_t) noexcept {
+				Shadow_minpos = Shadow_minpos_t;
+				Shadow_maxpos = Shadow_maxpos_t;
+				Light_vec = Light_vec_t;
+				Light_color = Light_color_t;
+			}
 		public:
 			scenes Next_scene{ scenes::NONE_SCENE };			//現在のシーン
 			std::shared_ptr<Sceneclass::TEMPSCENE> Next_scenes_ptr{ nullptr };
@@ -50,14 +53,12 @@ namespace FPS_n2 {
 				const std::shared_ptr<OPTION>& OPTPTs_t,
 				const std::shared_ptr<MAPclass::Map>& MAPPTs_t,
 				const std::shared_ptr<MAINLOOP>& MAINLOOPscene_t,
-				const std::shared_ptr<DeBuG>& DebugPTs_t,
 				std::vector<EffekseerEffectHandle>* effsorce_t
 			) noexcept {
 				DrawPts = DrawPts_t;
 				OPTPTs = OPTPTs_t;
 				MAPPTs = MAPPTs_t;
 				MAINLOOPscene = MAINLOOPscene_t;
-				DebugPTs = DebugPTs_t;
 				effsorce = effsorce_t;
 				this->decision = SoundHandle::Load("data/audio/chara/shot_2.wav");//
 				this->cancel = SoundHandle::Load("data/audio/chara/cancel.wav");
@@ -68,11 +69,7 @@ namespace FPS_n2 {
 				Next_scene = NEXT;
 			}
 
-			const VECTOR_ref& get_Shadow_minpos(void) const noexcept { return Shadow_minpos; }
-			const VECTOR_ref& get_Shadow_maxpos(void) const noexcept { return Shadow_maxpos; }
 			const VECTOR_ref& get_Light_vec(void) const noexcept { return Light_vec; }
-			const COLOR_F& get_Light_color(void) const noexcept { return Light_color; }
-			const COLOR_F& get_Light_color_ref(void) const noexcept { return Light_color_ref; }
 			cam_info& Get_Camera(void) noexcept { return camera_main; }
 
 			virtual void Set(void) noexcept {
@@ -80,7 +77,12 @@ namespace FPS_n2 {
 				SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
 				SetMousePoint(deskx / 2, desky / 2);											//
 				camera_main.set_cam_info(fov_base, 0.05f, 200.f);//1P
+
+				DrawPts->Set_Light_Shadow(Shadow_maxpos, Shadow_minpos, Light_vec, [&] {Shadow_Draw_Far(); });
+				SetGlobalAmbientLight(Light_color);
 			}
+
+
 			virtual bool UpDate(void) noexcept {
 				if (use_bless) {
 					bless += deg2rad(float(100 + GetRand(600)) / 100.f * Frame_Rate / GetFPS());
@@ -93,6 +95,14 @@ namespace FPS_n2 {
 			}
 			virtual void Dispose(void) noexcept {
 			}
+
+			virtual void ReadyDraw(void) noexcept {
+				//音位置指定
+				Set3DSoundListenerPosAndFrontPosAndUpVec(camera_main.campos.get(), camera_main.camvec.get(), camera_main.camup.get());
+				//影用意
+				DrawPts->Ready_Shadow(camera_main.campos, [&] { Shadow_Draw(); }, [&] { Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.5f, 2.5f, 2.5f), VECTOR_ref::vget(15.f, 2.5f, 15.f));//MAIN_LOOPのnearはこれ (Get_Mine()->Damage.get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
+			}
+
 			virtual void UI_Draw(void) noexcept {
 			}
 			virtual void BG_Draw(void) noexcept {
@@ -116,6 +126,35 @@ namespace FPS_n2 {
 			virtual void Item_Draw(void) noexcept {
 			}
 			virtual void LAST_Draw(void) noexcept {
+			}
+
+			virtual void KeyOperation(std::shared_ptr<key_bind>& KeyBind) noexcept {
+				/*
+				auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
+				//設定
+				mine_k.have_mag = true;
+				mine_k.wkey = KeyBind->get_key_use(0);
+				mine_k.skey = KeyBind->get_key_use(1);
+				mine_k.dkey = KeyBind->get_key_use(2);
+				mine_k.akey = KeyBind->get_key_use(3);
+				mine_k.qkey = KeyBind->get_key_use(4);
+				mine_k.ekey = KeyBind->get_key_use(5);
+				mine_k.reload = KeyBind->get_key_use(6);
+				mine_k.have_item = KeyBind->get_key_use(7);
+				mine_k.throw_gre = KeyBind->get_key_use(8);
+				KeyBind->key_use_ID[9].on_off.first = mine_k.squat;	//記憶
+				mine_k.squat = KeyBind->get_key_use(9);
+				mine_k.sort_magazine = KeyBind->get_key_use(12);
+				mine_k.running = KeyBind->get_key_use(13);
+				mine_k.jamp = KeyBind->get_key_use(14);
+				mine_k.TPS = KeyBind->get_key_use(15);
+				mine_k.view_gun = KeyBind->get_key_use(17);
+				mine_k.drop_ = KeyBind->get_key_use(19);
+				mine_k.shoot = KeyBind->get_mouse_use(0);
+				mine_k.select = KeyBind->get_mouse_use(1);
+				mine_k.aim = KeyBind->get_mouse_use(2);
+				mine_k.ride = KeyBind->get_key_use(20);
+				//*/
 			}
 		};
 		//
@@ -149,6 +188,14 @@ namespace FPS_n2 {
 			void Dispose(void) noexcept override {
 				UIparts->Dispose();
 			}
+
+			void KeyOperation(std::shared_ptr<key_bind>& KeyBind) noexcept override {
+				/*
+				auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
+				//設定
+				//*/
+			}
+
 		};
 		//
 		class LOAD : public TEMPSCENE {
@@ -255,6 +302,14 @@ namespace FPS_n2 {
 			}
 			void UI_Draw(void) noexcept override {
 				UIparts->UI_Draw(MAINLOOPscene->GetGunPartsControl(), save_parts, save_presets[preset_select]);
+			}
+
+			void KeyOperation(std::shared_ptr<key_bind>& KeyBind) noexcept override {
+				auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
+				//設定
+				mine_k.dkey = KeyBind->get_key_use(2);
+				mine_k.akey = KeyBind->get_key_use(3);
+				mine_k.jamp = KeyBind->get_key_use(14);
 			}
 		};
 		//
@@ -450,6 +505,8 @@ namespace FPS_n2 {
 
 			void Set(void) noexcept  override {
 				chara = &MAINLOOPscene->Get_Mine();
+				//ライティング
+				TEMPSCENE::Set_EnvLight(VECTOR_ref::vget(1.f, 1.f, 1.f), VECTOR_ref::vget(-1.f, -1.f, -1.f), VECTOR_ref::vget(0.5f, -0.5f, 0.5f), GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				TEMPSCENE::Set();
 				UIparts->Init(DrawPts, MAPPTs);
 				{
@@ -582,12 +639,6 @@ namespace FPS_n2 {
 					}
 					//save_parts.clear();
 				}
-				//ライティング
-				Shadow_maxpos = VECTOR_ref::vget(1.f, 1.f, 1.f);
-				Shadow_minpos = VECTOR_ref::vget(-1.f, -1.f, -1.f);
-				Light_vec = VECTOR_ref::vget(0.5f, -0.5f, 0.5f);
-				Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
-				Light_color_ref = GetColorF(0.20f, 0.20f, 0.23f, 0.0f);
 			}
 			bool UpDate(void) noexcept override {
 				TEMPSCENE::UpDate();
@@ -792,6 +843,19 @@ namespace FPS_n2 {
 					(*chara)->get_parts(EnumGunParts::PARTS_MAGAZINE)->Draw();
 				}
 			}
+
+			void KeyOperation(std::shared_ptr<key_bind>& KeyBind) noexcept override {
+				auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
+				//設定
+				mine_k.wkey = KeyBind->get_key_use(0);
+				mine_k.skey = KeyBind->get_key_use(1);
+				mine_k.dkey = KeyBind->get_key_use(2);
+				mine_k.akey = KeyBind->get_key_use(3);
+				mine_k.jamp = KeyBind->get_key_use(14);
+				mine_k.shoot = KeyBind->get_mouse_use(0);
+				mine_k.select = KeyBind->get_mouse_use(1);
+			}
+
 		};
 		//
 		class MAINLOOP : public TEMPSCENE {
@@ -879,6 +943,7 @@ namespace FPS_n2 {
 		public:
 			std::unique_ptr<GUNPARTS_Control>& GetGunPartsControl() noexcept { return GunPartses; }
 			std::shared_ptr<PLAYERclass::PLAYER_CHARA>& Get_Mine(void) noexcept { return this->chara[0]; }
+			const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& Get_Mine(void) const noexcept { return (this->chara.size() > 0) ? this->chara[0] : nullptr; }
 			std::vector<Meds>& get_meds_data(void) noexcept { return this->meds_data; }
 			std::vector<Grenades>& get_gres_data(void) noexcept { return this->gres_data; }
 		public:
@@ -937,6 +1002,7 @@ namespace FPS_n2 {
 			}
 		public:
 			void Set(void) noexcept override {
+				TEMPSCENE::Set_EnvLight(MAPPTs->map_col_get().mesh_maxpos(0), MAPPTs->map_col_get().mesh_minpos(0), VECTOR_ref::vget(0.5f, -0.5f, 0.5f), GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				TEMPSCENE::Set();
 				//NPCのカスタムattach
 				for (auto& c : this->chara) {
@@ -990,11 +1056,6 @@ namespace FPS_n2 {
 				TPSparts->Set(OPTPTs->Get_Fov());							//TPS
 				RULEparts->Set();									//ルール
 				//ライティング
-				Shadow_maxpos = MAPPTs->map_col_get().mesh_maxpos(0);
-				Shadow_minpos = MAPPTs->map_col_get().mesh_minpos(0);
-				Light_vec = VECTOR_ref::vget(0.5f, -0.5f, 0.5f);
-				Light_color = GetColorF(0.42f, 0.41f, 0.40f, 0.0f);
-				Light_color_ref = GetColorF(0.20f, 0.20f, 0.23f, 0.0f);
 				//環境
 				MAPPTs->Set();
 			}
@@ -1196,6 +1257,34 @@ namespace FPS_n2 {
 				//minimap
 				MiniMAPPTs->Draw();
 			}
+
+			void KeyOperation(std::shared_ptr<key_bind>& KeyBind) noexcept override {
+				auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
+				//設定
+				mine_k.have_mag = true;
+				mine_k.wkey = KeyBind->get_key_use(0);
+				mine_k.skey = KeyBind->get_key_use(1);
+				mine_k.dkey = KeyBind->get_key_use(2);
+				mine_k.akey = KeyBind->get_key_use(3);
+				mine_k.qkey = KeyBind->get_key_use(4);
+				mine_k.ekey = KeyBind->get_key_use(5);
+				mine_k.reload = KeyBind->get_key_use(6);
+				mine_k.have_item = KeyBind->get_key_use(7);
+				mine_k.throw_gre = KeyBind->get_key_use(8);
+				KeyBind->key_use_ID[9].on_off.first = mine_k.squat;	//記憶
+				mine_k.squat = KeyBind->get_key_use(9);
+				mine_k.sort_magazine = KeyBind->get_key_use(12);
+				mine_k.running = KeyBind->get_key_use(13);
+				mine_k.jamp = KeyBind->get_key_use(14);
+				mine_k.TPS = KeyBind->get_key_use(15);
+				mine_k.view_gun = KeyBind->get_key_use(17);
+				mine_k.drop_ = KeyBind->get_key_use(19);
+				mine_k.shoot = KeyBind->get_mouse_use(0);
+				mine_k.select = KeyBind->get_mouse_use(1);
+				mine_k.aim = KeyBind->get_mouse_use(2);
+				mine_k.ride = KeyBind->get_key_use(20);
+			}
+
 		};
 	};
 };
