@@ -1104,17 +1104,19 @@ namespace FPS_n2 {
 					this->move.mat = get_mat_XZ();
 				}
 				void UpDate_pos(const char& device_num, const bool flag_start_loop_t) noexcept {
-					auto ptr_ = &(*DrawPts->get_device())[device_num];
 					DrawPts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
+
+					auto ptr_ = &(*DrawPts->get_device())[device_num];
 					if (flag_start_loop_t || (ptr_->turn && ptr_->now) != this->oldv_2) {
 						this->move_start.SetPos(get_pos_noY());
 					}
 					this->oldv_2 = ptr_->turn && ptr_->now;
 				}
 				void UpDate_mat(const char& device_num, const bool flag_start_loop_t) noexcept {
-					auto ptr_ = &(*DrawPts->get_device())[device_num];
 					DrawPts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
 					this->move.mat = get_mat_XZ();
+
+					auto ptr_ = &(*DrawPts->get_device())[device_num];
 					if ((flag_start_loop_t || (ptr_->turn && ptr_->now) != this->oldv_2) && this->oldv_2_2) {
 						this->move_start.mat = this->move.mat;
 					}
@@ -2158,17 +2160,26 @@ namespace FPS_n2 {
 					BodyFrameLocalMatrix(this->obj_body, this->frame_s.LEFTarm2_f, a2_inv);
 					//手
 					BodyFrameLocalMatrix(this->obj_body, this->frame_s.LEFThand_f);
-					auto ans1_ = this->LEFT_pos_Anim(0);
-					auto ans2_ = this->LEFT_pos_Anim(1);
-					auto ans3_ = this->LEFT_pos_Anim(2);
-					MATRIX_ref a3_inv = MATRIX_ref::RotVec2(
-						MATRIX_ref::Vtrans(this->BodyFrame(this->frame_s.LEFThand2_f.first) - this->BodyFrame(this->frame_s.LEFThand_f.first), m_inv.Inverse() * a1_inv.Inverse() * a2_inv.Inverse()),
-						MATRIX_ref::Vtrans(ans2_ - ans1_, m_inv.Inverse() * a1_inv.Inverse() * a2_inv.Inverse()));
-					BodyFrameLocalMatrix(this->obj_body, this->frame_s.LEFThand_f, a3_inv);
-					MATRIX_ref a3_yvec = MATRIX_ref::RotVec2(
-						MATRIX_ref::Vtrans(this->BodyFrameMatrix(this->frame_s.LEFThand_f.first).zvec() * -1.f, m_inv.Inverse() * a1_inv.Inverse() * a2_inv.Inverse() * a3_inv.Inverse()),
-						MATRIX_ref::Vtrans(ans3_ - ans1_, m_inv.Inverse() * a1_inv.Inverse() * a2_inv.Inverse() * a3_inv.Inverse()));
-					BodyFrameLocalMatrix(this->obj_body, this->frame_s.LEFThand_f, a3_yvec * a3_inv);
+					if (!this->LEFT_hand) {
+						BodyFrameLocalMatrix(this->obj_body, this->frame_s.LEFThand_f,
+							MATRIX_ref::RotZ(deg2rad(0))*
+							MATRIX_ref::RotX(deg2rad(80))*
+							this->LEFTHAND.move.mat*
+							m_inv.Inverse()*a1_inv.Inverse()*a2_inv.Inverse());
+					}
+					else {
+						auto ans1_ = this->LEFT_pos_Anim(0);
+						auto ans2_ = this->LEFT_pos_Anim(1);
+						auto ans3_ = this->LEFT_pos_Anim(2);
+						MATRIX_ref a3_inv = MATRIX_ref::RotVec2(
+							MATRIX_ref::Vtrans(this->BodyFrame(this->frame_s.LEFThand2_f.first) - this->BodyFrame(this->frame_s.LEFThand_f.first), m_inv.Inverse() * a1_inv.Inverse() * a2_inv.Inverse()),
+							MATRIX_ref::Vtrans(ans2_ - ans1_, m_inv.Inverse() * a1_inv.Inverse() * a2_inv.Inverse()));
+						BodyFrameLocalMatrix(this->obj_body, this->frame_s.LEFThand_f, a3_inv);
+						MATRIX_ref a3_yvec = MATRIX_ref::RotVec2(
+							MATRIX_ref::Vtrans(this->BodyFrameMatrix(this->frame_s.LEFThand_f.first).zvec() * -1.f, m_inv.Inverse() * a1_inv.Inverse() * a2_inv.Inverse() * a3_inv.Inverse()),
+							MATRIX_ref::Vtrans(ans3_ - ans1_, m_inv.Inverse() * a1_inv.Inverse() * a2_inv.Inverse() * a3_inv.Inverse()));
+						BodyFrameLocalMatrix(this->obj_body, this->frame_s.LEFThand_f, a3_yvec * a3_inv);
+					}
 				}
 				//右
 				else {
@@ -2885,9 +2896,13 @@ namespace FPS_n2 {
 					if (this->Damage.get_alive()) {
 						//右手
 						this->RIGHTHAND.UpDate_none(DrawPts->get_hand1_num());
+						this->RIGHTHAND.move.pos += (this->pos_tt - this->HMD.move_start.pos);
+						
 						this->RIGHTHAND.move.mat = this->RIGHTHAND.move.mat * MATRIX_ref::RotAxis(this->RIGHTHAND.move.mat.xvec(), deg2rad(-60));
 						//左手
 						this->LEFTHAND.UpDate_none(DrawPts->get_hand2_num());
+						this->LEFTHAND.move.pos += (this->pos_tt - this->HMD.move_start.pos);
+
 						this->LEFTHAND.move.mat *= MATRIX_ref::RotAxis(this->LEFTHAND.move.mat.xvec(), deg2rad(-60));
 
 						this->RIGHTHAND.move.mat = get_res_blur(1.f) * this->RIGHTHAND.move.mat;//リコイル
@@ -3552,6 +3567,9 @@ namespace FPS_n2 {
 				this->WAIST.Set(DrawPts);
 				this->LEFTREG.Set(DrawPts);
 				this->RIGHTREG.Set(DrawPts);
+				this->RIGHTHAND.Set(DrawPts);							//右手座標系
+				this->LEFTHAND.Set(DrawPts);							//左手座標系
+
 #endif // _USE_OPENVR_
 				this->flag_start_loop = true;
 				this->ratio_move = 0.f;
@@ -4730,8 +4748,8 @@ namespace FPS_n2 {
 					{
 						//戦車座標反映
 						auto pp = this->move.mat.zvec();
-						this->body_yrad = -this->b2mine.Rad() - atan2f(-pp.x(), -pp.z());
-						this->move.mat *= MATRIX_ref::RotY(this->body_yrad);
+						this->body_yrad = atan2f(-pp.x(), -pp.z());
+						this->move.mat *= MATRIX_ref::RotY(-this->b2mine.Rad() - this->body_yrad);
 						this->move.pos = VECTOR_ref::vget(this->b2mine.Pos().x, this->move.pos.y(), this->b2mine.Pos().y);
 						float spdrec = this->spd_buf;
 						easing_set(&this->spd_buf, this->b2mine.Speed() * ((this->spd_buf > 0) ? 1.f : -1.f), 0.99f);

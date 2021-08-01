@@ -76,7 +76,12 @@ namespace FPS_n2 {
 				fov_base = deg2rad(DrawPts->use_vr ? 120 : OPTPTs->Get_Fov());	//fov
 				SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
 				SetMousePoint(deskx / 2, desky / 2);											//
-				camera_main.set_cam_info(fov_base, 0.05f, 200.f);//1P
+				if (DrawPts->use_vr) {
+					camera_main.set_cam_info(fov_base, 0.001f, 100.f);//1P
+				}
+				else {
+					camera_main.set_cam_info(fov_base, 0.05f, 200.f);//1P
+				}
 
 				DrawPts->Set_Light_Shadow(Shadow_maxpos, Shadow_minpos, Light_vec, [&] {Shadow_Draw_Far(); });
 				SetGlobalAmbientLight(Light_color);
@@ -943,7 +948,7 @@ namespace FPS_n2 {
 		public:
 			std::unique_ptr<GUNPARTS_Control>& GetGunPartsControl() noexcept { return GunPartses; }
 			std::shared_ptr<PLAYERclass::PLAYER_CHARA>& Get_Mine(void) noexcept { return this->chara[0]; }
-			const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& Get_Mine(void) const noexcept { return (this->chara.size() > 0) ? this->chara[0] : nullptr; }
+			const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& Get_Mine_const(void) const noexcept { return (this->chara.size() > 0) ? this->chara[0] : nullptr; }
 			std::vector<Meds>& get_meds_data(void) noexcept { return this->meds_data; }
 			std::vector<Grenades>& get_gres_data(void) noexcept { return this->gres_data; }
 		public:

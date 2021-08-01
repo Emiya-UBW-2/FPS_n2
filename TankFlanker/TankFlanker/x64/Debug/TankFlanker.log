@@ -109,8 +109,11 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1623
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1642): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1642): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(89): warning C4100: 'renderer': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(136): warning C4100: 'KeyBind': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(197): warning C4100: 'KeyBind': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(951): warning C4172: ローカル変数またはテンポラリのアドレスを返します
   TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Debug\FPS_n2.exe

@@ -14,7 +14,6 @@ namespace std {
 namespace FPS_n2 {
 	//フォントプール
 	class FontPool {
-		static const int pool_s = 16;
 	public:
 		class Fonthave {
 		public:

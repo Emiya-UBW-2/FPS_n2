@@ -38,12 +38,12 @@ namespace FPS_n2 {
 						t_disp_y = desky;
 					}
 					SetUseASyncLoadFlag(TRUE);
+					SetUseASyncLoadFlag(FALSE);
 					this->Font72 = Fonts.Get(y_r(72));
 					this->Font48 = Fonts.Get(y_r(48));
 					this->Font36 = Fonts.Get(y_r(36));
 					this->Font24 = Fonts.Get(y_r(24));
 					this->Font18 = Fonts.Get(y_r(18));
-					SetUseASyncLoadFlag(FALSE);
 				}
 			}
 			void set_fonts() {

@@ -10,8 +10,8 @@ namespace FPS_n2 {
 		bool selend{ true };
 		bool selpause{ true };
 		//シェーダー
-		shader_Vertex Screen_vertex;					// 頂点データ
-		std::array<shaders, 2> shader2D;
+		//shader_Vertex Screen_vertex;					// 頂点データ
+		//std::array<shaders, 2> shader2D;
 		//エフェクト
 		EffectControl effectControl;
 	public:
@@ -22,13 +22,13 @@ namespace FPS_n2 {
 			auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 #endif // DEBUG
 			OPTPTs->Set_useVR(DrawPts->use_vr);
-			Screen_vertex.Set();			// 頂点データの準備
 			//エフェクト
 			effectControl.Init();
 			//シェーダー
 			auto HostpassPTs = std::make_shared<HostPassEffect>(OPTPTs, DrawPts->disp_x, DrawPts->disp_y);				//ホストパスエフェクト(VR、フルスクリーン共用)
-			shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
-			shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");									//歪み
+			//Screen_vertex.Set();			// 頂点データの準備
+			//shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
+			//shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");									//歪み
 			//MAP
 			auto MAPPTs = std::make_shared<MAPclass::Map>(OPTPTs->Get_grass_level(), DrawPts->disp_x, DrawPts->disp_y);
 			MAPPTs->Set_mine(MAPPTs);
@@ -116,7 +116,7 @@ namespace FPS_n2 {
 						if (!selpause) {
 							if (DrawPts->use_vr) {
 #ifdef _USE_OPENVR_
-								if (MAINLOOPscene->Get_Mine() != nullptr) {
+								if (MAINLOOPscene->Get_Mine_const() != nullptr) {
 									auto& mine_k = MAINLOOPscene->Get_Mine()->set_key_();
 									if (DrawPts->get_hand1_num() != -1) {
 										auto ptr_ = DrawPts->get_device_hand1();
@@ -141,6 +141,7 @@ namespace FPS_n2 {
 									}
 								}
 #endif // _USE_OPENVR_
+								scenes_ptr->KeyOperation(KeyBind);
 							}
 							else {
 								scenes_ptr->KeyOperation(KeyBind);
@@ -170,6 +171,7 @@ namespace FPS_n2 {
 									//最終描画
 									HostpassPTs->Set_MAIN_draw();
 								}
+								/*
 								GraphHandle::SetDraw_Screen(tmp);
 								{
 									SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());	//使用するテクスチャをセット
@@ -196,6 +198,7 @@ namespace FPS_n2 {
 									}
 									SetUseTextureToShader(0, -1);	//使用するテクスチャをセット
 								}
+								//*/
 								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_, false);
 								{
 									HostpassPTs->MAIN_draw();						//デフォ描画
@@ -209,6 +212,7 @@ namespace FPS_n2 {
 						{
 							//描画
 							if (DrawPts->use_vr) {
+								DrawBox(0, 0, 2160, 2400, GetColor(255, 255, 255), TRUE);
 								DrawPts->outScreen[0].DrawRotaGraph(960, 540, 0.5f, 0, false);
 							}
 							else {
