@@ -16,20 +16,23 @@ namespace FPS_n2 {
 	class FontPool {
 	public:
 		class Fonthave {
-		public:
 			int size = 0;
 			FontHandle handle;
 		public:
+			const auto& Get_size(void)const noexcept { return size; }
+			const auto& Get_handle(void)const noexcept { return handle; }
 			void Set(int siz_t) {
 				this->size = siz_t;
+				SetUseASyncLoadFlag(TRUE);
 				this->handle = FontHandle::Create(siz_t, DX_FONTTYPE_EDGE);
+				SetUseASyncLoadFlag(FALSE);
 			}
 		};
+	private:
 		std::vector<Fonthave> havehandle;
-	public:
 		size_t Add(int siz_t) {
 			for (auto& h : this->havehandle) {
-				if (h.size == siz_t) {
+				if (h.Get_size() == siz_t) {
 					return &h - &this->havehandle.front();
 				}
 			}
@@ -37,8 +40,8 @@ namespace FPS_n2 {
 			this->havehandle.back().Set(siz_t);
 			return this->havehandle.size() - 1;
 		}
-
-		Fonthave* Get(int siz_t) {
+	public:
+		Fonthave* Get_haveptr(int siz_t) {
 			return &this->havehandle[Add(siz_t)];
 		}
 	};
@@ -55,11 +58,11 @@ namespace FPS_n2 {
 		class key_pair {
 			int first = 0;
 			int use_mode = 0;
+			switchs on_off;
 		public:
 			std::string second;
 			bool isalways{ false };
 			keyhandle* use_handle{ nullptr };
-			switchs on_off;
 
 			const auto& Get_first()const noexcept { return first; }
 
@@ -68,7 +71,8 @@ namespace FPS_n2 {
 				second = second_t;
 				use_mode = mode;
 			}
-			bool get_key(int id, bool checkupdate) {
+			//private:
+			bool Get_key(int id, bool checkupdate) {
 				switch (id) {
 					//キー
 				case 0:
@@ -100,10 +104,13 @@ namespace FPS_n2 {
 					return CheckHitKey(this->first) != 0;
 				}
 			}
-
-			bool get_key_Auto(bool checkupdate) {
+			//public:
+			void set_key(bool t) {
+				on_off.first = t;
+			}
+			bool Get_key_Auto(bool checkupdate) {
 				this->isalways = true;
-				return this->get_key(this->use_mode, checkupdate);
+				return this->Get_key(this->use_mode, checkupdate);
 
 			}
 		};
@@ -127,16 +134,16 @@ namespace FPS_n2 {
 		std::vector<key_pair> key_use_ID;
 		std::vector<key_pair> mouse_use_ID;
 		//
-		bool get_key_use(int id_t) {
-			return key_use_ID[id_t].get_key_Auto(true);
+		bool Get_key_use(EnumKeyBind id_t) {
+			return key_use_ID[(int)id_t].Get_key_Auto(true);
 		}
-		bool get_mouse_use(int id_t) {
-			return mouse_use_ID[id_t].get_key_Auto(true);
+		bool Get_mouse_use(EnumMouseBind id_t) {
+			return mouse_use_ID[(int)id_t].Get_key_Auto(true);
 		}
 		//
 		key_bind(void) noexcept {
 			SetUseASyncLoadFlag(FALSE);
-			Font24 = Fonts.Get(y_r(24));
+			Font24 = Fonts.Get_haveptr(y_r(24));
 			mousehandle = GraphHandle::Load("data/key/mouse.png");
 			SetTransColor(0, 255, 0);
 			keyboad = GraphHandle::Load("data/key/keyboad.png");
@@ -291,7 +298,7 @@ namespace FPS_n2 {
 			}
 		}
 		//
-		const auto Esc_key(void) noexcept { return this->key_use_ID[11].get_key_Auto(true); }
+		const auto Esc_key(void) noexcept { return this->key_use_ID[(int)EnumKeyBind::ESCAPE].Get_key_Auto(true); }
 		//
 		void reSet_isalways(void) noexcept {
 			for (auto& i : this->key_use_ID) {
@@ -303,7 +310,7 @@ namespace FPS_n2 {
 		}
 		//
 		void draw(void) noexcept {
-			auto tmp_f1 = this->key_use_ID[16].get_key_Auto(true);
+			auto tmp_f1 = this->key_use_ID[(int)EnumKeyBind::INFO].Get_key_Auto(true);
 			easing_set(&F1_f, float(tmp_f1), 0.9f);
 			noF1_f = std::max(noF1_f - 1.f / FPS, 0.f);
 			//インフォ
@@ -327,7 +334,7 @@ namespace FPS_n2 {
 							if (m.use_part != nullptr) {
 								xp_sk = xp_t + y_r(m.key.px);
 								yp_sk = yp_t + y_r(m.key.py);
-								if (m.use_part->get_key(0, false)) {//keyboad
+								if (m.use_part->Get_key(0, false)) {//keyboad
 									m.onhandle.DrawRotaGraph(xp_sk + y_size_k / 2, yp_sk + y_size_k / 2, float(y_size_k - y_r(4)) / 26.f, 0.f, false);
 								}
 								else {
@@ -340,7 +347,7 @@ namespace FPS_n2 {
 						yp_sk = y_r(800);
 						for (auto& m : this->keyg2) {
 							if (m.use_part != nullptr) {
-								if (m.use_part->get_key(3, false)) {
+								if (m.use_part->Get_key(3, false)) {
 									m.onhandle.GetSize(nullptr, &yss);
 									m.onhandle.DrawRotaGraph(xp_sk, yp_sk, float(y_r(float(256) / yss * 100)) / 100.f, 0.f, true);
 								}
@@ -357,7 +364,7 @@ namespace FPS_n2 {
 						float siz_t = float(y_size - 4) / 25.f;
 						for (auto& i : this->key_use_ID) {
 							if (i.isalways && i.use_handle != nullptr) {
-								if (i.get_key(0, false)) {
+								if (i.Get_key(0, false)) {
 									i.use_handle->onhandle.GetSize(&xss, &yss);
 									xss = int(float(xss) * siz_t);
 									yss = int(float(yss) * siz_t);
@@ -369,7 +376,7 @@ namespace FPS_n2 {
 									yss = int(float(yss) * siz_t);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, siz_t, 0.f, false);
 								}
-								Font24->handle.DrawString(xp_s, yp_s + (y_size - Font24->size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
+								Font24->Get_handle().DrawString(xp_s, yp_s + (y_size - Font24->Get_size()) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
 							}
 						}
 						for (auto& i : this->mouse_use_ID) {
@@ -378,7 +385,7 @@ namespace FPS_n2 {
 									mousehandle.GetSize(nullptr, &yss);
 									mousehandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
-								if (i.get_key(3, false)) {
+								if (i.Get_key(3, false)) {
 									i.use_handle->onhandle.GetSize(nullptr, &yss);
 									i.use_handle->onhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
@@ -386,7 +393,7 @@ namespace FPS_n2 {
 									i.use_handle->offhandle.GetSize(nullptr, &yss);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
-								Font24->handle.DrawString(xp_s, yp_s + (y_size - Font24->size) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
+								Font24->Get_handle().DrawString(xp_s, yp_s + (y_size - Font24->Get_size()) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
 							}
 						}
 					}
@@ -403,7 +410,7 @@ namespace FPS_n2 {
 						if (i.isalways) {
 							for (auto& m : this->keyg) {
 								if (m.key.mac == i.Get_first()) {
-									if (i.get_key(0, false)) {
+									if (i.Get_key(0, false)) {
 										noF1_f = 3.f;
 										m.onhandle.GetSize(&xss, &yss);
 										xss = int(float(xss) * siz_t);
@@ -429,7 +436,7 @@ namespace FPS_n2 {
 										mousehandle.GetSize(&xss, &yss);
 										mousehandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 									}
-									if (i.get_key(3, false)) {
+									if (i.Get_key(3, false)) {
 										noF1_f = 3.f;
 										m.onhandle.GetSize(&xss, &yss);
 										m.onhandle.DrawRotaGraph(xp_s + x_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
@@ -450,7 +457,7 @@ namespace FPS_n2 {
 						if (i.isalways) {
 							for (auto& m : this->keyg) {
 								if (m.key.mac == i.Get_first()) {
-									if (i.get_key(0, false)) {
+									if (i.Get_key(0, false)) {
 										noF1_f = 3.f;
 									}
 								}
@@ -461,7 +468,7 @@ namespace FPS_n2 {
 						if (i.isalways) {
 							for (auto& m : this->keyg2) {
 								if (m.key.mac == i.Get_first()) {
-									if (i.get_key(3, false)) {
+									if (i.Get_key(3, false)) {
 										noF1_f = 3.f;
 									}
 								}
@@ -490,27 +497,27 @@ namespace FPS_n2 {
 		pause_menu(std::shared_ptr<key_bind>& KeyBind_t) noexcept {
 			KeyBind = KeyBind_t;
 			SetUseASyncLoadFlag(FALSE);
-			Font24 = Fonts.Get(y_r(24));
+			Font24 = Fonts.Get_haveptr(y_r(24));
 		}
 		//
-		const auto Pause_key(void) noexcept { return KeyBind->key_use_ID[18].get_key_Auto(true); }
+		const auto Pause_key(void) noexcept { return KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(true); }
 		//
 		bool Update(void) noexcept {
-			KeyBind->key_use_ID[10].isalways = KeyBind->key_use_ID[18].get_key_Auto(false);
+			KeyBind->key_use_ID[(int)EnumKeyBind::BACK_TITLE].isalways = KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(false);
 
 			SetMouseDispFlag(TRUE);
 
 			bool selend = true;
 			//強制帰還はポーズメニューで
-			if (KeyBind->key_use_ID[10].get_key(0, false)) {
-				KeyBind->key_use_ID[18].on_off.first = false;
+			if (KeyBind->key_use_ID[(int)EnumKeyBind::BACK_TITLE].Get_key_Auto(true)) {
+				KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].set_key(false);
 				selend = false;
 			}
 			return selend;
 		}
 		//
 		void draw(void) noexcept {
-			auto tmp_P = KeyBind->key_use_ID[18].on_off.on();
+			auto tmp_P = KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(false);
 			easing_set(&P_f, float(tmp_P), 0.9f);
 			//インフォ
 			if (P_f > 0.1f) {
@@ -527,11 +534,11 @@ namespace FPS_n2 {
 				if (P_f > 0.9f) {
 					yp_t = 100;
 					//
-					Font24->handle.DrawString_RIGHT(deskx - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += Font24->size + 30;
+					Font24->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += Font24->Get_size() + 30;
 					//
-					Font24->handle.DrawString_RIGHT(deskx - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += Font24->size + 30;
+					Font24->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += Font24->Get_size() + 30;
 					//
-					Font24->handle.DrawString_RIGHT(deskx - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += Font24->size + 30;
+					Font24->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += Font24->Get_size() + 30;
 					//
 				}
 			}
@@ -545,17 +552,17 @@ namespace FPS_n2 {
 		float Ready = 0.f;
 		float timer = 0.f;
 	public:
-		float get_timer(void) const noexcept { return timer; }
-		float get_Ready(void) const noexcept { return Ready; }
-		bool get_Start(void) const noexcept { return Ready <= 0.f; }
-		bool get_Playing(void) const noexcept { return get_Start() && !get_end(); }
-		bool get_end(void) const noexcept { return timer <= 0.f; }
+		const auto& Get_timer(void) const noexcept { return timer; }
+		const auto& Get_Ready(void) const noexcept { return Ready; }
+		const auto Get_Start(void) const noexcept { return Ready <= 0.f; }
+		const auto Get_end(void) const noexcept { return timer <= 0.f; }
+		const auto Get_Playing(void) const noexcept { return Get_Start() && !Get_end(); }
 		void Set(void) noexcept {
 			Ready = 3.0f;
 			timer = 180.f;
 		}
 		void UpDate(void) noexcept {
-			if (get_Start()) {
+			if (Get_Start()) {
 				timer -= 1.f / FPS;
 			}
 			else {
@@ -688,9 +695,9 @@ namespace FPS_n2 {
 		std::array<frames, 3> LEFT_mag_frame;	//左手座標(マガジン保持時)
 		std::array<frames, 2> magazine_f;		//マガジンフレーム
 	public:
-		auto& get_name() const noexcept { return name; }
-		auto& get_path() const noexcept { return path; }
-		auto& get_model() const noexcept { return model; }
+		auto& Get_name() const noexcept { return name; }
+		auto& Get_path() const noexcept { return path; }
+		auto& Get_model() const noexcept { return model; }
 		const frames& getmagazine_ammo_f(int i) const noexcept { return magazine_ammo_f[i]; }
 		const frames& getLEFT_mag_frame(int i) const noexcept { return LEFT_mag_frame[i]; }
 		const frames& getmagazine_f(int i) const noexcept { return magazine_f[i]; }
@@ -868,14 +875,14 @@ namespace FPS_n2 {
 		int damage = 10;//ダメージ
 	public:
 		float& set_pene(void) noexcept { return pene; }
-		MV1& get_model(void) noexcept { return model; }
+		MV1& Get_model(void) noexcept { return model; }
 
-		const auto& get_model_full(void) const noexcept { return model_full; }
-		const float& get_caliber(void) const noexcept { return caliber; }
-		const float& get_speed(void) const noexcept { return speed; }
-		const float& get_pene(void) const noexcept { return pene; }
-		const int& get_damage(void) const noexcept { return damage; }
-		std::string& get_name(void) noexcept { return name; }
+		const auto& Get_model_full(void) const noexcept { return model_full; }
+		const float& Get_caliber(void) const noexcept { return caliber; }
+		const float& Get_speed(void) const noexcept { return speed; }
+		const float& Get_pene(void) const noexcept { return pene; }
+		const int& Get_damage(void) const noexcept { return damage; }
+		std::string& Get_name(void) noexcept { return name; }
 
 		auto& Set_speed(void) noexcept { return speed; }
 
@@ -1217,10 +1224,10 @@ namespace FPS_n2 {
 						}
 					}
 				}
-			});
+				});
 			if (this->type == EnumGunParts::PARTS_SIGHT) {
 				SetUseASyncLoadFlag(FALSE);
-				this->reticle = GraphHandle::Load(this->mod.get_path() + "/reticle.png");
+				this->reticle = GraphHandle::Load(this->mod.Get_path() + "/reticle.png");
 				SetUseASyncLoadFlag(FALSE);
 			}
 			if (this->type == EnumGunParts::PARTS_BASE) {
@@ -1278,7 +1285,7 @@ namespace FPS_n2 {
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				this->repair = getparams::_long(this->mod.mdata);//
-			});
+				});
 		}
 	};
 	//薬品データ
@@ -1306,7 +1313,7 @@ namespace FPS_n2 {
 			//テキスト
 			this->mod.Set_([&](void) noexcept {
 				this->time = getparams::_float(this->mod.mdata);//
-			});
+				});
 		}
 	};
 	//アイテム
@@ -1328,16 +1335,16 @@ namespace FPS_n2 {
 		Grenades grenades;
 	public:
 		bool flag_canlook_player{ true };
-		auto& get_ptr_mag(void) const noexcept { return ptr_mag; }
-		auto& get_ptr_med(void) const noexcept { return ptr_med; }
-		auto& get_magazine(void) const noexcept { return magazine_param; }
-		auto& get_pos_(void) const noexcept { return move.pos; }
+		auto& Get_ptr_mag(void) const noexcept { return ptr_mag; }
+		auto& Get_ptr_med(void) const noexcept { return ptr_med; }
+		auto& Get_magazine(void) const noexcept { return magazine_param; }
+		auto& Get_pos_(void) const noexcept { return move.pos; }
 	private:
 		//mag
 		void Set_item(GUNPARTs* magdata, const moves& move_, size_t dnm = SIZE_MAX) {
 			this->move = move_;
 			this->ptr_mag = magdata;
-			this->obj = this->ptr_mag->mod.get_model().Duplicate();
+			this->obj = this->ptr_mag->mod.Get_model().Duplicate();
 			if (dnm == SIZE_MAX) {
 				if (this->ptr_mag != nullptr) {
 					this->magazine_param.mag_cnt = int(this->ptr_mag->mag_cnt);
@@ -1350,7 +1357,7 @@ namespace FPS_n2 {
 				if (this->magazine_param.ammo.size() < this->ptr_mag->ammo.size()) {
 					this->magazine_param.ammo.resize(this->ptr_mag->ammo.size());
 				}
-				this->magazine_param.ammo[0].get_name() = this->ptr_mag->ammo[0].get_name();
+				this->magazine_param.ammo[0].Get_name() = this->ptr_mag->ammo[0].Get_name();
 			}
 			this->del_timer = (this->magazine_param.mag_cnt == 0) ? 5.f : 20.f;
 		}
@@ -1358,13 +1365,13 @@ namespace FPS_n2 {
 		void Set_item(Meds* meddata, const moves& move_) {
 			this->move = move_;
 			this->ptr_med = meddata;
-			this->obj = this->ptr_med->mod.get_model().Duplicate();
+			this->obj = this->ptr_med->mod.Get_model().Duplicate();
 		}
 		//med
 		void Set_item(Grenades* gredata, const moves& move_) {
 			this->move = move_;
 			this->ptr_gre = gredata;
-			this->obj = this->ptr_gre->mod.get_model().Duplicate();
+			this->obj = this->ptr_gre->mod.Get_model().Duplicate();
 			this->del_timer = this->ptr_gre->time;
 		}
 	public:
@@ -1459,11 +1466,11 @@ namespace FPS_n2 {
 				if (this->ptr_mag != nullptr) {
 					chara->addf_canget_magitem(zz);
 					if (zz) {
-						chara->set_canget_mag(this->id_t, this->ptr_mag->mod.get_name());
-						if (chara->getmagazine_push() && this->magazine_param.mag_cnt != 0 && (this->ptr_mag->ammo[0].get_name() == this->magazine_param.ammo[0].get_name())) {
+						chara->set_canget_mag(this->id_t, this->ptr_mag->mod.Get_name());
+						if (chara->getmagazine_push() && this->magazine_param.mag_cnt != 0 && (this->ptr_mag->ammo[0].Get_name() == this->magazine_param.ammo[0].Get_name())) {
 							chara->sort_f = false;
 							chara->gun_stat_now->magazine_plus(this);
-							if (chara->gun_stat_now->get_magazine_in().size() == 1) {
+							if (chara->gun_stat_now->Get_magazine_in().size() == 1) {
 								chara->reloadf = true;
 							}
 							this->Detach_item();
@@ -1474,7 +1481,7 @@ namespace FPS_n2 {
 				if (this->ptr_med != nullptr) {
 					chara->addf_canget_meditem(zz);
 					if (zz) {
-						chara->set_canget_med(this->id_t, this->ptr_med->mod.get_name());
+						chara->set_canget_med(this->id_t, this->ptr_med->mod.Get_name());
 						if (chara->getmagazine_push()) {
 							chara->Damage.AddHP(this->ptr_med->repair);
 							this->Detach_item();
@@ -1486,7 +1493,7 @@ namespace FPS_n2 {
 				if (this->ptr_gre != nullptr) {
 					chara->addf_canget_meditem(zz);
 					if (zz) {
-						chara->set_canget_med(this->id_t, this->ptr_gre->mod.get_name());
+						chara->set_canget_med(this->id_t, this->ptr_gre->mod.Get_name());
 						if (chara->getmagazine_push()) {
 							chara->HP = std::clamp<int>(chara->HP + this->ptr_gre->repair, 0, chara->HP_full);
 							this->Detach_item();
@@ -1539,31 +1546,31 @@ namespace FPS_n2 {
 				//effect
 				killer->Set_eff(Effect::ef_greexp, this->move.pos, VECTOR_ref::front(), 0.1f / 0.1f);
 				//
-				killer->get_audio().explosion.vol(255);
-				killer->get_audio().explosion.play_3D(this->move.pos, 100.f);
+				killer->Get_audio().explosion.vol(255);
+				killer->Get_audio().explosion.play_3D(this->move.pos, 100.f);
 				//グレ爆破
 				this->Detach_item();
 				for (auto& tgt : chara) {
 					tgt->calc_gredamage(killer);
-					if (tgt->Damage.get_alive()) {
-						float scale = (this->move.pos - tgt->get_head_pos()).size();
+					if (tgt->Damage.Get_alive()) {
+						float scale = (this->move.pos - tgt->Get_head_pos()).size();
 						if (scale < 10.f) {
-							if (!(map_col_line(this->move.pos, tgt->get_head_pos()).HitFlag == TRUE)) {
+							if (!(map_col_line(this->move.pos, tgt->Get_head_pos()).HitFlag == TRUE)) {
 								int damage = int(150.f * (10.f - scale) / 10.f);
 								damage = std::clamp(damage, 0, 100);
 
-								float x_1 = sinf(tgt->get_body_yrad());
-								float y_1 = cosf(tgt->get_body_yrad());
-								auto vc = (killer->get_pos() - tgt->get_pos()).Norm();
+								float x_1 = sinf(tgt->Get_body_yrad());
+								float y_1 = cosf(tgt->Get_body_yrad());
+								auto vc = (killer->Get_pos() - tgt->Get_pos()).Norm();
 								tgt->Damage.SubHP(damage, atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z()));
 								tgt->Damage.SubHP_Parts(damage, 0);
-								if (!tgt->Damage.get_alive()) {
+								if (!tgt->Damage.Get_alive()) {
 									killer->scores.set_kill(&tgt - &chara.front(), 70);
 									tgt->scores.set_death(&killer - &chara.front());
-									tgt->get_audio().voice_death.play_3D(tgt->get_pos(), 10.f);
+									tgt->Get_audio().voice_death.play_3D(tgt->Get_pos(), 10.f);
 								}
 								else {
-									tgt->get_audio().voice_damage.play_3D(tgt->get_pos(), 10.f);
+									tgt->Get_audio().voice_damage.play_3D(tgt->Get_pos(), 10.f);
 								}
 								tgt->gre_eff = true;
 								break;
@@ -1602,14 +1609,14 @@ namespace FPS_n2 {
 		frames frame3;
 	public:
 
-		const auto& get_rounds()const noexcept { return rounds; }
-		const auto& get_Spec()const noexcept { return Spec; }
+		const auto& Get_rounds()const noexcept { return rounds; }
+		const auto& Get_Spec()const noexcept { return Spec; }
 
-		const auto& get_load_time()const noexcept { return load_time; }
-		const auto& get_frame1()const noexcept { return frame1; }
-		const auto& get_frame2()const noexcept { return frame2; }
-		const auto& get_frame3()const noexcept { return frame3; }
-		//const auto& get_()const noexcept { return; }
+		const auto& Get_load_time()const noexcept { return load_time; }
+		const auto& Get_frame1()const noexcept { return frame1; }
+		const auto& Get_frame2()const noexcept { return frame2; }
+		const auto& Get_frame3()const noexcept { return frame3; }
+		//const auto& Get_()const noexcept { return; }
 
 		gun_frame() {
 			frame1.first = -1;
@@ -2066,7 +2073,7 @@ namespace FPS_n2 {
 			auto ptr = Get_Parts_Data_Ptr(type_sel);
 			return *ptr;
 		}
-		void Set_Pre() {
+		GUNPARTS_Control() {
 			GUNPARTs::Set_Pre(&this->grip_data, "data/Guns/parts/grip/");
 			GUNPARTs::Set_Pre(&this->uperhandguard_data, "data/Guns/parts/uper_handguard/");
 			GUNPARTs::Set_Pre(&this->underhandguard_data, "data/Guns/parts/under_handguard/");

@@ -154,13 +154,13 @@ namespace FPS_n2 {
 				MAPPTs = MAPPTs_t;
 			}
 
-			const std::vector<VECTOR_ref>& get_waypoint(void) const noexcept { return way_point; }
-			const std::vector<VECTOR_ref>& get_leanpoint_q(void) const noexcept { return lean_point_q; }
-			const std::vector<VECTOR_ref>& get_leanpoint_e(void) const noexcept { return lean_point_e; }
-			const std::vector<VECTOR_ref>& get_spawn_point(void) const noexcept { return spawn_point; }
-			GraphHandle& get_minmap(void) noexcept { return minmap; }
-			int& get_x_size(void) noexcept { return x_size; }
-			int& get_y_size(void) noexcept { return y_size; }
+			const std::vector<VECTOR_ref>& Get_waypoint(void) const noexcept { return way_point; }
+			const std::vector<VECTOR_ref>& Get_leanpoint_q(void) const noexcept { return lean_point_q; }
+			const std::vector<VECTOR_ref>& Get_leanpoint_e(void) const noexcept { return lean_point_e; }
+			const std::vector<VECTOR_ref>& Get_spawn_point(void) const noexcept { return spawn_point; }
+			GraphHandle& Get_minmap(void) noexcept { return minmap; }
+			int& Get_x_size(void) noexcept { return x_size; }
+			int& Get_y_size(void) noexcept { return y_size; }
 			Map(int grass_level, int dispx_t, int dispy_t) noexcept {
 				dispx = dispx_t;
 				dispy = dispy_t;
@@ -397,7 +397,7 @@ namespace FPS_n2 {
 				return map_col.CollCheck_Line(StartPos, EndPos, 0, 0);
 			}
 			//関数オブジェ版
-			std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> Map_col_line = [&](const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) {return map_col_line(StartPos, EndPos); };
+			std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> Map_col_line = [&](const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) {return map_col_line(StartPos, EndPos);};
 			//
 			bool map_col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) const noexcept {
 				bool ans = false;
@@ -546,9 +546,9 @@ namespace FPS_n2 {
 
 				shader.draw_lamda(
 					[&]() {
-					SetUseTextureToShader(1, DepthScreen.get());
-					map.DrawMesh(3);
-				}
+						SetUseTextureToShader(1, DepthScreen.get());
+						map.DrawMesh(3);
+					}
 				);
 
 				grass_Draw();
@@ -561,9 +561,9 @@ namespace FPS_n2 {
 				{
 					Depth.draw_lamda(
 						[&]() {
-						SetUseTextureToShader(0, -1);
-						map.DrawMesh(0);
-					}
+							SetUseTextureToShader(0, -1);
+							map.DrawMesh(0);
+						}
 					);
 				}
 				if (ischangescreen) {
@@ -577,7 +577,7 @@ namespace FPS_n2 {
 				for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs->Map_col_line); }
 			}
 			//
-			int get_next_waypoint(std::vector<int> wayp_pre, VECTOR_ref poss) {
+			int Get_next_waypoint(std::vector<int> wayp_pre, VECTOR_ref poss) {
 				int now = -1;
 				auto tmp = VECTOR_ref::vget(0, 100.f, 0);
 				for (auto& w : way_point) {
@@ -625,8 +625,8 @@ namespace FPS_n2 {
 			std::shared_ptr<Map> MAPPTs;
 		private:
 			void Set_pos_chara(int* xp, int* yp, const VECTOR_ref& chara_pos, float& radp) noexcept {
-				auto x_2 = chara_pos.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() * (float)(MAPPTs->get_x_size() / 2) * xcam;
-				auto y_2 = -chara_pos.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() * (float)(MAPPTs->get_y_size() / 2) * xcam;
+				auto x_2 = chara_pos.x() / MAPPTs->map_col_get().mesh_maxpos(0).x() * (float)(MAPPTs->Get_x_size() / 2) * xcam;
+				auto y_2 = -chara_pos.z() / MAPPTs->map_col_get().mesh_maxpos(0).z() * (float)(MAPPTs->Get_y_size() / 2) * xcam;
 
 				*xp = int(x_2 * cos(radp) - y_2 * sin(radp));
 				*yp = int(y_2 * cos(radp) + x_2 * sin(radp));
@@ -657,22 +657,22 @@ namespace FPS_n2 {
 					int xp = 0, yp = 0;
 					float radp = 0.f;
 					{
-						easing_set(&xcam, 1.f + mine->get_pseed_per() * 0.2f, 0.9f);
-						radp = -mine->get_body_yrad();
+						easing_set(&xcam, 1.f + mine->Get_pseed_per() * 0.2f, 0.9f);
+						radp = -mine->Get_body_yrad();
 						int xpos = 0, ypos = 0;
-						Set_pos_chara(&xpos, &ypos, mine->get_pos(), radp);
+						Set_pos_chara(&xpos, &ypos, mine->Get_pos(), radp);
 						xp = x_size / 2 - xpos;
 						yp = y_size / 2 - ypos;
 					}
 
-					MAPPTs->get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
+					MAPPTs->Get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
 					for (auto& c : chara) {
 						int xpos = 0, ypos = 0;
-						Set_pos_chara(&xpos, &ypos, c->get_pos(), radp);
+						Set_pos_chara(&xpos, &ypos, c->Get_pos(), radp);
 						int xt = xp + xpos;
 						int yt = yp + ypos;
 
-						UI_player.DrawRotaGraph(xt, yt, xcam, radp + c->get_body_yrad(), true);
+						UI_player.DrawRotaGraph(xt, yt, xcam, radp + c->Get_body_yrad(), true);
 					}
 				}
 			}

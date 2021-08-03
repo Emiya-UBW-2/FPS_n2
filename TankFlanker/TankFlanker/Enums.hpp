@@ -61,7 +61,6 @@ namespace FPS_n2 {
 		SELECTLAM_LIGHT,
 		SELECTLAM_NUM,
 	};
-
 	enum class scenes
 	{
 		NONE_SCENE,
@@ -70,5 +69,35 @@ namespace FPS_n2 {
 		LOAD,
 		SELECT,
 		MAIN_LOOP
+	};
+
+	enum class EnumKeyBind {
+		FRONT,
+		BACK,
+		RIGHT,
+		LEFT,
+		Q,
+		E,
+		RELOAD,
+		GET_ITEM,
+		THROW_GRE,
+		SIT,
+		BACK_TITLE,
+		ESCAPE,
+		SORT_MAG,
+		RUN,
+		JUMP,
+		CHANGE_VIEW,
+		INFO,
+		LOOKGUN,
+		PAUSE,
+		MED,
+		RIDE_ON,
+	};
+
+	enum class EnumMouseBind {
+		SHOOT,
+		CHANGE_SEL,
+		AIM,
 	};
 }

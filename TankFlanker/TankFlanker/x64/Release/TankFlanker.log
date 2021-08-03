@@ -109,14 +109,13 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1623
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1642): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1642): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(89): warning C4100: 'renderer': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(136): warning C4100: 'KeyBind': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(197): warning C4100: 'KeyBind': 引数は関数の本体部で 1 度も参照されません。
+c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\scene.hpp(129): warning C4100: 'KeyBind': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
   コード生成しています。
-  1 of 6036 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  6 of 6074 functions (<0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     1 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
