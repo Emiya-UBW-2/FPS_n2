@@ -1,0 +1,15 @@
+isfloat=false
+speed_flont=15
+speed_back=-5
+body_rad=27
+turret_rad=25
+HP=100
+gun_0_name=D-10TG
+gun_0_loadcnt=6.0
+gun_0_round=100
+gun_0_useammo0=BR412D
+end
+damage_sound=0
+fire_sound=0
+reload_sound=0
+ricochet_sound=0
