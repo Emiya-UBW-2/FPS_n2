@@ -428,11 +428,21 @@ namespace FPS_n2 {
 				}
 				void hit_effect(const VECTOR_ref& nomal) noexcept {
 					if (this->spec->Get_caliber() >= 0.020f) {
-						(*this->MINE_c)->Set_gndhit(this->move.pos, nomal, this->spec->Get_caliber() / 0.1f);
+						if (MINE_v == nullptr) {
+							(*this->MINE_c)->Set_gndhit(this->move.pos, nomal, this->spec->Get_caliber() / 0.1f);
+						}
+						else {
+							(*this->MINE_v)->Set_gndhit(this->move.pos, nomal, this->spec->Get_caliber() / 0.1f);
+						}
 						//(*this->MINE_c)->Set_eff(Effect::ef_reco, pos + nomal * 0.1f, nomal);
 					}
 					else {
-						(*this->MINE_c)->Set_gndhit(this->move.pos, nomal, 0.025f / 0.1f);
+						if (MINE_v == nullptr) {
+							(*this->MINE_c)->Set_gndhit(this->move.pos, nomal, 0.025f / 0.1f);
+						}
+						else {
+							(*this->MINE_v)->Set_gndhit(this->move.pos, nomal, 0.025f / 0.1f);
+						}
 						//(*this->MINE_c)->Set_eff(Effect::ef_gndsmoke, pos + nomal * 0.1f, nomal, 0.025f / 0.1f);
 					}
 					this->spec->set_pene() /= 2.0f;//ƒqƒbƒg‚µ‚½‚çŠÑ’Ê—Í”¼Œ¸
@@ -462,7 +472,12 @@ namespace FPS_n2 {
 					if (q.HitFlag == TRUE) {
 						this->move.pos = q.HitPosition;
 						//Hit
-						(*MINE_c)->Set_eff(Effect::ef_hitblood, this->move.pos, q.Normal, 0.1f / 0.1f);//Effect::ef_reco
+						if (MINE_v == nullptr) {
+							(*MINE_c)->Set_eff(Effect::ef_hitblood, this->move.pos, q.Normal, 0.1f / 0.1f);//Effect::ef_reco
+						}
+						else {
+							(*MINE_v)->Set_eff(Effect::ef_hitblood, this->move.pos, q.Normal, 0.1f / 0.1f);//Effect::ef_reco
+						}
 						//
 						this->Hit_Flag = true;
 						this->Flag = false;
@@ -4315,7 +4330,7 @@ namespace FPS_n2 {
 						this->rounds = std::max<int>(this->rounds - 1, 0);
 						this->fired = 1.f;
 
-						(*(*MINE_v)->MINE_c)->Set_eff(Effect::ef_fire, pos_t, vec_t, 0.1f / 0.1f);//ƒm[ƒ}ƒ‹
+						(*MINE_v)->Set_eff(Effect::ef_fire, pos_t, vec_t, 0.1f / 0.1f);//ƒm[ƒ}ƒ‹
 						(*MINE_v)->Get_audio().fire.vol(128);
 						(*MINE_v)->Get_audio().fire.play_3D((*MINE_v)->Get_pos(), 250.f);
 					}
