@@ -981,7 +981,7 @@ namespace FPS_n2 {
 					v = std::make_shared<PLAYERclass::PLAYER_VEHICLE>();
 					v->Set_Ptr_Common(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
 					v->Set_Ptr(&this->chara, nullptr, &this->vehicle, &v, effsorce);
-					v->Set(vehc_data, &v-&this->vehicle.front());
+					v->Set(vehc_data, int(&v-&this->vehicle.front()));
 				}
 			}
 		public:
@@ -1095,7 +1095,7 @@ namespace FPS_n2 {
 					}
 				}
 				for (auto& v : this->vehicle) {
-					v->UpDate(this->camera_main);
+					v->UpDate(this->camera_main, this->camera_main.fov / this->fov_base);
 				}
 				MAPPTs->world->Step(1.f, 1, 1);
 				for (auto& v : this->vehicle) {

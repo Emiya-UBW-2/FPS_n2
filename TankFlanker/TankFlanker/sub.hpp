@@ -559,7 +559,7 @@ namespace FPS_n2 {
 		const auto Get_Playing(void) const noexcept { return Get_Start() && !Get_end(); }
 		void Set(void) noexcept {
 			Ready = 3.0f;
-			timer = 180.f;
+			timer = 1800.f;
 		}
 		void UpDate(void) noexcept {
 			if (Get_Start()) {

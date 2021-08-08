@@ -1,8 +1,8 @@
 isfloat=false
 speed_flont=15
 speed_back=-5
-body_rad=27
-turret_rad=25
+body_rad=35
+turret_rad=60
 HP=100
 gun_0_name=2A70
 gun_0_loadcnt=5.5
