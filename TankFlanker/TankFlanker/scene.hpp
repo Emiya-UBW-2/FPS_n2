@@ -261,13 +261,8 @@ namespace FPS_n2 {
 						}
 						file.close();
 					}
-					//
 				}
-				if (mine->Get_key_().jamp) {
-					return false;
-				}
-				return true;
-				//
+				return (!mine->Get_key_().jamp);
 			}
 			void UI_Draw(void) noexcept override {
 				UIparts->UI_Draw(GunPartses, save_parts, save_presets[preset_select]);
@@ -1086,7 +1081,7 @@ namespace FPS_n2 {
 							auto range = c->Get_pos() - v->Get_pos();
 							if (range.size() < 3.f) {
 								c->set_canride_f() = true;
-								if (this->Get_Mine()->Get_key_().ride) {
+								if ((&this->Get_Mine() == &c) && this->Get_Mine()->Get_key_().ride) {
 									c->Ride_on(&v);	//èÊÇÈÇ∆Ç´ÇÃìoò^
 									break;
 								}
@@ -1111,8 +1106,7 @@ namespace FPS_n2 {
 				this->hit_b_obj_p.update();
 				//campos,camvec,camupÇÃéwíË
 				this->Get_Mine()->Setcamera(this->camera_main, this->fov_base);
-				//this->chara[1]->Set_cam(this->camera_main, this->fov_base);
-				this->camera_main.camup = MATRIX_ref::Vtrans(this->camera_main.camup, MATRIX_ref::RotAxis((this->camera_main.camvec - this->camera_main.campos), deg2rad(20.f * bless_ratio * sin(bless))));
+				this->camera_main.camup = MATRIX_ref::Vtrans(this->camera_main.camup, MATRIX_ref::RotAxis((this->camera_main.camvec - this->camera_main.campos), deg2rad(20.f * ratio_bless() * sin(bless))));
 
 				//ÉãÅ[Éãï€ë∂
 				UIparts->Update();
@@ -1206,6 +1200,7 @@ namespace FPS_n2 {
 				for (auto& v : this->vehicle) { v->Draw(); }
 				//ÉåÅ[ÉUÅ[
 				for (auto& c : this->chara) { c->Draw_LAM_Effect(light); }
+				for (auto& v : this->vehicle) { v->Draw_LAM_Effect(); }
 				//èeíe
 				SetFogEnable(FALSE);
 				SetUseLighting(FALSE);

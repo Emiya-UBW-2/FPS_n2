@@ -4051,7 +4051,6 @@ namespace FPS_n2 {
 					easing_set(&camera_main.fov, fov_, 0.9f);
 				}
 			}
-
 			void Setcamera(cam_info& camera_main, const float fov_) noexcept {
 				if (this->MINE_v == nullptr) {
 					this->Set_cam(camera_main, fov_);
@@ -4127,12 +4126,12 @@ namespace FPS_n2 {
 					auto EndPos = StartPos - this->base.Get_objMatrix().zvec() * 100.f;
 					MAPPTs->map_col_nearest(StartPos, &EndPos);
 					for (auto& tgt : *ALL_c) {
-						if (tgt.get() == this || !tgt->Damage.Get_alive()) {
+						if ((MINE_c != nullptr && tgt == *MINE_c) || !tgt->Damage.Get_alive()) {
 							continue;
 						}
 						if (tgt->set_ref_col(StartPos, EndPos, 2.f)) {
 							for (int i = 0; i < this->obj_col.mesh_num(); ++i) {
-								auto q = tgt->obj_col.CollCheck_Line(StartPos, EndPos, -1, i);
+								auto q = tgt->col_line(StartPos, EndPos, i);
 								if (q.HitFlag == TRUE) {
 									EndPos = q.HitPosition;
 								}
@@ -4142,8 +4141,8 @@ namespace FPS_n2 {
 					SetUseLighting(FALSE);
 					SetFogEnable(FALSE);
 					{
-						DXDraw::Capsule3D(StartPos, EndPos, 0.001f, GetColor(255, 0, 0), GetColor(255, 255, 255));
-						DXDraw::Sphere3D(EndPos, std::clamp(powf((EndPos - GetCameraPosition()).size() + 0.5f, 2) * 0.002f, 0.001f, 0.02f), GetColor(255, 0, 0), GetColor(255, 255, 255));
+						DXDraw::Capsule3D(StartPos, EndPos, 0.001f, GetColor(255, 0, 0), GetColor(255, 0, 0));
+						DXDraw::Sphere3D(EndPos, std::clamp(powf((EndPos - GetCameraPosition()).size() + 0.5f, 2) * 0.002f, 0.001f, 0.02f), GetColor(255, 0, 0), GetColor(255, 0, 0));
 					}
 					SetUseLighting(TRUE);
 					SetFogEnable(TRUE);
@@ -4285,6 +4284,8 @@ namespace FPS_n2 {
 				std::vector<Ammos> Spec;						/**/
 			public:
 				float xrad = 0.f, yrad = 0.f;
+				float xrad_shot = 0.f;														//射撃反動x
+				float zrad_shot = 0.f;														//射撃反動z
 
 				const auto& Getfired() const noexcept { return fired; }
 				const auto& Getgun_info() const noexcept { return gun_info; }
@@ -4330,7 +4331,9 @@ namespace FPS_n2 {
 						this->rounds = std::max<int>(this->rounds - 1, 0);
 						this->fired = 1.f;
 
-						(*MINE_v)->Set_eff(Effect::ef_fire, pos_t, vec_t, 0.1f / 0.1f);//ノーマル
+						
+
+						(*MINE_v)->Set_eff(Effect::ef_fire, pos_t, vec_t, this->Getcaliber(0) / 0.1f);//ノーマル
 						(*MINE_v)->Get_audio().fire.vol(128);
 						(*MINE_v)->Get_audio().fire.play_3D((*MINE_v)->Get_pos(), 250.f);
 					}
@@ -4381,8 +4384,6 @@ namespace FPS_n2 {
 			float per_sus{ 0.f };
 			float view_xrad = 0.f;
 			float view_yrad = 0.f;
-			float xrad_shot = 0.f;														//射撃反動x
-			float zrad_shot = 0.f;														//射撃反動z
 			VECTOR_ref wheel_normal = VECTOR_ref::up();
 			std::array<bool, 6> key{ false };											//キー
 			float body_yrad{ 0.f };														//胴体角度
@@ -4544,7 +4545,7 @@ namespace FPS_n2 {
 				if (MINE_v != nullptr && MINE_c != nullptr) {
 					const opes& key_ = (*MINE_c)->Get_key_();
 					key[0] = key_.shoot;	//射撃
-					key[1] = key_.select;	//マシンガン(現状無し)
+					key[1] = key_.aim;		//マシンガン(現状無し)
 					key[2] = key_.wkey;		//前進
 					key[3] = key_.skey;		//後退
 					key[4] = key_.dkey;		//右
@@ -4728,11 +4729,11 @@ namespace FPS_n2 {
 						}
 						this->move.pos += this->move.vec;
 						//射撃反動
-						{
-							auto fired = deg2rad(-this->Gun_[0].Getfired() * this->Gun_[0].Getcaliber(0) * 50.f);
-							easing_set(&this->xrad_shot, fired * cos(this->Gun_[0].yrad), 0.85f);
-							easing_set(&this->zrad_shot, fired * sin(this->Gun_[0].yrad), 0.85f);
-							this->move.mat *= MATRIX_ref::RotAxis(this->move.mat.xvec(), -this->xrad_shot) * MATRIX_ref::RotAxis(this->move.mat.zvec(), this->zrad_shot);
+						for (auto& g : this->Gun_) {
+							auto fired = deg2rad(-g.Getfired() * g.Getcaliber(0) * 50.f);
+							easing_set(&g.xrad_shot, fired * cos(g.yrad), 0.85f);
+							easing_set(&g.zrad_shot, fired * sin(g.yrad), 0.85f);
+							this->move.mat *= MATRIX_ref::RotAxis(this->move.mat.xvec(), -g.xrad_shot) * MATRIX_ref::RotAxis(this->move.mat.zvec(), g.zrad_shot);
 						}
 					}
 					//浮く
@@ -4854,6 +4855,35 @@ namespace FPS_n2 {
 			}
 			void Draw_ammo() {
 				for (auto& cg : this->Gun_) { cg.Draw_ammo(); }
+			}
+			/*レーザー、ライト描画*/
+			void Draw_LAM_Effect() noexcept {
+				if (MINE_v != nullptr && MINE_c != nullptr) {
+					auto StartPos = this->obj_body.frame(this->Gun_[0].Getgun_info().Get_frame3().first);
+					auto EndPos = StartPos + (this->obj_body.frame(this->Gun_[0].Getgun_info().Get_frame3().first) - this->obj_body.frame(this->Gun_[0].Getgun_info().Get_frame2().first)).Norm() * 100.f;
+					MAPPTs->map_col_nearest(StartPos, &EndPos);
+					for (auto& tgt : *ALL_c) {
+						if ((MINE_c != nullptr && tgt == *MINE_c) || !tgt->Damage.Get_alive()) {
+							continue;
+						}
+						if (tgt->set_ref_col(StartPos, EndPos, 2.f)) {
+							for (int i = 0; i < this->obj_col.mesh_num(); ++i) {
+								auto q = tgt->col_line(StartPos, EndPos, i);
+								if (q.HitFlag == TRUE) {
+									EndPos = q.HitPosition;
+								}
+							}
+						}
+					}
+					SetUseLighting(FALSE);
+					SetFogEnable(FALSE);
+					{
+						DXDraw::Capsule3D(StartPos, EndPos, 0.01f, GetColor(255, 0, 0), GetColor(255, 0, 0));
+						DXDraw::Sphere3D(EndPos, std::clamp(powf((EndPos - GetCameraPosition()).size() + 0.5f, 2) * 0.01f, 0.001f, 0.05f), GetColor(255, 0, 0), GetColor(255, 0, 0));
+					}
+					SetUseLighting(TRUE);
+					SetFogEnable(TRUE);
+				}
 			}
 			//UI描画用用意
 			void Draw_Hit_UI(GraphHandle& hit_Graph) noexcept {
