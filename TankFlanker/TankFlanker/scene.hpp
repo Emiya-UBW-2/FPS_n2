@@ -1169,7 +1169,7 @@ namespace FPS_n2 {
 				//ƒLƒƒƒ‰
 				for (auto& c : this->chara) {
 					if ((c->Get_pos() - GetCameraPosition()).size() > 1.f) {
-						c->Draw_chara(0);
+						c->Draw_chara();
 					}
 				}
 				for (auto& v : this->vehicle) {
@@ -1182,7 +1182,7 @@ namespace FPS_n2 {
 				//ƒLƒƒƒ‰
 				for (auto& c : this->chara) {
 					if ((c->Get_pos() - GetCameraPosition()).size() <= 2.5f) {
-						c->Draw_chara(1);
+						c->Draw_chara();
 					}
 				}
 				for (auto& v : this->vehicle) {

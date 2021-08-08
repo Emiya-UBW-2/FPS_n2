@@ -979,7 +979,7 @@ namespace FPS_n2 {
 			float ratio_move{ 0.f };						//移動の度合い(アニメ)
 			float add_ypos{ 0.f };							//垂直加速度
 		public:
-			const auto Get_jamping(void) const noexcept { return this->add_ypos != 0.f; }																					//ジャンプ中
+			virtual const bool Get_jamping(void) const noexcept { return this->add_ypos != 0.f; }																					//ジャンプ中
 			virtual const bool isSquat(void) const noexcept { return false; }
 			virtual const bool isRunning(void) const noexcept { return false; }
 			const auto& Get_pos_LEFTHAND(void) const noexcept { return LEFTHAND.move.pos; }																					//item関連
@@ -2226,7 +2226,7 @@ namespace FPS_n2 {
 			auto& set_key_(void) noexcept { return key_; }	//key
 			//getter
 			const bool ads_on(void) const noexcept override { return this->key_.aim && !this->view_ing; }													//ADS中
-			const auto Get_jamping(void) const noexcept { return this->add_ypos != 0.f; }																	//ジャンプ中
+			const bool Get_jamping(void) const noexcept override { return this->add_ypos != 0.f; }																	//ジャンプ中
 			const auto Get_head_pos(void) const noexcept { return this->obj_body.frame(this->frame_s.head_f.first); }										//頭部座標
 			const bool isSquat(void) const noexcept override { return this->key_.squat; }
 			const bool isRunning(void) const noexcept override { return this->key_.running; }
@@ -4073,42 +4073,14 @@ namespace FPS_n2 {
 			/*キャラ+銃描画*/
 			void Draw_chara(int drawlevel = 2) noexcept {
 				if (this->flag_canlook_player) {
-					switch (drawlevel) {
-					case 0://最低レベル
-					{
-						if (this->Damage.Get_alive()) {
-							this->obj_body.DrawModel();
-						}
-						else {
-							this->obj_lag.DrawModel();
-						}
-						break;
+					if (this->Damage.Get_alive()) {
+						this->obj_body.DrawModel();
+						//this->obj_col.DrawModel();
 					}
-					case 1://低レベル
-					{
-						if (this->Damage.Get_alive()) {
-							this->obj_body.DrawModel();
-						}
-						else {
-							this->obj_lag.DrawModel();
-						}
-						//Draw_gun();//drawcall:157
-						Draw_gun(0);//drawcall:131
-						break;
+					else {
+						this->obj_lag.DrawModel();
 					}
-					default://デフォ
-					{
-						if (this->Damage.Get_alive()) {
-							this->obj_body.DrawModel();
-							//this->obj_col.DrawModel();
-						}
-						else {
-							this->obj_lag.DrawModel();
-						}
-						Draw_gun();
-						break;
-					}
-					}
+					Draw_gun();
 				}
 			}
 			//銃描画
