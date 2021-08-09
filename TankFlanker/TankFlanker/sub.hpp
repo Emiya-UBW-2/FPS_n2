@@ -134,6 +134,9 @@ namespace FPS_n2 {
 		std::vector<key_pair> key_use_ID;
 		std::vector<key_pair> mouse_use_ID;
 		//
+		auto& Get_key_use_ID(EnumKeyBind id_t) {
+			return key_use_ID[(int)id_t];
+		}
 		bool Get_key_use(EnumKeyBind id_t) {
 			return key_use_ID[(int)id_t].Get_key_Auto(true);
 		}
@@ -143,7 +146,6 @@ namespace FPS_n2 {
 		//
 		key_bind(void) noexcept {
 			SetUseASyncLoadFlag(FALSE);
-			Font24 = Fonts.Get_haveptr(y_r(24));
 			mousehandle = GraphHandle::Load("data/key/mouse.png");
 			SetTransColor(0, 255, 0);
 			keyboad = GraphHandle::Load("data/key/keyboad.png");
@@ -362,6 +364,7 @@ namespace FPS_n2 {
 					{
 						int xss = 0, yss = 0;
 						float siz_t = float(y_size - 4) / 25.f;
+						Font24 = Fonts.Get_haveptr(y_r(24));
 						for (auto& i : this->key_use_ID) {
 							if (i.isalways && i.use_handle != nullptr) {
 								if (i.Get_key(0, false)) {
@@ -376,7 +379,8 @@ namespace FPS_n2 {
 									yss = int(float(yss) * siz_t);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, siz_t, 0.f, false);
 								}
-								Font24->Get_handle().DrawString(xp_s, yp_s + (y_size - Font24->Get_size()) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
+								Font24->Get_handle().DrawString(xp_s, yp_s + (y_size - Font24->Get_size()) / 2, i.second, GetColor(255, 255, 255));
+								yp_s += y_size;
 							}
 						}
 						for (auto& i : this->mouse_use_ID) {
@@ -497,7 +501,6 @@ namespace FPS_n2 {
 		pause_menu(std::shared_ptr<key_bind>& KeyBind_t) noexcept {
 			KeyBind = KeyBind_t;
 			SetUseASyncLoadFlag(FALSE);
-			Font24 = Fonts.Get_haveptr(y_r(24));
 		}
 		//
 		const auto Pause_key(void) noexcept { return KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(true); }
@@ -533,6 +536,7 @@ namespace FPS_n2 {
 				//前面
 				if (P_f > 0.9f) {
 					yp_t = 100;
+					Font24 = Fonts.Get_haveptr(y_r(24));
 					//
 					Font24->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += Font24->Get_size() + 30;
 					//
@@ -1470,7 +1474,7 @@ namespace FPS_n2 {
 						if (chara->getmagazine_push() && this->magazine_param.mag_cnt != 0 && (this->ptr_mag->ammo[0].Get_name() == this->magazine_param.ammo[0].Get_name())) {
 							chara->sort_f = false;
 							chara->gun_stat_now->magazine_plus(this);
-							if (chara->gun_stat_now->Get_magazine_in().size() == 1) {
+							if (chara->Get_mag_in().size() == 1) {
 								chara->reloadf = true;
 							}
 							this->Detach_item();

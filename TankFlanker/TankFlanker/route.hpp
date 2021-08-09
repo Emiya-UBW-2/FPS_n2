@@ -44,10 +44,10 @@ namespace FPS_n2 {
 			//リソース
 			auto GunPartses = std::make_shared<GUNPARTS_Control>();							//銃パーツ
 			//
-			UI_LOADPTs->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce);
-			LOADscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce);
-			SELECTscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce);
-			MAINLOOPscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce);
+			UI_LOADPTs->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce, KeyBind);
+			LOADscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce, KeyBind);
+			SELECTscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce, KeyBind);
+			MAINLOOPscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce, KeyBind);
 			//遷移先指定
 			LOADscene->Set_Next(SELECTscene, scenes::SELECT);
 			SELECTscene->Set_Next(MAINLOOPscene, scenes::MAIN_LOOP);
@@ -122,7 +122,7 @@ namespace FPS_n2 {
 									scenes_ptr->KeyOperation_VR();
 								}
 								else {
-									scenes_ptr->KeyOperation(KeyBind);
+									scenes_ptr->KeyOperation();
 								}
 							}
 							selend = (!selpause) ? scenes_ptr->UpDate() : PauseMenu->Update();

@@ -11,7 +11,7 @@
 namespace FPS_n2 {
 	class MAPclass {
 	public:
-		static const int grassDiv = 3;
+		static const int grassDiv = 6;
 
 		class Map;
 		class MiniMap;
@@ -169,16 +169,16 @@ namespace FPS_n2 {
 					grasss = 0;
 					break;
 				case 1:
-					grasss = 500 / (grassDiv * grassDiv);
-					break;
-				case 2:
 					grasss = 1000 / (grassDiv * grassDiv);
 					break;
-				case 3:
+				case 2:
 					grasss = 2000 / (grassDiv * grassDiv);
 					break;
-				case 4:
+				case 3:
 					grasss = 4000 / (grassDiv * grassDiv);
+					break;
+				case 4:
+					grasss = 8000 / (grassDiv * grassDiv);
 					break;
 				default:
 					grasss = 0;
@@ -341,7 +341,7 @@ namespace FPS_n2 {
 										z_t = (float)(GetRand(int(max.z() - min.z()) * 100) + int(min.z()) * 100) / 100.0f;
 									}
 									cnt++;
-									if (cnt >= 100) {
+									if (cnt >= 10) {
 										break;
 									}
 								}

@@ -20,6 +20,7 @@ namespace FPS_n2 {
 			std::shared_ptr<OPTION> OPTPTs;
 			std::shared_ptr<MAPclass::Map> MAPPTs;
 			std::shared_ptr<GUNPARTS_Control> GunPartses;
+			std::shared_ptr<key_bind> KeyBind;
 			//UIsound
 			SoundHandle decision;
 			SoundHandle cancel;
@@ -53,13 +54,15 @@ namespace FPS_n2 {
 				const std::shared_ptr<OPTION>& OPTPTs_t,
 				const std::shared_ptr<MAPclass::Map>& MAPPTs_t,
 				const std::shared_ptr<GUNPARTS_Control>& GunPartses_t,
-				std::vector<EffekseerEffectHandle>* effsorce_t
+				std::vector<EffekseerEffectHandle>* effsorce_t,
+				const std::shared_ptr<key_bind>& KeyBind_t
 			) noexcept {
 				DrawPts = DrawPts_t;
 				OPTPTs = OPTPTs_t;
 				MAPPTs = MAPPTs_t;
 				effsorce = effsorce_t;
 				GunPartses = GunPartses_t;
+				KeyBind = KeyBind_t;
 				this->decision = SoundHandle::Load("data/audio/chara/shot_2.wav");//
 				this->cancel = SoundHandle::Load("data/audio/chara/cancel.wav");
 				this->cursor = SoundHandle::Load("data/audio/chara/cursor.wav");
@@ -126,7 +129,7 @@ namespace FPS_n2 {
 			virtual void Item_Draw(void) noexcept {}
 			virtual void LAST_Draw(void) noexcept {}
 			virtual void KeyOperation_VR() noexcept {}
-			virtual void KeyOperation(std::shared_ptr<key_bind>& KeyBind) noexcept {}
+			virtual void KeyOperation() noexcept {}
 		};
 		//
 		class LOADING : public TEMPSCENE {
@@ -280,7 +283,7 @@ namespace FPS_n2 {
 				}
 #endif // _USE_OPENVR_
 			}
-			void KeyOperation(std::shared_ptr<key_bind>& KeyBind) noexcept override {
+			void KeyOperation() noexcept override {
 				auto& mine_k = mine->set_key_();
 				//ê›íË
 				mine_k.dkey = KeyBind->Get_key_use(EnumKeyBind::RIGHT);
@@ -623,7 +626,7 @@ namespace FPS_n2 {
 						mine->set_gun_pos(tmp);
 						mine->Set_gun();
 						mine->set_mag_pos();
-						mine->Get_parts(EnumGunParts::PARTS_MAGAZINE)->Setpos_Nomal(mine->Mag_Mat());
+						mine->Mag_setpos_Nomal();
 						//ÉLÅ[
 						up.GetInput(mine->Get_key_().wkey);
 						down.GetInput(mine->Get_key_().skey);
@@ -714,6 +717,7 @@ namespace FPS_n2 {
 								trigger_se.play(DX_PLAYTYPE_BACK, TRUE);
 								//ñÚ‰∞
 								mine->create_cart();
+								mine->create_bullet();
 							}
 							//ÉGÉtÉFÉNÉg
 							mine->calc_shot_effect();
@@ -830,7 +834,7 @@ namespace FPS_n2 {
 				}
 #endif // _USE_OPENVR_
 			}
-			void KeyOperation(std::shared_ptr<key_bind>& KeyBind) noexcept override {
+			void KeyOperation() noexcept override {
 				auto& mine_k = mine->set_key_();
 				//ê›íË
 				mine_k.wkey = KeyBind->Get_key_use(EnumKeyBind::FRONT);
@@ -896,7 +900,7 @@ namespace FPS_n2 {
 						}
 						//rad
 						{
-							VECTOR_ref vec_2 = (chara[this->sel_cam]->Get_head_pos() - this->camera_TPS.campos).Norm();
+							VECTOR_ref vec_2 = ((chara[this->sel_cam]->Get_pos() + VECTOR_ref::vget(0, 1.5f, 0)) - this->camera_TPS.campos).Norm();
 							VECTOR_ref vec_z = (this->camera_TPS.camvec - this->camera_TPS.campos).Norm();
 							VECTOR_ref vec_x = vec_z.cross(this->camera_TPS.camup);
 
@@ -1020,7 +1024,7 @@ namespace FPS_n2 {
 					c->Start();
 				}
 				for (auto& v : this->vehicle) {
-					temp.pos = VECTOR_ref::vget(1.f, 10.f, 0);
+					temp.pos = VECTOR_ref::vget(25.f + 5.f*int(&v - &this->vehicle.front()), 10.f, -25.f);
 					temp.mat = MATRIX_ref::RotY(deg2rad(0.f));
 					v->SetSpawnPos(temp);
 					v->Spawn();
@@ -1073,7 +1077,7 @@ namespace FPS_n2 {
 				}
 				//ã§í ââéZ//2Å`3ms
 				for (auto& c : this->chara) {
-					c->UpDate_(RULEparts->Get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data, &c == &this->Get_Mine());
+					c->UpDate(RULEparts->Get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data, &c == &this->Get_Mine());
 					//èÊÇËç~ÇË
 					c->set_canride_f() = false;
 					if (!c->isRide()) {
@@ -1118,7 +1122,7 @@ namespace FPS_n2 {
 					//âeópà”
 					DrawPts->Ready_Shadow(TPSparts->Get_camera().campos, [&] {Shadow_Draw(); }, [&] {Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(15.f, 12.5f, 15.f));
 					//èëÇ´çûÇ›
-					Hostpassparts_TPS->BUF_draw([&](void) noexcept { BG_Draw(); }, [&] {DrawPts->Draw_by_Shadow([&] {Main_Draw(); }); }, TPSparts->Get_camera());	//îÌé ëÃê[ìxï`âÊ
+					Hostpassparts_TPS->BUF_draw([&](void) noexcept { BG_Draw(); }, [&] {DrawPts->Draw_by_Shadow([&] {Main_Draw(); }); }, TPSparts->Get_camera(), false);	//îÌé ëÃê[ìxï`âÊ
 					Hostpassparts_TPS->Set_MAIN_draw();																												//ç≈èIï`âÊ
 				}
 				//ï\é¶ÇÃî@âΩ
@@ -1153,7 +1157,7 @@ namespace FPS_n2 {
 				this->vehicle.clear();
 			}
 			void UI_Draw(void) noexcept  override {
-				UIparts->UI_Draw(this->Get_Mine());
+				UIparts->UI_Draw(this->Get_Mine(),KeyBind);
 				//É~ÉjÉ}ÉbÉv
 				MiniMAPPTs->UI_Draw(this->chara, (TPSparts->ON()) ? this->chara[TPSparts->sel_cam] : this->Get_Mine());
 			}
@@ -1268,7 +1272,7 @@ namespace FPS_n2 {
 				}
 #endif // _USE_OPENVR_
 			}
-			void KeyOperation(std::shared_ptr<key_bind>& KeyBind) noexcept override {
+			void KeyOperation() noexcept override {
 				auto& mine_k = Get_Mine()->set_key_();
 				//ê›íË
 				mine_k.have_mag = true;
