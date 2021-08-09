@@ -2544,10 +2544,10 @@ namespace FPS_n2 {
 				void set_death(size_t killid) {
 					this->death_f = true;
 					this->death_id = killid;
-					this->death_timer = 30.f;
+					this->death_timer = 3.f;
 					++this->death_cnt;
 				}
-				bool start_death(void) const noexcept { return death_timer == 30.f; }
+				bool start_death(void) const noexcept { return death_timer == 3.f; }
 			};
 			//AI—p
 			class AI {
