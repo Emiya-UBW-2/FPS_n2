@@ -12,12 +12,6 @@ namespace FPS_n2 {
 			std::shared_ptr<DXDraw> DrawPts;
 			std::shared_ptr<MAPclass::Map> MAPPTs;
 			//font
-			FontPool::Fonthave* Font72 = nullptr;
-			FontPool::Fonthave* Font48 = nullptr;
-			FontPool::Fonthave* Font36 = nullptr;
-			FontPool::Fonthave* Font24 = nullptr;
-			FontPool::Fonthave* Font18 = nullptr;
-
 			FontPool::Fonthave* Large;
 			FontPool::Fonthave* Middle;
 			FontPool::Fonthave* Small;
@@ -27,17 +21,12 @@ namespace FPS_n2 {
 					first_f = false;
 					DrawPts = DrawPts_t;
 					MAPPTs = MAPPTs_t;
-					this->Font72 = Fonts.Get_haveptr(y_r(72));
-					this->Font48 = Fonts.Get_haveptr(y_r(48));
-					this->Font36 = Fonts.Get_haveptr(y_r(36));
-					this->Font24 = Fonts.Get_haveptr(y_r(24));
-					this->Font18 = Fonts.Get_haveptr(y_r(18));
 				}
 			}
 			void set_fonts() {
-				Large = (DrawPts->use_vr) ? this->Font72 : this->Font48;
-				Middle = (DrawPts->use_vr) ? this->Font36 : this->Font24;
-				Small = (DrawPts->use_vr) ? this->Font24 : this->Font18;
+				Large = (DrawPts->use_vr) ? Fonts.Get_haveptr(y_r(72)) : Fonts.Get_haveptr(y_r(48));
+				Middle = (DrawPts->use_vr) ? Fonts.Get_haveptr(y_r(36)) : Fonts.Get_haveptr(y_r(24));
+				Small = (DrawPts->use_vr) ? Fonts.Get_haveptr(y_r(24)) : Fonts.Get_haveptr(y_r(18));
 			}
 			//virtual void UI_Draw(void) noexcept {}
 			//virtual void item_Draw(void) noexcept {}

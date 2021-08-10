@@ -14,6 +14,8 @@ namespace FPS_n2 {
 		std::array<shaders, 2> shader2D;
 		//エフェクト
 		EffectControl effectControl;
+
+		AudioPool Audio_resource;
 	public:
 		main_c(void) noexcept {
 			auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
@@ -42,6 +44,7 @@ namespace FPS_n2 {
 			auto LOADscene = std::make_shared<Sceneclass::LOAD>();
 			auto SELECTscene = std::make_shared<Sceneclass::SELECT>();
 			//リソース
+			Audio_resource.Set();															//オーディオ
 			auto GunPartses = std::make_shared<GUNPARTS_Control>();							//銃パーツ
 			//
 			UI_LOADPTs->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce, KeyBind);

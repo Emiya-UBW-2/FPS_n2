@@ -46,6 +46,76 @@ namespace FPS_n2 {
 		}
 	};
 	FontPool Fonts;
+	//サウンドプール
+	class SoundPool {
+	public:
+		class Soundhave {
+			class handles {
+			public:
+				size_t ID_2;
+				std::string path;
+				std::array<SoundHandle, 20> handle;
+			};
+
+			EnumSound ID;
+			std::vector<handles> handle;
+			size_t now = 0;
+		public:
+			const auto& Get_ID(void)const noexcept { return ID; }
+			void Set(EnumSound ID_t, std::string path_t) {
+				if (path_t == "") { return; }
+				for (auto& h : this->handle) {
+					if (h.path == path_t) { return; }
+				}
+				this->ID = ID_t;
+				this->handle.resize(this->handle.size() + 1);
+				this->handle.back().path = path_t;
+				//SetUseASyncLoadFlag(TRUE);
+				SetUseASyncLoadFlag(FALSE);
+				SetCreate3DSoundFlag(TRUE);
+				this->handle.back().handle[0] = SoundHandle::Load(this->handle.back().path);
+				SetCreate3DSoundFlag(FALSE);
+				SetUseASyncLoadFlag(FALSE);
+
+				SetCreate3DSoundFlag(TRUE);
+				for (size_t i = 1;i < this->handle.back().handle.size();i++) {
+					this->handle.back().handle[i] = this->handle.back().handle[0].Duplicate();
+				}
+				SetCreate3DSoundFlag(FALSE);
+			}
+			void Play(int Sel_t, const int& type, const int& flag = 1, int vol_t = -1) {
+				handle[Sel_t].handle[now].play(type, flag);
+				if (vol_t != -1) {
+					handle[Sel_t].handle[now].vol(vol_t);
+				}
+				++now %= handle[Sel_t].handle.size();
+			}
+			void Play_3D(int Sel_t, const VECTOR_ref& pos, const float& radius, int vol_t = -1) noexcept {
+				handle[Sel_t].handle[now].play_3D(pos, radius);
+				if (vol_t != -1) {
+					handle[Sel_t].handle[now].vol(vol_t);
+				}
+				++now %= handle[Sel_t].handle.size();
+			}
+		};
+	private:
+		std::vector<Soundhave> havehandle;
+	public:
+		size_t Add(EnumSound ID_t, std::string path_t = "") {
+			for (auto& h : this->havehandle) {
+				if (h.Get_ID() == ID_t) {
+					return &h - &this->havehandle.front();
+				}
+			}
+			this->havehandle.resize(this->havehandle.size() + 1);
+			this->havehandle.back().Set(ID_t, path_t);
+			return this->havehandle.size() - 1;
+		}
+		Soundhave* Get_haveptr(EnumSound ID_t, std::string path_t = "") {
+			return &this->havehandle[Add(ID_t, path_t)];
+		}
+	};
+	SoundPool Sounds;
 	//キーバインド
 	class key_bind {
 	private:
@@ -120,8 +190,6 @@ namespace FPS_n2 {
 			GraphHandle onhandle, offhandle;
 			key_pair* use_part{ nullptr };
 		};
-
-		FontPool::Fonthave* Font24 = nullptr;
 
 		std::vector<keyhandle> keyg;
 		std::vector<keyhandle> keyg2;
@@ -364,7 +432,6 @@ namespace FPS_n2 {
 					{
 						int xss = 0, yss = 0;
 						float siz_t = float(y_size - 4) / 25.f;
-						Font24 = Fonts.Get_haveptr(y_r(24));
 						for (auto& i : this->key_use_ID) {
 							if (i.isalways && i.use_handle != nullptr) {
 								if (i.Get_key(0, false)) {
@@ -379,7 +446,7 @@ namespace FPS_n2 {
 									yss = int(float(yss) * siz_t);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, siz_t, 0.f, false);
 								}
-								Font24->Get_handle().DrawString(xp_s, yp_s + (y_size - Font24->Get_size()) / 2, i.second, GetColor(255, 255, 255));
+								Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get_haveptr(y_r(24))->Get_size()) / 2, i.second, GetColor(255, 255, 255));
 								yp_s += y_size;
 							}
 						}
@@ -397,7 +464,7 @@ namespace FPS_n2 {
 									i.use_handle->offhandle.GetSize(nullptr, &yss);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
-								Font24->Get_handle().DrawString(xp_s, yp_s + (y_size - Font24->Get_size()) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
+								Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get_haveptr(y_r(24))->Get_size()) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
 							}
 						}
 					}
@@ -492,9 +559,6 @@ namespace FPS_n2 {
 	class pause_menu {
 	private:
 		std::shared_ptr<key_bind> KeyBind{ nullptr };
-
-		FontPool::Fonthave* Font24 = nullptr;
-
 		float P_f = 0.0f;
 	public:
 		//
@@ -536,13 +600,12 @@ namespace FPS_n2 {
 				//前面
 				if (P_f > 0.9f) {
 					yp_t = 100;
-					Font24 = Fonts.Get_haveptr(y_r(24));
 					//
-					Font24->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += Font24->Get_size() + 30;
+					Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += Fonts.Get_haveptr(y_r(24))->Get_size() + 30;
 					//
-					Font24->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += Font24->Get_size() + 30;
+					Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += Fonts.Get_haveptr(y_r(24))->Get_size() + 30;
 					//
-					Font24->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += Font24->Get_size() + 30;
+					Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += Fonts.Get_haveptr(y_r(24))->Get_size() + 30;
 					//
 				}
 			}
@@ -737,131 +800,132 @@ namespace FPS_n2 {
 			FileRead_close(mdata);
 		}
 	};
-	//キャラ用オーディオ
-	class Audios {
+
+	//オーディオまとめ
+	class AudioPool {
+	public:
+		void Set() {
+			//キャラ用オーディオ
+			Sounds.Add(EnumSound::Sort_MAG, "data/audio/chara/sort.wav");
+			Sounds.Add(EnumSound::Foot_Sound, "data/audio/chara/foot_sand.wav");
+			Sounds.Add(EnumSound::Explosion, "data/audio/chara/explosion.wav");
+			Sounds.Add(EnumSound::Cate_Load, "data/audio/chara/load.wav");
+
+			Sounds.Add(EnumSound::Voice_Damage, "data/audio/voice/damage.wav");
+			Sounds.Add(EnumSound::Voice_Death, "data/audio/voice/death.wav");
+			Sounds.Add(EnumSound::Voice_Breath, "data/audio/voice/breath.wav");
+			Sounds.Add(EnumSound::Voice_Breath_Run, "data/audio/voice/breath_run.wav");
+			//銃用オーディオ
+			//戦車用オーディオ
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			{
+				HANDLE hFind = FindFirstFile("data/audio/tank/damage/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Tank_Damage, "data/audio/tank/damage/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			{
+				HANDLE hFind = FindFirstFile("data/audio/tank/fire/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Tank_Shot, "data/audio/tank/fire/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			{
+				HANDLE hFind = FindFirstFile("data/audio/tank/reload/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Tank_Reload, "data/audio/tank/reload/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			{
+				HANDLE hFind = FindFirstFile("data/audio/tank/ricochet/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Tank_Ricochet, "data/audio/tank/ricochet/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			Sounds.Add(EnumSound::Tank_engine, "data/audio/tank/engine.wav");
+		}
+	};
+	//銃用オーディオ
+	class Audios_Gun {
 	private:
 	public:
 		std::string shot_path;
-		SoundHandle shot;
 		std::string slide_path;
-		SoundHandle slide;
 		std::string trigger_path;
-		SoundHandle trigger;
-		SoundHandle magazine_down;
-		SoundHandle magazine_Set;
-		SoundHandle case_down;
-		SoundHandle load_;
-		SoundHandle sort_magazine;
-		SoundHandle foot_;
-		SoundHandle explosion;
-		//
-		SoundHandle voice_damage;
-		SoundHandle voice_death;
-		SoundHandle voice_breath;
-		SoundHandle voice_breath_run;
-		//
+
 		void Set(int mdata) {
-			SetUseASyncLoadFlag(TRUE);
-			SetCreate3DSoundFlag(TRUE);
 			shot_path = "data/audio/chara/shot_" + getparams::_str(mdata) + ".wav";
-			shot = SoundHandle::Load(shot_path);
 			slide_path = "data/audio/chara/slide_" + getparams::_str(mdata) + ".wav";
-			slide = SoundHandle::Load(slide_path);
 			trigger_path = "data/audio/chara/trigger_" + getparams::_str(mdata) + ".wav";
-			trigger = SoundHandle::Load(trigger_path);
-			magazine_down = SoundHandle::Load("data/audio/chara/mag_down_" + getparams::_str(mdata) + ".wav");
-			magazine_Set = SoundHandle::Load("data/audio/chara/mag_set_" + getparams::_str(mdata) + ".wav");
-			case_down = SoundHandle::Load("data/audio/chara/case_2.wav");
-			load_ = SoundHandle::Load("data/audio/chara/load.wav");
-			sort_magazine = SoundHandle::Load("data/audio/chara/sort.wav");
-			foot_ = SoundHandle::Load("data/audio/chara/foot_sand.wav");
-			explosion = SoundHandle::Load("data/audio/chara/explosion.wav");
-
-			voice_damage = SoundHandle::Load("data/audio/voice/damage.wav");
-			voice_death = SoundHandle::Load("data/audio/voice/death.wav");
-			voice_breath = SoundHandle::Load("data/audio/voice/breath.wav");
-			voice_breath_run = SoundHandle::Load("data/audio/voice/breath_run.wav");
-
-			SetCreate3DSoundFlag(FALSE);
-			SetUseASyncLoadFlag(FALSE);
-
+			Sounds.Add(EnumSound::Shot, shot_path);
+			Sounds.Add(EnumSound::Slide, slide_path);
+			Sounds.Add(EnumSound::Trigger, trigger_path);
+			Sounds.Add(EnumSound::MAG_Down, "data/audio/chara/mag_down_" + getparams::_str(mdata) + ".wav");
+			Sounds.Add(EnumSound::MAG_Set, "data/audio/chara/mag_set_" + getparams::_str(mdata) + ".wav");
+			Sounds.Add(EnumSound::Cate_Down, "data/audio/chara/case_2.wav");
 		}
-		void Duplicate(Audios& tgt) {
-			SetCreate3DSoundFlag(TRUE);
+		void Duplicate(Audios_Gun& tgt) {
 			this->shot_path = tgt.shot_path;
 			this->slide_path = tgt.slide_path;
 			this->trigger_path = tgt.trigger_path;
-			this->shot = tgt.shot.Duplicate();
-			this->explosion = tgt.explosion.Duplicate();
-			this->slide = tgt.slide.Duplicate();
-			this->trigger = tgt.trigger.Duplicate();
-			this->magazine_down = tgt.magazine_down.Duplicate();
-			this->magazine_Set = tgt.magazine_Set.Duplicate();
-			this->case_down = tgt.case_down.Duplicate();
-			this->load_ = tgt.load_.Duplicate();
-			this->sort_magazine = tgt.sort_magazine.Duplicate();
-			this->foot_ = tgt.foot_.Duplicate();
-			this->voice_damage = tgt.voice_damage.Duplicate();
-			this->voice_death = tgt.voice_death.Duplicate();
-			this->voice_breath = tgt.voice_breath.Duplicate();
-			this->voice_breath_run = tgt.voice_breath_run.Duplicate();
-			SetCreate3DSoundFlag(FALSE);
 		}
 		void Dispose(void) noexcept {
 			this->shot_path = "";
 			this->slide_path = "";
 			this->trigger_path = "";
-			this->shot.Dispose();
-			this->explosion.Dispose();
-			this->slide.Dispose();
-			this->trigger.Dispose();
-			this->magazine_down.Dispose();
-			this->magazine_Set.Dispose();
-			this->load_.Dispose();
-			this->sort_magazine.Dispose();
-			this->foot_.Dispose();
-			this->voice_damage.Dispose();
-			this->voice_death.Dispose();
-			this->voice_breath.Dispose();
-			this->voice_breath_run.Dispose();
 		}
 	};
 	//戦車用オーディオ
 	class Audios_tanks {
 	private:
 	public:
-		SoundHandle damage;
-		SoundHandle fire;
-		SoundHandle reload;
-		SoundHandle ricochet;
-		SoundHandle engine;
+		int damage_ID = -1;
+		int Shot_ID = -1;
+		int Reload_ID = -1;
+		int Ricochet_ID = -1;
 		//
 		void Set(int mdata) {
-			SetUseASyncLoadFlag(TRUE);
-			SetCreate3DSoundFlag(TRUE);
-			damage = SoundHandle::Load("data/audio/tank/damage/" + getparams::_str(mdata) + ".wav");
-			fire = SoundHandle::Load("data/audio/tank/fire/" + getparams::_str(mdata) + ".wav");
-			reload = SoundHandle::Load("data/audio/tank/reload/" + getparams::_str(mdata) + ".wav");
-			ricochet = SoundHandle::Load("data/audio/tank/ricochet/" + getparams::_str(mdata) + ".wav");
-			engine = SoundHandle::Load("data/audio/tank/engine.wav");
-			SetCreate3DSoundFlag(FALSE);
-			SetUseASyncLoadFlag(FALSE);
+			damage_ID = getparams::_int(mdata);
+			Shot_ID = getparams::_int(mdata);
+			Reload_ID = getparams::_int(mdata);
+			Ricochet_ID = getparams::_int(mdata);
 		}
 		void Duplicate(const Audios_tanks& tgt) {
-			SetCreate3DSoundFlag(TRUE);
-			this->damage = tgt.damage.Duplicate();
-			this->fire = tgt.fire.Duplicate();
-			this->reload = tgt.reload.Duplicate();
-			this->ricochet = tgt.ricochet.Duplicate();
-			this->engine = tgt.engine.Duplicate();
-			SetCreate3DSoundFlag(FALSE);
+			damage_ID = tgt.damage_ID;
+			Shot_ID = tgt.Shot_ID;
+			Reload_ID = tgt.Reload_ID;
+			Ricochet_ID = tgt.Ricochet_ID;
 		}
 		void Dispose(void) noexcept {
-			this->damage.Dispose();
-			this->fire.Dispose();
-			this->reload.Dispose();
-			this->ricochet.Dispose();
-			this->engine.Dispose();
+			damage_ID = -1;
+			Shot_ID = -1;
+			Reload_ID = -1;
+			Ricochet_ID = -1;
 		}
 	};
 	//弾データ
@@ -1118,7 +1182,7 @@ namespace FPS_n2 {
 		size_t stock_type = 0;				//stock
 		std::vector<std::string> can_attach;
 		std::vector<Ammos> ammo;
-		Audios audio;
+		Audios_Gun audio;
 		//magazine
 		size_t mag_cnt = 1;
 	public:
@@ -1550,8 +1614,7 @@ namespace FPS_n2 {
 				//effect
 				killer->Set_eff(Effect::ef_greexp, this->move.pos, VECTOR_ref::front(), 0.1f / 0.1f);
 				//
-				killer->Get_audio().explosion.vol(255);
-				killer->Get_audio().explosion.play_3D(this->move.pos, 100.f);
+				Sounds.Get_haveptr(EnumSound::Explosion)->Play_3D(0, this->move.pos, 100.f, 255);
 				//グレ爆破
 				this->Detach_item();
 				for (auto& tgt : chara) {
@@ -1571,10 +1634,10 @@ namespace FPS_n2 {
 								if (!tgt->Damage.Get_alive()) {
 									killer->scores.set_kill(&tgt - &chara.front(), 70);
 									tgt->scores.set_death(&killer - &chara.front());
-									tgt->Get_audio().voice_death.play_3D(tgt->Get_pos(), 10.f);
+									Sounds.Get_haveptr(EnumSound::Voice_Death)->Play_3D(0, tgt->Get_pos(), 10.f);
 								}
 								else {
-									tgt->Get_audio().voice_damage.play_3D(tgt->Get_pos(), 10.f);
+									Sounds.Get_haveptr(EnumSound::Voice_Damage)->Play_3D(0, tgt->Get_pos(), 10.f);
 								}
 								tgt->gre_eff = true;
 								break;

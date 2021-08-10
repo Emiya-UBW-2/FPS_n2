@@ -21,10 +21,6 @@ namespace FPS_n2 {
 			std::shared_ptr<MAPclass::Map> MAPPTs;
 			std::shared_ptr<GUNPARTS_Control> GunPartses;
 			std::shared_ptr<key_bind> KeyBind;
-			//UIsound
-			SoundHandle decision;
-			SoundHandle cancel;
-			SoundHandle cursor;
 			//カメラ
 			cam_info camera_main;
 			float fov_base = DX_PI_F / 2;
@@ -63,9 +59,9 @@ namespace FPS_n2 {
 				effsorce = effsorce_t;
 				GunPartses = GunPartses_t;
 				KeyBind = KeyBind_t;
-				this->decision = SoundHandle::Load("data/audio/chara/shot_2.wav");//
-				this->cancel = SoundHandle::Load("data/audio/chara/cancel.wav");
-				this->cursor = SoundHandle::Load("data/audio/chara/cursor.wav");
+				//Sounds.Get_haveptr(EnumSound::Shot)->Play_3D(2, VECTOR_ref::zero(), 1.f);//decision
+				//Sounds.Add(EnumSound::CANCEL, "data/audio/chara/cancel.wav");
+				//Sounds.Add(EnumSound::CURSOR, "data/audio/chara/cursor.wav");
 			}
 			void Set_Next(const std::shared_ptr<Sceneclass::TEMPSCENE>& Next_scenes_ptr_t, scenes NEXT) {
 				Next_scenes_ptr = Next_scenes_ptr_t;
@@ -295,7 +291,6 @@ namespace FPS_n2 {
 		class SELECT : public TEMPSCENE {
 		private:
 			//sound
-			SoundHandle assemble;
 			SoundHandle shot_se;
 			SoundHandle slide_se;
 			SoundHandle trigger_se;
@@ -474,7 +469,8 @@ namespace FPS_n2 {
 		public:
 			SELECT(void) noexcept {
 				UIparts = std::make_unique<UIclass::UI_CUSTOM>();
-				this->assemble = SoundHandle::Load("data/audio/chara/assemble.wav");
+
+				Sounds.Add(EnumSound::Assemble, "data/audio/chara/assemble.wav");
 			}
 
 			void Start(std::string_view set_str, std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine_t) {
@@ -511,9 +507,9 @@ namespace FPS_n2 {
 				}
 				{
 					SetCreateSoundTimeStretchRate(1.f / std::clamp(rate, 0.9f, 1.1f));
-					shot_se = SoundHandle::Load(mine->Get_audio().shot_path);
-					slide_se = SoundHandle::Load(mine->Get_audio().slide_path);
-					trigger_se = SoundHandle::Load(mine->Get_audio().trigger_path);
+					shot_se = SoundHandle::Load(mine->Get_Gunaudio().shot_path);
+					slide_se = SoundHandle::Load(mine->Get_Gunaudio().slide_path);
+					trigger_se = SoundHandle::Load(mine->Get_Gunaudio().trigger_path);
 					SetCreateSoundTimeStretchRate(1.f);
 				}
 				/*パーツデータをロード*/
@@ -700,7 +696,8 @@ namespace FPS_n2 {
 						//
 						{
 							change_per = 1.f;
-							assemble.play(DX_PLAYTYPE_BACK, TRUE);
+
+							Sounds.Get_haveptr(EnumSound::Assemble)->Play(0, DX_PLAYTYPE_BACK, TRUE);
 
 							xrad_t = viewparts_buf.y() * 1000.f;
 							yrad_t = ((viewparts_buf.x() > 0.f) ? 90.f - viewparts_buf.z() * 100.f : -90.f + viewparts_buf.z() * 100.f);

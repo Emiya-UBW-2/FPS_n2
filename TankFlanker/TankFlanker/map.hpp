@@ -36,7 +36,6 @@ namespace FPS_n2 {
 			std::string path;
 			MV1 map, map_col, mapcol_tank;		//地面
 			MV1 sky;							//空
-			SoundHandle envi;					//
 			std::vector<VECTOR_ref> way_point;
 			std::vector<VECTOR_ref> lean_point_q;
 			std::vector<VECTOR_ref> lean_point_e;
@@ -194,12 +193,14 @@ namespace FPS_n2 {
 				MV1::Load(this->path + "col.mv1", &map_col, true);					//mapコリジョン
 				MV1::Load(this->path + "col_tank.mv1", &mapcol_tank, true);			//mapコリジョン
 				MV1::Load(this->path + "sky/model.mv1", &sky, true);				//空
-				SetUseASyncLoadFlag(TRUE);
-				envi = SoundHandle::Load(this->path + "envi.wav");
-				minmap = GraphHandle::Load(this->path + "minimap.png");
 
+				SetUseASyncLoadFlag(TRUE);
+				minmap = GraphHandle::Load(this->path + "minimap.png");				/*minimap*/
 				this->sun_pic = GraphHandle::Load("data/sun.png");					/*sun*/
 				SetUseASyncLoadFlag(FALSE);
+
+				Sounds.Add(EnumSound::MAP0_ENVI, this->path + "envi.wav");
+
 				// 深度を描画するテクスチャの作成( １チャンネル浮動小数点１６ビットテクスチャ )
 				{
 					SetCreateDrawValidGraphChannelNum(1);
@@ -364,7 +365,7 @@ namespace FPS_n2 {
 				this->sun_pos = ray.Norm() * -1500.f;
 			}
 			void Set(void) noexcept {
-				envi.play(DX_PLAYTYPE_LOOP, TRUE);
+				Sounds.Get_haveptr(EnumSound::MAP0_ENVI)->Play(0, DX_PLAYTYPE_LOOP, TRUE);
 			}
 			void Dispose(void) noexcept {
 				for (auto& i : item) { i->Detach_item(); }
@@ -375,7 +376,6 @@ namespace FPS_n2 {
 				for (auto& w : wall) { w.b2.Dispose(); }
 				wall.clear();
 				sky.Dispose();	 //空
-				envi.Dispose();
 				way_point.clear();
 				lean_point_q.clear();
 				lean_point_e.clear();

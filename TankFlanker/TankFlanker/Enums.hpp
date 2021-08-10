@@ -100,4 +100,46 @@ namespace FPS_n2 {
 		CHANGE_SEL,
 		AIM,
 	};
+
+	enum class EnumSound {
+		//UI
+
+		CURSOR,
+		CANCEL,
+
+		//human
+
+		Sort_MAG,
+		Cate_Load,
+		Foot_Sound,
+		Explosion,
+
+		Voice_Damage,
+		Voice_Death,
+		Voice_Breath,
+		Voice_Breath_Run,
+
+		//Gun
+
+		Assemble,
+		Shot,
+		Slide,
+		Trigger,
+		MAG_Down,
+		MAG_Set,
+		Cate_Down,
+
+		//Tank
+
+		Tank_Damage,
+		Tank_Shot,
+		Tank_Reload,
+		Tank_Ricochet,
+		Tank_engine,
+
+		//Item
+
+		//MAP
+		MAP0_ENVI,
+	};
 }
