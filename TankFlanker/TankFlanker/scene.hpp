@@ -708,14 +708,11 @@ namespace FPS_n2 {
 					if (shot.trigger()) {
 						if (mine->set_flag_gun()) {
 							//todo ディレイつける
-							{
-								shot_se.play(DX_PLAYTYPE_BACK, TRUE);
-								slide_se.play(DX_PLAYTYPE_BACK, TRUE);
-								trigger_se.play(DX_PLAYTYPE_BACK, TRUE);
-								//薬莢
-								mine->create_cart();
-								mine->create_bullet();
-							}
+							shot_se.play(DX_PLAYTYPE_BACK, TRUE);
+							slide_se.play(DX_PLAYTYPE_BACK, TRUE);
+							trigger_se.play(DX_PLAYTYPE_BACK, TRUE);
+							//薬莢
+							mine->create_cart();
 							//エフェクト
 							mine->calc_shot_effect();
 						}
@@ -1029,12 +1026,13 @@ namespace FPS_n2 {
 				}
 				//弾薬設定
 				for (auto& c : this->chara) {
-					c->Set_bullet();
+					c->SetUp_bullet(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
+					c->Set_bullet_Ptr();
 				}
 				for (auto& v : this->vehicle) {
 					v->Set_bullet();
+					v->Set_bullet_Ptr();
 				}
-
 				//UI
 				UIparts->Init(DrawPts, MAPPTs);
 				//

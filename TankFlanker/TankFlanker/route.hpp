@@ -17,9 +17,11 @@ namespace FPS_n2 {
 
 		AudioPool Audio_resource;
 	public:
+		std::shared_ptr<DXDraw> DrawPts;
+	public:
 		main_c(void) noexcept {
 			auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
-			auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);	//汎用
+			DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);		//汎用
 #ifdef DEBUG
 			auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 #endif // DEBUG
