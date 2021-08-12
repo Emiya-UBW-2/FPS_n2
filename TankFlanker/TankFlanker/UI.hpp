@@ -787,8 +787,8 @@ namespace FPS_n2 {
 					for (auto& c : chara) {
 						c->Draw_Hit_UI(hit_Graph);
 					}
-					for (auto& c : vehicle) {
-						c->Draw_Hit_UI(hit_Graph);
+					for (auto& v : vehicle) {
+						v->Draw_Hit_UI(hit_Graph);
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					//todo:êÌé‘ÇÃï\é¶Ç‡

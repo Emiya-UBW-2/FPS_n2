@@ -106,6 +106,7 @@ namespace FPS_n2 {
 
 		CURSOR,
 		CANCEL,
+		TIMER,
 
 		//human
 

@@ -59,9 +59,6 @@ namespace FPS_n2 {
 				effsorce = effsorce_t;
 				GunPartses = GunPartses_t;
 				KeyBind = KeyBind_t;
-				//Sounds.Get_haveptr(EnumSound::Shot)->Play_3D(2, VECTOR_ref::zero(), 1.f);//decision
-				//Sounds.Add(EnumSound::CANCEL, "data/audio/chara/cancel.wav");
-				//Sounds.Add(EnumSound::CURSOR, "data/audio/chara/cursor.wav");
 			}
 			void Set_Next(const std::shared_ptr<Sceneclass::TEMPSCENE>& Next_scenes_ptr_t, scenes NEXT) {
 				Next_scenes_ptr = Next_scenes_ptr_t;
@@ -175,6 +172,21 @@ namespace FPS_n2 {
 			//そのまま
 			std::unique_ptr<UIclass::UI_LOAD> UIparts;
 			std::shared_ptr<PLAYERclass::PLAYER_CHARA> mine;
+			/*パーツデータをロード*/
+			void load_partsdata() {
+				std::fstream file;
+				save_parts.clear();
+				file.open(("data/save/" + save_presets[preset_select]).c_str(), std::ios::binary | std::ios::in);
+				save_c savetmp;
+				while (true) {
+					file.read((char*)&savetmp, sizeof(savetmp));
+					if (file.eof()) {
+						break;
+					}
+					this->save_parts.emplace_back(savetmp);
+				}
+				file.close();
+			}
 		public:
 			std::string_view putout_preset() { return save_presets[preset_select]; }
 			//
@@ -204,21 +216,9 @@ namespace FPS_n2 {
 					FindClose(hFind);
 					preset_select_max = int(save_presets.size());
 				}
+				preset_select = 0;
 				/*パーツデータをロード*/
-				{
-					std::fstream file;
-					save_parts.clear();
-					file.open(("data/save/" + save_presets[0]).c_str(), std::ios::binary | std::ios::in);
-					save_c savetmp;
-					while (true) {
-						file.read((char*)&savetmp, sizeof(savetmp));
-						if (file.eof()) {
-							break;
-						}
-						this->save_parts.emplace_back(savetmp);
-					}
-					file.close();
-				}
+				load_partsdata();
 			}
 			void Start(std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine_t) {
 				mine = mine_t;
@@ -236,29 +236,23 @@ namespace FPS_n2 {
 					left.GetInput(mine->Get_key_().akey);
 					right.GetInput(mine->Get_key_().dkey);
 					if (left.trigger()) {
+						Sounds.Get_haveptr(EnumSound::CURSOR)->Play(0, DX_PLAYTYPE_BACK, TRUE);
 						--preset_select;
 						changef = true;
 					}
 					if (right.trigger()) {
+						Sounds.Get_haveptr(EnumSound::CURSOR)->Play(0, DX_PLAYTYPE_BACK, TRUE);
 						++preset_select;
 						changef = true;
+					}
+					if (mine->Get_key_().jamp) {
+						Sounds.Get_haveptr(EnumSound::Assemble)->Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
 					if (preset_select < 0) { preset_select = preset_select_max - 1; }
 					if (preset_select > preset_select_max - 1) { preset_select = 0; }
 					if (changef) {
 						/*パーツデータをロード*/
-						std::fstream file;
-						save_parts.clear();
-						file.open(("data/save/" + save_presets[preset_select]).c_str(), std::ios::binary | std::ios::in);
-						save_c savetmp;
-						while (true) {
-							file.read((char*)&savetmp, sizeof(savetmp));
-							if (file.eof()) {
-								break;
-							}
-							this->save_parts.emplace_back(savetmp);
-						}
-						file.close();
+						load_partsdata();
 					}
 				}
 				return (!mine->Get_key_().jamp);
@@ -470,7 +464,6 @@ namespace FPS_n2 {
 			SELECT(void) noexcept {
 				UIparts = std::make_unique<UIclass::UI_CUSTOM>();
 
-				Sounds.Add(EnumSound::Assemble, "data/audio/chara/assemble.wav");
 			}
 
 			void Start(std::string_view set_str, std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine_t) {
@@ -769,6 +762,7 @@ namespace FPS_n2 {
 					}
 				}
 				if (mine->Get_key_().jamp) {
+					Sounds.Get_haveptr(EnumSound::Assemble)->Play(0, DX_PLAYTYPE_BACK, TRUE);
 					return false;
 				}
 				return true;

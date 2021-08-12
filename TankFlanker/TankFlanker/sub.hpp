@@ -54,65 +54,78 @@ namespace FPS_n2 {
 			public:
 				size_t ID_2;
 				std::string path;
-				std::array<SoundHandle, 20> handle;
+				std::vector<SoundHandle> handle;
+
 			};
 
 			EnumSound ID;
-			std::vector<handles> handle;
+			std::vector<handles> shandle;
 			size_t now = 0;
 		public:
 			const auto& Get_ID(void)const noexcept { return ID; }
-			void Set(EnumSound ID_t, std::string path_t) {
+			void Set(EnumSound ID_t, size_t buffersize, std::string path_t, bool is3Dsound = true) {
 				if (path_t == "") { return; }
-				for (auto& h : this->handle) {
+				for (auto& h : this->shandle) {
 					if (h.path == path_t) { return; }
 				}
 				this->ID = ID_t;
-				this->handle.resize(this->handle.size() + 1);
-				this->handle.back().path = path_t;
+				this->shandle.resize(this->shandle.size() + 1);
+				this->shandle.back().path = path_t;
+				this->shandle.back().handle.resize(buffersize);
 				//SetUseASyncLoadFlag(TRUE);
 				SetUseASyncLoadFlag(FALSE);
-				SetCreate3DSoundFlag(TRUE);
-				this->handle.back().handle[0] = SoundHandle::Load(this->handle.back().path);
+				if (is3Dsound) {
+					SetCreate3DSoundFlag(TRUE);
+				}
+				this->shandle.back().handle[0] = SoundHandle::Load(this->shandle.back().path);
 				SetCreate3DSoundFlag(FALSE);
 				SetUseASyncLoadFlag(FALSE);
 
 				SetCreate3DSoundFlag(TRUE);
-				for (size_t i = 1;i < this->handle.back().handle.size();i++) {
-					this->handle.back().handle[i] = this->handle.back().handle[0].Duplicate();
+				for (size_t i = 1;i < this->shandle.back().handle.size();i++) {
+					this->shandle.back().handle[i] = this->shandle.back().handle[0].Duplicate();
 				}
 				SetCreate3DSoundFlag(FALSE);
 			}
 			void Play(int Sel_t, const int& type, const int& flag = 1, int vol_t = -1) {
-				handle[Sel_t].handle[now].play(type, flag);
+				shandle[Sel_t].handle[now].play(type, flag);
 				if (vol_t != -1) {
-					handle[Sel_t].handle[now].vol(vol_t);
+					shandle[Sel_t].handle[now].vol(vol_t);
 				}
-				++now %= handle[Sel_t].handle.size();
+				++now %= shandle[Sel_t].handle.size();
 			}
-			void Play_3D(int Sel_t, const VECTOR_ref& pos, const float& radius, int vol_t = -1) noexcept {
-				handle[Sel_t].handle[now].play_3D(pos, radius);
-				if (vol_t != -1) {
-					handle[Sel_t].handle[now].vol(vol_t);
+			void Play_3D(int Sel_t, const VECTOR_ref& pos_t, const float& radius, int vol_t = -1) noexcept {
+				bool isplay = true;
+				{
+					//距離内にいない場合鳴らさない
+					//float dist = (pos_t - GetCameraPosition()).size();
+					//isplay = (dist < radius);
 				}
-				++now %= handle[Sel_t].handle.size();
+				if (isplay) {
+					shandle[Sel_t].handle[now].play_3D(pos_t, radius);
+					if (vol_t != -1) {
+						shandle[Sel_t].handle[now].vol(vol_t);
+					}
+					++now %= shandle[Sel_t].handle.size();
+				}
 			}
 		};
 	private:
 		std::vector<Soundhave> havehandle;
 	public:
-		size_t Add(EnumSound ID_t, std::string path_t = "") {
+		size_t Add(EnumSound ID_t, size_t buffersize = 1, std::string path_t = "", bool is3Dsound = true) {
 			for (auto& h : this->havehandle) {
 				if (h.Get_ID() == ID_t) {
+					h.Set(ID_t, buffersize, path_t, is3Dsound);
 					return &h - &this->havehandle.front();
 				}
 			}
 			this->havehandle.resize(this->havehandle.size() + 1);
-			this->havehandle.back().Set(ID_t, path_t);
+			this->havehandle.back().Set(ID_t, buffersize, path_t,is3Dsound);
 			return this->havehandle.size() - 1;
 		}
-		Soundhave* Get_haveptr(EnumSound ID_t, std::string path_t = "") {
-			return &this->havehandle[Add(ID_t, path_t)];
+		Soundhave* Get_haveptr(EnumSound ID_t) {
+			return &this->havehandle[Add(ID_t)];
 		}
 	};
 	SoundPool Sounds;
@@ -560,6 +573,7 @@ namespace FPS_n2 {
 	private:
 		std::shared_ptr<key_bind> KeyBind{ nullptr };
 		float P_f = 0.0f;
+		bool old = false;
 	public:
 		//
 		pause_menu(std::shared_ptr<key_bind>& KeyBind_t) noexcept {
@@ -567,7 +581,14 @@ namespace FPS_n2 {
 			SetUseASyncLoadFlag(FALSE);
 		}
 		//
-		const auto Pause_key(void) noexcept { return KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(true); }
+		const auto Pause_key(void) noexcept {
+			auto key_p = KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(true);
+			if (key_p!=old) {
+				Sounds.Get_haveptr(EnumSound::CANCEL)->Play(0, DX_PLAYTYPE_BACK, TRUE);
+			}
+			old = key_p;
+			return key_p;
+		}
 		//
 		bool Update(void) noexcept {
 			KeyBind->key_use_ID[(int)EnumKeyBind::BACK_TITLE].isalways = KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(false);
@@ -577,6 +598,7 @@ namespace FPS_n2 {
 			bool selend = true;
 			//強制帰還はポーズメニューで
 			if (KeyBind->key_use_ID[(int)EnumKeyBind::BACK_TITLE].Get_key_Auto(true)) {
+				Sounds.Get_haveptr(EnumSound::CANCEL)->Play(0, DX_PLAYTYPE_BACK, TRUE);
 				KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].set_key(false);
 				selend = false;
 			}
@@ -617,6 +639,7 @@ namespace FPS_n2 {
 	class RULE_parts {
 	private:
 		float Ready = 0.f;
+		float Ready_border = 0.f;
 		float timer = 0.f;
 	public:
 		const auto& Get_timer(void) const noexcept { return timer; }
@@ -626,6 +649,7 @@ namespace FPS_n2 {
 		const auto Get_Playing(void) const noexcept { return Get_Start() && !Get_end(); }
 		void Set(void) noexcept {
 			Ready = 3.0f;
+			Ready_border = Ready;
 			timer = 1800.f;
 		}
 		void UpDate(void) noexcept {
@@ -633,6 +657,10 @@ namespace FPS_n2 {
 				timer -= 1.f / FPS;
 			}
 			else {
+				if (Ready <= Ready_border) {
+					Sounds.Get_haveptr(EnumSound::TIMER)->Play(0, DX_PLAYTYPE_BACK, TRUE,255);
+					Ready_border--;
+				}
 				Ready -= 1.f / FPS;
 			}
 		}
@@ -805,27 +833,29 @@ namespace FPS_n2 {
 	class AudioPool {
 	public:
 		void Set() {
-			//キャラ用オーディオ
-			Sounds.Add(EnumSound::Sort_MAG, "data/audio/chara/sort.wav");
-			Sounds.Add(EnumSound::Foot_Sound, "data/audio/chara/foot_sand.wav");
-			Sounds.Add(EnumSound::Explosion, "data/audio/chara/explosion.wav");
-			Sounds.Add(EnumSound::Cate_Load, "data/audio/chara/load.wav");
-
-			Sounds.Add(EnumSound::Voice_Damage, "data/audio/voice/damage.wav");
-			Sounds.Add(EnumSound::Voice_Death, "data/audio/voice/death.wav");
-			Sounds.Add(EnumSound::Voice_Breath, "data/audio/voice/breath.wav");
-			Sounds.Add(EnumSound::Voice_Breath_Run, "data/audio/voice/breath_run.wav");
-			//銃用オーディオ
-			//戦車用オーディオ
 			std::string p;
 			WIN32_FIND_DATA win32fdt;
+			//キャラ用オーディオ
+			Sounds.Add(EnumSound::Sort_MAG, 2, "data/audio/chara/sort.wav");
+			Sounds.Add(EnumSound::Cate_Load, 2, "data/audio/chara/load.wav");
+			Sounds.Add(EnumSound::Foot_Sound, 5, "data/audio/chara/foot_sand.wav");
+			Sounds.Add(EnumSound::Explosion, 2, "data/audio/chara/explosion.wav");
+
+			Sounds.Add(EnumSound::Voice_Damage, 2, "data/audio/voice/damage.wav");
+			Sounds.Add(EnumSound::Voice_Death, 2, "data/audio/voice/death.wav");
+			Sounds.Add(EnumSound::Voice_Breath, 4, "data/audio/voice/breath.wav");
+			Sounds.Add(EnumSound::Voice_Breath_Run, 4, "data/audio/voice/breath_run.wav");
+			//銃用オーディオ
+			Sounds.Add(EnumSound::Cate_Down, 5, "data/audio/gun/cate/case_2.wav");
+			Sounds.Add(EnumSound::Assemble, 1, "data/audio/gun/assemble.wav");
+			//戦車用オーディオ
 			{
 				HANDLE hFind = FindFirstFile("data/audio/tank/damage/*", &win32fdt);
 				if (hFind != INVALID_HANDLE_VALUE) {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Damage, "data/audio/tank/damage/" + p);
+							Sounds.Add(EnumSound::Tank_Damage, 2, "data/audio/tank/damage/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -837,19 +867,19 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Shot, "data/audio/tank/fire/" + p);
+							Sounds.Add(EnumSound::Tank_Shot, 10, "data/audio/tank/fire/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
 				FindClose(hFind);
 			}
 			{
-				HANDLE hFind = FindFirstFile("data/audio/tank/reload/*", &win32fdt);
+				HANDLE hFind = FindFirstFile("data/audio/tank/reload/hand/*", &win32fdt);
 				if (hFind != INVALID_HANDLE_VALUE) {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Reload, "data/audio/tank/reload/" + p);
+							Sounds.Add(EnumSound::Tank_Reload, 2, "data/audio/tank/reload/hand/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -861,13 +891,21 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Ricochet, "data/audio/tank/ricochet/" + p);
+							Sounds.Add(EnumSound::Tank_Ricochet, 2, "data/audio/tank/ricochet/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
 				FindClose(hFind);
 			}
-			Sounds.Add(EnumSound::Tank_engine, "data/audio/tank/engine.wav");
+			Sounds.Add(EnumSound::Tank_engine, 4, "data/audio/tank/engine.wav");
+			//UI用オーディオ
+			//*
+			//Sounds.Get_haveptr(EnumSound::Shot)->Play_3D(2, VECTOR_ref::zero(), 1.f);//decision
+			Sounds.Add(EnumSound::CANCEL, 2, "data/audio/UI/cancel.wav", false);
+			Sounds.Add(EnumSound::CURSOR, 2, "data/audio/UI/cursor.wav", false);
+			//*/
+			Sounds.Add(EnumSound::TIMER, 2, "data/audio/UI/timer.wav", false);
+			//
 		}
 	};
 	//銃用オーディオ
@@ -879,15 +917,14 @@ namespace FPS_n2 {
 		std::string trigger_path;
 
 		void Set(int mdata) {
-			shot_path = "data/audio/chara/shot_" + getparams::_str(mdata) + ".wav";
-			slide_path = "data/audio/chara/slide_" + getparams::_str(mdata) + ".wav";
-			trigger_path = "data/audio/chara/trigger_" + getparams::_str(mdata) + ".wav";
-			Sounds.Add(EnumSound::Shot, shot_path);
-			Sounds.Add(EnumSound::Slide, slide_path);
-			Sounds.Add(EnumSound::Trigger, trigger_path);
-			Sounds.Add(EnumSound::MAG_Down, "data/audio/chara/mag_down_" + getparams::_str(mdata) + ".wav");
-			Sounds.Add(EnumSound::MAG_Set, "data/audio/chara/mag_set_" + getparams::_str(mdata) + ".wav");
-			Sounds.Add(EnumSound::Cate_Down, "data/audio/chara/case_2.wav");
+			shot_path = "data/audio/gun/fire/shot_" + getparams::_str(mdata) + ".wav";
+			slide_path = "data/audio/gun/slide/slide_" + getparams::_str(mdata) + ".wav";
+			trigger_path = "data/audio/gun/trigger.wav";
+			Sounds.Add(EnumSound::Shot, 20, shot_path);
+			Sounds.Add(EnumSound::Slide, 5, slide_path);
+			Sounds.Add(EnumSound::Trigger, 5, trigger_path);
+			Sounds.Add(EnumSound::MAG_Down, 5, "data/audio/gun/mag_down/mag_down_" + getparams::_str(mdata) + ".wav");
+			Sounds.Add(EnumSound::MAG_Set,5, "data/audio/gun/mag_set/mag_set_" + getparams::_str(mdata) + ".wav");
 		}
 		void Duplicate(Audios_Gun& tgt) {
 			this->shot_path = tgt.shot_path;
@@ -904,28 +941,16 @@ namespace FPS_n2 {
 	class Audios_tanks {
 	private:
 	public:
-		int damage_ID = -1;
-		int Shot_ID = -1;
 		int Reload_ID = -1;
-		int Ricochet_ID = -1;
 		//
 		void Set(int mdata) {
-			damage_ID = getparams::_int(mdata);
-			Shot_ID = getparams::_int(mdata);
 			Reload_ID = getparams::_int(mdata);
-			Ricochet_ID = getparams::_int(mdata);
 		}
 		void Duplicate(const Audios_tanks& tgt) {
-			damage_ID = tgt.damage_ID;
-			Shot_ID = tgt.Shot_ID;
 			Reload_ID = tgt.Reload_ID;
-			Ricochet_ID = tgt.Ricochet_ID;
 		}
 		void Dispose(void) noexcept {
-			damage_ID = -1;
-			Shot_ID = -1;
 			Reload_ID = -1;
-			Ricochet_ID = -1;
 		}
 	};
 	//弾データ
@@ -942,7 +967,6 @@ namespace FPS_n2 {
 		float pene = 10.f;//貫通
 		int damage = 10;//ダメージ
 	public:
-		float& set_pene(void) noexcept { return pene; }
 		MV1& Get_model(void) noexcept { return model; }
 
 		const auto& Get_model_full(void) const noexcept { return model_full; }
@@ -1674,10 +1698,12 @@ namespace FPS_n2 {
 		frames frame1;
 		frames frame2;
 		frames frame3;
+		int sound_use = 0;
 	public:
 
 		const auto& Get_rounds()const noexcept { return rounds; }
 		const auto& Get_Spec()const noexcept { return Spec; }
+		const auto& Get_sound()const noexcept { return sound_use; }
 
 		const auto& Get_load_time()const noexcept { return load_time; }
 		const auto& Get_frame1()const noexcept { return frame1; }
@@ -1721,7 +1747,7 @@ namespace FPS_n2 {
 			this->name = getparams::getright(stt);
 			this->load_time = getparams::_float(mdata);
 			this->rounds = getparams::_int(mdata);
-
+			this->sound_use = getparams::_int(mdata);
 			this->Spec.resize(this->Spec.size() + 1);
 			this->Spec.back().Set_before("data/ammo/", getparams::_str(mdata));
 			while (true) {

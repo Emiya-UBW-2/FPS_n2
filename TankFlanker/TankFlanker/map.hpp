@@ -199,7 +199,7 @@ namespace FPS_n2 {
 				this->sun_pic = GraphHandle::Load("data/sun.png");					/*sun*/
 				SetUseASyncLoadFlag(FALSE);
 
-				Sounds.Add(EnumSound::MAP0_ENVI, this->path + "envi.wav");
+				Sounds.Add(EnumSound::MAP0_ENVI,1, this->path + "envi.wav");
 
 				// 深度を描画するテクスチャの作成( １チャンネル浮動小数点１６ビットテクスチャ )
 				{

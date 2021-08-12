@@ -5,7 +5,6 @@ mode=semi
 mode=end
 shot_sound=1
 slide_sound=1
-trigger_sound=1
 mag_down_sound=1
 mag_set_sound=1
 recoil_xadd(deg)=7.2
