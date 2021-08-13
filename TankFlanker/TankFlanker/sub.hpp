@@ -12,6 +12,7 @@ namespace std {
 }; // namespace std
 //
 namespace FPS_n2 {
+
 	//フォントプール
 	class FontPool {
 	public:
@@ -41,14 +42,12 @@ namespace FPS_n2 {
 			return this->havehandle.size() - 1;
 		}
 	public:
-		Fonthave* Get_haveptr(int siz_t) {
-			return &this->havehandle[Add(siz_t)];
-		}
+		Fonthave& Get(int siz_t) { return this->havehandle[Add(siz_t)]; }
 	};
 	FontPool Fonts;
 	//サウンドプール
 	class SoundPool {
-	public:
+	private:
 		class Soundhave {
 			class handles {
 			public:
@@ -124,11 +123,66 @@ namespace FPS_n2 {
 			this->havehandle.back().Set(ID_t, buffersize, path_t,is3Dsound);
 			return this->havehandle.size() - 1;
 		}
-		Soundhave* Get_haveptr(EnumSound ID_t) {
-			return &this->havehandle[Add(ID_t)];
-		}
+		Soundhave& Get(EnumSound ID_t) { return this->havehandle[Add(ID_t)]; }
 	};
 	SoundPool Sounds;
+	//エフェクトリソース
+	class EffectControl {
+	public:
+		LONGLONG Update_effect_was = 0;					//エフェクトのアップデートタイミングタイマー
+		bool Update_effect_f{ true };					//エフェクトのアップデートタイミングフラグ
+		std::vector<EffekseerEffectHandle> effsorce;	/*エフェクトリソース*/
+
+		void Init(void) noexcept {
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			HANDLE hFind = FindFirstFile("data/effect/*", &win32fdt);
+			if (hFind != INVALID_HANDLE_VALUE) {
+				do {
+					{
+						p = win32fdt.cFileName;
+						if (p.find(".efk") != std::string::npos) {
+							effsorce.resize(effsorce.size() + 1);
+							effsorce.back() = EffekseerEffectHandle::load("data/effect/" + p);
+						}
+					}
+				} while (FindNextFile(hFind, &win32fdt));
+			} //else{ return false; }
+			FindClose(hFind);
+			effsorce.resize(effsorce.size() + 1);
+			effsorce.back() = EffekseerEffectHandle::load("data/effect/gndsmk.efk");								//戦車用エフェクト
+		}
+
+		void Start(void) noexcept {
+			Update_effect_was = GetNowHiPerformanceCount();
+		}
+
+		void Calc(void) noexcept {
+			Update_effect_f = ((GetNowHiPerformanceCount() - Update_effect_was) >= 1000000 / 60);
+			if (Update_effect_f) {
+				Update_effect_was = GetNowHiPerformanceCount();
+			}
+		}
+
+		void Dispose(void) noexcept {
+			for (auto& e : effsorce) {
+				e.Dispose();
+			}
+		}
+	};
+	EffectControl effectControl;
+
+
+	class save_c {
+	public:
+		size_t cang_ = 0;						//パーツ選択
+		EnumGunParts type_ = EnumGunParts::PARTS_NONE;			//パーツの種類
+		EnumAttachPoint pt_cat_ = EnumAttachPoint::POINTS_NONE;	//ベースパーツの場所
+		EnumGunParts pt_type_ = EnumGunParts::PARTS_NONE;		//ベースパーツの種類
+		size_t pt_sel_ = 0;						//ベースパーツの番号(マウントなど)
+	};
+
+
 	//キーバインド
 	class key_bind {
 	private:
@@ -142,31 +196,36 @@ namespace FPS_n2 {
 			int first = 0;
 			int use_mode = 0;
 			switchs on_off;
+			std::array<std::string,3> second;
 		public:
-			std::string second;
+			
+
 			bool isalways{ false };
 			keyhandle* use_handle{ nullptr };
 
 			const auto& Get_first()const noexcept { return first; }
+			const auto& Get_second(size_t sel)const noexcept { return second[sel]; }
 
-			void Set(int first_t, std::string_view second_t, int mode) {
+			void Set(int first_t, std::string_view second_t, int mode, std::string_view second2_t = "", std::string_view second3_t="") {
 				first = first_t;
-				second = second_t;
+				second[0] = second_t;
+				second[1] = second2_t;
+				second[2] = second3_t;
 				use_mode = mode;
 			}
 			//private:
-			bool Get_key(int id, bool checkupdate) {
+			bool Get_key(int id, bool checkUpdate) {
 				switch (id) {
 					//キー
 				case 0:
 					return CheckHitKey(this->first) != 0;
 				case 1:
-					if (checkupdate) {
+					if (checkUpdate) {
 						on_off.GetInput(CheckHitKey(this->first) != 0);
 					}
 					return on_off.on();
 				case 2:
-					if (checkupdate) {
+					if (checkUpdate) {
 						on_off.GetInput(CheckHitKey(this->first) != 0);
 					}
 					return on_off.trigger();
@@ -174,12 +233,12 @@ namespace FPS_n2 {
 				case 3:
 					return (GetMouseInput() & this->first) != 0;
 				case 4:
-					if (checkupdate) {
+					if (checkUpdate) {
 						on_off.GetInput((GetMouseInput() & this->first) != 0);
 					}
 					return on_off.on();
 				case 5:
-					if (checkupdate) {
+					if (checkUpdate) {
 						on_off.GetInput((GetMouseInput() & this->first) != 0);
 					}
 					return on_off.trigger();
@@ -191,9 +250,9 @@ namespace FPS_n2 {
 			void set_key(bool t) {
 				on_off.first = t;
 			}
-			bool Get_key_Auto(bool checkupdate) {
+			bool Get_key_Auto(bool checkUpdate) {
 				this->isalways = true;
-				return this->Get_key(this->use_mode, checkupdate);
+				return this->Get_key(this->use_mode, checkUpdate);
 
 			}
 		};
@@ -211,9 +270,14 @@ namespace FPS_n2 {
 		float noF1_f = 0.0f;
 		GraphHandle keyboad;
 		GraphHandle mousehandle;
-	public:
+
+		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
+
 		std::vector<key_pair> key_use_ID;
 		std::vector<key_pair> mouse_use_ID;
+		size_t info = 0;
+	public:
+		void set_Mode(size_t now) { info = now; }
 		//
 		auto& Get_key_use_ID(EnumKeyBind id_t) {
 			return key_use_ID[(int)id_t];
@@ -225,7 +289,7 @@ namespace FPS_n2 {
 			return mouse_use_ID[(int)id_t].Get_key_Auto(true);
 		}
 		//
-		key_bind(void) noexcept {
+		key_bind(std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
 			SetUseASyncLoadFlag(FALSE);
 			mousehandle = GraphHandle::Load("data/key/mouse.png");
 			SetTransColor(0, 255, 0);
@@ -234,13 +298,13 @@ namespace FPS_n2 {
 			//
 			{
 				key_pair tmp_k;
-				tmp_k.Set(KEY_INPUT_W, "前進", 0);
+				tmp_k.Set(KEY_INPUT_W, "前進", 0, "選択");
 				this->key_use_ID.emplace_back(tmp_k);//0
-				tmp_k.Set(KEY_INPUT_S, "後退", 0);
+				tmp_k.Set(KEY_INPUT_S, "後退", 0, "選択");
 				this->key_use_ID.emplace_back(tmp_k);//1
-				tmp_k.Set(KEY_INPUT_D, "右歩き", 0);
+				tmp_k.Set(KEY_INPUT_D, "右歩き", 0, "選択");
 				this->key_use_ID.emplace_back(tmp_k);//2
-				tmp_k.Set(KEY_INPUT_A, "左歩き", 0);
+				tmp_k.Set(KEY_INPUT_A, "左歩き", 0, "選択");
 				this->key_use_ID.emplace_back(tmp_k);//3
 				tmp_k.Set(KEY_INPUT_Q, "左リーン", 0);
 				this->key_use_ID.emplace_back(tmp_k);//4
@@ -254,32 +318,30 @@ namespace FPS_n2 {
 				this->key_use_ID.emplace_back(tmp_k);//8
 				tmp_k.Set(KEY_INPUT_C, "しゃがみ", 1);
 				this->key_use_ID.emplace_back(tmp_k);//9
-				tmp_k.Set(KEY_INPUT_O, "タイトル画面に戻る", 1);
+				tmp_k.Set(KEY_INPUT_ESCAPE, "強制終了", 1,"強制終了");
 				this->key_use_ID.emplace_back(tmp_k);//10
-				tmp_k.Set(KEY_INPUT_ESCAPE, "強制終了", 1);
-				this->key_use_ID.emplace_back(tmp_k);//11
 				tmp_k.Set(KEY_INPUT_Z, "マガジン整理", 2);
-				this->key_use_ID.emplace_back(tmp_k);//12
+				this->key_use_ID.emplace_back(tmp_k);//11
 				tmp_k.Set(KEY_INPUT_LSHIFT, "走る", 0);
+				this->key_use_ID.emplace_back(tmp_k);//12
+				tmp_k.Set(KEY_INPUT_SPACE, "ジャンプ", 2, "決定");
 				this->key_use_ID.emplace_back(tmp_k);//13
-				tmp_k.Set(KEY_INPUT_SPACE, "ジャンプ", 2);
-				this->key_use_ID.emplace_back(tmp_k);//14
 				tmp_k.Set(KEY_INPUT_LCONTROL, "視点切替", 0);
+				this->key_use_ID.emplace_back(tmp_k);//14
+				tmp_k.Set(KEY_INPUT_F1, "キー案内", 1, "キー案内");
 				this->key_use_ID.emplace_back(tmp_k);//15
-				tmp_k.Set(KEY_INPUT_F1, "キー案内", 1);
-				this->key_use_ID.emplace_back(tmp_k);//16
 				tmp_k.Set(KEY_INPUT_V, "眺める", 2);
-				this->key_use_ID.emplace_back(tmp_k);//17
+				this->key_use_ID.emplace_back(tmp_k);//16
 				tmp_k.Set(KEY_INPUT_P, "ポーズ", 1);
-				this->key_use_ID.emplace_back(tmp_k);//18
+				this->key_use_ID.emplace_back(tmp_k);//17
 				tmp_k.Set(KEY_INPUT_H, "治療キット排出", 2);
-				this->key_use_ID.emplace_back(tmp_k);//19
+				this->key_use_ID.emplace_back(tmp_k);//18
 				tmp_k.Set(KEY_INPUT_B, "乗車", 2);
-				this->key_use_ID.emplace_back(tmp_k);//20
+				this->key_use_ID.emplace_back(tmp_k);//19
 				//
-				tmp_k.Set(MOUSE_INPUT_LEFT, "射撃", 3);
+				tmp_k.Set(MOUSE_INPUT_LEFT, "射撃", 3, "射撃");
 				this->mouse_use_ID.emplace_back(tmp_k);//0
-				tmp_k.Set(MOUSE_INPUT_MIDDLE, "セレクター切替", 5);
+				tmp_k.Set(MOUSE_INPUT_MIDDLE, "セレクター切替", 5, "ビュー切り替え");
 				this->mouse_use_ID.emplace_back(tmp_k);//1
 				tmp_k.Set(MOUSE_INPUT_RIGHT, "エイム", 3);
 				this->mouse_use_ID.emplace_back(tmp_k);//2
@@ -379,11 +441,13 @@ namespace FPS_n2 {
 				}
 				//*/
 			}
+
+			DrawPts = DrawPts_t;
 		}
 		//
 		const auto Esc_key(void) noexcept { return this->key_use_ID[(int)EnumKeyBind::ESCAPE].Get_key_Auto(true); }
 		//
-		void reSet_isalways(void) noexcept {
+		void Reset_isalways(void) noexcept {
 			for (auto& i : this->key_use_ID) {
 				i.isalways = false;
 			}
@@ -392,7 +456,7 @@ namespace FPS_n2 {
 			}
 		}
 		//
-		void draw(void) noexcept {
+		void Draw(void) noexcept {
 			auto tmp_f1 = this->key_use_ID[(int)EnumKeyBind::INFO].Get_key_Auto(true);
 			easing_set(&F1_f, float(tmp_f1), 0.9f);
 			noF1_f = std::max(noF1_f - 1.f / FPS, 0.f);
@@ -403,10 +467,10 @@ namespace FPS_n2 {
 				int xp_s = y_r(1500), yp_s = y_r(200), y_size = y_r(32);
 				//背景
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * F1_f));
-				DrawBox(0, 0, deskx, desky, GetColor(0, 0, 0), TRUE);
+				DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
 				if (F1_f > 0.9f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
-					keyboad.DrawExtendGraph(0, 0, deskx, desky, true);
+					keyboad.DrawExtendGraph(0, 0, DrawPts->disp_x, DrawPts->disp_y, true);
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				//前面
@@ -459,7 +523,7 @@ namespace FPS_n2 {
 									yss = int(float(yss) * siz_t);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, siz_t, 0.f, false);
 								}
-								Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get_haveptr(y_r(24))->Get_size()) / 2, i.second, GetColor(255, 255, 255));
+								Fonts.Get(y_r(24)).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24)).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255));
 								yp_s += y_size;
 							}
 						}
@@ -477,7 +541,7 @@ namespace FPS_n2 {
 									i.use_handle->offhandle.GetSize(nullptr, &yss);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
-								Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get_haveptr(y_r(24))->Get_size()) / 2, i.second, GetColor(255, 255, 255)); yp_s += y_size;
+								Fonts.Get(y_r(24)).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24)).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255)); yp_s += y_size;
 							}
 						}
 					}
@@ -487,7 +551,7 @@ namespace FPS_n2 {
 			if (!tmp_f1) {
 				if (noF1_f >= 0.1f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * std::clamp(noF1_f, 0.f, 1.f)));
-					int xp_s = deskx - y_r(700), yp_s = desky - y_r(28), x_size = y_r(26), y_size = y_r(24);
+					int xp_s = DrawPts->disp_x - y_r(700), yp_s = DrawPts->disp_y - y_r(28), x_size = y_r(26), y_size = y_r(24);
 					int xss = 0, yss = 0;
 					float siz_t = float(y_size - 4) / 25.f;
 					for (auto& i : this->key_use_ID) {
@@ -568,52 +632,99 @@ namespace FPS_n2 {
 		}
 		//
 	};
-	//キーバインド
+	//ポーズメニュー
 	class pause_menu {
 	private:
 		std::shared_ptr<key_bind> KeyBind{ nullptr };
+		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
 		float P_f = 0.0f;
 		bool old = false;
+
+		int select = 0;
+		int selmax = 3;
+		//キー
+		switchs up;
+		switchs down;
+		switchs left;
+		switchs right;
+		switchs shot;
+	private:
+		std::vector<float> sel_x;
+		auto& Sel_X(size_t size) {
+			if (sel_x.size() < size + 1) {
+				sel_x.resize(size + 1);
+				sel_x[size] = 0.f;
+			}
+			return sel_x[size];
+		}
 	public:
 		//
-		pause_menu(std::shared_ptr<key_bind>& KeyBind_t) noexcept {
+		pause_menu(std::shared_ptr<key_bind>& KeyBind_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
 			KeyBind = KeyBind_t;
+			DrawPts = DrawPts_t;
 			SetUseASyncLoadFlag(FALSE);
 		}
 		//
 		const auto Pause_key(void) noexcept {
-			auto key_p = KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(true);
+			auto key_p = KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Get_key_Auto(true);
 			if (key_p!=old) {
-				Sounds.Get_haveptr(EnumSound::CANCEL)->Play(0, DX_PLAYTYPE_BACK, TRUE);
+				Sounds.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 			}
 			old = key_p;
 			return key_p;
 		}
 		//
 		bool Update(void) noexcept {
-			KeyBind->key_use_ID[(int)EnumKeyBind::BACK_TITLE].isalways = KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(false);
-
 			SetMouseDispFlag(TRUE);
-
 			bool selend = true;
-			//強制帰還はポーズメニューで
-			if (KeyBind->key_use_ID[(int)EnumKeyBind::BACK_TITLE].Get_key_Auto(true)) {
-				Sounds.Get_haveptr(EnumSound::CANCEL)->Play(0, DX_PLAYTYPE_BACK, TRUE);
-				KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].set_key(false);
-				selend = false;
+
+			KeyBind->set_Mode(1);
+			up.GetInput(KeyBind->Get_key_use(EnumKeyBind::FRONT));
+			down.GetInput(KeyBind->Get_key_use(EnumKeyBind::BACK));
+			left.GetInput(KeyBind->Get_key_use(EnumKeyBind::LEFT));
+			right.GetInput(KeyBind->Get_key_use(EnumKeyBind::RIGHT));
+			shot.GetInput(KeyBind->Get_key_use(EnumKeyBind::JUMP));
+			if (up.trigger()) {
+				Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				select--;
 			}
+			if (down.trigger()) {
+				Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				select++;
+			}
+
+			if (select < 0) { select = selmax- 1; }
+			if (select > selmax - 1) { select = 0; }
+
+			if(shot.trigger()){
+				//オプション
+				if (select == 0) {
+					Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				}
+				//戦闘に戻る
+				if (select == 1) {
+					Sounds.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).set_key(false);
+				}
+				//強制帰還
+				if (select == 2) {
+					Sounds.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).set_key(false);
+					selend = false;
+				}
+			}
+
 			return selend;
 		}
 		//
-		void draw(void) noexcept {
-			auto tmp_P = KeyBind->key_use_ID[(int)EnumKeyBind::PAUSE].Get_key_Auto(false);
+		void Draw(void) noexcept {
+			auto tmp_P = KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Get_key_Auto(false);
 			easing_set(&P_f, float(tmp_P), 0.9f);
 			//インフォ
 			if (P_f > 0.1f) {
-				int yp_t = 100;
 				//背景
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * P_f));
-				DrawBox(0, 0, deskx, desky, GetColor(0, 0, 0), TRUE);
+				DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
 				if (P_f > 0.9f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 					//背景画像
@@ -621,13 +732,23 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				//前面
 				if (P_f > 0.9f) {
-					yp_t = 100;
+					int yp_t = y_r(100);
+					int now = 0;
 					//
-					Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "オプション", GetColor(0, 255, 0)); yp_t += Fonts.Get_haveptr(y_r(24))->Get_size() + 30;
+					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(DrawPts->disp_x - y_r(100) - int(Sel_X(now) * y_r(32)), yp_t, "オプション", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					now++;
 					//
-					Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "Pキーで戦闘に戻る", GetColor(0, 255, 0)); yp_t += Fonts.Get_haveptr(y_r(24))->Get_size() + 30;
+					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(DrawPts->disp_x - y_r(100) - int(Sel_X(now) * y_r(32)), yp_t, "戦闘に戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					now++;
 					//
-					Fonts.Get_haveptr(y_r(24))->Get_handle().DrawString_RIGHT(deskx - 100, yp_t, "Oキーで強制帰還", GetColor(0, 255, 0)); yp_t += Fonts.Get_haveptr(y_r(24))->Get_size() + 30;
+					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(DrawPts->disp_x - y_r(100) - int(Sel_X(now) * y_r(32)), yp_t, "強制帰還", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					now++;
 					//
 				}
 			}
@@ -652,56 +773,49 @@ namespace FPS_n2 {
 			Ready_border = Ready;
 			timer = 1800.f;
 		}
-		void UpDate(void) noexcept {
+		void Update(void) noexcept {
 			if (Get_Start()) {
 				timer -= 1.f / FPS;
 			}
 			else {
 				if (Ready <= Ready_border) {
-					Sounds.Get_haveptr(EnumSound::TIMER)->Play(0, DX_PLAYTYPE_BACK, TRUE,255);
+					Sounds.Get(EnumSound::TIMER).Play(0, DX_PLAYTYPE_BACK, TRUE,255);
 					Ready_border--;
 				}
 				Ready -= 1.f / FPS;
 			}
 		}
 	};
-	//
-	class save_c {
-	public:
-		size_t cang_ = 0;						//パーツ選択
-		EnumGunParts type_ = EnumGunParts::PARTS_NONE;			//パーツの種類
-		EnumAttachPoint pt_cat_ = EnumAttachPoint::POINTS_NONE;	//ベースパーツの場所
-		EnumGunParts pt_type_ = EnumGunParts::PARTS_NONE;		//ベースパーツの種類
-		size_t pt_sel_ = 0;						//ベースパーツの番号(マウントなど)
-	};
 	//シェーダー
-	class shader_Vertex {
-	public:
-		VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
-
-		// 頂点データの準備
-		void Set() {
-			int xp1 = 0;
-			int yp1 = 0;
-			int xp2 = deskx;
-			int yp2 = desky;
-			Screen_vertex[0].pos = VGet(float(xp1), float(desky - yp1), 0.0f);
-			Screen_vertex[1].pos = VGet(float(xp2), float(desky - yp1), 0.0f);
-			Screen_vertex[2].pos = VGet(float(xp1), float(desky - yp2), 0.0f);
-			Screen_vertex[3].pos = VGet(float(xp2), float(desky - yp2), 0.0f);
-			Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
-			Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
-			Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
-			Screen_vertex[3].dif = GetColorU8(255, 255, 255, 255);
-			Screen_vertex[0].u = 0.0f; Screen_vertex[0].v = 0.0f;
-			Screen_vertex[1].u = 1.0f; Screen_vertex[1].v = 0.0f;
-			Screen_vertex[2].u = 0.0f; Screen_vertex[3].v = 1.0f;
-			Screen_vertex[3].u = 1.0f; Screen_vertex[2].v = 1.0f;
-			Screen_vertex[4] = Screen_vertex[2];
-			Screen_vertex[5] = Screen_vertex[1];
-		}
-	};
 	class shaders {
+	public:
+		class shader_Vertex {
+		public:
+			VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
+
+			// 頂点データの準備
+			void Set(std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+				int xp1 = 0;
+				int yp1 = 0;
+				int xp2 = DrawPts_t->disp_x;
+				int yp2 = DrawPts_t->disp_y;
+				Screen_vertex[0].pos = VGet(float(xp1), float(DrawPts_t->disp_y - yp1), 0.0f);
+				Screen_vertex[1].pos = VGet(float(xp2), float(DrawPts_t->disp_y - yp1), 0.0f);
+				Screen_vertex[2].pos = VGet(float(xp1), float(DrawPts_t->disp_y - yp2), 0.0f);
+				Screen_vertex[3].pos = VGet(float(xp2), float(DrawPts_t->disp_y - yp2), 0.0f);
+				Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
+				Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
+				Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
+				Screen_vertex[3].dif = GetColorU8(255, 255, 255, 255);
+				Screen_vertex[0].u = 0.0f; Screen_vertex[0].v = 0.0f;
+				Screen_vertex[1].u = 1.0f; Screen_vertex[1].v = 0.0f;
+				Screen_vertex[2].u = 0.0f; Screen_vertex[3].v = 1.0f;
+				Screen_vertex[3].u = 1.0f; Screen_vertex[2].v = 1.0f;
+				Screen_vertex[4] = Screen_vertex[2];
+				Screen_vertex[5] = Screen_vertex[1];
+			}
+		};
+	private:
 		int pshandle{ -1 }, vshandle{ -1 };
 		int pscbhandle{ -1 };
 		int pscbhandle2{ -1 };
@@ -728,7 +842,7 @@ namespace FPS_n2 {
 			UpdateShaderConstantBuffer(this->pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
 			SetShaderConstantBuffer(this->pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
 		}
-		void draw_lamda(std::function<void()> doing) {
+		void Draw_lamda(std::function<void()> doing) {
 			SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
 			SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
 			MV1SetUseOrigShader(TRUE);
@@ -737,46 +851,8 @@ namespace FPS_n2 {
 			SetUseVertexShader(-1);					// 使用する頂点シェーダーをセット
 			SetUsePixelShader(-1);					// 使用するピクセルシェーダーをセット
 		}
-		void draw(shader_Vertex& Screen_vertex) {
-			draw_lamda([&] {DrawPolygon3DToShader(Screen_vertex.Screen_vertex, 2); });
-		}
-	};
-	//
-	class EffectControl {
-	public:
-		LONGLONG update_effect_was = 0;					//エフェクトのアップデートタイミングタイマー
-		bool update_effect_f{ true };					//エフェクトのアップデートタイミングフラグ
-		std::vector<EffekseerEffectHandle> effsorce;	/*エフェクトリソース*/
-
-		void Init() {
-			std::string p;
-			WIN32_FIND_DATA win32fdt;
-			HANDLE hFind = FindFirstFile("data/effect/*", &win32fdt);
-			if (hFind != INVALID_HANDLE_VALUE) {
-				do {
-					{
-						p = win32fdt.cFileName;
-						if (p.find(".efk") != std::string::npos) {
-							effsorce.resize(effsorce.size() + 1);
-							effsorce.back() = EffekseerEffectHandle::load("data/effect/" + p);
-						}
-					}
-				} while (FindNextFile(hFind, &win32fdt));
-			} //else{ return false; }
-			FindClose(hFind);
-			effsorce.resize(effsorce.size() + 1);
-			effsorce.back() = EffekseerEffectHandle::load("data/effect/gndsmk.efk");								//戦車用エフェクト
-		}
-
-		void Start() {
-			update_effect_was = GetNowHiPerformanceCount();
-		}
-
-		void Calc() {
-			update_effect_f = ((GetNowHiPerformanceCount() - update_effect_was) >= 1000000 / 60);
-			if (update_effect_f) {
-				update_effect_was = GetNowHiPerformanceCount();
-			}
+		void Draw(shader_Vertex& Screen_vertex) {
+			Draw_lamda([&] {DrawPolygon3DToShader(Screen_vertex.Screen_vertex, 2); });
 		}
 	};
 	//銃、マガジン共通モデル
@@ -828,129 +904,41 @@ namespace FPS_n2 {
 			FileRead_close(mdata);
 		}
 	};
-
-	//オーディオまとめ
-	class AudioPool {
-	public:
-		void Set() {
-			std::string p;
-			WIN32_FIND_DATA win32fdt;
-			//キャラ用オーディオ
-			Sounds.Add(EnumSound::Sort_MAG, 2, "data/audio/chara/sort.wav");
-			Sounds.Add(EnumSound::Cate_Load, 2, "data/audio/chara/load.wav");
-			Sounds.Add(EnumSound::Foot_Sound, 5, "data/audio/chara/foot_sand.wav");
-			Sounds.Add(EnumSound::Explosion, 2, "data/audio/chara/explosion.wav");
-
-			Sounds.Add(EnumSound::Voice_Damage, 2, "data/audio/voice/damage.wav");
-			Sounds.Add(EnumSound::Voice_Death, 2, "data/audio/voice/death.wav");
-			Sounds.Add(EnumSound::Voice_Breath, 4, "data/audio/voice/breath.wav");
-			Sounds.Add(EnumSound::Voice_Breath_Run, 4, "data/audio/voice/breath_run.wav");
-			//銃用オーディオ
-			Sounds.Add(EnumSound::Cate_Down, 5, "data/audio/gun/cate/case_2.wav");
-			Sounds.Add(EnumSound::Assemble, 1, "data/audio/gun/assemble.wav");
-			//戦車用オーディオ
-			{
-				HANDLE hFind = FindFirstFile("data/audio/tank/damage/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Damage, 2, "data/audio/tank/damage/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			{
-				HANDLE hFind = FindFirstFile("data/audio/tank/fire/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Shot, 10, "data/audio/tank/fire/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			{
-				HANDLE hFind = FindFirstFile("data/audio/tank/reload/hand/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Reload, 2, "data/audio/tank/reload/hand/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			{
-				HANDLE hFind = FindFirstFile("data/audio/tank/ricochet/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Ricochet, 2, "data/audio/tank/ricochet/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			Sounds.Add(EnumSound::Tank_engine, 4, "data/audio/tank/engine.wav");
-			//UI用オーディオ
-			//*
-			//Sounds.Get_haveptr(EnumSound::Shot)->Play_3D(2, VECTOR_ref::zero(), 1.f);//decision
-			Sounds.Add(EnumSound::CANCEL, 2, "data/audio/UI/cancel.wav", false);
-			Sounds.Add(EnumSound::CURSOR, 2, "data/audio/UI/cursor.wav", false);
-			//*/
-			Sounds.Add(EnumSound::TIMER, 2, "data/audio/UI/timer.wav", false);
-			//
-		}
-	};
 	//銃用オーディオ
 	class Audios_Gun {
 	private:
 	public:
 		std::string shot_path;
 		std::string slide_path;
-		std::string trigger_path;
+		int use_shot = -1;
+		int use_slide = -1;
+		int use_magdown = -1;
+		int use_magset = -1;
 
 		void Set(int mdata) {
-			shot_path = "data/audio/gun/fire/shot_" + getparams::_str(mdata) + ".wav";
-			slide_path = "data/audio/gun/slide/slide_" + getparams::_str(mdata) + ".wav";
-			trigger_path = "data/audio/gun/trigger.wav";
-			Sounds.Add(EnumSound::Shot, 20, shot_path);
-			Sounds.Add(EnumSound::Slide, 5, slide_path);
-			Sounds.Add(EnumSound::Trigger, 5, trigger_path);
-			Sounds.Add(EnumSound::MAG_Down, 5, "data/audio/gun/mag_down/mag_down_" + getparams::_str(mdata) + ".wav");
-			Sounds.Add(EnumSound::MAG_Set,5, "data/audio/gun/mag_set/mag_set_" + getparams::_str(mdata) + ".wav");
+			use_shot = getparams::_int(mdata);
+			use_slide = getparams::_int(mdata);
+			use_magdown = getparams::_int(mdata);
+			use_magset = getparams::_int(mdata);
+
+			shot_path = "data/audio/gun/fire/" + std::to_string(use_shot) + ".wav";
+			slide_path = "data/audio/gun/slide/" + std::to_string(use_slide) + ".wav";
 		}
 		void Duplicate(Audios_Gun& tgt) {
+			this->use_shot = tgt.use_shot;
+			this->use_slide = tgt.use_slide;
+			this->use_magdown = tgt.use_magdown;
+			this->use_magset = tgt.use_magset;
 			this->shot_path = tgt.shot_path;
 			this->slide_path = tgt.slide_path;
-			this->trigger_path = tgt.trigger_path;
 		}
 		void Dispose(void) noexcept {
+			this->use_shot = -1;
+			this->use_slide = -1;
+			this->use_magdown = -1;
+			this->use_magset = -1;
 			this->shot_path = "";
 			this->slide_path = "";
-			this->trigger_path = "";
-		}
-	};
-	//戦車用オーディオ
-	class Audios_tanks {
-	private:
-	public:
-		int Reload_ID = -1;
-		//
-		void Set(int mdata) {
-			Reload_ID = getparams::_int(mdata);
-		}
-		void Duplicate(const Audios_tanks& tgt) {
-			Reload_ID = tgt.Reload_ID;
-		}
-		void Dispose(void) noexcept {
-			Reload_ID = -1;
 		}
 	};
 	//弾データ
@@ -993,7 +981,7 @@ namespace FPS_n2 {
 			FileRead_close(mdata);
 		}
 
-		Ammos() {
+		Ammos(void) noexcept {
 			this->caliber = 0.f;
 			this->speed = 100.f;//弾速
 			this->pene = 10.f;//貫通
@@ -1031,7 +1019,7 @@ namespace FPS_n2 {
 			MV1::Load(mv1path, &this->hits, false);	//弾痕
 			Init_one();
 		}
-		void Init_one() {
+		void Init_one(void) noexcept {
 			MV1RefreshReferenceMesh(this->hits.get(), -1, TRUE);			/*参照用メッシュの更新*/
 			this->RefMesh = MV1GetReferenceMesh(this->hits.get(), -1, TRUE);	/*参照用メッシュの取得*/
 		}
@@ -1061,13 +1049,13 @@ namespace FPS_n2 {
 			}
 			Set_one();
 		}
-		void Set_start() {
+		void Set_start(void) noexcept {
 			this->IndexNum = this->RefMesh.PolygonNum * 3 * this->hitss;				/*インデックスの数を取得*/
 			this->VerNum = this->RefMesh.VertexNum * this->hitss;						/*頂点の数を取得*/
 			this->hitsver.resize(this->VerNum);									/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 			this->hitsind.resize(this->IndexNum);								/*頂点データとインデックスデータを格納するメモリ領域の確保*/
 		}
-		void Set_one() {
+		void Set_one(void) noexcept {
 			Init_one();
 			for (size_t j = 0; j < size_t(this->RefMesh.VertexNum); ++j) {
 				auto& g = this->hitsver[j + this->vnum];
@@ -1088,13 +1076,13 @@ namespace FPS_n2 {
 			this->pnum += this->RefMesh.PolygonNum * 3;
 		}
 
-		void update(void) noexcept {
+		void Update(void) noexcept {
 			this->VerBuf = CreateVertexBuffer(this->VerNum, DX_VERTEX_TYPE_NORMAL_3D);
 			this->IndexBuf = CreateIndexBuffer(this->IndexNum, DX_INDEX_TYPE_32BIT);
 			SetVertexBufferData(0, this->hitsver.data(), this->VerNum, this->VerBuf);
 			SetIndexBufferData(0, this->hitsind.data(), this->IndexNum, this->IndexBuf);
 		}
-		void draw(void) noexcept {
+		void Draw(void) noexcept {
 			//SetDrawAlphaTest(DX_CMP_GREATER, 128);
 			{
 				DrawPolygonIndexed3D_UseVertexBuffer(this->VerBuf, this->IndexBuf, this->hits_pic.get(), TRUE);
@@ -1106,7 +1094,7 @@ namespace FPS_n2 {
 	class HIT_PASSIVE {
 		//雲
 		Model_Instance inst;
-		bool isUPDate{ true };
+		bool isUpdate{ true };
 	public:
 		//初期化
 		void Init(void) noexcept {
@@ -1119,22 +1107,22 @@ namespace FPS_n2 {
 
 		void Set(const float& caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
 			inst.Set(caliber, Position, Normal, Zvec);
-			isUPDate = true;
+			isUpdate = true;
 		}
-		void update(void) noexcept {
-			if (isUPDate) {
-				isUPDate = false;
-				inst.update();
+		void Update(void) noexcept {
+			if (isUpdate) {
+				isUpdate = false;
+				inst.Update();
 			}
 		}
-		void draw(void) noexcept {
-			inst.draw();
+		void Draw(void) noexcept {
+			inst.Draw();
 		}
 	};
 	class HIT_BLOOD_PASSIVE {
 		//雲
 		Model_Instance inst;
-		bool isUPDate{ true };
+		bool isUpdate{ true };
 	public:
 		//初期化
 		void Init(void) noexcept {
@@ -1147,17 +1135,20 @@ namespace FPS_n2 {
 
 		void Set(const float& caliber, const VECTOR_ref& Position, const VECTOR_ref& Normal, const VECTOR_ref& Zvec) {
 			inst.Set(caliber, Position, Normal, Zvec);
-			isUPDate = true;
+			isUpdate = true;
 		}
-		void update(void) noexcept {
-			if (isUPDate) {
-				isUPDate = false;
-				inst.update();
+		void Update(void) noexcept {
+			if (isUpdate) {
+				isUpdate = false;
+				inst.Update();
 			}
 		}
-		void draw(void) noexcept {
-			inst.draw();
+		void Draw(void) noexcept {
+			inst.Draw();
 		}
+	};
+	class HIT_ACTIVE {
+
 	};
 	//パフォーマンス
 	class performance {
@@ -1234,7 +1225,7 @@ namespace FPS_n2 {
 		void Set(size_t id_) {
 			BASE_Obj::Set(id_);
 			//テキスト
-			this->mod.Set_([&](void) noexcept {
+			this->mod.Set_([&] {
 				//共通データ
 				{
 					per.name = getparams::get_str(this->mod.mdata);		//名前
@@ -1375,7 +1366,7 @@ namespace FPS_n2 {
 		void Set(size_t id_) {
 			BASE_Obj::Set(id_);
 			//テキスト
-			this->mod.Set_([&](void) noexcept {
+			this->mod.Set_([&] {
 				this->repair = getparams::_long(this->mod.mdata);//
 				});
 		}
@@ -1403,7 +1394,7 @@ namespace FPS_n2 {
 		void Set(size_t id_) {
 			BASE_Obj::Set(id_);
 			//テキスト
-			this->mod.Set_([&](void) noexcept {
+			this->mod.Set_([&] {
 				this->time = getparams::_float(this->mod.mdata);//
 				});
 		}
@@ -1504,7 +1495,7 @@ namespace FPS_n2 {
 			return false;
 		}
 		//
-		void UpDate(std::vector<std::shared_ptr<Items>>& item, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) {
+		void Update(std::vector<std::shared_ptr<Items>>& item, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) {
 			auto old = this->move.pos;
 			if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
 				this->obj.SetMatrix(this->move.mat * MATRIX_ref::Mtrans(this->move.pos));
@@ -1638,7 +1629,7 @@ namespace FPS_n2 {
 				//effect
 				killer->Set_eff(Effect::ef_greexp, this->move.pos, VECTOR_ref::front(), 0.1f / 0.1f);
 				//
-				Sounds.Get_haveptr(EnumSound::Explosion)->Play_3D(0, this->move.pos, 100.f, 255);
+				Sounds.Get(EnumSound::Explosion).Play_3D(0, this->move.pos, 100.f, 255);
 				//グレ爆破
 				this->Detach_item();
 				for (auto& tgt : chara) {
@@ -1658,10 +1649,10 @@ namespace FPS_n2 {
 								if (!tgt->Damage.Get_alive()) {
 									killer->scores.set_kill(&tgt - &chara.front(), 70);
 									tgt->scores.set_death(&killer - &chara.front());
-									Sounds.Get_haveptr(EnumSound::Voice_Death)->Play_3D(0, tgt->Get_pos(), 10.f);
+									Sounds.Get(EnumSound::Voice_Death).Play_3D(0, tgt->Get_pos(), 10.f);
 								}
 								else {
-									Sounds.Get_haveptr(EnumSound::Voice_Damage)->Play_3D(0, tgt->Get_pos(), 10.f);
+									Sounds.Get(EnumSound::Voice_Damage).Play_3D(0, tgt->Get_pos(), 10.f);
 								}
 								tgt->gre_eff = true;
 								break;
@@ -1685,7 +1676,7 @@ namespace FPS_n2 {
 		Items() = default;
 		Items& operator=(Items&&) = default;
 
-		~Items() {}
+		~Items(void) noexcept {}
 	};
 	//戦車砲データ
 	class gun_frame {
@@ -1711,7 +1702,7 @@ namespace FPS_n2 {
 		const auto& Get_frame3()const noexcept { return frame3; }
 		//const auto& Get_()const noexcept { return; }
 
-		gun_frame() {
+		gun_frame(void) noexcept {
 			frame1.first = -1;
 			frame2.first = -1;
 			frame3.first = -1;
@@ -1759,7 +1750,7 @@ namespace FPS_n2 {
 			}
 		}
 
-		void Set_Ammos_after() {
+		void Set_Ammos_after(void) noexcept {
 			for (auto& a : this->Spec) {
 				a.Set();
 			}
@@ -1785,23 +1776,23 @@ namespace FPS_n2 {
 			this->body->SetLinearVelocity(position);
 		}
 
-		void UpDate(const VECTOR_ref& add, float yradadd) {
+		void Update(const VECTOR_ref& add, float yradadd) {
 			this->body->SetLinearVelocity(b2Vec2(add.x(), add.z()));
 			this->body->SetAngularVelocity(yradadd);
 		}
 
 
-		void Dispose() {
+		void Dispose(void) noexcept {
 			if (this->playerfix != nullptr) {
 				delete this->playerfix->GetUserData();
 				this->playerfix->SetUserData(nullptr);
 			}
 		}
 
-		const auto Get() { return body.get(); }
-		const auto Pos() { return body->GetPosition(); }
-		const auto Rad() { return body->GetAngle(); }
-		const float Speed() { return std::hypot(this->body->GetLinearVelocity().x, this->body->GetLinearVelocity().y); }
+		const auto Get(void) noexcept { return body.get(); }
+		const auto Pos(void) noexcept { return body->GetPosition(); }
+		const auto Rad(void) noexcept { return body->GetAngle(); }
+		const float Speed(void) noexcept { return std::hypot(this->body->GetLinearVelocity().x, this->body->GetLinearVelocity().y); }
 
 		void SetTransform(const b2Vec2& position, float32 angle) {
 			body->SetTransform(position, angle);
@@ -1868,7 +1859,7 @@ namespace FPS_n2 {
 			this->pic_y = t.pic_y;
 		}
 	public:
-		Audios_tanks audio;
+		int Reload_ID = -1;
 		//
 		const auto& Get_name()const noexcept { return name; }
 
@@ -1900,7 +1891,7 @@ namespace FPS_n2 {
 		const auto& Get_b2upsideframe()const noexcept { return b2upsideframe; }
 		const auto& Get_b2downsideframe()const noexcept { return b2downsideframe; }
 		//コンストラクタ
-		Vehcs() { }
+		Vehcs(void) noexcept { }
 		Vehcs(const Vehcs& t) {
 			this->copy(t);
 		}
@@ -1928,7 +1919,7 @@ namespace FPS_n2 {
 			}
 		}
 		//メイン読み込み
-		void Set() {
+		void Set(void) noexcept {
 			using namespace std::literals;
 
 			//αテスト
@@ -2103,7 +2094,7 @@ namespace FPS_n2 {
 				this->HP = getparams::_int(mdata);
 				auto stt = getparams::get_str(mdata);
 				for (auto& g : this->gunframe) { g.Set_performance(mdata, stt); }
-				this->audio.Set(mdata);						//サウンド
+				Reload_ID = getparams::_int(mdata);//サウンド
 				FileRead_close(mdata);
 				for (auto& g : this->gunframe) { g.Set_Ammos_after(); }
 			}
@@ -2166,7 +2157,7 @@ namespace FPS_n2 {
 			auto ptr = Get_Parts_Data_Ptr(type_sel);
 			return *ptr;
 		}
-		GUNPARTS_Control() {
+		GUNPARTS_Control(void) noexcept {
 			GUNPARTs::Set_Pre(&this->grip_data, "data/Guns/parts/grip/");
 			GUNPARTs::Set_Pre(&this->uperhandguard_data, "data/Guns/parts/uper_handguard/");
 			GUNPARTs::Set_Pre(&this->underhandguard_data, "data/Guns/parts/under_handguard/");
@@ -2182,7 +2173,7 @@ namespace FPS_n2 {
 			GUNPARTs::Set_Pre(&this->magazine_data, "data/Guns/mag/", EnumGunParts::PARTS_MAGAZINE);		//MAGデータ
 		}
 
-		void Set() {
+		void Set(void) noexcept {
 			for (auto& g : this->mazzule_data) { g.Set(&g - &this->mazzule_data.front()); }
 			for (auto& g : this->grip_data) { g.Set(&g - &this->grip_data.front()); }
 			for (auto& g : this->uperhandguard_data) { g.Set(&g - &this->uperhandguard_data.front()); }
@@ -2196,6 +2187,134 @@ namespace FPS_n2 {
 			for (auto& g : this->sight_data) { g.Set(&g - &this->sight_data.front()); }
 			for (auto& g : this->gun_data) { g.Set(&g - &this->gun_data.front()); }							//GUNデータ2
 			for (auto& g : this->magazine_data) { g.Set(&g - &this->magazine_data.front()); }				//MAGデータ2
+		}
+	};
+	//オーディオ管理
+	class Audio_Control {
+	public:
+		Audio_Control(void) noexcept {
+			std::string p;
+			WIN32_FIND_DATA win32fdt;
+			//環境音
+			Sounds.Add(EnumSound::MAP0_ENVI,1, "data/audio/envi.wav");
+			//キャラ用オーディオ
+			Sounds.Add(EnumSound::Sort_MAG, 2, "data/audio/chara/sort.wav");
+			Sounds.Add(EnumSound::Cate_Load, 2, "data/audio/chara/load.wav");
+			Sounds.Add(EnumSound::Foot_Sound, 5, "data/audio/chara/foot_sand.wav");
+			Sounds.Add(EnumSound::Explosion, 2, "data/audio/chara/explosion.wav");
+
+			Sounds.Add(EnumSound::Voice_Damage, 2, "data/audio/voice/damage.wav");
+			Sounds.Add(EnumSound::Voice_Death, 2, "data/audio/voice/death.wav");
+			Sounds.Add(EnumSound::Voice_Breath, 4, "data/audio/voice/breath.wav");
+			Sounds.Add(EnumSound::Voice_Breath_Run, 4, "data/audio/voice/breath_run.wav");
+			//銃用オーディオ
+			Sounds.Add(EnumSound::Cate_Down, 5, "data/audio/gun/cate/case_2.wav");
+			Sounds.Add(EnumSound::Assemble, 2, "data/audio/gun/assemble.wav");
+			Sounds.Add(EnumSound::Trigger, 5, "data/audio/gun/trigger.wav");
+			{
+				HANDLE hFind = FindFirstFile("data/audio/gun/mag_down/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::MAG_Down, 4, "data/audio/gun/mag_down/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			{
+				HANDLE hFind = FindFirstFile("data/audio/gun/mag_set/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::MAG_Set, 4, "data/audio/gun/mag_set/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			{
+				HANDLE hFind = FindFirstFile("data/audio/gun/fire/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Shot, 10, "data/audio/gun/fire/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			{
+				HANDLE hFind = FindFirstFile("data/audio/gun/slide/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Slide, 2, "data/audio/gun/slide/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			//戦車用オーディオ
+			{
+				HANDLE hFind = FindFirstFile("data/audio/tank/damage/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Tank_Damage, 2, "data/audio/tank/damage/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			{
+				HANDLE hFind = FindFirstFile("data/audio/tank/fire/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Tank_Shot, 4, "data/audio/tank/fire/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			{
+				HANDLE hFind = FindFirstFile("data/audio/tank/reload/hand/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Tank_Reload, 2, "data/audio/tank/reload/hand/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			{
+				HANDLE hFind = FindFirstFile("data/audio/tank/ricochet/*", &win32fdt);
+				if (hFind != INVALID_HANDLE_VALUE) {
+					do {
+						p = win32fdt.cFileName;
+						if (p.find(".wav") != std::string::npos) {
+							Sounds.Add(EnumSound::Tank_Ricochet, 2, "data/audio/tank/ricochet/" + p);
+						}
+					} while (FindNextFile(hFind, &win32fdt));
+				} //else{ return false; }
+				FindClose(hFind);
+			}
+			Sounds.Add(EnumSound::Tank_engine, 4, "data/audio/tank/engine.wav");
+			//UI用オーディオ
+			//Sounds.Get(EnumSound::Shot).Play_3D(2, VECTOR_ref::zero(), 1.f);//decision
+			Sounds.Add(EnumSound::CANCEL, 2, "data/audio/UI/cancel.wav", false);
+			Sounds.Add(EnumSound::CURSOR, 2, "data/audio/UI/cursor.wav", false);
+			Sounds.Add(EnumSound::TIMER, 2, "data/audio/UI/timer.wav", false);
+			//
 		}
 	};
 };

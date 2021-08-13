@@ -73,15 +73,15 @@ namespace FPS_n2 {
 					this->inst.Set_start();
 				}
 
-				void set_one() {
+				void set_one(void) noexcept {
 					this->inst.Set_one();
 				}
-				void put() {
+				void put(void) noexcept {
 					canlook = true;
-					this->inst.update();
+					this->inst.Update();
 				}
 
-				void Dispose() {
+				void Dispose(void) noexcept {
 
 					MAPPTs.reset();
 					this->inst.hitsver.clear();
@@ -121,14 +121,16 @@ namespace FPS_n2 {
 					}
 				}
 
-				void Draw() {
+				void Draw(void) noexcept {
 					if (this->canlook) {
-						this->inst.draw();
+						this->inst.Draw();
 					}
 				}
 			};
 
 		public:
+			bool isDispose = false;
+
 			std::shared_ptr<b2World> world;
 
 			GraphHandle DepthScreen;		// 深度を取得するスクリーン
@@ -199,8 +201,6 @@ namespace FPS_n2 {
 				this->sun_pic = GraphHandle::Load("data/sun.png");					/*sun*/
 				SetUseASyncLoadFlag(FALSE);
 
-				Sounds.Add(EnumSound::MAP0_ENVI,1, this->path + "envi.wav");
-
 				// 深度を描画するテクスチャの作成( １チャンネル浮動小数点１６ビットテクスチャ )
 				{
 					SetCreateDrawValidGraphChannelNum(1);
@@ -215,6 +215,7 @@ namespace FPS_n2 {
 				Depth.Init("DepthVS.vso", "DepthPS.pso");
 			}
 			void Start() noexcept {
+				isDispose = true;
 				//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 				VECTOR_ref size;
 				{
@@ -365,33 +366,35 @@ namespace FPS_n2 {
 				this->sun_pos = ray.Norm() * -1500.f;
 			}
 			void Set(void) noexcept {
-				Sounds.Get_haveptr(EnumSound::MAP0_ENVI)->Play(0, DX_PLAYTYPE_LOOP, TRUE);
+				Sounds.Get(EnumSound::MAP0_ENVI).Play(0, DX_PLAYTYPE_LOOP, TRUE);
 			}
 			void Dispose(void) noexcept {
-				for (auto& i : item) { i->Detach_item(); }
-				item.clear();
-				map.Dispose();		   //map
-				map_col.Dispose();		   //mapコリジョン
-				mapcol_tank.Dispose();
-				for (auto& w : wall) { w.b2.Dispose(); }
-				wall.clear();
-				sky.Dispose();	 //空
-				way_point.clear();
-				lean_point_q.clear();
-				lean_point_e.clear();
-				spawn_point.clear();
-				minmap.Dispose();
-				this->sun_pic.Dispose();
-				if (grasss != 0) {
-					for (int x_ = 0; x_ < grassDiv; x_++) {
-						for (int z_ = 0; z_ < grassDiv; z_++) {
-							auto& tgt_g = grass__[x_][z_];
-							tgt_g.Dispose();
+				if (isDispose) {
+					isDispose = false;
+					for (auto& i : item) { i->Detach_item(); }
+					item.clear();
+					map.Dispose();		   //map
+					map_col.Dispose();		   //mapコリジョン
+					mapcol_tank.Dispose();
+					for (auto& w : wall) { w.b2.Dispose(); }
+					wall.clear();
+					sky.Dispose();	 //空
+					way_point.clear();
+					lean_point_q.clear();
+					lean_point_e.clear();
+					spawn_point.clear();
+					minmap.Dispose();
+					this->sun_pic.Dispose();
+					if (grasss != 0) {
+						for (int x_ = 0; x_ < grassDiv; x_++) {
+							for (int z_ = 0; z_ < grassDiv; z_++) {
+								auto& tgt_g = grass__[x_][z_];
+								tgt_g.Dispose();
+							}
 						}
 					}
 				}
 			}
-			auto& map_get(void) const noexcept { return map; }
 			auto& map_col_get(void) const noexcept { return map_col; }
 			const MV1_COLL_RESULT_POLY map_col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) const noexcept {
 				return map_col.CollCheck_Line(StartPos, EndPos, 0, 0);
@@ -544,8 +547,8 @@ namespace FPS_n2 {
 					map.DrawMesh(i);
 				}
 
-				shader.draw_lamda(
-					[&]() {
+				shader.Draw_lamda(
+					[&] {
 						SetUseTextureToShader(1, DepthScreen.get());
 						map.DrawMesh(3);
 					}
@@ -559,8 +562,8 @@ namespace FPS_n2 {
 				int handle = GetDrawScreen();
 				DepthScreen.SetDraw_Screen(GetCameraPosition(), GetCameraTarget(), GetCameraUpVector(), GetCameraFov(), GetCameraNear(), GetCameraFar());
 				{
-					Depth.draw_lamda(
-						[&]() {
+					Depth.Draw_lamda(
+						[&] {
 							SetUseTextureToShader(0, -1);
 							map.DrawMesh(0);
 						}
@@ -573,7 +576,7 @@ namespace FPS_n2 {
 			//
 			template<class PLAYER_CHARA>
 			void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<PLAYER_CHARA>& chara) noexcept {
-				chara->reset_canget_item();
+				chara->Reset_canget_item();
 				for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs->Map_col_line); }
 			}
 			//

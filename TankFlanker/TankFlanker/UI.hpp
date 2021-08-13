@@ -4,29 +4,17 @@
 namespace FPS_n2 {
 	class UIclass {
 	public:
-		class UI_TEMP {
-		private:
-			bool first_f{ true };
+		class UI_TEMP : public PTR_COMMON {
 		protected:
-			//ˆø‚«Œp‚®
-			std::shared_ptr<DXDraw> DrawPts;
-			std::shared_ptr<MAPclass::Map> MAPPTs;
 			//font
 			FontPool::Fonthave* Large;
 			FontPool::Fonthave* Middle;
 			FontPool::Fonthave* Small;
 		public:
-			void Init(std::shared_ptr<DXDraw>& DrawPts_t, std::shared_ptr<MAPclass::Map>& MAPPTs_t) noexcept {
-				if (first_f) {
-					first_f = false;
-					DrawPts = DrawPts_t;
-					MAPPTs = MAPPTs_t;
-				}
-			}
-			void set_fonts() {
-				Large = (DrawPts->use_vr) ? Fonts.Get_haveptr(y_r(72)) : Fonts.Get_haveptr(y_r(48));
-				Middle = (DrawPts->use_vr) ? Fonts.Get_haveptr(y_r(36)) : Fonts.Get_haveptr(y_r(24));
-				Small = (DrawPts->use_vr) ? Fonts.Get_haveptr(y_r(24)) : Fonts.Get_haveptr(y_r(18));
+			void set_fonts(void) noexcept {
+				Large = &((DrawPts->use_vr) ? Fonts.Get(y_r(72)) : Fonts.Get(y_r(48)));
+				Middle = &((DrawPts->use_vr) ? Fonts.Get(y_r(36)) : Fonts.Get(y_r(24)));
+				Small = &((DrawPts->use_vr) ? Fonts.Get(y_r(24)) : Fonts.Get(y_r(18)));
 			}
 			//virtual void UI_Draw(void) noexcept {}
 			//virtual void item_Draw(void) noexcept {}
@@ -95,9 +83,8 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 		public:
-			void UI_Draw(std::shared_ptr<GUNPARTS_Control>& GunPartses, std::vector<save_c>& save_parts, const std::string& set_name) noexcept {
+			void UI_Draw(std::shared_ptr<GUNPARTS_Control>& GunPartses, std::vector<save_c>& save_parts, std::string_view set_name) noexcept {
 				set_fonts();
-				//DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(192, 192, 192), TRUE);
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{
 					int i = 0;
@@ -587,15 +574,15 @@ namespace FPS_n2 {
 							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 12;
 						}
 						if (mine->Get_canget_mag_f()) {
-							Small->Get_handle().DrawString_MID(xp, yp, KeyBind->Get_key_use_ID(EnumKeyBind::GET_ITEM).second + ": " + mine->Get_canget_mag_s(), GetColor(255, 255, 0)); yp += Small->Get_size();
+							Small->Get_handle().DrawString_MID(xp, yp, KeyBind->Get_key_use_ID(EnumKeyBind::GET_ITEM).Get_second(0) + ": " + mine->Get_canget_mag_s(), GetColor(255, 255, 0)); yp += Small->Get_size();
 						}
 
 						if (mine->Get_canget_med_f()) {
-							Small->Get_handle().DrawString_MID(xp, yp, KeyBind->Get_key_use_ID(EnumKeyBind::GET_ITEM).second + ": " + mine->Get_canget_med(), GetColor(255, 255, 0)); yp += Small->Get_size();
+							Small->Get_handle().DrawString_MID(xp, yp, KeyBind->Get_key_use_ID(EnumKeyBind::GET_ITEM).Get_second(0) + ": " + mine->Get_canget_med(), GetColor(255, 255, 0)); yp += Small->Get_size();
 						}
 
 						if (mine->Get_canride_f()) {
-							Small->Get_handle().DrawString_MID(xp, yp, KeyBind->Get_key_use_ID(EnumKeyBind::RIDE_ON).second, GetColor(255, 255, 0)); yp += Small->Get_size();
+							Small->Get_handle().DrawString_MID(xp, yp, KeyBind->Get_key_use_ID(EnumKeyBind::RIDE_ON).Get_second(0), GetColor(255, 255, 0)); yp += Small->Get_size();
 						}
 					}
 					//’e–ò

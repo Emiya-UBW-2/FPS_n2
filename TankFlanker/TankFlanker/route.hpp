@@ -10,18 +10,12 @@ namespace FPS_n2 {
 		bool selend{ true };
 		bool selpause{ true };
 		//シェーダー
-		shader_Vertex Screen_vertex;					// 頂点データ
+		shaders::shader_Vertex Screen_vertex;					// 頂点データ
 		std::array<shaders, 2> shader2D;
-		//エフェクト
-		EffectControl effectControl;
-
-		AudioPool Audio_resource;
-	public:
-		std::shared_ptr<DXDraw> DrawPts;
 	public:
 		main_c(void) noexcept {
 			auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
-			DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);		//汎用
+			auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);		//汎用
 #ifdef DEBUG
 			auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 #endif // DEBUG
@@ -31,32 +25,34 @@ namespace FPS_n2 {
 			//シェーダー
 			auto HostpassPTs = std::make_shared<HostPassEffect>(OPTPTs, DrawPts->disp_x, DrawPts->disp_y);				//ホストパスエフェクト(VR、フルスクリーン共用)
 			//シェーダー
-			Screen_vertex.Set();			// 頂点データの準備
+			Screen_vertex.Set(DrawPts);			// 頂点データの準備
 			shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
 			shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");									//歪み
 			//MAP
 			auto MAPPTs = std::make_shared<MAPclass::Map>(OPTPTs->Get_grass_level(), DrawPts->disp_x, DrawPts->disp_y);
 			MAPPTs->Set_mine(MAPPTs);
 			//キー読み込み
-			auto KeyBind = std::make_shared<key_bind>();
-			auto PauseMenu = std::make_shared<pause_menu>(KeyBind);
+			auto KeyBind = std::make_shared<key_bind>(DrawPts);
+			auto PauseMenu = std::make_unique<pause_menu>(KeyBind, DrawPts);
 			//シーン
 			auto UI_LOADPTs = std::make_shared<Sceneclass::LOADING>();
 			auto MAINLOOPscene = std::make_shared<Sceneclass::MAINLOOP>(MAPPTs, OPTPTs);
 			auto LOADscene = std::make_shared<Sceneclass::LOAD>();
 			auto SELECTscene = std::make_shared<Sceneclass::SELECT>();
 			//リソース
-			Audio_resource.Set();															//オーディオ
+			auto Audio_resource = std::make_shared<Audio_Control>();						//オーディオ
 			auto GunPartses = std::make_shared<GUNPARTS_Control>();							//銃パーツ
+			effectControl.Start();
 			//
-			UI_LOADPTs->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce, KeyBind);
-			LOADscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce, KeyBind);
-			SELECTscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce, KeyBind);
-			MAINLOOPscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, &effectControl.effsorce, KeyBind);
+			UI_LOADPTs->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);
+			LOADscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);
+			SELECTscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);
+			MAINLOOPscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);
 			//遷移先指定
 			LOADscene->Set_Next(SELECTscene, scenes::SELECT);
 			SELECTscene->Set_Next(MAINLOOPscene, scenes::MAIN_LOOP);
 			MAINLOOPscene->Set_Next(UI_LOADPTs, scenes::MAP_LOAD);
+
 			//繰り返し
 			do {
 				//遷移
@@ -102,7 +98,6 @@ namespace FPS_n2 {
 					}
 					selend = true;
 					selpause = false;
-					effectControl.Start();
 				}
 				//
 				while (ProcessMessage() == 0) {
@@ -117,7 +112,7 @@ namespace FPS_n2 {
 					{
 						//更新
 						{
-							KeyBind->reSet_isalways();
+							KeyBind->Reset_isalways();
 							selpause = false;
 							if (sel_scene == scenes::MAIN_LOOP) {
 								selpause = PauseMenu->Pause_key();
@@ -130,7 +125,7 @@ namespace FPS_n2 {
 									scenes_ptr->KeyOperation();
 								}
 							}
-							selend = (!selpause) ? scenes_ptr->UpDate() : PauseMenu->Update();
+							selend = (!selpause) ? scenes_ptr->Update() : PauseMenu->Update();
 						}
 						//VR空間に適用
 						DrawPts->Move_Player();
@@ -143,18 +138,18 @@ namespace FPS_n2 {
 							//共通の描画前用意
 							scenes_ptr->ReadyDraw();
 							//UI書き込み
-							HostpassPTs->Set_UI_draw([&](void) noexcept { scenes_ptr->UI_Draw(); });
+							HostpassPTs->Set_UI_Draw([&] { scenes_ptr->UI_Draw(); });
 							//VRに移す
-							DrawPts->draw_VR([&] {
+							DrawPts->Draw_VR([&] {
 								auto tmp = GetDrawScreen();
 								cam_info tmp_cam = scenes_ptr->Get_Camera();
 								tmp_cam.campos = GetCameraPosition();
 								tmp_cam.camvec = GetCameraTarget();
 								{
 									//被写体深度描画
-									HostpassPTs->BUF_draw([&] { scenes_ptr->BG_Draw(); }, [&] { DrawPts->Draw_by_Shadow([&] { scenes_ptr->Main_Draw(); }); }, tmp_cam, effectControl.update_effect_f);
+									HostpassPTs->BUF_Draw([&] { scenes_ptr->BG_Draw(); }, [&] { DrawPts->Draw_by_Shadow([&] { scenes_ptr->Main_Draw(); }); }, tmp_cam, effectControl.Update_effect_f);
 									//最終描画
-									HostpassPTs->Set_MAIN_draw();
+									HostpassPTs->Set_MAIN_Draw();
 								}
 								//*
 								GraphHandle::SetDraw_Screen(tmp);
@@ -166,9 +161,9 @@ namespace FPS_n2 {
 										shader2D[0].set_param(float(DrawPts->disp_x) / 2.f, float(DrawPts->disp_y) / 2.f, scenes_ptr->size_lens(), scenes_ptr->zoom_lens());
 										HostpassPTs->Get_BUF_Screen().SetDraw_Screen();
 										{
-											shader2D[0].draw(Screen_vertex);
+											shader2D[0].Draw(Screen_vertex);
 										}
-										HostpassPTs->Set_MAIN_draw_nohost();
+										HostpassPTs->Set_MAIN_Draw_nohost();
 									}
 
 									if (scenes_ptr->is_bless()) {
@@ -177,16 +172,16 @@ namespace FPS_n2 {
 										shader2D[1].set_param(0, 0, scenes_ptr->ratio_bless(), (1.f - cos(scenes_ptr->time_bless())) / 2.f);
 										HostpassPTs->Get_BUF_Screen().SetDraw_Screen();
 										{
-											shader2D[1].draw(Screen_vertex);
+											shader2D[1].Draw(Screen_vertex);
 										}
-										HostpassPTs->Set_MAIN_draw_nohost();
+										HostpassPTs->Set_MAIN_Draw_nohost();
 									}
 									SetUseTextureToShader(0, -1);	//使用するテクスチャをセット
 								}
 								//*/
 								GraphHandle::SetDraw_Screen(tmp, tmp_cam.campos, tmp_cam.camvec, tmp_cam.camup, tmp_cam.fov, tmp_cam.near_, tmp_cam.far_, false);
 								{
-									HostpassPTs->MAIN_draw();											//デフォ描画
+									HostpassPTs->MAIN_Draw();											//デフォ描画
 									HostpassPTs->DrawUI(&scenes_ptr->Get_Camera(), DrawPts->use_vr);	//UI1
 									scenes_ptr->Item_Draw();											//UI2
 								}
@@ -197,8 +192,8 @@ namespace FPS_n2 {
 						{
 							//描画
 							if (DrawPts->use_vr) {
-								DrawBox(0, 0, deskx, desky, GetColor(255, 255, 255), TRUE);
-								DrawPts->outScreen[0].DrawRotaGraph(deskx / 2, desky / 2, 0.5f, 0, false);
+								DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(255, 255, 255), TRUE);
+								DrawPts->outScreen[0].DrawRotaGraph(DrawPts->disp_x / 2, DrawPts->disp_y / 2, 0.5f, 0, false);
 							}
 							else {
 								DrawPts->outScreen[0].DrawGraph(0, 0, false);
@@ -206,9 +201,9 @@ namespace FPS_n2 {
 							//上に書く
 							scenes_ptr->LAST_Draw();
 							//ポーズ
-							PauseMenu->draw();
+							PauseMenu->Draw();
 							//キー
-							KeyBind->draw();
+							KeyBind->Draw();
 							//デバッグ
 #ifdef DEBUG
 							DebugPTs->end_way();
@@ -241,35 +236,32 @@ namespace FPS_n2 {
 					switch (sel_scene) {
 					default: break;
 					case scenes::ITEM_LOAD:
-						GunPartses->Set();
-						MAINLOOPscene->Start();											//メインループ開始読み込み
+						GunPartses->Set();																//
+						MAINLOOPscene->Start();															//メインループ開始読み込み
 						break;
 					case scenes::MAP_LOAD:
-						MAPPTs->Start();												//マップパーツ生成
-						MAINLOOPscene->Ready_Chara(MAPPTs->Get_spawn_point().size());	//キャラ設定
-						LOADscene->Start(MAINLOOPscene->Get_Mine());
+						MAPPTs->Start();																//マップパーツ生成
+						MAINLOOPscene->Ready_Chara(MAPPTs->Get_spawn_point().size());					//キャラ設定
+						LOADscene->Start(MAINLOOPscene->Get_Mine());									//
 						break;
 					case scenes::LOAD:
-						SELECTscene->Start(LOADscene->putout_preset(), MAINLOOPscene->Get_Mine());		//プリセットを指定
+						SELECTscene->Start(LOADscene->putout_Preset(), MAINLOOPscene->Get_Mine());		//プリセットを指定
 						break;
 					case scenes::SELECT:
-						MAINLOOPscene->Ready_Tank();									//戦車指定
+						MAINLOOPscene->Ready_Tank(2);													//戦車指定
 						break;
 					case scenes::MAIN_LOOP:
-						MAPPTs->Dispose();												//マップを消去
+						MAPPTs->Dispose();																//マップを消去
 						break;
 					}
 				}
 				//
-				if (!this->ending) {
-					//MAINLOOPscene->Dispose();//解放
-					MAPPTs->Dispose();
-					break;
-				}
-				//
-			} while (true);
+			} while (this->ending);
 			//
+			//MAINLOOPscene->Dispose();//解放
+			MAPPTs->Dispose();
 			DrawPts->Delete_Shadow();
+			effectControl.Dispose();
 		}
 	};
 };

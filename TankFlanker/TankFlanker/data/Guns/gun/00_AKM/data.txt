@@ -3,10 +3,10 @@ AKM assault rifle
 mode=full
 mode=semi
 mode=end
-shot_sound=1
-slide_sound=1
-mag_down_sound=1
-mag_set_sound=1
+shot_sound=0
+slide_sound=0
+mag_down_sound=0
+mag_set_sound=0
 recoil_xadd(deg)=7.2
 recoil_xmnus(deg)=-3.2
 recoil_yadd(deg)=15.0

@@ -82,7 +82,6 @@ namespace FPS_n2 {
 		GET_ITEM,
 		THROW_GRE,
 		SIT,
-		BACK_TITLE,
 		ESCAPE,
 		SORT_MAG,
 		RUN,
