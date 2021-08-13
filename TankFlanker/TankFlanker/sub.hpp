@@ -81,7 +81,7 @@ namespace FPS_n2 {
 				SetUseASyncLoadFlag(FALSE);
 
 				SetCreate3DSoundFlag(TRUE);
-				for (size_t i = 1;i < this->shandle.back().handle.size();i++) {
+				for (size_t i = 1; i < this->shandle.back().handle.size(); i++) {
 					this->shandle.back().handle[i] = this->shandle.back().handle[0].Duplicate();
 				}
 				SetCreate3DSoundFlag(FALSE);
@@ -120,7 +120,7 @@ namespace FPS_n2 {
 				}
 			}
 			this->havehandle.resize(this->havehandle.size() + 1);
-			this->havehandle.back().Set(ID_t, buffersize, path_t,is3Dsound);
+			this->havehandle.back().Set(ID_t, buffersize, path_t, is3Dsound);
 			return this->havehandle.size() - 1;
 		}
 		Soundhave& Get(EnumSound ID_t) { return this->havehandle[Add(ID_t)]; }
@@ -196,9 +196,9 @@ namespace FPS_n2 {
 			int first = 0;
 			int use_mode = 0;
 			switchs on_off;
-			std::array<std::string,3> second;
+			std::array<std::string, 3> second;
 		public:
-			
+
 
 			bool isalways{ false };
 			keyhandle* use_handle{ nullptr };
@@ -206,7 +206,7 @@ namespace FPS_n2 {
 			const auto& Get_first()const noexcept { return first; }
 			const auto& Get_second(size_t sel)const noexcept { return second[sel]; }
 
-			void Set(int first_t, std::string_view second_t, int mode, std::string_view second2_t = "", std::string_view second3_t="") {
+			void Set(int first_t, std::string_view second_t, int mode, std::string_view second2_t = "", std::string_view second3_t = "") {
 				first = first_t;
 				second[0] = second_t;
 				second[1] = second2_t;
@@ -318,7 +318,7 @@ namespace FPS_n2 {
 				this->key_use_ID.emplace_back(tmp_k);//8
 				tmp_k.Set(KEY_INPUT_C, "しゃがみ", 1);
 				this->key_use_ID.emplace_back(tmp_k);//9
-				tmp_k.Set(KEY_INPUT_ESCAPE, "強制終了", 1,"強制終了");
+				tmp_k.Set(KEY_INPUT_ESCAPE, "強制終了", 1, "強制終了");
 				this->key_use_ID.emplace_back(tmp_k);//10
 				tmp_k.Set(KEY_INPUT_Z, "マガジン整理", 2);
 				this->key_use_ID.emplace_back(tmp_k);//11
@@ -667,7 +667,7 @@ namespace FPS_n2 {
 		//
 		const auto Pause_key(void) noexcept {
 			auto key_p = KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Get_key_Auto(true);
-			if (key_p!=old) {
+			if (key_p != old) {
 				Sounds.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 			}
 			old = key_p;
@@ -693,10 +693,10 @@ namespace FPS_n2 {
 				select++;
 			}
 
-			if (select < 0) { select = selmax- 1; }
+			if (select < 0) { select = selmax - 1; }
 			if (select > selmax - 1) { select = 0; }
 
-			if(shot.trigger()){
+			if (shot.trigger()) {
 				//オプション
 				if (select == 0) {
 					Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
@@ -779,7 +779,7 @@ namespace FPS_n2 {
 			}
 			else {
 				if (Ready <= Ready_border) {
-					Sounds.Get(EnumSound::TIMER).Play(0, DX_PLAYTYPE_BACK, TRUE,255);
+					Sounds.Get(EnumSound::TIMER).Play(0, DX_PLAYTYPE_BACK, TRUE, 255);
 					Ready_border--;
 				}
 				Ready -= 1.f / FPS;
@@ -1307,7 +1307,7 @@ namespace FPS_n2 {
 						}
 					}
 				}
-				});
+			});
 			if (this->type == EnumGunParts::PARTS_SIGHT) {
 				SetUseASyncLoadFlag(FALSE);
 				this->reticle = GraphHandle::Load(this->mod.Get_path() + "/reticle.png");
@@ -1368,7 +1368,7 @@ namespace FPS_n2 {
 			//テキスト
 			this->mod.Set_([&] {
 				this->repair = getparams::_long(this->mod.mdata);//
-				});
+			});
 		}
 	};
 	//薬品データ
@@ -1396,7 +1396,7 @@ namespace FPS_n2 {
 			//テキスト
 			this->mod.Set_([&] {
 				this->time = getparams::_float(this->mod.mdata);//
-				});
+			});
 		}
 	};
 	//アイテム
@@ -2196,7 +2196,7 @@ namespace FPS_n2 {
 			std::string p;
 			WIN32_FIND_DATA win32fdt;
 			//環境音
-			Sounds.Add(EnumSound::MAP0_ENVI,1, "data/audio/envi.wav");
+			Sounds.Add(EnumSound::MAP0_ENVI, 1, "data/audio/envi.wav");
 			//キャラ用オーディオ
 			Sounds.Add(EnumSound::Sort_MAG, 2, "data/audio/chara/sort.wav");
 			Sounds.Add(EnumSound::Cate_Load, 2, "data/audio/chara/load.wav");

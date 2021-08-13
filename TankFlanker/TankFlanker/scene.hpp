@@ -252,7 +252,7 @@ namespace FPS_n2 {
 			}
 		};
 
-		class LOAD : public TEMPSCENE , public SaveControl {
+		class LOAD : public TEMPSCENE, public SaveControl {
 		private:
 			//キー
 			switchs left;
@@ -964,7 +964,7 @@ namespace FPS_n2 {
 					v = std::make_shared<PLAYERclass::PLAYER_VEHICLE>();
 					v->Set_Ptr_Common(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
 					v->Set_Ptr(&this->chara, nullptr, &this->vehicle, &v);
-					v->Set(vehc_data, int(&v-&this->vehicle.front()));
+					v->Set(vehc_data, int(&v - &this->vehicle.front()));
 				}
 			}
 		public:
@@ -1137,7 +1137,7 @@ namespace FPS_n2 {
 				this->vehicle.clear();
 			}
 			void UI_Draw(void) noexcept  override {
-				UIparts->UI_Draw(this->Get_Mine(),KeyBind);
+				UIparts->UI_Draw(this->Get_Mine(), KeyBind);
 				//ミニマップ
 				MiniMAPPTs->UI_Draw(this->chara, (TPSparts->ON()) ? this->chara[TPSparts->sel_cam] : this->Get_Mine());
 			}

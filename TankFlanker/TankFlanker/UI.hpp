@@ -442,14 +442,14 @@ namespace FPS_n2 {
 						if ((*mine->MINE_v)->ads_on()) {
 							aim_view.DrawExtendGraph(0, 0, DrawPts->disp_x, DrawPts->disp_y, true);
 
-							
+
 							easing_set(&dist, (*mine->MINE_v)->Get_dist(), 0.9f);
 							easing_set(&ratio, (*mine->MINE_v)->Get_ratio(), 0.9f);
 
 							aim_ret0.DrawRotaGraph(int(DrawPts->disp_x / 2), int(DrawPts->disp_y / 2), (float)(y_r(300)) / 200.f, 0.f, true);
 							aim_ret1.DrawRotaGraph(int(DrawPts->disp_x / 2), int(DrawPts->disp_y / 2) - y_r(dist / 16), (float)(y_r(300)) / 200.f, 0.f, true);
 							aim_ret2.DrawRotaGraph(int(DrawPts->disp_x / 2), int(DrawPts->disp_y / 2), (float)(y_r(300)) / 200.f, 0.f, true);
-							
+
 							Small->Get_handle().DrawStringFormat(x_r(1056), y_r(594), GetColor(0, 255, 0), "[%05.1f]", dist);
 							Small->Get_handle().DrawStringFormat(x_r(1056), y_r(648), GetColor(0, 255, 0), "[x%02.1f]", ratio);
 						}

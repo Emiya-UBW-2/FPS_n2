@@ -185,7 +185,7 @@ namespace FPS_n2 {
 									HostpassPTs->DrawUI(&scenes_ptr->Get_Camera(), DrawPts->use_vr);	//UI1
 									scenes_ptr->Item_Draw();											//UI2
 								}
-								}, scenes_ptr->Get_Camera());
+							}, scenes_ptr->Get_Camera());
 						}
 						//ディスプレイ描画
 						GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), true);

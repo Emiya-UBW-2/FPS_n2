@@ -400,7 +400,7 @@ namespace FPS_n2 {
 				return map_col.CollCheck_Line(StartPos, EndPos, 0, 0);
 			}
 			//関数オブジェ版
-			std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> Map_col_line = [&](const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) {return map_col_line(StartPos, EndPos);};
+			std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> Map_col_line = [&](const VECTOR_ref& StartPos, const VECTOR_ref& EndPos) {return map_col_line(StartPos, EndPos); };
 			//
 			bool map_col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) const noexcept {
 				bool ans = false;
@@ -549,9 +549,9 @@ namespace FPS_n2 {
 
 				shader.Draw_lamda(
 					[&] {
-						SetUseTextureToShader(1, DepthScreen.get());
-						map.DrawMesh(3);
-					}
+					SetUseTextureToShader(1, DepthScreen.get());
+					map.DrawMesh(3);
+				}
 				);
 
 				grass_Draw();
@@ -564,9 +564,9 @@ namespace FPS_n2 {
 				{
 					Depth.Draw_lamda(
 						[&] {
-							SetUseTextureToShader(0, -1);
-							map.DrawMesh(0);
-						}
+						SetUseTextureToShader(0, -1);
+						map.DrawMesh(0);
+					}
 					);
 				}
 				if (ischangescreen) {
