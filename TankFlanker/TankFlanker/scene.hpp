@@ -146,7 +146,6 @@ namespace FPS_n2 {
 				UIparts->UI_Draw();
 			}
 			void Dispose(void) noexcept override {
-				UIparts->Dispose();
 			}
 		};
 		//パーツデータのセーブ指定
@@ -344,7 +343,7 @@ namespace FPS_n2 {
 					if (ptr_->turn && ptr_->now) {
 						mine_k.dkey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
 						mine_k.akey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() < -0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
-						mine_k.jamp = ((ptr_->on[0] & BUTTON_SIDE) != 0);									//jamp
+						mine_k.jamp = ((ptr_->on[0] & BUTTON_SIDE) != 0);																							//jamp
 					}
 				}
 #endif // _USE_OPENVR_

@@ -1691,8 +1691,8 @@ namespace FPS_n2 {
 		frames frame3;
 		int sound_use = 0;
 	public:
-
 		const auto& Get_rounds()const noexcept { return rounds; }
+		const auto& Get_name()const noexcept { return name; }
 		const auto& Get_Spec()const noexcept { return Spec; }
 		const auto& Get_sound()const noexcept { return sound_use; }
 
@@ -2196,28 +2196,28 @@ namespace FPS_n2 {
 			std::string p;
 			WIN32_FIND_DATA win32fdt;
 			//環境音
-			Sounds.Add(EnumSound::MAP0_ENVI, 1, "data/audio/envi.wav");
+			Sounds.Add(EnumSound::MAP0_ENVI, 1, "data/audio/envi.wav", false);
 			//キャラ用オーディオ
 			Sounds.Add(EnumSound::Sort_MAG, 2, "data/audio/chara/sort.wav");
 			Sounds.Add(EnumSound::Cate_Load, 2, "data/audio/chara/load.wav");
-			Sounds.Add(EnumSound::Foot_Sound, 5, "data/audio/chara/foot_sand.wav");
+			Sounds.Add(EnumSound::Foot_Sound, 3, "data/audio/chara/foot_sand.wav");
 			Sounds.Add(EnumSound::Explosion, 2, "data/audio/chara/explosion.wav");
 
 			Sounds.Add(EnumSound::Voice_Damage, 2, "data/audio/voice/damage.wav");
 			Sounds.Add(EnumSound::Voice_Death, 2, "data/audio/voice/death.wav");
-			Sounds.Add(EnumSound::Voice_Breath, 4, "data/audio/voice/breath.wav");
-			Sounds.Add(EnumSound::Voice_Breath_Run, 4, "data/audio/voice/breath_run.wav");
+			Sounds.Add(EnumSound::Voice_Breath, 3, "data/audio/voice/breath.wav");
+			Sounds.Add(EnumSound::Voice_Breath_Run, 3, "data/audio/voice/breath_run.wav");
 			//銃用オーディオ
-			Sounds.Add(EnumSound::Cate_Down, 5, "data/audio/gun/cate/case_2.wav");
+			Sounds.Add(EnumSound::Cate_Down, 2, "data/audio/gun/cate/case_2.wav");
 			Sounds.Add(EnumSound::Assemble, 2, "data/audio/gun/assemble.wav");
-			Sounds.Add(EnumSound::Trigger, 5, "data/audio/gun/trigger.wav");
+			Sounds.Add(EnumSound::Trigger, 2, "data/audio/gun/trigger.wav");
 			{
 				HANDLE hFind = FindFirstFile("data/audio/gun/mag_down/*", &win32fdt);
 				if (hFind != INVALID_HANDLE_VALUE) {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::MAG_Down, 4, "data/audio/gun/mag_down/" + p);
+							Sounds.Add(EnumSound::MAG_Down, 2, "data/audio/gun/mag_down/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2229,7 +2229,7 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::MAG_Set, 4, "data/audio/gun/mag_set/" + p);
+							Sounds.Add(EnumSound::MAG_Set, 2, "data/audio/gun/mag_set/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2241,7 +2241,7 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Shot, 10, "data/audio/gun/fire/" + p);
+							Sounds.Add(EnumSound::Shot, 5, "data/audio/gun/fire/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2308,7 +2308,7 @@ namespace FPS_n2 {
 				} //else{ return false; }
 				FindClose(hFind);
 			}
-			Sounds.Add(EnumSound::Tank_engine, 4, "data/audio/tank/engine.wav");
+			Sounds.Add(EnumSound::Tank_engine, 3, "data/audio/tank/engine.wav");
 			//UI用オーディオ
 			//Sounds.Get(EnumSound::Shot).Play_3D(2, VECTOR_ref::zero(), 1.f);//decision
 			Sounds.Add(EnumSound::CANCEL, 2, "data/audio/UI/cancel.wav", false);

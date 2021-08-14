@@ -2203,7 +2203,7 @@ namespace FPS_n2 {
 				void Penetration(const std::pair<int, float>& a, const std::shared_ptr<PLAYER_VEHICLE>& tgt, const  VECTOR_ref& position, const  VECTOR_ref& normal) noexcept {
 					//貫通
 					if (this->pene > a.second * (1.0f / std::abs(this->move.vec.Norm().dot(normal)))) {
-						Sounds.Get(EnumSound::Tank_Damage).Play_3D(0, position, 15.f, 255);
+						Sounds.Get(EnumSound::Tank_Damage).Play_3D(0, position, 150.f, 255);
 
 						tgt->Damage.SubHP(this->spec->Get_damage(), 0);	//ダメージ
 						tgt->Damage.SubHP_Parts(this->spec->Get_damage(), a.first);
@@ -2213,7 +2213,7 @@ namespace FPS_n2 {
 					//はじく
 					else {
 						//this->pene *= 0.8f;
-						Sounds.Get(EnumSound::Tank_Ricochet).Play_3D(0, position, 15.f, 255);
+						Sounds.Get(EnumSound::Tank_Ricochet).Play_3D(0, position, 150.f, 255);
 						//tgt->Hit_obj[tgt->Hitbuf].use = 1;	//弾痕
 						this->pene_cnt++;
 					}
@@ -2598,6 +2598,7 @@ namespace FPS_n2 {
 				float xrad_shot = 0.f;														//射撃反動x
 				float zrad_shot = 0.f;														//射撃反動z
 
+				const auto& Getrounds() const noexcept { return rounds; }
 				const auto& Getfired() const noexcept { return fired; }
 				const auto& Getfirereact() const noexcept { return firereact; }
 				const auto& Getgun_info() const noexcept { return gun_info; }
@@ -2643,7 +2644,7 @@ namespace FPS_n2 {
 					if (this->reload_se_f && this->loadcnt < 1.f) {
 						this->reload_se_f = false;
 						//サウンド
-						Sounds.Get(EnumSound::Tank_Reload).Play_3D((*MINE_v)->use_veh->Reload_ID, (*MINE_v)->Get_pos(), 250.f, 128);
+						Sounds.Get(EnumSound::Tank_Reload).Play_3D((*MINE_v)->use_veh->Reload_ID, (*MINE_v)->Get_pos(), 3.f, 128);
 					}
 					this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
 					this->fired = std::max(this->fired - 1.f / FPS, 0.f);
@@ -2757,8 +2758,10 @@ namespace FPS_n2 {
 					g.SetUp_bullet(MAPPTs_t, DrawPts_t, Hit_obj_p_t, Hit_b_obj_p_t);
 				}
 			}
-		protected:
+			const auto& Gunround(size_t id_t) const noexcept { return this->Gun_[id_t].Getrounds(); }
 			const auto& Guninfo(size_t id_t) const noexcept { return this->Gun_[id_t].Getgun_info(); }
+			const auto& Get_Gun() const noexcept { return this->Gun_; }
+		protected:
 
 			void Spawn(moves& move) {
 				this->b2mine.SetTransform(b2Vec2(move.pos.x(), move.pos.z()), atan2f(-move.mat.zvec().x(), -move.mat.zvec().z()));
@@ -4732,7 +4735,7 @@ namespace FPS_n2 {
 							//エフェクト
 							calc_shot_effect();
 							//サウンド
-							Sounds.Get(EnumSound::Shot).Play_3D(audio.use_shot, GunControl::Get_pos_gun(), 100.f, (this->Get_mazzuletype() == 1) ? 192 : 255);
+							Sounds.Get(EnumSound::Shot).Play_3D(audio.use_shot, GunControl::Get_pos_gun(), 200.f, (this->Get_mazzuletype() == 1) ? 192 : 255);
 						}
 						//弾の処理
 						BulletControl::Update();
