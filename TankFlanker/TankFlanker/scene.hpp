@@ -1002,8 +1002,8 @@ namespace FPS_n2 {
 					c->Start();
 				}
 				for (auto& v : this->vehicle) {
-					temp.pos = VECTOR_ref::vget(25.f + 5.f*int(&v - &this->vehicle.front()), 10.f, -25.f);
-					temp.mat = MATRIX_ref::RotY(deg2rad(0.f));
+					temp.pos = VECTOR_ref::vget(30.f + 10.f*int(&v - &this->vehicle.front()), 10.f, -30.f);
+					temp.mat = MATRIX_ref::RotY(deg2rad(-90.f));
 					v->SetSpawnPos(temp);
 					v->Spawn();
 					v->Start();

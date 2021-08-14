@@ -114,9 +114,9 @@ c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
   コード生成しています。
-  2 of 6490 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  1 of 6493 functions (<0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    1 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
 EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\FPS_n2.exe

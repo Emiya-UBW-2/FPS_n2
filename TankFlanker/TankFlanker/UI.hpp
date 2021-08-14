@@ -609,17 +609,25 @@ namespace FPS_n2 {
 								int size = int((*mine->MINE_v)->Get_Gun().size());
 								if (DrawPts->use_vr) {
 									xp = DrawPts->disp_x / 2 - y_r(140) + Middle->Get_size();
-									yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20) - (Small->Get_size() + Middle->Get_size()) * size;
+									yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20) - (Small->Get_size() + Middle->Get_size() + Small->Get_size()) * size;
 								}
 								else {
-									xp = y_r(220) + Middle->Get_size();
-									yp = DrawPts->disp_y - y_r(20) - (Small->Get_size() + Middle->Get_size()) * size;
+									xp = y_r(20) + Middle->Get_size();
+									yp = DrawPts->disp_y - y_r(20) - (Small->Get_size() + Middle->Get_size() + Small->Get_size()) * size;
 								}
 								for (auto t = 0; t < size; t++) {
 									Small->Get_handle().DrawString(xp, yp, (*mine->MINE_v)->Guninfo(t).Get_name(), GetColor(255, 255, 255));
 									yp += Small->Get_size();
 									Middle->Get_handle().DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", (*mine->MINE_v)->Gunround(t), (*mine->MINE_v)->Guninfo(t).Get_rounds());
 									yp += Middle->Get_size();
+									if ((*mine->MINE_v)->Gunround(t) != 0) {
+										int color = ((*mine->MINE_v)->Gunloadtime(t) == 0.f) ? GetColor(0, 255, 0) : GetColor(255, 0, 0);
+										Small->Get_handle().DrawStringFormat(xp, yp, color, "%05.2f s /%05.2f s", (*mine->MINE_v)->Gunloadtime(t), (*mine->MINE_v)->Guninfo(t).Get_load_time());
+									}
+									else {
+										Small->Get_handle().DrawString(xp, yp, "Empty", GetColor(255, 0, 0));
+									}
+									yp += Small->Get_size();
 								}
 							}
 						}

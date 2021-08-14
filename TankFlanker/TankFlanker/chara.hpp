@@ -2599,6 +2599,7 @@ namespace FPS_n2 {
 				float zrad_shot = 0.f;														//ËŒ‚”½“®z
 
 				const auto& Getrounds() const noexcept { return rounds; }
+				const auto& Getloadtime() const noexcept { return loadcnt; }
 				const auto& Getfired() const noexcept { return fired; }
 				const auto& Getfirereact() const noexcept { return firereact; }
 				const auto& Getgun_info() const noexcept { return gun_info; }
@@ -2758,6 +2759,7 @@ namespace FPS_n2 {
 					g.SetUp_bullet(MAPPTs_t, DrawPts_t, Hit_obj_p_t, Hit_b_obj_p_t);
 				}
 			}
+			const auto& Gunloadtime(size_t id_t) const noexcept { return this->Gun_[id_t].Getloadtime(); }
 			const auto& Gunround(size_t id_t) const noexcept { return this->Gun_[id_t].Getrounds(); }
 			const auto& Guninfo(size_t id_t) const noexcept { return this->Gun_[id_t].Getgun_info(); }
 			const auto& Get_Gun() const noexcept { return this->Gun_; }
