@@ -33,7 +33,8 @@ namespace FPS_n2 {
 			MAPPTs->Set_mine(MAPPTs);
 			//キー読み込み
 			auto KeyBind = std::make_shared<key_bind>(DrawPts);
-			auto PauseMenu = std::make_unique<pause_menu>(KeyBind, DrawPts);
+			auto OptionMenu = std::make_shared<option_menu>(KeyBind, DrawPts);
+			auto PauseMenu = std::make_unique<pause_menu>(OptionMenu,KeyBind, DrawPts);
 			//シーン
 			auto UI_LOADPTs = std::make_shared<Sceneclass::LOADING>();
 			auto MAINLOOPscene = std::make_shared<Sceneclass::MAINLOOP>(MAPPTs, OPTPTs);
@@ -125,6 +126,9 @@ namespace FPS_n2 {
 									scenes_ptr->KeyOperation();
 								}
 							}
+							if (selpause) {
+								OptionMenu->Update();
+							}
 							selend = (!selpause) ? scenes_ptr->Update() : PauseMenu->Update();
 						}
 						//VR空間に適用
@@ -202,6 +206,7 @@ namespace FPS_n2 {
 							scenes_ptr->LAST_Draw();
 							//ポーズ
 							PauseMenu->Draw();
+							OptionMenu->Draw();
 							//キー
 							KeyBind->Draw();
 							//デバッグ

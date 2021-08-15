@@ -2203,18 +2203,16 @@ namespace FPS_n2 {
 				void Penetration(const std::pair<int, float>& a, const std::shared_ptr<PLAYER_VEHICLE>& tgt, const  VECTOR_ref& position, const  VECTOR_ref& normal) noexcept {
 					//貫通
 					if (this->pene > a.second * (1.0f / std::abs(this->move.vec.Norm().dot(normal)))) {
-						Sounds.Get(EnumSound::Tank_Damage).Play_3D(0, position, 150.f, 255);
+						Sounds.Get(EnumSound::Tank_Damage).Play_3D(0, position, 50.f, 64);
 
 						tgt->Damage.SubHP(this->spec->Get_damage(), 0);	//ダメージ
 						tgt->Damage.SubHP_Parts(this->spec->Get_damage(), a.first);
 						this->Flag = false;									//弾フラグ削除
-						//tgt->Hit_obj[tgt->Hitbuf].use = 0;				//弾痕
 					}
 					//はじく
 					else {
 						//this->pene *= 0.8f;
-						Sounds.Get(EnumSound::Tank_Ricochet).Play_3D(0, position, 150.f, 255);
-						//tgt->Hit_obj[tgt->Hitbuf].use = 1;	//弾痕
+						Sounds.Get(EnumSound::Tank_Ricochet).Play_3D(0, position, 50.f, 64);
 						this->pene_cnt++;
 					}
 					//はじく処理
@@ -2223,19 +2221,7 @@ namespace FPS_n2 {
 					//
 					hit_effect(normal);
 					//弾痕のセット
-					/*
-					{
-						float asize = mine_b.spec->Get_caliber() * 100.f;
-						auto scale = VECTOR_ref::vget(asize / std::abs(mine_b.move.vec.Norm().dot(normal)), asize, asize);
-						auto y_vec = MATRIX_ref::Vtrans(normal, tgt->move.mat.Inverse() * MATRIX_ref::RotY(deg2rad(180)));
-						auto z_vec = MATRIX_ref::Vtrans(normal.cross(mine_b.move.vec), tgt->move.mat.Inverse() * MATRIX_ref::RotY(deg2rad(180)));
-
-						tgt->Hit_obj[tgt->Hitbuf].mat = MATRIX_ref::Scale(scale)* MATRIX_ref::Axis1(y_vec.cross(z_vec), y_vec, z_vec);
-						tgt->Hit_obj[tgt->Hitbuf].move.pos = MATRIX_ref::Vtrans(position - tgt->move.pos, tgt->move.mat.Inverse() * MATRIX_ref::RotY(deg2rad(180))) + y_vec * 0.02f;
-						tgt->Hit_obj[tgt->Hitbuf].Flag = true;
-						++tgt->Hitbuf %= tgt->Hit_obj.size();
-					}
-					*/
+					tgt->Hit_active.Set(tgt->Get_move(), position, normal, this->move.vec.Norm(), this->spec->Get_caliber(), !this->Flag);
 				}
 				void hit_effect(const VECTOR_ref& nomal) noexcept {
 					if (isRide()) {
@@ -4943,6 +4929,7 @@ namespace FPS_n2 {
 			bool changeview = false;
 		public:
 			MATRIX_ref lookvec;
+			HIT_ACTIVE Hit_active;
 		public:
 			void Reset_range(void) noexcept { range = 6.f; }
 			const VECTOR_ref& Get_pos() const noexcept { return this->move.pos; }
@@ -4991,7 +4978,7 @@ namespace FPS_n2 {
 				camera_main.set_cam_pos(eyepos, eyetgt, this->move.mat.yvec());
 				camera_main.near_ = 0.1f;
 			}
-			void Set(std::vector<Vehcs>& vehc_data_t, int itr) {
+			void Set(std::vector<Vehcs>& vehc_data_t, int itr, const MV1& hit_pic) {
 				this->move = this->spawn;
 				this->use_veh = &vehc_data_t[itr];
 				//
@@ -5007,6 +4994,8 @@ namespace FPS_n2 {
 				TankControl::Set(this->obj_body, this->move, MAPPTs->world, MINE_v);
 				//ヒットポイント
 				Damage.Set((int)this->obj_col.mesh_num(), this->use_veh->Get_HP());
+				//弾痕
+				Hit_active.Set(hit_pic);
 			}
 			/*戦車スポーン*/
 			void Spawn() noexcept override {
@@ -5118,6 +5107,8 @@ namespace FPS_n2 {
 				}
 				//エフェクトの処理
 				Update_effect();
+				//弾痕
+				Hit_active.Update(this->move);
 			}
 			/*描画*/
 			void Draw(void) noexcept {
@@ -5133,6 +5124,7 @@ namespace FPS_n2 {
 						this->obj_body.DrawMesh(i);
 					}
 					//obj_col.DrawModel();
+					Hit_active.Draw();
 				}
 			}
 			/*レーザー、ライト描画*/
@@ -5146,6 +5138,7 @@ namespace FPS_n2 {
 			void Dispose() noexcept override {
 				TankControl::Dispose();
 				PLAYER_COMMON::Dispose();
+				Hit_active.Dispose();
 				this->Reset();
 			}
 			void Reset() noexcept override {

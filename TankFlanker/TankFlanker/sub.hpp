@@ -182,7 +182,6 @@ namespace FPS_n2 {
 		size_t pt_sel_ = 0;						//ベースパーツの番号(マウントなど)
 	};
 
-
 	//キーバインド
 	class key_bind {
 	private:
@@ -633,8 +632,123 @@ namespace FPS_n2 {
 		//
 	};
 	//ポーズメニュー
+	class option_menu {
+	private:
+		std::shared_ptr<key_bind> KeyBind{ nullptr };
+		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
+		float P_f = 0.0f;
+		bool old = false;
+		bool On_Option = false;
+
+		int select = 0;
+		int selmax = 2;
+		//キー
+		switchs up;
+		switchs down;
+		switchs left;
+		switchs right;
+		switchs shot;
+	private:
+		std::vector<float> sel_x;
+		auto& Sel_X(size_t size) {
+			if (sel_x.size() < size + 1) {
+				sel_x.resize(size + 1);
+				sel_x[size] = 0.f;
+			}
+			return sel_x[size];
+		}
+	public:
+		//
+		option_menu(std::shared_ptr<key_bind>& KeyBind_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+			KeyBind = KeyBind_t;
+			DrawPts = DrawPts_t;
+			SetUseASyncLoadFlag(FALSE);
+		}
+		//
+		const auto& Pause_key() const noexcept { return On_Option; }
+		void Pause_key(bool value) noexcept { On_Option = value; }
+		//
+		bool Update(void) noexcept {
+			if (On_Option) {
+				SetMouseDispFlag(TRUE);
+
+				KeyBind->set_Mode(1);
+				up.GetInput(KeyBind->Get_key_use(EnumKeyBind::FRONT));
+				down.GetInput(KeyBind->Get_key_use(EnumKeyBind::BACK));
+				left.GetInput(KeyBind->Get_key_use(EnumKeyBind::LEFT));
+				right.GetInput(KeyBind->Get_key_use(EnumKeyBind::RIGHT));
+				shot.GetInput(KeyBind->Get_key_use(EnumKeyBind::JUMP));
+				if (up.trigger()) {
+					Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					select--;
+				}
+				if (down.trigger()) {
+					Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					select++;
+				}
+
+				if (select < 0) { select = selmax - 1; }
+				if (select > selmax - 1) { select = 0; }
+
+				if (shot.trigger()) {
+					//オプション
+					if (select == 0) {
+						Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					}
+					//戻る
+					if (select == 1) {
+						Sounds.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						On_Option = false;
+					}
+				}
+			}
+			return true;
+		}
+		//
+		void Draw(void) noexcept {
+			auto tmp_P = On_Option;
+			easing_set(&P_f, float(tmp_P), 0.9f);
+			//インフォ
+			if (P_f > 0.1f) {
+				//背景
+				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * P_f));
+				DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
+				if (P_f > 0.9f) {
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+					//背景画像
+				}
+				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+				//前面
+				if (P_f > 0.9f) {
+					int xp_t = DrawPts->disp_x - (y_r(100) + y_r(140));
+					int yp_t = y_r(100);
+					int now = 0;
+					//
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "オプション1", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
+					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					now++;
+					//
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
+					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					now++;
+					//
+				}
+			}
+			else {
+				for (auto& x : sel_x) {
+					x = -1.f*(y_r(100) + y_r(140)) / y_r(32);
+				}
+			}
+			//
+		}
+		//
+	};
+	//ポーズメニュー
 	class pause_menu {
 	private:
+		std::shared_ptr<option_menu> OptionMenu{ nullptr };
 		std::shared_ptr<key_bind> KeyBind{ nullptr };
 		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
 		float P_f = 0.0f;
@@ -659,7 +773,8 @@ namespace FPS_n2 {
 		}
 	public:
 		//
-		pause_menu(std::shared_ptr<key_bind>& KeyBind_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+		pause_menu(std::shared_ptr<option_menu>& OptionMenu_t, std::shared_ptr<key_bind>& KeyBind_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+			OptionMenu = OptionMenu_t;
 			KeyBind = KeyBind_t;
 			DrawPts = DrawPts_t;
 			SetUseASyncLoadFlag(FALSE);
@@ -679,11 +794,11 @@ namespace FPS_n2 {
 			bool selend = true;
 
 			KeyBind->set_Mode(1);
-			up.GetInput(KeyBind->Get_key_use(EnumKeyBind::FRONT));
-			down.GetInput(KeyBind->Get_key_use(EnumKeyBind::BACK));
-			left.GetInput(KeyBind->Get_key_use(EnumKeyBind::LEFT));
-			right.GetInput(KeyBind->Get_key_use(EnumKeyBind::RIGHT));
-			shot.GetInput(KeyBind->Get_key_use(EnumKeyBind::JUMP));
+			up.GetInput(KeyBind->Get_key_use(EnumKeyBind::FRONT) && !OptionMenu->Pause_key());
+			down.GetInput(KeyBind->Get_key_use(EnumKeyBind::BACK) && !OptionMenu->Pause_key());
+			left.GetInput(KeyBind->Get_key_use(EnumKeyBind::LEFT) && !OptionMenu->Pause_key());
+			right.GetInput(KeyBind->Get_key_use(EnumKeyBind::RIGHT) && !OptionMenu->Pause_key());
+			shot.GetInput(KeyBind->Get_key_use(EnumKeyBind::JUMP) && !OptionMenu->Pause_key());
 			if (up.trigger()) {
 				Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 				select--;
@@ -700,6 +815,7 @@ namespace FPS_n2 {
 				//オプション
 				if (select == 0) {
 					Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					OptionMenu->Pause_key(true);
 				}
 				//戦闘に戻る
 				if (select == 1) {
@@ -732,24 +848,30 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				//前面
 				if (P_f > 0.9f) {
+					int xp_t = DrawPts->disp_x - y_r(100);
 					int yp_t = y_r(100);
 					int now = 0;
 					//
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "オプション", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(DrawPts->disp_x - y_r(100) - int(Sel_X(now) * y_r(32)), yp_t, "オプション", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;
 					//
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "戦闘に戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(DrawPts->disp_x - y_r(100) - int(Sel_X(now) * y_r(32)), yp_t, "戦闘に戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;
 					//
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "強制帰還", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(DrawPts->disp_x - y_r(100) - int(Sel_X(now) * y_r(32)), yp_t, "強制帰還", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;
 					//
+				}
+			}
+			else {
+				for (auto& x : sel_x) {
+					x = -1.f*(y_r(100)) / y_r(32);
 				}
 			}
 			//
@@ -1148,7 +1270,62 @@ namespace FPS_n2 {
 		}
 	};
 	class HIT_ACTIVE {
+		struct Hit {		      /**/
+			bool flug{ false };   /*弾痕フラグ*/
+			int use{ 0 };	      /*使用フレーム*/
+			MV1 pic;	      /*弾痕モデル*/
+			VECTOR_ref pos;	      /*座標*/
+			MATRIX_ref mat;	      /**/
+		};								      /**/
+		std::array<Hit, 24> hit_obj;					      /*弾痕*/
+		int hitbuf = 0;		       /*使用弾痕*/
+	public :
+		void Set(const MV1& hit_pic) {
+			for (auto& h : this->hit_obj) {
+				h.flug = false;
+				h.pic = hit_pic.Duplicate();
+				h.use = 0;
+				h.mat = MGetIdent();
+				h.pos = VGet(0.f, 0.f, 0.f);
+			}
+		}
+		void Set(const moves& this_move, const  VECTOR_ref& Put_pos, const  VECTOR_ref& Put_normal,const VECTOR_ref& ammo_nomal/*this->move.vec.Norm()*/,const float&caliber,bool isPene) {
+			float asize = 200.f*caliber;
+			auto y_vec = MATRIX_ref::Vtrans(Put_normal, this_move.mat.Inverse());
+			auto z_vec = MATRIX_ref::Vtrans(Put_normal.cross(ammo_nomal).Norm(), this_move.mat.Inverse());
+			auto scale = VECTOR_ref::vget(asize / std::abs(ammo_nomal.dot(Put_normal)), asize, asize);
 
+			this->hit_obj[this->hitbuf].use = (isPene) ? 0 : 1;				//弾痕
+			this->hit_obj[this->hitbuf].mat = MATRIX_ref::GetScale(scale)* MATRIX_ref::Axis1_YZ(y_vec, z_vec);
+			this->hit_obj[this->hitbuf].pos = MATRIX_ref::Vtrans(Put_pos - this_move.pos, this_move.mat.Inverse()) + y_vec * 0.005f;
+			this->hit_obj[this->hitbuf].flug = true;
+			++this->hitbuf %= this->hit_obj.size();
+		}
+		void Update(const moves& this_move) {
+			//弾痕
+			for (auto& h : this->hit_obj) {
+				if (h.flug) {
+					h.pic.SetMatrix(h.mat* this_move.mat*MATRIX_ref::Mtrans(this_move.pos + MATRIX_ref::Vtrans(h.pos, this_move.mat)));
+				}
+			}
+		}
+		void Draw() {
+			//弾痕
+			for (auto& h : this->hit_obj) {
+				if (h.flug) {
+					h.pic.DrawFrame(h.use);
+				}
+			}
+		}
+		void Dispose() {
+			for (auto& h : this->hit_obj) {
+				h.flug = false;
+				h.use = 0;
+				h.pic.Dispose();
+				h.pos = VGet(0, 0, 0);
+				h.mat = MGetIdent();
+			}
+		}
 	};
 	//パフォーマンス
 	class performance {

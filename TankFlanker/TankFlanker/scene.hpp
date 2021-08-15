@@ -963,7 +963,7 @@ namespace FPS_n2 {
 					v = std::make_shared<PLAYERclass::PLAYER_VEHICLE>();
 					v->Set_Ptr_Common(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
 					v->Set_Ptr(&this->chara, nullptr, &this->vehicle, &v);
-					v->Set(vehc_data, int(&v - &this->vehicle.front()));
+					v->Set(vehc_data, int(&v - &this->vehicle.front()), hit_pic);
 				}
 			}
 		public:
