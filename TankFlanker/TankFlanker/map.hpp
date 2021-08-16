@@ -11,7 +11,7 @@
 namespace FPS_n2 {
 	class MAPclass {
 	public:
-		static const int grassDiv = 6;
+		static const int grassDiv = 1;//6;
 
 		class Map;
 		class MiniMap;
@@ -214,7 +214,7 @@ namespace FPS_n2 {
 				shader.Init("NormalMesh_PointLightVS.vso", "NormalMesh_PointLightPS.pso");
 				Depth.Init("DepthVS.vso", "DepthPS.pso");
 			}
-			void Start() noexcept {
+			void Start(void) noexcept {
 				isDispose = true;
 				//map.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 				VECTOR_ref size;
@@ -366,7 +366,7 @@ namespace FPS_n2 {
 				this->sun_pos = ray.Norm() * -1500.f;
 			}
 			void Set(void) noexcept {
-				Sounds.Get(EnumSound::MAP0_ENVI).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+				SE.Get(EnumSound::MAP0_ENVI).Play(0, DX_PLAYTYPE_LOOP, TRUE);
 			}
 			void Dispose(void) noexcept {
 				if (isDispose) {

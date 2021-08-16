@@ -20,8 +20,6 @@ namespace FPS_n2 {
 			auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 #endif // DEBUG
 			OPTPTs->Set_useVR(DrawPts->use_vr);
-			//エフェクト
-			effectControl.Init();
 			//シェーダー
 			auto HostpassPTs = std::make_shared<HostPassEffect>(OPTPTs, DrawPts->disp_x, DrawPts->disp_y);				//ホストパスエフェクト(VR、フルスクリーン共用)
 			//シェーダー
@@ -33,8 +31,8 @@ namespace FPS_n2 {
 			MAPPTs->Set_mine(MAPPTs);
 			//キー読み込み
 			auto KeyBind = std::make_shared<key_bind>(DrawPts);
-			auto OptionMenu = std::make_shared<option_menu>(KeyBind, DrawPts);
-			auto PauseMenu = std::make_unique<pause_menu>(OptionMenu,KeyBind, DrawPts);
+			auto OptionMenu = std::make_shared<option_menu>(OPTPTs, KeyBind, DrawPts);
+			auto PauseMenu = std::make_unique<pause_menu>(OptionMenu, KeyBind, DrawPts);
 			//シーン
 			auto UI_LOADPTs = std::make_shared<Sceneclass::LOADING>();
 			auto MAINLOOPscene = std::make_shared<Sceneclass::MAINLOOP>(MAPPTs, OPTPTs);
@@ -43,7 +41,8 @@ namespace FPS_n2 {
 			//リソース
 			auto Audio_resource = std::make_shared<Audio_Control>();						//オーディオ
 			auto GunPartses = std::make_shared<GUNPARTS_Control>();							//銃パーツ
-			effectControl.Start();
+			effectControl.Init();															//エフェクト
+			OptionMenu->Set();
 			//
 			UI_LOADPTs->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);
 			LOADscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);

@@ -330,11 +330,21 @@ namespace FPS_n2 {
 			float changeview = 0.f;
 		private:
 			void Draw_HP(int xpos, int ypos, int xsize, int ysize, const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine) noexcept {
+				PLAYERclass::PLAYER_COMMON::Damages* dam = nullptr;
+				if (mine->isRide()) {
+					dam = &(*mine->MINE_v)->Damage;
+				}
+				else {
+					dam = &mine->Damage;
+				}
+
+				
+
 				auto size = y_r(2);
 				int x1 = xpos - xsize / 2;
 				float size_y = float(ysize - size) / Small->Get_size();
-				int nowHP = (int)(mine->Damage.HP_Per() * (xsize - size * 2));
-				int willHP = (int)(mine->Damage.HP_r_Per() * (xsize - size * 2));
+				int nowHP = (int)(dam->HP_Per() * (xsize - size * 2));
+				int willHP = (int)(dam->HP_r_Per() * (xsize - size * 2));
 				//back
 				DrawBox(x1, ypos, x1 + xsize, ypos + ysize + size, GetColor(128, 128, 128), FALSE);
 				//
@@ -348,11 +358,11 @@ namespace FPS_n2 {
 				if (nowHP < willHP) {
 					DrawBox(x1 + nowHP, ypos + size, x1 + willHP, ypos + ysize + size, GetColor(255, 255, 0), TRUE);
 				}
-				Small->Get_handle().DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", mine->Damage.Get_HP(), mine->Damage.Get_HP_full());
+				Small->Get_handle().DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", dam->Get_HP(), dam->Get_HP_full());
 
-				if (1.f - mine->Damage.Get_got_damage_f() >= 0.01f) {
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * (1.f - powf(1.f - mine->Damage.Get_got_damage_f(), 5.f))), 0, 255));
-					Small->Get_handle().DrawExtendStringFormat_MID(xpos + (xsize / 2 * mine->Damage.Get_got_damage_x() / 255), ypos + size - int(100 * (1.f - mine->Damage.Get_got_damage_f())), size_y, size_y, mine->Damage.Get_got_damage_color(), "%d", mine->Damage.Get_got_damage());
+				if (1.f - dam->Get_got_damage_f() >= 0.01f) {
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * (1.f - powf(1.f - dam->Get_got_damage_f(), 5.f))), 0, 255));
+					Small->Get_handle().DrawExtendStringFormat_MID(xpos + (xsize / 2 * dam->Get_got_damage_x() / 255), ypos + size - int(100 * (1.f - dam->Get_got_damage_f())), size_y, size_y, dam->Get_got_damage_color(), "%d", dam->Get_got_damage());
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
 			}
@@ -444,7 +454,15 @@ namespace FPS_n2 {
 
 					//HP表示
 					{
-						auto ratio_t = (1.f - mine->Damage.HP_Per());
+						PLAYERclass::PLAYER_COMMON::Damages* dam = nullptr;
+						if (mine->isRide()) {
+							dam = &(*mine->MINE_v)->Damage;
+						}
+						else {
+							dam = &mine->Damage;
+						}
+
+						auto ratio_t = (1.f - dam->HP_Per());
 						if (ratio_t > 1.f / 255.f) {
 							if (DrawPts->use_vr) {
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f * ratio_t), 0, 255));
@@ -456,7 +474,7 @@ namespace FPS_n2 {
 							}
 						}
 						//ダメージ
-						ratio_t = (float(int(mine->Damage.Get_HP_r()) - mine->Damage.Get_HP()) / 50.f);
+						ratio_t = (float(int(dam->Get_HP_r()) - dam->Get_HP()) / 50.f);
 						if (ratio_t > 1.f / 255.f) {
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * ratio_t), 0, 255));
 							DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 0, 0), TRUE);
@@ -668,7 +686,15 @@ namespace FPS_n2 {
 							xp = DrawPts->disp_x / 2;
 							yp = DrawPts->disp_y / 2;
 						}
-						for (const auto& d : mine->Damage.Get_got_damage_()) {
+						PLAYERclass::PLAYER_COMMON::Damages* dam = nullptr;
+						if (mine->isRide()) {
+							dam = &(*mine->MINE_v)->Damage;
+						}
+						else {
+							dam = &mine->Damage;
+						}
+
+						for (const auto& d : dam->Get_got_damage_rad()) {
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * (1.f - powf(1.f - d.alpfa, 5.f))), 0, 255));
 							this->hit_rad.DrawRotaGraph(xp, yp, float(y_r(100 * 1.25f)) / 100.f * ((1.f - 0.3f) + (d.alpfa * 0.3f)), d.rad, true);
 						}

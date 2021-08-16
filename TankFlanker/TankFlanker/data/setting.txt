@@ -6,3 +6,6 @@ usevr=false
 SSAO=true
 fov=65.0
 vsync=false
+SE=0.0
+VOICE=0.0
+BGM=0.0

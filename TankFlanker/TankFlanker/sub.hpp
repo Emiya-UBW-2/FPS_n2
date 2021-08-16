@@ -60,6 +60,8 @@ namespace FPS_n2 {
 			EnumSound ID;
 			std::vector<handles> shandle;
 			size_t now = 0;
+			int set_vol = 255;
+			float vol_rate = 1.f;
 		public:
 			const auto& Get_ID(void)const noexcept { return ID; }
 			void Set(EnumSound ID_t, size_t buffersize, std::string path_t, bool is3Dsound = true) {
@@ -89,7 +91,8 @@ namespace FPS_n2 {
 			void Play(int Sel_t, const int& type, const int& flag = 1, int vol_t = -1) {
 				shandle[Sel_t].handle[now].play(type, flag);
 				if (vol_t != -1) {
-					shandle[Sel_t].handle[now].vol(vol_t);
+					set_vol = vol_t;
+					shandle[Sel_t].handle[now].vol((int)(vol_rate * set_vol));
 				}
 				++now %= shandle[Sel_t].handle.size();
 			}
@@ -103,9 +106,19 @@ namespace FPS_n2 {
 				if (isplay) {
 					shandle[Sel_t].handle[now].play_3D(pos_t, radius);
 					if (vol_t != -1) {
-						shandle[Sel_t].handle[now].vol(vol_t);
+						set_vol = vol_t;
+						shandle[Sel_t].handle[now].vol((int)(vol_rate * set_vol));
 					}
 					++now %= shandle[Sel_t].handle.size();
+				}
+			}
+			void SetVol(float vol) {
+				vol = std::clamp(vol, 0.f, 1.f);
+				vol_rate = vol;
+				for (auto& sh : this->shandle) {
+					for (auto& h : sh.handle) {
+						h.vol((int)(vol_rate * set_vol));
+					}
 				}
 			}
 		};
@@ -124,8 +137,15 @@ namespace FPS_n2 {
 			return this->havehandle.size() - 1;
 		}
 		Soundhave& Get(EnumSound ID_t) { return this->havehandle[Add(ID_t)]; }
+
+		void SetVol(float vol) {
+			for (auto& h : this->havehandle) {
+				h.SetVol(vol);
+			}
+		}
 	};
-	SoundPool Sounds;
+	SoundPool SE;
+	SoundPool VOICE;
 	//エフェクトリソース
 	class EffectControl {
 	public:
@@ -151,9 +171,6 @@ namespace FPS_n2 {
 			FindClose(hFind);
 			effsorce.resize(effsorce.size() + 1);
 			effsorce.back() = EffekseerEffectHandle::load("data/effect/gndsmk.efk");								//戦車用エフェクト
-		}
-
-		void Start(void) noexcept {
 			Update_effect_was = GetNowHiPerformanceCount();
 		}
 
@@ -641,13 +658,21 @@ namespace FPS_n2 {
 		bool On_Option = false;
 
 		int select = 0;
-		int selmax = 2;
+		int selmax = 3;
 		//キー
 		switchs up;
 		switchs down;
 		switchs left;
 		switchs right;
 		switchs shot;
+
+		float SE_vol_per = 1.f;
+		float Voice_vol_per = 1.f;
+
+		float SE_left_timer = 0.f;
+		float SE_right_timer = 0.f;
+		float Voice_left_timer = 0.f;
+		float Voice_right_timer = 0.f;
 	private:
 		std::vector<float> sel_x;
 		auto& Sel_X(size_t size) {
@@ -659,14 +684,21 @@ namespace FPS_n2 {
 		}
 	public:
 		//
-		option_menu(std::shared_ptr<key_bind>& KeyBind_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+		option_menu(std::shared_ptr<OPTION>& OPTPTs_t, std::shared_ptr<key_bind>& KeyBind_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
 			KeyBind = KeyBind_t;
 			DrawPts = DrawPts_t;
-			SetUseASyncLoadFlag(FALSE);
+			SE_vol_per = OPTPTs_t->Get_SE();
+			Voice_vol_per = OPTPTs_t->Get_VOICE();
+
 		}
 		//
-		const auto& Pause_key() const noexcept { return On_Option; }
+		const auto& Pause_key(void) const noexcept { return On_Option; }
 		void Pause_key(bool value) noexcept { On_Option = value; }
+
+		void Set() {
+			SE.SetVol(SE_vol_per);
+			VOICE.SetVol(Voice_vol_per);
+		}
 		//
 		bool Update(void) noexcept {
 			if (On_Option) {
@@ -679,25 +711,60 @@ namespace FPS_n2 {
 				right.GetInput(KeyBind->Get_key_use(EnumKeyBind::RIGHT));
 				shot.GetInput(KeyBind->Get_key_use(EnumKeyBind::JUMP));
 				if (up.trigger()) {
-					Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					select--;
 				}
 				if (down.trigger()) {
-					Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					select++;
 				}
 
 				if (select < 0) { select = selmax - 1; }
 				if (select > selmax - 1) { select = 0; }
 
-				if (shot.trigger()) {
-					//オプション
-					if (select == 0) {
-						Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				//サウンド
+				if (select == 0) {
+					//
+					if (left.press()) { SE_left_timer += 1.f / FPS; }
+					else { SE_left_timer = 0.f; }
+					if (left.trigger() || (SE_left_timer > 1.f && ((int)(SE_left_timer * 10.f) % 2 == 0))) {
+						SE_vol_per = std::clamp(SE_vol_per - 0.01f, 0.f, 1.f);
+						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE.SetVol(SE_vol_per);
 					}
+					//
+					if (right.press()) { SE_right_timer += 1.f / FPS; }
+					else { SE_right_timer = 0.f; }
+					if (right.trigger() || (SE_right_timer >1.f && ((int)(SE_right_timer * 10.f) % 2 == 0))) {
+						SE_vol_per = std::clamp(SE_vol_per + 0.01f, 0.f, 1.f);
+						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE.SetVol(SE_vol_per);
+					}
+				}
+				//サウンド
+				if (select == 1) {
+					//
+					if (left.press()) { Voice_left_timer += 1.f / FPS; }
+					else { Voice_left_timer = 0.f; }
+					if (left.trigger() || (Voice_left_timer > 1.f && ((int)(Voice_left_timer * 10.f) % 2 == 0))) {
+						Voice_vol_per = std::clamp(Voice_vol_per - 0.01f, 0.f, 1.f);
+						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						VOICE.SetVol(Voice_vol_per);
+					}
+					//
+					if (right.press()) { Voice_right_timer += 1.f / FPS; }
+					else { Voice_right_timer = 0.f; }
+					if (right.trigger() || (Voice_right_timer > 1.f && ((int)(Voice_right_timer * 10.f) % 2 == 0))) {
+						Voice_vol_per = std::clamp(Voice_vol_per + 0.01f, 0.f, 1.f);
+						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						VOICE.SetVol(Voice_vol_per);
+					}
+				}
+
+				if (select == 2) {
 					//戻る
-					if (select == 1) {
-						Sounds.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					if (shot.trigger()) {
+						SE.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						On_Option = false;
 					}
 				}
@@ -724,12 +791,17 @@ namespace FPS_n2 {
 					int yp_t = y_r(100);
 					int now = 0;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "オプション1", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Fonts.Get(y_r(24)).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "SE:%03.0f%%", SE_vol_per * 100.f);
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Fonts.Get(y_r(24)).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "VOICE:%03.0f%%", Voice_vol_per * 100.f);
+					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
+					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					now++;
+					//
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;
@@ -738,7 +810,7 @@ namespace FPS_n2 {
 			}
 			else {
 				for (auto& x : sel_x) {
-					x = -1.f*(y_r(100) + y_r(140)) / y_r(32);
+					x = -1.f*((float)y_r(100) + (float)y_r(140)) / (float)y_r(32);
 				}
 			}
 			//
@@ -781,9 +853,13 @@ namespace FPS_n2 {
 		}
 		//
 		const auto Pause_key(void) noexcept {
-			auto key_p = KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Get_key_Auto(true);
+			auto key_p = old;
+			if (!OptionMenu->Pause_key()) {
+				key_p = KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Get_key_Auto(true);
+			}
+
 			if (key_p != old) {
-				Sounds.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				SE.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 			}
 			old = key_p;
 			return key_p;
@@ -800,11 +876,11 @@ namespace FPS_n2 {
 			right.GetInput(KeyBind->Get_key_use(EnumKeyBind::RIGHT) && !OptionMenu->Pause_key());
 			shot.GetInput(KeyBind->Get_key_use(EnumKeyBind::JUMP) && !OptionMenu->Pause_key());
 			if (up.trigger()) {
-				Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 				select--;
 			}
 			if (down.trigger()) {
-				Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 				select++;
 			}
 
@@ -814,17 +890,17 @@ namespace FPS_n2 {
 			if (shot.trigger()) {
 				//オプション
 				if (select == 0) {
-					Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					OptionMenu->Pause_key(true);
 				}
 				//戦闘に戻る
 				if (select == 1) {
-					Sounds.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					SE.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).set_key(false);
 				}
 				//強制帰還
 				if (select == 2) {
-					Sounds.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					SE.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).set_key(false);
 					selend = false;
 				}
@@ -852,17 +928,17 @@ namespace FPS_n2 {
 					int yp_t = y_r(100);
 					int now = 0;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "オプション", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "オプション", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "戦闘に戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戦闘に戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * y_r(32)), yp_t, "強制帰還", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "強制帰還", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;
@@ -871,7 +947,7 @@ namespace FPS_n2 {
 			}
 			else {
 				for (auto& x : sel_x) {
-					x = -1.f*(y_r(100)) / y_r(32);
+					x = -1.f*((float)y_r(100)) / (float)y_r(32);
 				}
 			}
 			//
@@ -901,7 +977,7 @@ namespace FPS_n2 {
 			}
 			else {
 				if (Ready <= Ready_border) {
-					Sounds.Get(EnumSound::TIMER).Play(0, DX_PLAYTYPE_BACK, TRUE, 255);
+					SE.Get(EnumSound::TIMER).Play(0, DX_PLAYTYPE_BACK, TRUE, 255);
 					Ready_border--;
 				}
 				Ready -= 1.f / FPS;
@@ -988,9 +1064,9 @@ namespace FPS_n2 {
 		std::array<frames, 3> LEFT_mag_frame;	//左手座標(マガジン保持時)
 		std::array<frames, 2> magazine_f;		//マガジンフレーム
 	public:
-		auto& Get_name() const noexcept { return name; }
-		auto& Get_path() const noexcept { return path; }
-		auto& Get_model() const noexcept { return model; }
+		auto& Get_name(void) const noexcept { return name; }
+		auto& Get_path(void) const noexcept { return path; }
+		auto& Get_model(void) const noexcept { return model; }
 		const frames& getmagazine_ammo_f(int i) const noexcept { return magazine_ammo_f[i]; }
 		const frames& getLEFT_mag_frame(int i) const noexcept { return LEFT_mag_frame[i]; }
 		const frames& getmagazine_f(int i) const noexcept { return magazine_f[i]; }
@@ -1806,36 +1882,11 @@ namespace FPS_n2 {
 				//effect
 				killer->Set_eff(Effect::ef_greexp, this->move.pos, VECTOR_ref::front(), 0.1f / 0.1f);
 				//
-				Sounds.Get(EnumSound::Explosion).Play_3D(0, this->move.pos, 100.f, 255);
+				SE.Get(EnumSound::Explosion).Play_3D(0, this->move.pos, 100.f, 255);
 				//グレ爆破
 				this->Detach_item();
 				for (auto& tgt : chara) {
 					tgt->calc_gredamage(killer);
-					if (tgt->Damage.Get_alive()) {
-						float scale = (this->move.pos - tgt->Get_head_pos()).size();
-						if (scale < 10.f) {
-							if (!(map_col_line(this->move.pos, tgt->Get_head_pos()).HitFlag == TRUE)) {
-								int damage = int(150.f * (10.f - scale) / 10.f);
-								damage = std::clamp(damage, 0, 100);
-
-								float x_1 = sinf(tgt->Get_body_yrad());
-								float y_1 = cosf(tgt->Get_body_yrad());
-								auto vc = (killer->Get_pos() - tgt->Get_pos()).Norm();
-								tgt->Damage.SubHP(damage, atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z()));
-								tgt->Damage.SubHP_Parts(damage, 0);
-								if (!tgt->Damage.Get_alive()) {
-									killer->scores.set_kill(&tgt - &chara.front(), 70);
-									tgt->scores.set_death(&killer - &chara.front());
-									Sounds.Get(EnumSound::Voice_Death).Play_3D(0, tgt->Get_pos(), 10.f);
-								}
-								else {
-									Sounds.Get(EnumSound::Voice_Damage).Play_3D(0, tgt->Get_pos(), 10.f);
-								}
-								tgt->gre_eff = true;
-								break;
-							}
-						}
-					}
 				}
 				return true;
 			}
@@ -2373,28 +2424,28 @@ namespace FPS_n2 {
 			std::string p;
 			WIN32_FIND_DATA win32fdt;
 			//環境音
-			Sounds.Add(EnumSound::MAP0_ENVI, 1, "data/audio/envi.wav", false);
+			SE.Add(EnumSound::MAP0_ENVI, 1, "data/audio/envi.wav", false);
 			//キャラ用オーディオ
-			Sounds.Add(EnumSound::Sort_MAG, 2, "data/audio/chara/sort.wav");
-			Sounds.Add(EnumSound::Cate_Load, 2, "data/audio/chara/load.wav");
-			Sounds.Add(EnumSound::Foot_Sound, 3, "data/audio/chara/foot_sand.wav");
-			Sounds.Add(EnumSound::Explosion, 2, "data/audio/chara/explosion.wav");
+			SE.Add(EnumSound::Sort_MAG, 2, "data/audio/chara/sort.wav");
+			SE.Add(EnumSound::Cate_Load, 2, "data/audio/chara/load.wav");
+			SE.Add(EnumSound::Foot_Sound, 3, "data/audio/chara/foot_sand.wav");
+			SE.Add(EnumSound::Explosion, 2, "data/audio/chara/explosion.wav");
 
-			Sounds.Add(EnumSound::Voice_Damage, 2, "data/audio/voice/damage.wav");
-			Sounds.Add(EnumSound::Voice_Death, 2, "data/audio/voice/death.wav");
-			Sounds.Add(EnumSound::Voice_Breath, 3, "data/audio/voice/breath.wav");
-			Sounds.Add(EnumSound::Voice_Breath_Run, 3, "data/audio/voice/breath_run.wav");
+			VOICE.Add(EnumSound::Voice_Damage, 2, "data/audio/voice/damage.wav");
+			VOICE.Add(EnumSound::Voice_Death, 2, "data/audio/voice/death.wav");
+			VOICE.Add(EnumSound::Voice_Breath, 3, "data/audio/voice/breath.wav");
+			VOICE.Add(EnumSound::Voice_Breath_Run, 3, "data/audio/voice/breath_run.wav");
 			//銃用オーディオ
-			Sounds.Add(EnumSound::Cate_Down, 2, "data/audio/gun/cate/case_2.wav");
-			Sounds.Add(EnumSound::Assemble, 2, "data/audio/gun/assemble.wav");
-			Sounds.Add(EnumSound::Trigger, 2, "data/audio/gun/trigger.wav");
+			SE.Add(EnumSound::Cate_Down, 2, "data/audio/gun/cate/case_2.wav");
+			SE.Add(EnumSound::Assemble, 2, "data/audio/gun/assemble.wav");
+			SE.Add(EnumSound::Trigger, 2, "data/audio/gun/trigger.wav");
 			{
 				HANDLE hFind = FindFirstFile("data/audio/gun/mag_down/*", &win32fdt);
 				if (hFind != INVALID_HANDLE_VALUE) {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::MAG_Down, 2, "data/audio/gun/mag_down/" + p);
+							SE.Add(EnumSound::MAG_Down, 2, "data/audio/gun/mag_down/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2406,7 +2457,7 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::MAG_Set, 2, "data/audio/gun/mag_set/" + p);
+							SE.Add(EnumSound::MAG_Set, 2, "data/audio/gun/mag_set/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2418,7 +2469,7 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Shot, 5, "data/audio/gun/fire/" + p);
+							SE.Add(EnumSound::Shot, 5, "data/audio/gun/fire/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2430,7 +2481,7 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Slide, 2, "data/audio/gun/slide/" + p);
+							SE.Add(EnumSound::Slide, 2, "data/audio/gun/slide/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2443,7 +2494,7 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Damage, 2, "data/audio/tank/damage/" + p);
+							SE.Add(EnumSound::Tank_Damage, 2, "data/audio/tank/damage/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2455,7 +2506,7 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Shot, 4, "data/audio/tank/fire/" + p);
+							SE.Add(EnumSound::Tank_Shot, 4, "data/audio/tank/fire/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2467,7 +2518,7 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Reload, 2, "data/audio/tank/reload/hand/" + p);
+							SE.Add(EnumSound::Tank_Reload, 2, "data/audio/tank/reload/hand/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
@@ -2479,18 +2530,18 @@ namespace FPS_n2 {
 					do {
 						p = win32fdt.cFileName;
 						if (p.find(".wav") != std::string::npos) {
-							Sounds.Add(EnumSound::Tank_Ricochet, 2, "data/audio/tank/ricochet/" + p);
+							SE.Add(EnumSound::Tank_Ricochet, 2, "data/audio/tank/ricochet/" + p);
 						}
 					} while (FindNextFile(hFind, &win32fdt));
 				} //else{ return false; }
 				FindClose(hFind);
 			}
-			Sounds.Add(EnumSound::Tank_engine, 3, "data/audio/tank/engine.wav");
+			SE.Add(EnumSound::Tank_engine, 3, "data/audio/tank/engine.wav");
 			//UI用オーディオ
-			//Sounds.Get(EnumSound::Shot).Play_3D(2, VECTOR_ref::zero(), 1.f);//decision
-			Sounds.Add(EnumSound::CANCEL, 2, "data/audio/UI/cancel.wav", false);
-			Sounds.Add(EnumSound::CURSOR, 2, "data/audio/UI/cursor.wav", false);
-			Sounds.Add(EnumSound::TIMER, 2, "data/audio/UI/timer.wav", false);
+			//SE.Get(EnumSound::Shot).Play_3D(2, VECTOR_ref::zero(), 1.f);//decision
+			SE.Add(EnumSound::CANCEL, 2, "data/audio/UI/cancel.wav", false);
+			SE.Add(EnumSound::CURSOR, 2, "data/audio/UI/cursor.wav", false);
+			SE.Add(EnumSound::TIMER, 2, "data/audio/UI/timer.wav", false);
 			//
 		}
 	};

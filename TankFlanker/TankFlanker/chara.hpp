@@ -4,14 +4,8 @@
 namespace FPS_n2 {
 	class PLAYERclass {
 	public:
-		static void BodyFrameSetMatrix(const MV1& obj_body_t, const frames& id, const MATRIX_ref& mat_t = MGetIdent()) noexcept {
-			if (id.first >= 0) {
-				obj_body_t.SetFrameLocalMatrix(id.first, mat_t * MATRIX_ref::Mtrans(id.second));
-			}
-		}
-		static const auto BodyFrameMatrix(const MV1& obj_body_t, const frames& id) noexcept {
-			return obj_body_t.GetFrameLocalWorldMatrix(id.first);
-		}
+		static void BodyFrameSetMatrix(const MV1& obj_body_t, const frames& id, const MATRIX_ref& mat_t = MGetIdent()) noexcept { if (id.first >= 0) { obj_body_t.SetFrameLocalMatrix(id.first, mat_t * MATRIX_ref::Mtrans(id.second)); } }
+		static const auto BodyFrameMatrix(const MV1& obj_body_t, const frames& id) noexcept { return obj_body_t.GetFrameLocalWorldMatrix(id.first); }
 
 		class PLAYER_VEHICLE;
 		class PLAYER_CHARA;
@@ -25,8 +19,8 @@ namespace FPS_n2 {
 			std::shared_ptr<PLAYER_VEHICLE>* MINE_v{ nullptr };
 			std::vector<std::shared_ptr<PLAYER_VEHICLE>>* ALL_v{ nullptr };
 		public:
-			bool isRide() const noexcept { return this->MINE_v != nullptr && MINE_c != nullptr; }
-			bool changeRide() const noexcept { return this->chage_ride; }
+			bool isRide(void) const noexcept { return this->MINE_v != nullptr && MINE_c != nullptr; }
+			bool changeRide(void) const noexcept { return this->chage_ride; }
 			void Ride_on(std::shared_ptr<PLAYER_VEHICLE>* MINE_v_t) noexcept {
 				this->chage_ride = true;
 				if (MINE_v_t != nullptr) {
@@ -34,18 +28,14 @@ namespace FPS_n2 {
 						Ride_on(nullptr);
 					}
 					this->MINE_v = MINE_v_t;
-					(*this->MINE_v)->MINE_c = this->MINE_c;
-					(*this->MINE_v)->xrad_p = (*this->MINE_c)->xrad_p;
-					(*this->MINE_v)->lookvec = (*this->MINE_c)->GetHMDmat();
+					(*this->MINE_v)->Ride(this->MINE_c);
 					(*this->MINE_c)->Set_bullet_Ptr();
-					(*this->MINE_v)->Set_bullet_Ptr();
 				}
 				else {
 					(*this->MINE_v)->MINE_c = nullptr;
 					(*this->MINE_v)->Reset_range();
 					(*this->MINE_v)->Set_bullet_Ptr();
-					(*this->MINE_c)->set_basepos((*this->MINE_v)->Get_pos());
-					(*this->MINE_c)->SetHMDmat((*this->MINE_v)->lookvec);
+					(*this->MINE_c)->GetOff(this->MINE_v);
 					this->MINE_v = nullptr;
 					(*this->MINE_c)->Set_bullet_Ptr();
 				}
@@ -63,12 +53,108 @@ namespace FPS_n2 {
 		};
 		//操作共通
 		class PLAYER_COMMON : public PTR_COMMON, public SHARED_COMMON {
-		protected:
-			//被弾角度
-			class damage_rad {
+		public:
+			//HP関連
+			class Damages {
+			private:
+				//被弾角度
+				class damage_rad {
+				public:
+					float alpfa{ 1.f };
+					float rad{ 0.f };
+				};
+			private:
+				unsigned int got_damage_color{ 0 };
+				int got_damage_x{ 0 };
+				float got_damage_f{ 0.f };
+				std::vector<damage_rad> got_damage_rad;
+				int got_damage{ 0 };
+				int HP{ 100 };
+				float HP_r{ 100.f };
+				int HP_full{ 100 };
+				std::vector<int> HP_parts;
 			public:
-				float alpfa{ 1.f };
-				float rad{ 0.f };
+				//getter
+				const auto IsShow(void) const noexcept { return (int(this->HP_r) - this->HP) >= 2; }
+				const auto Get_alive(void) const noexcept { return this->HP != 0; }																								//生きているか
+				const auto HP_Per(void) const noexcept { return float(this->HP) / this->HP_full; }
+				const auto HP_r_Per(void) const noexcept { return this->HP_r / this->HP_full; }
+				const auto& Get_HP()const noexcept { return HP; }
+				const auto& Get_HP_r()const noexcept { return HP_r; }
+				const auto& Get_HP_full()const noexcept { return HP_full; }
+				const auto& Get_got_damage()const noexcept { return got_damage; }
+				const auto& Get_got_damage_rad(void) const noexcept { return got_damage_rad; }
+				const auto& Get_got_damage_f()const noexcept { return got_damage_f; }
+				const auto& Get_got_damage_x()const noexcept { return got_damage_x; }
+				const auto& Get_got_damage_color()const noexcept { return got_damage_color; }
+				const auto& Get_HP_parts()const noexcept { return HP_parts; }
+			public:
+				void SubHP_Parts(int damage_t, int parts_set_t) noexcept {
+					this->HP_parts[parts_set_t] = std::max<int>(this->HP_parts[parts_set_t] - damage_t, 0); //
+				}
+				void SubHP(int damage_t, float rad_t)  noexcept {
+					auto old = this->HP;
+					this->HP = std::max<int>(this->HP - damage_t, 0); //
+					this->got_damage = old - this->HP;
+					this->got_damage_color = GetColor(255, 255, 255);
+
+					if (float(this->HP) / float(this->HP_full) <= 0.66) {
+						this->got_damage_color = GetColor(255, 255, 0);
+					}
+					if (float(this->HP) / float(this->HP_full) <= 0.33) {
+						this->got_damage_color = GetColor(255, 128, 0);
+					}
+					if (damage_t != this->got_damage) {
+						this->got_damage_color = GetColor(255, 0, 0);
+					}
+					this->got_damage_x = -255 + GetRand(255 * 2);
+					this->got_damage_f = 1.f;
+
+					this->got_damage_rad.resize(this->got_damage_rad.size() + 1);
+					this->got_damage_rad.back().alpfa = 1.f;
+					this->got_damage_rad.back().rad = rad_t;
+
+				}
+				void AddHP(int repair_t) noexcept {
+					this->HP = std::clamp<int>(this->HP + repair_t, 0, this->HP_full);
+				}
+			public:
+				void Set(int parts_num, int Full_t = -1) noexcept {
+					if (Full_t > 0) {
+						this->HP_full = Full_t;
+					}
+					this->HP = this->HP_full;
+					this->HP_parts.resize(parts_num);
+					for (auto& h : this->HP_parts) { h = this->HP_full; }//モジュール耐久
+
+				}
+				void Update(void) noexcept {
+					easing_set(&this->HP_r, float(this->HP), 0.95f);
+					easing_set(&this->got_damage_f, 0.f, 0.95f);
+
+					{
+						for (auto& d : this->got_damage_rad) { easing_set(&d.alpfa, 0.f, 0.975f); }
+						while (true) {
+							bool none = true;
+							for (auto& d : this->got_damage_rad) {
+								if (std::clamp(int(255.f * (1.f - powf(1.f - d.alpfa, 5.f))), 0, 255) < 5) {
+									auto i = (&d - &this->got_damage_rad.front());
+									std::iter_swap(this->got_damage_rad.begin() + i, this->got_damage_rad.end() - 1);
+									this->got_damage_rad.pop_back();
+									none = false;
+									break;
+								}
+							}
+							if (none) {
+								break;
+							}
+						}
+					}
+				}
+				void Dispose(void) noexcept {
+					this->HP = 0;
+					this->HP_parts.clear();
+				}
 			};
 			//操作全般
 			class opes {
@@ -132,204 +218,120 @@ namespace FPS_n2 {
 					}
 				}
 			};
-			//HP関連
-			class Damages {
-			public:
-				//HPバー
-				unsigned int got_damage_color{ 0 };
-				int got_damage_x{ 0 };
-				float got_damage_f{ 0.f };
-				std::vector<damage_rad> got_damage_;
-				int got_damage{ 0 };
-				int HP{ 100 };
-				float HP_r{ 100.f };
-				int HP_full{ 100 };
-				std::vector<int> HP_parts;
-
-			public:
-				const auto& Get_got_damage_color()const noexcept { return got_damage_color; };
-				const auto& Get_got_damage_x()const noexcept { return got_damage_x; };
-				const auto& Get_got_damage_f()const noexcept { return got_damage_f; };
-				const auto& Get_got_damage()const noexcept { return got_damage; };
-				const auto& Get_HP()const noexcept { return HP; };
-				const auto& Get_HP_r()const noexcept { return HP_r; };
-				const auto& Get_HP_full()const noexcept { return HP_full; };
-				const auto& Get_HP_parts()const noexcept { return HP_parts; };
-				const auto& Get_got_damage_() const noexcept { return got_damage_; }
-
-				const float HP_Per() const noexcept { return float(this->HP) / this->HP_full; }
-				const float HP_r_Per() const noexcept { return this->HP_r / this->HP_full; }
-
-				void SubHP_Parts(int damage_t, int parts_set_t) noexcept {
-					this->HP_parts[parts_set_t] = std::max<int>(this->HP_parts[parts_set_t] - damage_t, 0); //
-				}
-				void SubHP(int damage_t, float rad_t)  noexcept {
-
-					auto old = this->HP;
-					this->HP = std::max<int>(this->HP - damage_t, 0); //
-					this->got_damage = old - this->HP;
-					this->got_damage_color = GetColor(255, 255, 255);
-
-					if (float(this->HP) / float(this->HP_full) <= 0.66) {
-						this->got_damage_color = GetColor(255, 255, 0);
-					}
-					if (float(this->HP) / float(this->HP_full) <= 0.33) {
-						this->got_damage_color = GetColor(255, 128, 0);
-					}
-					if (damage_t != this->got_damage) {
-						this->got_damage_color = GetColor(255, 0, 0);
-					}
-					//撃破時エフェクト
-					if (this->HP == 0) {
-						//set_effect(&this->effcs[ef_bomb], this->obj.frame(this->use_veh->gunframe[0].frame1.first), VECTOR_ref::zero());
-					}
-					this->got_damage_x = -255 + GetRand(255 * 2);
-					this->got_damage_f = 1.f;
-
-					this->got_damage_.resize(this->got_damage_.size() + 1);
-					this->got_damage_.back().alpfa = 1.f;
-					this->got_damage_.back().rad = rad_t;
-
-				}
-
-				void AddHP(int repair_t) noexcept {
-					this->HP = std::clamp<int>(this->HP + repair_t, 0, this->HP_full);
-				}
-
-				void Set(int parts_num, int Full_t = -1) noexcept {
-					if (Full_t > 0) {
-						this->HP_full = Full_t;
-					}
-					this->HP = this->HP_full;
-					this->HP_parts.resize(parts_num);
-					for (auto& h : this->HP_parts) { h = this->HP_full; }//モジュール耐久
-
-				}
-
-				void Update() noexcept {
-					easing_set(&this->HP_r, float(this->HP), 0.95f);
-					easing_set(&this->got_damage_f, 0.f, 0.95f);
-
-					{
-						for (auto& d : this->got_damage_) { easing_set(&d.alpfa, 0.f, 0.975f); }
-						while (true) {
-							bool none = true;
-							for (auto& d : this->got_damage_) {
-								if (std::clamp(int(255.f * (1.f - powf(1.f - d.alpfa, 5.f))), 0, 255) < 5) {
-									auto i = (&d - &this->got_damage_.front());
-									std::iter_swap(this->got_damage_.begin() + i, this->got_damage_.end() - 1);
-									this->got_damage_.pop_back();
-									none = false;
-									break;
-								}
-							}
-							if (none) {
-								break;
-							}
-						}
-					}
-				}
-
-				void Dispose() noexcept {
-					this->HP = 0;
-					this->HP_parts.clear();
-				}
-				const bool Get_alive(void) const noexcept { return this->HP != 0; }																								//生きているか
-
-				bool IsShow() noexcept { return (int(this->HP_r) - this->HP) >= 2; }
-			};
 		protected:
-			bool nearhit{ false };								//
-			moves move;											//プレイヤー座標
-			moves spawn;										//プレイヤースポーン座標
 			MV1 obj_body;										//本体オブジェ
 			MV1 obj_col;										//本体コリジョン
-			float speed{ 0.f };									//移動速度
+			moves move;											//プレイヤー座標
+			moves spawn;										//プレイヤースポーン座標
+			float body_xtrun{ 0.f };							//胴体角度
+			float body_ztrun{ 0.f };							//胴体角度
+			float speed_base{ 0.f };							//移動速度
+			VECTOR_ref add_vec_real;							//移動ベクトルバッファ
 			bool flag_start_loop{ true };						//演算開始フラグ
 			bool flag_calc_body{ true };						//身体の物理演算フラグ
+			bool nearhit{ false };								//
+		private:
 			std::array<EffectS, int(Effect::effects)> effcs;	/*エフェクト*/
 			std::array<EffectS, 12> effcs_gndhit;				/*エフェクト*/
 			size_t use_effcsgndhit{ 0 };						/*エフェクト*/
-			VECTOR_ref add_vec_real;						//移動ベクトルバッファ
-
-			float body_xtrun{ 0.f };						//胴体角度
-			float body_ztrun{ 0.f };						//胴体角度
-
 			float dist = 100.f;
+			float xrad_p{ 0.f };							//マウスエイム用変数確保
+		public:
+			Damages Damage;
+		public:
+			const float Get_xradP() const noexcept { return this->xrad_p; }
+			void Set_xradP(float value) noexcept { this->xrad_p = value; }
 		protected:
-			//Nomal操作
-			void key_move(float& x_m, float& y_m, const float fov_per) noexcept {
+			const float Add_xradP(float xrd, float min, float max) noexcept {
+				this->xrad_p = std::clamp(this->xrad_p + xrd, min, max);
+				return this->xrad_p;
+			}
+			//マウス角取得
+			void Get_MouseVec(float* x_m, float* y_m, const float fov_per) const noexcept {
 				int x_t, y_t;
 				GetMousePoint(&x_t, &y_t);//~0.01
-				x_m = float(std::clamp(x_t - DrawPts->disp_x / 2, -120, 120)) * fov_per;
-				y_m = float(std::clamp(y_t - DrawPts->disp_y / 2, -120, 120)) * fov_per;
+				*x_m = float(std::clamp(x_t - DrawPts->disp_x / 2, -120, 120)) * fov_per;
+				*y_m = float(std::clamp(y_t - DrawPts->disp_y / 2, -120, 120)) * fov_per;
 				SetMousePoint(DrawPts->disp_x / 2, DrawPts->disp_y / 2);//ウィンドウだと0.05～0.10ms掛かる?!
 				SetMouseDispFlag(FALSE);
 			}
-
-			void key_operation(float x_m, float y_m) {
-				easing_set(&this->body_ztrun, -deg2rad(x_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f);
-				easing_set(&this->body_xtrun, -deg2rad(y_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f);
+			//コリジョンの設定
+			void SetupCollInfo(void) const noexcept {
+				for (int i = 0; i < this->obj_col.mesh_num(); ++i) { this->obj_col.SetupCollInfo(8, 8, 8, -1, i); }
 			}
-
 			/*レーザー、ライト描画*/
-			void Draw_Lazer_Effect(const VECTOR_ref& start_pos, const VECTOR_ref& vec_t,bool isDraw, float laser_siz) noexcept {
-				{
-					auto EndPos = start_pos + vec_t.Norm() * 100.f;
-					MAPPTs->map_col_nearest(start_pos, &EndPos);
-					for (auto& tgt : *ALL_c) {
-						if ((MINE_c != nullptr && tgt == *MINE_c) || !tgt->Damage.Get_alive()) {
-							continue;
-						}
-						if (tgt->set_ref_col(start_pos, EndPos, 2.f)) {
-							for (int i = 0; i < this->obj_col.mesh_num(); ++i) {
-								auto q = tgt->col_line(start_pos, EndPos, i);
-								if (q.HitFlag == TRUE) {
-									EndPos = q.HitPosition;
-								}
-							}
-						}
-					}
-					for (auto& tgt : *ALL_v) {
-						if ((MINE_c != nullptr && tgt->MINE_c == MINE_c) || !tgt->Damage.Get_alive()) {
-							continue;
-						}
-						if (tgt->set_ref_col(start_pos, EndPos, 2.f)) {
-							for (int i = 0; i < this->obj_col.mesh_num(); ++i) {
-								auto q = tgt->col_line(start_pos, EndPos, i);
-								if (q.HitFlag == TRUE) {
-									EndPos = q.HitPosition;
-								}
-							}
-						}
-					}
-					dist = (start_pos - EndPos).size();
-					if (isDraw) {
-						SetUseLighting(FALSE);
-						SetFogEnable(FALSE);
-						{
-							DXDraw::Capsule3D(start_pos, EndPos, 0.01f * laser_siz, GetColor(255, 0, 0), GetColor(255, 0, 0));
-							DXDraw::Sphere3D(EndPos, std::clamp(powf((EndPos - GetCameraPosition()).size() + 0.5f, 2) * 0.002f + 0.08f * laser_siz, 0.001f, 0.02f + 0.03f * laser_siz), GetColor(255, 0, 0), GetColor(255, 0, 0));
-						}
-						SetUseLighting(TRUE);
-						SetFogEnable(TRUE);
+			void Draw_Lazer_Effect(const VECTOR_ref& start_pos, const VECTOR_ref& vec_t, bool isDraw, float laser_siz) noexcept {
+				auto EndPos = start_pos + vec_t.Norm() * 100.f;
+				MAPPTs->map_col_nearest(start_pos, &EndPos);
+				for (auto& tgt : *ALL_c) {
+					if ((MINE_c != nullptr && tgt == *MINE_c) || !tgt->Damage.Get_alive()) { continue; }
+					if (tgt->set_ref_col(start_pos, EndPos, 2.f)) {
+						tgt->col_nearest(start_pos, &EndPos);
 					}
 				}
+				for (auto& tgt : *ALL_v) {
+					if ((MINE_c != nullptr && tgt->MINE_c == MINE_c) || !tgt->Damage.Get_alive()) { continue; }
+					if (tgt->set_ref_col(start_pos, EndPos, 10.f)) {
+						tgt->col_nearest(start_pos, &EndPos);
+					}
+				}
+				dist = (start_pos - EndPos).size();
+				if (isDraw) {
+					SetUseLighting(FALSE);
+					SetFogEnable(FALSE);
+					{
+						DXDraw::Capsule3D(start_pos, EndPos, 0.01f * laser_siz, GetColor(255, 0, 0), GetColor(255, 0, 0));
+						DXDraw::Sphere3D(EndPos, std::clamp(powf((EndPos - GetCameraPosition()).size() + 0.5f, 2) * 0.002f + 0.08f * laser_siz, 0.001f, 0.02f + 0.03f * laser_siz), GetColor(255, 0, 0), GetColor(255, 0, 0));
+					}
+					SetUseLighting(TRUE);
+					SetFogEnable(TRUE);
+				}
 			}
-
-		public:
-			float xrad_p{ 0.f };							//マウスエイム用変数確保
-			Damages Damage;
-		public:
-			const auto Get_pseed_per(void) const noexcept {
-				if (!isRide()) {
-					return add_vec_real.size() / speed;
+			//物理
+			void Calc_Physics(void) noexcept {
+				if (this->flag_start_loop) {
+					this->obj_body.PhysicsResetState();
+					this->flag_start_loop = false;
 				}
 				else {
-					return (*MINE_v)->add_vec_real.size() / (*MINE_v)->use_veh->Get_flont_speed_limit() / 3.6f;
+					if (this->flag_calc_body) {
+						this->obj_body.PhysicsResetState();
+						this->flag_calc_body = false;
+					}
+					else {
+						this->obj_body.PhysicsCalculation(1000.f / FPS);
+					}
+				}
+			}
+		public:
+			bool Damage_Calc(int sel, int damage, const std::shared_ptr<PLAYER_COMMON>& tgt) {
+				float rad = 0.f;
+				float x_1 = sinf(tgt->Get_body_yrad());
+				float y_1 = cosf(tgt->Get_body_yrad());
+				auto vc = ((*MINE_c)->Get_pos() - tgt->Get_pos()).Norm();
+				rad = atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z());
+				tgt->Damage.SubHP(damage, rad);
+				tgt->Damage.SubHP_Parts(damage, sel);
+				if (!tgt->Damage.Get_alive()) {
+					if (tgt->MINE_c != nullptr) {
+						(*MINE_c)->scores.set_kill(tgt->MINE_c - &ALL_c->front(), 70);
+						(*tgt->MINE_c)->scores.set_death(MINE_c - &ALL_c->front());
+					}
+					if (tgt->isRide()) {
+						(*tgt->MINE_c)->Damage.SubHP(100, rad);
+						(*tgt->MINE_c)->Ride_on(nullptr);
+					}
+				}
+				return (!tgt->Damage.Get_alive());
+			}
+			const auto Get_pseed_per(void) const noexcept {
+				if (!isRide()) {
+					return add_vec_real.size() / speed_base;
+				}
+				else {
+					return (*MINE_v)->add_vec_real.size() / (*MINE_v)->speed_base;
 				}
 			}//移動速度のパーセンテージ
-
 			const float& Get_dist(void) const noexcept { return this->dist; }		//UI用
 
 			void Set_eff(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) noexcept { this->effcs[(int)ef_].Set(pos_t, nomal_t, scale); }
@@ -338,7 +340,7 @@ namespace FPS_n2 {
 				++this->use_effcsgndhit %= this->effcs_gndhit.size();
 			}
 			//エフェクトの更新
-			void Update_effect() noexcept {
+			void Update_effect(void) noexcept {
 				for (auto& t : this->effcs) {
 					const size_t index = &t - &this->effcs.front();
 					if (index != (int)Effect::ef_smoke) {
@@ -347,7 +349,7 @@ namespace FPS_n2 {
 				}
 				for (auto& t : this->effcs_gndhit) { t.put(effectControl.effsorce[(int)Effect::ef_gndsmoke]); }
 			}
-			const moves& Get_move() const noexcept { return this->move; }
+			const moves& Get_move(void) const noexcept { return this->move; }
 			static b2Body* CreateBody(std::shared_ptr<b2World>& world, b2BodyType type, float32 x_, float32 y_, float angle = 0) noexcept {
 				b2BodyDef f_bodyDef;
 				f_bodyDef.type = type;
@@ -355,20 +357,29 @@ namespace FPS_n2 {
 				f_bodyDef.angle = angle;
 				return world->CreateBody(&f_bodyDef);
 			}
-			virtual void Reset() noexcept {
-				this->obj_body.Dispose();
-				this->obj_col.Dispose();
-				this->Damage.Dispose();
-				this->speed = 0.f;
-				this->move.vec.clear();
-			}
 			/*コンストラクタ*/
-			PLAYER_COMMON() noexcept {
+			PLAYER_COMMON(void) noexcept {
 			}
 			//判定取得
 			const MV1_COLL_RESULT_POLY col_line(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, const int sel) const noexcept {
 				return obj_col.CollCheck_Line(StartPos, EndPos, -1, sel);
 			}
+			void col_nearest(const VECTOR_ref& StartPos, VECTOR_ref* EndPos) const noexcept {
+				MV1_COLL_RESULT_POLY colres;
+				for (int i = 0; i < this->obj_col.mesh_num(); ++i) {
+					colres = col_line(StartPos, *EndPos, i);
+					if (colres.HitFlag == TRUE) {
+						*EndPos = colres.HitPosition;
+					}
+				}
+			}
+			/*キャラスポーン*/
+			void SetSpawnPos(const moves& move_) noexcept {
+				this->spawn = move_;
+			}
+			//
+			virtual const float& Get_body_yrad(void) const noexcept { return 0.f; }
+			virtual const VECTOR_ref Get_pos(bool no_y = false) const noexcept { return VECTOR_ref::zero(); }
 			//判定起動
 			virtual const bool set_ref_col(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, float range) noexcept {
 				//すでに起動しているなら無視
@@ -386,36 +397,25 @@ namespace FPS_n2 {
 				return false;
 			}
 			/*戦車スポーン*/
-			virtual void Spawn() noexcept {
+			virtual void Spawn(void) noexcept {
+				this->xrad_p = 0;
+				Damage.Set((int)this->obj_col.mesh_num());
 			}
 			/*最初*/
-			virtual void Start() noexcept {
+			virtual void Start(void) noexcept {
 
 			}
-			//物理
-			void Calc_Physics() noexcept {
-				if (this->flag_start_loop) {
-					this->obj_body.PhysicsResetState();
-					this->flag_start_loop = false;
-				}
-				else {
-					if (this->flag_calc_body) {
-						this->obj_body.PhysicsResetState();
-						this->flag_calc_body = false;
-					}
-					else {
-						this->obj_body.PhysicsCalculation(1000.f / FPS);
-					}
-				}
-			}
-			/*キャラスポーン*/
-			void SetSpawnPos(const moves& move_) noexcept {
-				this->spawn = move_;
-			}
-			/**/
+			/*おわり*/
 			virtual void Dispose(void) noexcept {
 				for (auto& t : this->effcs) { t.handle.Dispose(); }
 				for (auto& t : this->effcs_gndhit) { t.handle.Dispose(); }
+			}
+			virtual void Reset(void) noexcept {
+				this->obj_body.Dispose();
+				this->obj_col.Dispose();
+				this->Damage.Dispose();
+				this->speed_base = 0.f;
+				this->move.vec.clear();
 			}
 		};
 		//人間のフレーム、アニメ管理
@@ -557,35 +557,35 @@ namespace FPS_n2 {
 				void copy_frame(MV1& mine, frame_body& frame_tgt_, MV1* tgt) noexcept {
 					tgt->SetMatrix(mine.GetMatrix());
 					//
-					tgt->SetFrameLocalMatrix(frame_tgt_.head_f.first, mine.GetFrameLocalMatrix(this->head_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.head_f.first, mine.GetFrameLocalMatrix(frame_tgt_.head_f.first));
 					//
-					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTeye_f.first, mine.GetFrameLocalMatrix(this->LEFTeye_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTeye_f.first, mine.GetFrameLocalMatrix(this->RIGHTeye_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTeye_f.first, mine.GetFrameLocalMatrix(frame_tgt_.LEFTeye_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTeye_f.first, mine.GetFrameLocalMatrix(frame_tgt_.RIGHTeye_f.first));
 					//
-					tgt->SetFrameLocalMatrix(frame_tgt_.bodyg_f.first, mine.GetFrameLocalMatrix(this->bodyg_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.bodyc_f.first, mine.GetFrameLocalMatrix(this->bodyc_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.bodyb_f.first, mine.GetFrameLocalMatrix(this->bodyb_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.body_f.first, mine.GetFrameLocalMatrix(this->body_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.bodyg_f.first, mine.GetFrameLocalMatrix(frame_tgt_.bodyg_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.bodyc_f.first, mine.GetFrameLocalMatrix(frame_tgt_.bodyc_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.bodyb_f.first, mine.GetFrameLocalMatrix(frame_tgt_.bodyb_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.body_f.first, mine.GetFrameLocalMatrix(frame_tgt_.body_f.first));
 					//右手座標系
-					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHThand2_f.first, mine.GetFrameLocalMatrix(this->RIGHThand2_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHThand_f.first, mine.GetFrameLocalMatrix(this->RIGHThand_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTarm2_f.first, mine.GetFrameLocalMatrix(this->RIGHTarm2_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTarm1_f.first, mine.GetFrameLocalMatrix(this->RIGHTarm1_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHThand2_f.first, mine.GetFrameLocalMatrix(frame_tgt_.RIGHThand2_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHThand_f.first, mine.GetFrameLocalMatrix(frame_tgt_.RIGHThand_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTarm2_f.first, mine.GetFrameLocalMatrix(frame_tgt_.RIGHTarm2_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTarm1_f.first, mine.GetFrameLocalMatrix(frame_tgt_.RIGHTarm1_f.first));
 					//左手座標系
-					tgt->SetFrameLocalMatrix(frame_tgt_.LEFThand2_f.first, mine.GetFrameLocalMatrix(this->LEFThand2_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.LEFThand_f.first, mine.GetFrameLocalMatrix(this->LEFThand_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTarm2_f.first, mine.GetFrameLocalMatrix(this->LEFTarm2_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTarm1_f.first, mine.GetFrameLocalMatrix(this->LEFTarm1_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.LEFThand2_f.first, mine.GetFrameLocalMatrix(frame_tgt_.LEFThand2_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.LEFThand_f.first, mine.GetFrameLocalMatrix(frame_tgt_.LEFThand_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTarm2_f.first, mine.GetFrameLocalMatrix(frame_tgt_.LEFTarm2_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTarm1_f.first, mine.GetFrameLocalMatrix(frame_tgt_.LEFTarm1_f.first));
 					//右手座標系
-					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTreg2_f.first, mine.GetFrameLocalMatrix(this->RIGHTreg2_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTreg_f.first, mine.GetFrameLocalMatrix(this->RIGHTreg_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTfoot2_f.first, mine.GetFrameLocalMatrix(this->RIGHTfoot2_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTfoot1_f.first, mine.GetFrameLocalMatrix(this->RIGHTfoot1_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTreg2_f.first, mine.GetFrameLocalMatrix(frame_tgt_.RIGHTreg2_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTreg_f.first, mine.GetFrameLocalMatrix(frame_tgt_.RIGHTreg_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTfoot2_f.first, mine.GetFrameLocalMatrix(frame_tgt_.RIGHTfoot2_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.RIGHTfoot1_f.first, mine.GetFrameLocalMatrix(frame_tgt_.RIGHTfoot1_f.first));
 					//左手座標系
-					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTreg2_f.first, mine.GetFrameLocalMatrix(this->LEFTreg2_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTreg_f.first, mine.GetFrameLocalMatrix(this->LEFTreg_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTfoot2_f.first, mine.GetFrameLocalMatrix(this->LEFTfoot2_f.first));
-					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTfoot1_f.first, mine.GetFrameLocalMatrix(this->LEFTfoot1_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTreg2_f.first, mine.GetFrameLocalMatrix(frame_tgt_.LEFTreg2_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTreg_f.first, mine.GetFrameLocalMatrix(frame_tgt_.LEFTreg_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTfoot2_f.first, mine.GetFrameLocalMatrix(frame_tgt_.LEFTfoot2_f.first));
+					tgt->SetFrameLocalMatrix(frame_tgt_.LEFTfoot1_f.first, mine.GetFrameLocalMatrix(frame_tgt_.LEFTfoot1_f.first));
 					for (int i = 0; i < tgt->get_anime().size(); ++i) {
 						tgt->get_anime(i).per = mine.get_anime(i).per;
 						tgt->get_anime(i).time = mine.get_anime(i).time;
@@ -606,9 +606,9 @@ namespace FPS_n2 {
 				bool oldv_2{ false };
 				bool oldv_2_2{ false };
 			public:
-				auto Get_pos_noY() const noexcept { return VECTOR_ref::vget(this->move.pos.x(), 0.f, this->move.pos.z()); }
-				auto Get_pos_old_noY() const noexcept { return VECTOR_ref::vget(this->move.repos.x(), 0.f, this->move.repos.z()); }
-				MATRIX_ref Get_mat_XZ() const noexcept { return MATRIX_ref::Axis1(this->move.mat.xvec() * -1.f, this->move.mat.yvec(), this->move.mat.zvec() * -1.f); }
+				auto Get_pos_noY(void) const noexcept { return VECTOR_ref::vget(this->move.pos.x(), 0.f, this->move.pos.z()); }
+				auto Get_pos_old_noY(void) const noexcept { return VECTOR_ref::vget(this->move.repos.x(), 0.f, this->move.repos.z()); }
+				MATRIX_ref Get_mat_XZ(void) const noexcept { return MATRIX_ref::Axis1(this->move.mat.xvec() * -1.f, this->move.mat.yvec(), this->move.mat.zvec() * -1.f); }
 
 				void Set(std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
 					DrawPts = DrawPts_t;
@@ -731,7 +731,7 @@ namespace FPS_n2 {
 				this->colframe_.Get_frame(obj_col_t);
 			}
 			//
-			void Init_Anim() noexcept {
+			void Init_Anim(void) noexcept {
 				this->ani_timeline.resize(15);
 				this->ani_lefthand.resize(3);
 				this->ani_righthand.resize(1);
@@ -753,7 +753,7 @@ namespace FPS_n2 {
 
 				this->ani_timeline[14].total = 0.4f;//構える
 			}
-			void Init_Left() noexcept {
+			void Init_Left(void) noexcept {
 				this->prev_ani_lefthand = &this->ani_lefthand[0];
 				this->next_ani_lefthand = &this->ani_lefthand[0];
 			}
@@ -769,7 +769,7 @@ namespace FPS_n2 {
 				return Func_Set_LEFT_pos_Anim(&this->ani_timeline[anim], &this->ani_lefthand[next_ani], vec_gun, pos_gun_t, zrad_gun);
 			}
 			//
-			auto Get_GunPos_Run() noexcept {
+			auto Get_GunPos_Run(void) noexcept {
 				return VECTOR_ref::vget(0.05f + (sin(DX_PI_F * 3.f * (this->anime_run->time / this->anime_run->alltime)) * this->anime_run->per * 0.04f), -0.04f + (sin(DX_PI_F * 3.f * (this->anime_run->time / this->anime_run->alltime)) * this->anime_run->per * 0.012f), -0.1f);
 			}
 			//腕アニメを参照
@@ -928,7 +928,7 @@ namespace FPS_n2 {
 				}
 			}
 			//アニメによる脚操作
-			void move_Leg_Anim() noexcept {
+			void move_Leg_Anim(void) noexcept {
 				float ani_per = 0.95f;//7
 
 				float ani_walk = 0.f;//1
@@ -985,7 +985,7 @@ namespace FPS_n2 {
 				this->anime_hand_trigger->per = 1.f - this->anime_hand_trigger_pull->per;
 			}
 			//アニメのリセット
-			void anim_Reset() noexcept {
+			void anim_Reset(void) noexcept {
 				easing_set(&this->anime_swalk->per, 0.f, 0.9f);
 				easing_set(&this->anime_walk->per, 0.f, 0.9f);
 				easing_set(&this->anime_run->per, 0.f, 0.9f);
@@ -1067,10 +1067,10 @@ namespace FPS_n2 {
 				moves move;
 
 			public:
-				auto& Get_Flag() const noexcept { return Flag; }
+				auto& Get_Flag(void) const noexcept { return Flag; }
 				auto& Get_pos(void) noexcept { return move.pos; }
 
-				void Set() noexcept {
+				void Set(void) noexcept {
 					this->Dispose();
 				}
 				void Put_first(MV1& model, const VECTOR_ref& pos_t, const MATRIX_ref& mat_t) noexcept {
@@ -1121,7 +1121,7 @@ namespace FPS_n2 {
 								this->move.vec += map_nomal * (map_nomal.dot(this->move.vec * -1.f) * 1.25f);
 								easing_set(&this->move.vec, VECTOR_ref::zero(), 0.95f);
 								if (!this->se_use) {
-									Sounds.Get(EnumSound::Cate_Down).Play_3D(0, this->move.pos, 2.f);
+									SE.Get(EnumSound::Cate_Down).Play_3D(0, this->move.pos, 2.f);
 									this->se_use = true;
 								}
 								this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.yvec(), map_nomal);
@@ -1141,6 +1141,7 @@ namespace FPS_n2 {
 						this->obj.DrawModel();
 					}
 				}
+				/*おわり*/
 				void Dispose(void) noexcept {
 					this->Flag = false;
 					this->obj.Dispose();
@@ -1418,7 +1419,6 @@ namespace FPS_n2 {
 				VECTOR_ref sight_vec;					//サイトが見ている場所
 				frames sight_frame;						//サイト
 				GraphHandle reticle;					//レティクル
-				/*MV1 obj_col;*/
 				/*マガジン専用*/
 				std::array<MV1, 2> obj_ammo;			//マガジン用弾
 			public:
@@ -1662,8 +1662,8 @@ namespace FPS_n2 {
 			const auto Get_mag2f_pos(void) const noexcept { return this->base.Get_mag2f_pos(); }
 			const auto Get_mazzuletype(void) const noexcept { return mazzule.Get_mazzuletype(); }															//
 			const auto Get_reloadtime(void) const noexcept { return this->base.thisparts->reload_time; }
-			const auto Get_persub() const noexcept { return (this->per_all.weight - this->per_minimam.weight) / 3.f; }
-			const auto Get_sightVec() const noexcept { return (select_sight != SIZE_MAX) ? this->sight_[select_sight].Get_sightvec() : this->base.Get_sight_frame(); }		//サイト
+			const auto Get_persub(void) const noexcept { return (this->per_all.weight - this->per_minimam.weight) / 3.f; }
+			const auto Get_sightVec(void) const noexcept { return (select_sight != SIZE_MAX) ? this->sight_[select_sight].Get_sightvec() : this->base.Get_sight_frame(); }		//サイト
 			const auto Get_lamtype(void) const noexcept { return this->lam.Get_lamtype(0); }
 			const auto Get_source_pos(void) const noexcept { return this->lam.Get_source_pos(); }
 		private:
@@ -1849,7 +1849,7 @@ namespace FPS_n2 {
 				}
 			}
 			//
-			bool Calc_Gun(float per_blur, bool isreload, bool isview) {
+			bool Calc(float per_blur, bool isreload, bool isview) {
 				bool ans = false;
 				if (!this->flag_gun && this->gun_stat_now->not_chamber_EMPTY()) {
 					if (this->base.thisparts->Select_Chose(EnumSELECTER::SELECT_FULL) == int(this->gun_stat_now->Get_selecter())) {
@@ -1950,13 +1950,13 @@ namespace FPS_n2 {
 				this->Set_gun();
 			}
 			//銃描画
-			void Draw_Gun_Base() noexcept {
+			void Draw_Gun_Base(void) noexcept {
 				this->base.Draw();
 			}
-			void Draw_Gun_Cart() noexcept {
+			void Draw_Gun_Cart(void) noexcept {
 				for (auto& a : this->cart) { a.Draw(); }
 			}
-			void Draw_Gun_Else() noexcept {
+			void Draw_Gun_Else(void) noexcept {
 				this->mazzule.Draw();
 				this->grip.Draw();
 				this->uperhandguard.Draw();
@@ -1969,7 +1969,7 @@ namespace FPS_n2 {
 				this->lam.Draw();
 				for (auto& s : sight_) { s.Draw(); }
 			}
-			//
+			/*おわり*/
 			void Dispose(void) noexcept {
 				//パーツリセット
 				Detach_parts(EnumGunParts::PARTS_BASE);
@@ -2178,7 +2178,6 @@ namespace FPS_n2 {
 		};
 		//弾処理共通
 		class BulletControl : public GunControl {
-			//private:
 		public:
 			//実際に発射される弾
 			class BULLETS : public PTR_COMMON, public SHARED_COMMON {
@@ -2203,16 +2202,19 @@ namespace FPS_n2 {
 				void Penetration(const std::pair<int, float>& a, const std::shared_ptr<PLAYER_VEHICLE>& tgt, const  VECTOR_ref& position, const  VECTOR_ref& normal) noexcept {
 					//貫通
 					if (this->pene > a.second * (1.0f / std::abs(this->move.vec.Norm().dot(normal)))) {
-						Sounds.Get(EnumSound::Tank_Damage).Play_3D(0, position, 50.f, 64);
+						SE.Get(EnumSound::Tank_Damage).Play_3D(0, position, 50.f, 64);
+						if ((*MINE_v)->Damage_Calc(a.first, this->spec->Get_damage(), tgt)) {
+							//撃破時エフェクト
+						}
+						else {
 
-						tgt->Damage.SubHP(this->spec->Get_damage(), 0);	//ダメージ
-						tgt->Damage.SubHP_Parts(this->spec->Get_damage(), a.first);
+						}
 						this->Flag = false;									//弾フラグ削除
 					}
 					//はじく
 					else {
 						//this->pene *= 0.8f;
-						Sounds.Get(EnumSound::Tank_Ricochet).Play_3D(0, position, 50.f, 64);
+						SE.Get(EnumSound::Tank_Ricochet).Play_3D(0, position, 50.f, 64);
 						this->pene_cnt++;
 					}
 					//はじく処理
@@ -2221,7 +2223,7 @@ namespace FPS_n2 {
 					//
 					hit_effect(normal);
 					//弾痕のセット
-					tgt->Hit_active.Set(tgt->Get_move(), position, normal, this->move.vec.Norm(), this->spec->Get_caliber(), !this->Flag);
+					tgt->SetHit(tgt->Get_move(), position, normal, this->move.vec.Norm(), this->spec->Get_caliber(), !this->Flag);
 				}
 				void hit_effect(const VECTOR_ref& nomal) noexcept {
 					if (isRide()) {
@@ -2255,34 +2257,13 @@ namespace FPS_n2 {
 					this->pene = this->spec->Get_pene();
 				}
 			private:
-				bool subHP(int sel, int damage, const std::shared_ptr<PLAYER_CHARA>& tgt) noexcept {
+				bool CheckHit(int sel, int damage, const std::shared_ptr<PLAYER_CHARA>& tgt) noexcept {
 					auto q = tgt->col_line(this->move.repos, this->move.pos, sel);
 					if (q.HitFlag == TRUE) {
-						this->move.pos = q.HitPosition;
-						//Hit
-						if (isRide()) {
-							(*MINE_v)->Set_eff(Effect::ef_hitblood, this->move.pos, q.Normal, 0.1f / 0.1f);//Effect::ef_reco
-						}
-						else {
-							(*MINE_c)->Set_eff(Effect::ef_hitblood, this->move.pos, q.Normal, 0.1f / 0.1f);//Effect::ef_reco
-						}
-						//
 						this->Hit_Flag = true;
 						this->Flag = false;
-
-						float x_1 = sinf(tgt->Get_body_yrad());
-						float y_1 = cosf(tgt->Get_body_yrad());
-						auto vc = ((*MINE_c)->Get_pos() - tgt->Get_pos()).Norm();
-						tgt->Damage.SubHP(damage, atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z()));
-						tgt->Damage.SubHP_Parts(damage, sel);
-						if (!tgt->Damage.Get_alive()) {
-							(*MINE_c)->scores.set_kill(&tgt - &(*MINE_c)->ALL_c->front(), 70);
-							tgt->scores.set_death(MINE_c - &(*MINE_c)->ALL_c->front());
-							Sounds.Get(EnumSound::Voice_Death).Play_3D(0, tgt->Get_pos(), 10.f);
-						}
-						else {
-							Sounds.Get(EnumSound::Voice_Damage).Play_3D(0, tgt->Get_pos(), 10.f);
-						}
+						this->move.pos = q.HitPosition;
+						(*MINE_c)->subHP(q.HitPosition, q.Normal, sel, damage, tgt);
 						return true;
 					}
 					return false;
@@ -2346,23 +2327,23 @@ namespace FPS_n2 {
 								}
 								if (tgt->set_ref_col(repos, this->move.pos, 2.f)) {
 									//HEAD
-									if (subHP(0, this->spec->Get_damage() * 3, tgt)) {
+									if (CheckHit(0, this->spec->Get_damage() * 3, tgt)) {
 										break;
 									}
 									//BODY
-									if (subHP(1, this->spec->Get_damage(), tgt)) {
+									if (CheckHit(1, this->spec->Get_damage(), tgt)) {
 										break;
 									}
 									//LEFTHAND
-									if (subHP(2, this->spec->Get_damage() * 2 / 5, tgt)) {
+									if (CheckHit(2, this->spec->Get_damage() * 2 / 5, tgt)) {
 										break;
 									}
 									//RIGHTHAND
-									if (subHP(3, this->spec->Get_damage() * 2 / 5, tgt)) {
+									if (CheckHit(3, this->spec->Get_damage() * 2 / 5, tgt)) {
 										break;
 									}
 									//LEG
-									if (subHP(4, this->spec->Get_damage() * 4 / 5, tgt)) {
+									if (CheckHit(4, this->spec->Get_damage() * 4 / 5, tgt)) {
 										break;
 									}
 								}
@@ -2438,6 +2419,7 @@ namespace FPS_n2 {
 						}
 					}
 				}
+				/*おわり*/
 				void Dispose(void) noexcept {
 					MINE_c = nullptr;
 					MINE_v = nullptr;
@@ -2488,7 +2470,8 @@ namespace FPS_n2 {
 					}
 				}
 			}
-			virtual void Dispose() noexcept {
+			/*おわり*/
+			virtual void Dispose(void) noexcept {
 				for (auto& a : this->bullet) { a.Dispose(); }			//弾
 			}
 		};
@@ -2496,73 +2479,73 @@ namespace FPS_n2 {
 		class VEHICLE_HitControl {
 		private:
 			class pair_hit {
-			public:
 				size_t first{ SIZE_MAX };
 				float second{ -1 };
-
-				bool Hit_Check(std::optional<size_t>& Hitnear, BulletControl::BULLETS& mine_b, const std::shared_ptr<PLAYER_VEHICLE>& tgt) {
+			public:
+				bool operator<(const pair_hit& tgt) const noexcept {
+					return this->second < tgt.second;
+				}
+				void Set(size_t f_t, float s_t)noexcept {
+					first = f_t;
+					second = s_t;
+				}
+				bool Hit_Check(std::optional<size_t>& Hitnear, BulletControl::BULLETS& mine_b, const std::shared_ptr<PLAYER_VEHICLE>& tgt) noexcept {
 					//装甲面に当たらなかったならスルー
 					if (this->second == (std::numeric_limits<float>::max)()) {
-						return false;//break;
+						return false;
 					}
-					//AP
-					{
-						//装甲面に当たったのでHitnearに代入して終了
-						for (auto& a : tgt->use_veh->Get_armer_mesh()) {
-							if (this->first == a.first) {
-								Hitnear = this->first;
-								//ダメージ面に当たった時に装甲値に勝てるかどうか
-								mine_b.Penetration(a, tgt, tgt->Get_hitres()[Hitnear.value()].HitPosition, tgt->Get_hitres()[Hitnear.value()].Normal);
-								break;
-							}
+					//装甲面に当たったのでHitnearに代入して終了
+					for (auto& a : tgt->use_veh->Get_armer_mesh()) {
+						if (this->first == a.first) {
+							Hitnear = this->first;
+							//ダメージ面に当たった時に装甲値に勝てるかどうか
+							mine_b.Penetration(a, tgt, tgt->Get_hitres(Hitnear.value()).HitPosition, tgt->Get_hitres(Hitnear.value()).Normal);
+							break;
 						}
-						if (Hitnear.has_value()) {
-							return false;//break;
-						}
-						//空間装甲、モジュールに当たったのでモジュールに30ダメ、貫徹力を1/2に
-						for (auto& a : tgt->use_veh->Get_space_mesh()) {
-							if (this->first == a) {
-								mine_b.hit_effect(tgt->Get_hitres()[a].Normal);
-								tgt->Damage.SubHP_Parts(30, a);
-							}
-						}
-						for (auto& a : tgt->use_veh->Get_module_mesh()) {
-							if (this->first == a) {
-								mine_b.hit_effect(tgt->Get_hitres()[a].Normal);
-								tgt->Damage.SubHP_Parts(30, a);
-							}
-						}
-						return true;
 					}
+					if (Hitnear.has_value()) {
+						return false;
+					}
+					//空間装甲、モジュールに当たったのでモジュールに30ダメ、貫徹力を1/2に
+					for (auto& a : tgt->use_veh->Get_space_mesh()) {
+						if (this->first == a) {
+							mine_b.hit_effect(tgt->Get_hitres(a).Normal);
+							tgt->Damage.SubHP_Parts(30, a);
+						}
+					}
+					for (auto& a : tgt->use_veh->Get_module_mesh()) {
+						if (this->first == a) {
+							mine_b.hit_effect(tgt->Get_hitres(a).Normal);
+							tgt->Damage.SubHP_Parts(30, a);
+						}
+					}
+					return true;
 				}
 			};
 		private:
-			std::vector<MV1_COLL_RESULT_POLY> hitres;									/*確保*/
 			std::vector<pair_hit> hitssort;												/*フレームに当たった順番*/
+			std::vector<MV1_COLL_RESULT_POLY> hitres;									/*確保*/
 		public:
-			void sort_Hit(void) noexcept { std::sort(this->hitssort.begin(), this->hitssort.end(), [](const pair_hit& x, const pair_hit& y) { return x.second < y.second; }); }
-			std::vector<pair_hit>& Get_hitssort() noexcept { return this->hitssort; }
-			std::vector<MV1_COLL_RESULT_POLY>& Get_hitres() noexcept { return this->hitres; }
-
-			bool HitCheck_t(int m, moves ray, const MV1_COLL_RESULT_POLY& hitres_t) {
+			void sort_Hit(void) noexcept { std::sort(this->hitssort.begin(), this->hitssort.end(), [](const pair_hit& x, const pair_hit& y) { return x < y; }); }
+			std::vector<pair_hit>& Get_hitssort(void) noexcept { return this->hitssort; }
+			const MV1_COLL_RESULT_POLY& Get_hitres(size_t ID_t) const noexcept { return this->hitres[ID_t]; }
+		protected:
+			bool HitCheck(int m, const VECTOR_ref& repos, const MV1_COLL_RESULT_POLY& hitres_t) {
 				this->hitres[m] = hitres_t;
 				if (this->hitres[m].HitFlag == TRUE) {
-					this->hitssort[m].first = m;
-					this->hitssort[m].second = (ray.repos - this->hitres[m].HitPosition).size();
+					this->hitssort[m].Set(m, (repos - this->hitres[m].HitPosition).size());
 					return true;
 				}
 				else {
-					this->hitssort[m].first = m;
-					this->hitssort[m].second = (std::numeric_limits<float>::max)();
+					this->hitssort[m].Set(m, (std::numeric_limits<float>::max)());
 					return false;
 				}
 			}
-
-			void Set_hitres(size_t siz_t) {
+			void Set(size_t siz_t) {
 				this->hitres.resize(siz_t);		//モジュールごとの当たり判定結果を確保
 				this->hitssort.resize(siz_t);	//モジュールごとの当たり判定順序を確保
 			}
-			void Reset_hitres(void) noexcept {
+			void Reset(void) noexcept {
 				this->hitres.clear();
 				this->hitssort.clear();
 			}
@@ -2579,25 +2562,65 @@ namespace FPS_n2 {
 				int rounds{ 0 };								/*弾数*/
 				gun_frame gun_info;								/**/
 				std::vector<Ammos> Spec;						/**/
-			public:
 				float xrad = 0.f, yrad = 0.f;
 				float xrad_shot = 0.f;														//射撃反動x
 				float zrad_shot = 0.f;														//射撃反動z
-
-				const auto& Getrounds() const noexcept { return rounds; }
-				const auto& Getloadtime() const noexcept { return loadcnt; }
-				const auto& Getfired() const noexcept { return fired; }
-				const auto& Getfirereact() const noexcept { return firereact; }
-				const auto& Getgun_info() const noexcept { return gun_info; }
-				const auto& Getcaliber(size_t id) const noexcept { return Spec[id].Get_caliber(); }
-
-				void Clear(void) noexcept {
-					this->fired = 0.f;
-					this->loadcnt = 0.f;
-					this->reload_se_f = true;
-					this->rounds = 0;
-					this->Spec.clear();
+			private:
+				bool Calc_Gun(bool key) {
+					bool ans = (key && this->loadcnt == 0 && this->rounds > 0);
+					if (ans) {
+						this->loadcnt = this->gun_info.Get_load_time();
+						this->reload_se_f = true;
+						this->rounds = std::max<int>(this->rounds - 1, 0);
+						this->fired = 1.f;
+						this->firereact = std::clamp(this->firereact + this->Spec[0].Get_caliber() * 10.f, 0.f, 3.f);
+					}
+					if (this->reload_se_f && this->loadcnt < 1.f) {
+						this->reload_se_f = false;
+						//サウンド
+						SE.Get(EnumSound::Tank_Reload).Play_3D((*MINE_v)->use_veh->Reload_ID, (*MINE_v)->Get_pos(), 3.f, 128);
+					}
+					this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
+					this->fired = std::max(this->fired - 1.f / FPS, 0.f);
+					this->firereact = std::max(this->firereact - 1.f / FPS, 0.f);
+					return ans;
 				}
+			public:
+				const auto& Getrounds(void) const noexcept { return rounds; }
+				const auto& Getloadtime(void) const noexcept { return loadcnt; }
+				const auto& Getgun_info(void) const noexcept { return gun_info; }
+				//銃反動
+				void FireReaction(MATRIX_ref* mat_t) noexcept {
+					auto firereact_t = deg2rad(-this->firereact * this->Spec[0].Get_caliber() * 50.f);
+					easing_set(&this->xrad_shot, firereact_t * cos(this->yrad), 0.85f);
+					easing_set(&this->zrad_shot, firereact_t * sin(this->yrad), 0.85f);
+					(*mat_t) *= MATRIX_ref::RotAxis(mat_t->xvec(), -this->xrad_shot) * MATRIX_ref::RotAxis(mat_t->zvec(), this->zrad_shot);
+				}
+			public:
+				//弾
+				void Set_bullet_Ptr(void) noexcept {
+					SetUp_bullet_Ptr((*MINE_v)->MINE_c, MINE_v);
+				}
+				//角度指示
+				void SetGunRad(const float view_xrad, const float view_yrad, float limit) {
+					this->yrad += std::clamp(view_yrad, -limit, limit);
+					//this->yrad = std::clamp(this->yrad + std::clamp(view_yrad, -limit, limit),deg2rad(-30.0)+yrad,deg2rad(30.0)+yrad);//射界制限
+					this->xrad = std::clamp(this->xrad + std::clamp(view_xrad, -limit, limit), deg2rad(-10), deg2rad(20));
+				}
+				//銃発砲エフェクトのセット
+				void calc_shot_effect(const VECTOR_ref& pos_t) noexcept {
+					(*MINE_v)->Set_eff(Effect::ef_fire, pos_t, GunControl::Get_mat_gun().zvec() * -1.f, this->Spec[0].Get_caliber() / 0.1f);//ノーマル
+				}
+				//
+				void Set_Frame(MV1* obj_body_t)const noexcept {
+					BodyFrameSetMatrix(*obj_body_t, this->gun_info.Get_frame1(), MATRIX_ref::RotY(this->yrad));
+					BodyFrameSetMatrix(*obj_body_t, this->gun_info.Get_frame2(), MATRIX_ref::RotX(this->xrad));
+					BodyFrameSetMatrix(*obj_body_t, this->gun_info.Get_frame3(), MATRIX_ref::Mtrans(VECTOR_ref::front() * (this->fired * 0.5f)));
+				}
+				//
+				Guns(void) noexcept { }
+				Guns(const Guns&) { }
+				//
 				void Set(const gun_frame& resorce, std::shared_ptr<PLAYER_VEHICLE>* MINE_v_t) {
 					MINE_v = MINE_v_t;
 					this->gun_info = resorce;
@@ -2605,40 +2628,8 @@ namespace FPS_n2 {
 					//使用砲弾
 					this->Spec = this->gun_info.Get_Spec();
 				}
-				//弾
-				void Set_bullet_Ptr(void) noexcept {
-					SetUp_bullet_Ptr((*MINE_v)->MINE_c, MINE_v);
-				}
-				void SetGunRad(const float view_xrad, const float view_yrad, float limit) {
-					this->yrad += std::clamp(view_yrad, -limit, limit);
-					//this->yrad = std::clamp(this->yrad + std::clamp(view_yrad, -limit, limit),deg2rad(-30.0)+yrad,deg2rad(30.0)+yrad);//射界制限
-					this->xrad = std::clamp(this->xrad + std::clamp(view_xrad, -limit, limit), deg2rad(-10), deg2rad(20));
-				}
-				//弾の生成
-				//銃発砲エフェクトのセット
-				void calc_shot_effect(const VECTOR_ref& pos_t) noexcept {
-					(*MINE_v)->Set_eff(Effect::ef_fire, pos_t, GunControl::Get_mat_gun().zvec() * -1.f, this->Getcaliber(0) / 0.1f);//ノーマル
-				}
-				bool Calc_Gun(bool key) {
-					bool ans = (key && this->loadcnt == 0 && this->rounds > 0);
-					if (ans) {
-						this->loadcnt = this->Getgun_info().Get_load_time();
-						this->reload_se_f = true;
-						this->rounds = std::max<int>(this->rounds - 1, 0);
-						this->fired = 1.f;
-						this->firereact = std::clamp(this->firereact + this->Getcaliber(0) * 10.f, 0.f, 3.f);
-					}
-					if (this->reload_se_f && this->loadcnt < 1.f) {
-						this->reload_se_f = false;
-						//サウンド
-						Sounds.Get(EnumSound::Tank_Reload).Play_3D((*MINE_v)->use_veh->Reload_ID, (*MINE_v)->Get_pos(), 3.f, 128);
-					}
-					this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
-					this->fired = std::max(this->fired - 1.f / FPS, 0.f);
-					this->firereact = std::max(this->firereact - 1.f / FPS, 0.f);
-					return ans;
-				}
-				void Update_Gun(bool key, const VECTOR_ref& pos_t, const MATRIX_ref& mat_t) {
+				//銃演算
+				void Update(bool key, const VECTOR_ref& pos_t, const MATRIX_ref& mat_t) {
 					GunControl::gun_m.mat = mat_t;
 					//射撃
 					if (Calc_Gun(key)) {
@@ -2648,25 +2639,22 @@ namespace FPS_n2 {
 						//エフェクト
 						calc_shot_effect(pos_t);
 						//サウンド
-						Sounds.Get(EnumSound::Tank_Shot).Play_3D(this->gun_info.Get_sound(), (*MINE_v)->Get_pos(), 250.f, 128);
+						SE.Get(EnumSound::Tank_Shot).Play_3D(this->gun_info.Get_sound(), (*MINE_v)->Get_pos(), 250.f, 128);
 					}
 					//弾の処理
 					BulletControl::Update();
 				}
-				Guns(void) noexcept {
-				}
-				Guns(const Guns&) {
-				}
-
-				void Set_Frame(MV1* obj_body_t) {
-					BodyFrameSetMatrix(*obj_body_t, this->Getgun_info().Get_frame1(), MATRIX_ref::RotY(this->yrad));
-					BodyFrameSetMatrix(*obj_body_t, this->Getgun_info().Get_frame2(), MATRIX_ref::RotX(this->xrad));
-					BodyFrameSetMatrix(*obj_body_t, this->Getgun_info().Get_frame3(), MATRIX_ref::Mtrans(VECTOR_ref::front() * (this->Getfired() * 0.5f)));
-				}
-
-				void Dispose() noexcept {
+				/*おわり*/
+				void Dispose(void) noexcept {
 					BulletControl::Dispose();
 					MINE_v = nullptr;
+				}
+				void Reset(void) noexcept {
+					this->fired = 0.f;
+					this->loadcnt = 0.f;
+					this->reload_se_f = true;
+					this->rounds = 0;
+					this->Spec.clear();
 				}
 			};
 		protected:
@@ -2705,10 +2693,11 @@ namespace FPS_n2 {
 				std::vector<b2Pats> Foot, Wheel, Yudo;			/**/
 			};
 		protected:
-			float wheel_Left = 0.f, wheel_Right = 0.f;									//転輪回転
 		private:
+			float wheel_Left = 0.f, wheel_Right = 0.f;									//転輪回転
 			float body_yrad{ 0.f };														//胴体角度
 			std::vector<Guns> Gun_;														/**/
+			float speed{ 0.f };															//移動速度
 			float speed_add = 0.f, speed_sub = 0.f;										/**/
 			float xrad = 0.f, xradadd = 0.f, xradadd_left = 0.f, xradadd_right = 0.f;	/**/
 			float yrad = 0.f, yradadd = 0.f, yradadd_left = 0.f, yradadd_right = 0.f;	/**/
@@ -2716,7 +2705,7 @@ namespace FPS_n2 {
 			b2Pats b2mine;																/*box2d*/
 			float spd_buf = 0.f;														/*box2d*/
 			float wheel_Leftadd = 0.f, wheel_Rightadd = 0.f;							//転輪回転
-			std::array<FootWorld, 2> foot;												/*足*/
+			std::array<FootWorld, 2> foot;												//履帯BOX2D
 			VECTOR_ref wheel_normal = VECTOR_ref::up();
 			std::vector<foot_frame> wheelframe;											/**/
 			std::array<std::vector<cat_frame>, 2> b2downsideframe;						/*履帯*/
@@ -2724,7 +2713,6 @@ namespace FPS_n2 {
 		public:
 			Vehcs* use_veh;																/*固有値*/
 		public:
-			const float& Get_body_yrad(void) const noexcept { return this->body_yrad; }		//ミニマップ用
 			//UI描画用用意
 			void Draw_Hit_UI(GraphHandle& hit_Graph) noexcept {
 				for (auto& cg : this->Gun_) { cg.Draw_Hit_UI(hit_Graph); }
@@ -2745,16 +2733,17 @@ namespace FPS_n2 {
 					g.SetUp_bullet(MAPPTs_t, DrawPts_t, Hit_obj_p_t, Hit_b_obj_p_t);
 				}
 			}
+			const float& Get_wheel_Left(void) const noexcept { return this->wheel_Left; }
+			const float& Get_wheel_Right(void) const noexcept { return this->wheel_Right; }
+			const float& Get_body_yrad(void) const noexcept { return this->body_yrad; }
 			const auto& Gunloadtime(size_t id_t) const noexcept { return this->Gun_[id_t].Getloadtime(); }
 			const auto& Gunround(size_t id_t) const noexcept { return this->Gun_[id_t].Getrounds(); }
 			const auto& Guninfo(size_t id_t) const noexcept { return this->Gun_[id_t].Getgun_info(); }
-			const auto& Get_Gun() const noexcept { return this->Gun_; }
+			const auto& Get_Gun(void) const noexcept { return this->Gun_; }
 		protected:
-
 			void Spawn(moves& move) {
 				this->b2mine.SetTransform(b2Vec2(move.pos.x(), move.pos.z()), atan2f(-move.mat.zvec().x(), -move.mat.zvec().z()));
 			}
-
 			void Set(MV1& obj_body_t, moves& move, std::shared_ptr<b2World>& world_t, std::shared_ptr<PLAYER_VEHICLE>* MINE_v) {
 				VECTOR_ref minmaxsub = this->use_veh->Get_maxpos() - this->use_veh->Get_minpos();
 				VECTOR_ref minmaxadd = this->use_veh->Get_minpos() + this->use_veh->Get_maxpos();
@@ -2834,9 +2823,8 @@ namespace FPS_n2 {
 				this->Gun_.resize(this->use_veh->Get_gunframe().size());
 				for (auto& g : this->Gun_) { g.Set(this->use_veh->Get_gunframe(&g - &this->Gun_.front()), MINE_v); }
 			}
-
-			void Update_Tank(MV1& obj_body_t, MV1& obj_col_t, std::shared_ptr<MAPclass::Map>& MAPPTs, moves& move, bool isfloat, std::array<bool, 6>& key, float& speed, float& view_xrad, float& view_yrad) {
-				this->spd_rec = speed;
+			void Update_Tank(MV1& obj_body_t, MV1& obj_col_t, std::shared_ptr<MAPclass::Map>& MAPPTs, moves& move, bool isfloat, std::array<bool, 6>& key, float& view_xrad, float& view_yrad) {
+				this->spd_rec = this->speed;
 				//砲塔旋回
 				{
 					float limit = this->use_veh->Get_turret_rad_limit() / FPS;
@@ -2859,10 +2847,10 @@ namespace FPS_n2 {
 						easing_set(&f.will_y, (ColResGround.HitFlag == TRUE) ? (ColResGround.HitPosition.y + y_vec.y() * f.frame.second.y() - startpos.y()) : -0.3f, 0.9f);
 						tmp = MATRIX_ref::Mtrans(VECTOR_ref::up() * f.will_y);
 
-						obj_body_t.SetFrameLocalMatrix(f.frame.first, MATRIX_ref::RotX((f.frame.second.x() >= 0) ? this->wheel_Left : this->wheel_Right) * tmp * MATRIX_ref::Mtrans(f.frame.second));
+						BodyFrameSetMatrix(obj_body_t, f.frame, MATRIX_ref::RotX((f.frame.second.x() >= 0) ? this->wheel_Left : this->wheel_Right) * tmp);
 					}
 					for (const auto& f : this->use_veh->Get_wheelframe_nospring()) {
-						obj_body_t.SetFrameLocalMatrix(f.first, MATRIX_ref::RotX((f.second.x() >= 0) ? this->wheel_Left : this->wheel_Right) * MATRIX_ref::Mtrans(f.second));
+						BodyFrameSetMatrix(obj_body_t, f, MATRIX_ref::RotX((f.second.x() >= 0) ? this->wheel_Left : this->wheel_Right));
 					}
 				}
 				easing_set(
@@ -2883,7 +2871,7 @@ namespace FPS_n2 {
 							else {
 								tmp = MATRIX_ref::Mtrans(VECTOR_ref::up() * -0.4f);
 							}
-							obj_body_t.SetFrameLocalMatrix(t.frame.first, tmp * MATRIX_ref::Mtrans(t.frame.second));
+							BodyFrameSetMatrix(obj_body_t, t.frame, tmp);
 						}
 					}
 				}
@@ -2948,8 +2936,8 @@ namespace FPS_n2 {
 									this->speed_add = (this->speed_add > 0.f) ? (this->speed_add - (0.35f / 3.6f) * (60.f / FPS)) : 0.f;
 									this->speed_sub = (this->speed_sub < 0.f) ? (this->speed_sub + (0.35f / 3.6f) * (60.f / FPS)) : 0.f;
 								}
-								speed = (old + ((this->speed_add + this->speed_sub) - old) * 0.1f) / FPS;
-								move.vec = move.mat.zvec() * -speed;
+								this->speed = (old + ((this->speed_add + this->speed_sub) - old) * 0.1f) / FPS;
+								move.vec = move.mat.zvec() * -this->speed;
 							}
 							//旋回
 							{
@@ -2960,7 +2948,7 @@ namespace FPS_n2 {
 							//慣性
 							{
 								const auto xradold = this->xradadd;
-								this->xradadd = deg2rad(-((speed) / (60.f / FPS)) / (0.1f / 3.6f) * 50.f);
+								this->xradadd = deg2rad(-((this->speed) / (60.f / FPS)) / (0.1f / 3.6f) * 50.f);
 								easing_set(&this->xrad, std::clamp(this->xradadd - xradold, deg2rad(-30.f), deg2rad(30.f)), 0.995f);
 
 								auto zradold = this->zradadd;
@@ -2979,14 +2967,11 @@ namespace FPS_n2 {
 				}
 				//射撃反動
 				for (auto& g : this->Gun_) {
-					auto firereact = deg2rad(-g.Getfirereact() * g.Getcaliber(0) * 50.f);
-					easing_set(&g.xrad_shot, firereact * cos(g.yrad), 0.85f);
-					easing_set(&g.zrad_shot, firereact * sin(g.yrad), 0.85f);
-					move.mat *= MATRIX_ref::RotAxis(move.mat.xvec(), -g.xrad_shot) * MATRIX_ref::RotAxis(move.mat.zvec(), g.zrad_shot);
+					g.FireReaction(&move.mat);
 				}
 				//転輪
-				this->wheel_Leftadd = -(speed * 2.f - this->yradadd * 5.f);
-				this->wheel_Rightadd = -(speed * 2.f + this->yradadd * 5.f);
+				this->wheel_Leftadd = -(this->speed * 2.f - this->yradadd * 5.f);
+				this->wheel_Rightadd = -(this->speed * 2.f + this->yradadd * 5.f);
 
 				this->wheel_Left += this->wheel_Leftadd;  // -this->yradadd * 5.f;
 				this->wheel_Right += this->wheel_Rightadd; // +this->yradadd * 5.f;
@@ -2998,14 +2983,10 @@ namespace FPS_n2 {
 				}
 				//射撃
 				for (auto& cg : this->Gun_) {
-					cg.Update_Gun(
-						key[(&cg == &this->Gun_[0]) ? 0 : 1],
-						obj_body_t.frame(cg.Getgun_info().Get_frame3().first),
-						obj_body_t.GetFrameLocalWorldMatrix(cg.Getgun_info().Get_frame2().first)
-					);
+					cg.Update(key[(&cg == &this->Gun_[0]) ? 0 : 1], obj_body_t.frame(cg.Getgun_info().Get_frame3().first), BodyFrameMatrix(obj_body_t, cg.Getgun_info().Get_frame2()));
 				}
 			}
-			void Update_Tank2(MV1& obj_body_t, moves& move, float& speed) {
+			void Update_Tank2(MV1& obj_body_t, moves& move) {
 				auto pp = move.mat.zvec();
 				this->body_yrad = atan2f(-pp.x(), -pp.z());
 				//戦車座標反映
@@ -3013,7 +2994,7 @@ namespace FPS_n2 {
 				move.pos = VECTOR_ref::vget(this->b2mine.Pos().x, move.pos.y(), this->b2mine.Pos().y);
 				float spdrec = this->spd_buf;
 				easing_set(&this->spd_buf, this->b2mine.Speed() * ((this->spd_buf > 0) ? 1.f : -1.f), 0.99f);
-				speed = this->spd_buf - spdrec;
+				this->speed = this->spd_buf - spdrec;
 				//move.mat *= MATRIX_ref::RotAxis(move.mat.yvec(),this->yradadd);
 
 				//転輪
@@ -3067,7 +3048,7 @@ namespace FPS_n2 {
 				for (auto& g : this->b2downsideframe) {
 					for (auto& t : g) {
 						if (t.colres.HitFlag == TRUE) {
-							easing_set(&t.gndsmksize, 0.1f + std::abs(speed - this->spd_rec) / ((0.01f / 3.6f) / FPS) * 1.f, 0.95f);
+							easing_set(&t.gndsmksize, 0.1f + std::abs(this->speed - this->spd_rec) / ((0.01f / 3.6f) / FPS) * 1.f, 0.95f);
 						}
 						else {
 							t.gndsmksize = 0.1f;
@@ -3077,7 +3058,7 @@ namespace FPS_n2 {
 					}
 				}
 			}
-
+			/*おわり*/
 			void Dispose(void) noexcept {
 				this->b2mine.Dispose();			/*Box2D*/
 				for (auto& t : foot) {
@@ -3097,6 +3078,7 @@ namespace FPS_n2 {
 				for (auto& cg : this->Gun_) { cg.Dispose(); }
 			}
 			void Reset(void) noexcept {
+				this->speed = 0.f;
 				this->speed_add = 0.f;
 				this->speed_sub = 0.f;
 				this->wheel_Left = 0.f;
@@ -3118,17 +3100,12 @@ namespace FPS_n2 {
 				for (auto& f : foot) {
 					f.world.reset();
 				}
-				for (auto& g : this->Gun_) { g.Clear(); }
+				for (auto& g : this->Gun_) { g.Reset(); }
 				this->Gun_.clear();
 			}
-
-
-
 		};
 		//人間
 		class PLAYER_CHARA : public PLAYER_COMMON, public BulletControl, public HumanControl {
-		public:
-			const bool ads_on(void) const noexcept override { return this->key_.aim && !this->view_ing; }													//ADS中
 		private:
 			//スコア
 			class score_s {
@@ -3280,14 +3257,32 @@ namespace FPS_n2 {
 			bool flag_canlook_player{ true };				//プレイヤーが視界内か否かのフラグ
 			bool flag_calc_lag{ true };						//ラグドールの物理演算フラグ
 		public:
+			void subHP(const VECTOR_ref& Pos, const VECTOR_ref& Nomal, int sel, int damage, const std::shared_ptr<PLAYER_CHARA>& tgt) noexcept {
+				//Hit
+				if (isRide()) {
+					(*MINE_v)->Set_eff(Effect::ef_hitblood, Pos, Nomal, 0.1f / 0.1f);//Effect::ef_reco
+				}
+				else {
+					(*MINE_c)->Set_eff(Effect::ef_hitblood, Pos, Nomal, 0.1f / 0.1f);//Effect::ef_reco
+				}
+				//
+				if ((*MINE_c)->Damage_Calc(sel, damage, tgt)) {
+					VOICE.Get(EnumSound::Voice_Death).Play_3D(0, tgt->Get_pos(), 10.f);
+				}
+				else {
+					VOICE.Get(EnumSound::Voice_Damage).Play_3D(0, tgt->Get_pos(), 10.f);
+				}
+				return;
+			}
 			//setter
 			auto& set_key_(void) noexcept { return key_; }	//key
 			//getter
+			const bool ads_on(void) const noexcept override { return this->key_.aim && !this->view_ing; }													//ADS中
 			const bool Get_jamping(void) const noexcept override { return this->add_ypos != 0.f; }															//ジャンプ中
 			const auto Get_head_pos(void) const noexcept { return this->obj_body.frame(this->frame_s.head_f.first); }										//頭部座標
 			const bool isSquat(void) const noexcept override { return this->key_.squat; }
 			const bool isRunning(void) const noexcept override { return this->key_.running; }
-			const VECTOR_ref Get_pos(bool no_y = false) const noexcept {
+			const VECTOR_ref Get_pos(bool no_y = false) const noexcept override {
 				if (isRide()) {
 					return (*MINE_v)->Get_pos();
 				}
@@ -3303,7 +3298,7 @@ namespace FPS_n2 {
 				}
 			}
 			const auto& Get_key_(void) const noexcept { return key_; }																						//key
-			const float& Get_body_yrad(void) const noexcept {
+			const float& Get_body_yrad(void) const noexcept override {
 				if (isRide()) {
 					return (*MINE_v)->Get_body_yrad();
 				}
@@ -3311,14 +3306,13 @@ namespace FPS_n2 {
 					return this->body_yrad;
 				}
 			}//ミニマップ用
-			const Audios_Gun& Get_Gunaudio() const noexcept { return this->audio; }																				//audio(メニューのみ)
+			const Audios_Gun& Get_Gunaudio(void) const noexcept { return this->audio; }																				//audio(メニューのみ)
 			const auto& getmagazine_push(void) const noexcept { return this->key_.have_item; }																//item関連
 			const auto& Get_canget_mag_f(void) const noexcept { return canget_magitem_f; }																	//item関連
 			const auto& Get_canget_med_f(void) const noexcept { return canget_meditem_f; }																	//item関連
 			const auto& Get_canget_mag_s(void) const noexcept { return canget_mag; }																		//item関連
 			const auto& Get_canget_med(void) const noexcept { return canget_med; }																			//item関連
 			const auto& Get_canride_f(void) const noexcept { return canride_f; }																			//item関連
-			auto& set_canride_f(void) noexcept { return canride_f; }																						//item関連
 		public:
 			//
 			void set_basepos(const VECTOR_ref& pos_t) noexcept { this->pos_tt = pos_t; }
@@ -3329,20 +3323,7 @@ namespace FPS_n2 {
 					if (scale < 10.f) {
 						if (!(MAPPTs->map_col_line(this->move.pos, this->Get_head_pos()).HitFlag == TRUE)) {
 							int damage = std::clamp(int(150.f * (10.f - scale) / 10.f), 0, 100);
-
-							float x_1 = sinf(this->body_yrad);
-							float y_1 = cosf(this->body_yrad);
-							auto vc = (killer->Get_pos() - this->Get_pos()).Norm();
-							this->Damage.SubHP(damage, atan2f(y_1 * vc.x() - x_1 * vc.z(), x_1 * vc.x() + y_1 * vc.z()));
-							this->Damage.SubHP_Parts(damage, 0);
-							if (!this->Damage.Get_alive()) {
-								killer->scores.set_kill(MINE_c - &ALL_c->front(), 70);
-								this->scores.set_death(&killer - &ALL_c->front());
-								Sounds.Get(EnumSound::Voice_Death).Play_3D(0, this->Get_pos(), 10.f);
-							}
-							else {
-								Sounds.Get(EnumSound::Voice_Damage).Play_3D(0, this->Get_pos(), 10.f);
-							}
+							killer->subHP(this->Get_head_pos(), VECTOR_ref::front(), 0, damage, *MINE_c);
 							this->gre_eff = true;
 							return;
 						}
@@ -3377,8 +3358,13 @@ namespace FPS_n2 {
 			void set_HMDpos(void) noexcept {
 				this->HMD.move.pos = (this->obj_body.frame(this->frame_s.RIGHTeye_f.first) + (this->obj_body.frame(this->frame_s.LEFTeye_f.first) - this->obj_body.frame(this->frame_s.RIGHTeye_f.first)) * 0.5f) - this->pos_tt;
 			}
-			const MATRIX_ref& GetHMDmat() noexcept { return HMD.move.mat; }
-			void SetHMDmat(MATRIX_ref& value_t) noexcept { HMD.move.mat = value_t; }
+			const MATRIX_ref& GetHMDmat(void) noexcept { return HMD.move.mat; }
+			void SetHMDmat(const MATRIX_ref& value_t) noexcept { HMD.move.mat = value_t; }
+
+			void GetOff(std::shared_ptr<PLAYER_VEHICLE>* MINE_v_t) {
+				(*this->MINE_c)->set_basepos((*MINE_v_t)->Get_pos());
+				(*this->MINE_c)->SetHMDmat((*MINE_v_t)->Get_lookvec());
+			}
 		private:
 			//腕アニメで使う座標の決定
 			void Set_GUN_pos_Anim(void) noexcept {
@@ -3576,7 +3562,7 @@ namespace FPS_n2 {
 			void magrelease_t(size_t test_) noexcept {
 				if (this->gun_stat_now->hav_mag()) {
 					//音
-					Sounds.Get(EnumSound::MAG_Down).Play_3D(audio.use_magdown, GunControl::Get_pos_gun(), 15.f, 255);
+					SE.Get(EnumSound::MAG_Down).Play_3D(audio.use_magdown, GunControl::Get_pos_gun(), 15.f, 255);
 					//弾数
 					if (test_ == 0) {//全排出
 						while (true) {
@@ -3674,7 +3660,7 @@ namespace FPS_n2 {
 					this->Set_gun();//一時的に銃位置更新
 				}
 			}
-			void move_VR_Gun() noexcept {
+			void move_VR_Gun(void) noexcept {
 				if (this->Damage.Get_alive()) {
 					this->set_gun_pos(this->RIGHTHAND.move);
 				}
@@ -3687,14 +3673,14 @@ namespace FPS_n2 {
 					if (ptr_->turn && ptr_->now) {
 						//移動
 						if ((ptr_->on[1] & BUTTON_TOUCHPAD) != 0) {
-							this->speed = (this->isRunning() ? 8.f : 6.f) / FPS;
+							this->speed_base = (this->isRunning() ? 8.f : 6.f) / FPS;
 
 							if (DrawPts->tracker_num.size() > 0) {
 								auto p = BodyFrameMatrix(this->obj_body, this->frame_s.bodyb_f);
-								easing_set(&this->add_vec_buf, (p.zvec() * -ptr_->touch.y() + p.xvec() * -ptr_->touch.x()) * this->speed, 0.95f);
+								easing_set(&this->add_vec_buf, (p.zvec() * -ptr_->touch.y() + p.xvec() * -ptr_->touch.x()) * this->speed_base, 0.95f);
 							}
 							else {
-								easing_set(&this->add_vec_buf, (this->GetHMDmat().zvec() * ptr_->touch.y() + this->GetHMDmat().xvec() * ptr_->touch.x()) * this->speed, 0.95f);
+								easing_set(&this->add_vec_buf, (this->GetHMDmat().zvec() * ptr_->touch.y() + this->GetHMDmat().xvec() * ptr_->touch.x()) * this->speed_base, 0.95f);
 							}
 						}
 						else {
@@ -3965,10 +3951,8 @@ namespace FPS_n2 {
 						if (DrawPts->use_vr) {
 							vr_move();//player move(VR)
 						}
-						else {
-							if (!isRide()) {
-								key_move(*x_m, *y_m, fov_per);//player move
-							}
+						else if (!isRide()) {
+							PLAYER_COMMON::Get_MouseVec(x_m, y_m, fov_per);//player move
 						}
 						break;
 					case 1://AI move
@@ -3996,7 +3980,8 @@ namespace FPS_n2 {
 				this->key_.rule_();
 				const bool& alive = this->Damage.Get_alive();
 				if (alive) {
-					key_operation(x_m, y_m);
+					easing_set(&this->body_ztrun, -deg2rad(x_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f);
+					easing_set(&this->body_xtrun, -deg2rad(y_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f);
 					//z軸回転(リーン)
 					if (this->key_.qkey) {
 						easing_set(&this->body_zrad, deg2rad(-25), 0.9f);
@@ -4007,73 +3992,16 @@ namespace FPS_n2 {
 					else {
 						easing_set(&this->body_zrad, this->body_ztrun, 0.8f);
 					}
-					//y軸回転(旋回)
-					this->HMD.mat_notlean = MATRIX_ref::RotX(-this->xrad_p) * this->HMD.mat_notlean;
-					this->xrad_p = std::clamp(this->xrad_p - deg2rad(y_m) * 0.1f, deg2rad(-80), deg2rad(60));
-					this->HMD.mat_notlean *= MATRIX_ref::RotY(deg2rad(x_m) * 0.1f);
-					//x軸回転(仰俯)
-					this->HMD.mat_notlean = MATRIX_ref::RotX(this->xrad_p) * this->HMD.mat_notlean;
+					this->HMD.mat_notlean = MATRIX_ref::RotX(-Get_xradP()) * this->HMD.mat_notlean;													//x軸回転リセット
+					this->HMD.mat_notlean *= MATRIX_ref::RotY(deg2rad(x_m) * 0.1f);																	//y軸回転(旋回)
+					this->HMD.mat_notlean = MATRIX_ref::RotX(Add_xradP(-deg2rad(y_m) * 0.1f, deg2rad(-80), deg2rad(60))) * this->HMD.mat_notlean;	//x軸回転(仰俯)
 					//anser
 					this->HMD.move.mat = this->HMD.mat_notlean * MATRIX_ref::RotAxis(this->HMD.mat_notlean.zvec(), this->body_zrad);
 				}
 			}
-			void operation(const bool cannotmove, const float fov_per, int move_mode) noexcept {
-				float x_m = 0.f, y_m = 0.f;
-				operation_common(cannotmove, fov_per, move_mode, &x_m, &y_m);
-				const bool& alive = this->Damage.Get_alive();
-				if (!DrawPts->use_vr) {
-					operation_common2(x_m, y_m);
-					this->speed = (this->isRunning() ? 6.f : ((this->ads_on() ? 2.f : 4.f) * (this->isSquat() ? 0.7f : 1.f))) / FPS;
-					auto zv_t = this->GetHMDmat().zvec();
-					zv_t.y(0.f);
-					zv_t = zv_t.Norm();
-					auto xv_t = this->GetHMDmat().xvec();
-					xv_t.y(0.f);
-					xv_t = xv_t.Norm();
-					if (this->isRunning()) {
-						xv_t = xv_t.Norm() * 0.5f;
-					}
-					easing_set(&this->add_vec_buf,
-						VECTOR_ref(VECTOR_ref::zero())
-						+ (this->key_.wkey ? (zv_t * -this->speed) : VECTOR_ref::zero())
-						+ (this->key_.skey ? (zv_t * this->speed) : VECTOR_ref::zero())
-						+ (this->key_.akey ? (xv_t * this->speed) : VECTOR_ref::zero())
-						+ (this->key_.dkey ? (xv_t * -this->speed) : VECTOR_ref::zero())
-						, 0.95f);
-					this->mat_body = this->GetHMDmat();
-				}
-				//ジャンプ
-				{
-					if (!this->Get_jamping()) {
-						if (this->key_.jamp && alive) {
-							this->add_ypos = 0.05f * Frame_Rate / FPS;
-						}
-						this->move.vec = this->add_vec_buf;
-					}
-					else {
-						easing_set(&this->move.vec, VECTOR_ref::zero(), 0.995f);
-					}
-				}
-				//操作
-				{
-					if (isReload()) {
-						this->key_.aim = false;
-					}
-					//引き金(左クリック)
-					easing_set(&this->gunanime_trigger->per, float(this->key_.shoot && !this->isRunning()), 0.5f);
-					//マグキャッチ(Rキー)
-					easing_set(&this->gunanime_magcatch->per, float(this->key_.reload), 0.5f);
-				}
-				//
-			}
-
-			void operation_tank(const bool cannotmove, const float fov_per, int move_mode) noexcept {
-				float x_m = 0.f, y_m = 0.f;
-				operation_common(cannotmove, fov_per, move_mode, &x_m, &y_m);
-				operation_common2(x_m, y_m);
-			}
+		private:
 			//壁、床判定
-			void wall_col() noexcept {
+			void wall_col(void) noexcept {
 				VECTOR_ref pos_t2, pos_t;
 				//VR専用
 				if (DrawPts->use_vr) {
@@ -4112,8 +4040,7 @@ namespace FPS_n2 {
 							this->add_ypos += M_GR / std::powf(FPS, 2.f);
 							//復帰
 							if (pos_t.y() <= -5.f) {
-								this->Damage.SubHP(100, 0);
-								this->scores.set_death(0);
+								(*MINE_c)->Damage_Calc(0, 100, *MINE_c);
 							}
 						}
 					}
@@ -4276,20 +4203,20 @@ namespace FPS_n2 {
 							if (this->foot_timer == 0.f) {
 								if (this->isRunning()) {
 									if (abs(Head_bobbing(this->anime_run)) >= 0.8f) {
-										Sounds.Get(EnumSound::Foot_Sound).Play_3D(0, GunControl::Get_pos_gun(), 15.f, 255);
+										SE.Get(EnumSound::Foot_Sound).Play_3D(0, GunControl::Get_pos_gun(), 15.f, 255);
 										this->foot_timer = 0.2f;
 									}
 								}
 								else {
 									if (!this->isSquat()) {
 										if (abs(Head_bobbing(this->anime_walk)) >= 0.8f) {
-											Sounds.Get(EnumSound::Foot_Sound).Play_3D(0, GunControl::Get_pos_gun(), 5.f, 128);
+											SE.Get(EnumSound::Foot_Sound).Play_3D(0, GunControl::Get_pos_gun(), 5.f, 128);
 											this->foot_timer = 0.2f;
 										}
 									}
 									else {
 										if (abs(Head_bobbing(this->anime_swalk)) >= 0.8f) {
-											Sounds.Get(EnumSound::Foot_Sound).Play_3D(0, GunControl::Get_pos_gun(), 1.5f, 64);
+											SE.Get(EnumSound::Foot_Sound).Play_3D(0, GunControl::Get_pos_gun(), 1.5f, 64);
 											this->foot_timer = 0.2f;
 										}
 									}
@@ -4385,7 +4312,7 @@ namespace FPS_n2 {
 			}
 		public:
 			//銃発砲エフェクトのセット
-			void calc_shot_effect() noexcept {
+			void calc_shot_effect(void) noexcept {
 				calc_shot_effect(this->Get_maz());
 			}
 			void calc_shot_effect(const VECTOR_ref& pos_t) noexcept {
@@ -4406,8 +4333,6 @@ namespace FPS_n2 {
 			void Update_cart(void) noexcept {
 				GunControl::Update_cart(MAPPTs);
 			}
-
-
 		public:
 			using PLAYER_COMMON::PLAYER_COMMON;
 			void Set(std::vector<GUNPARTs>& gun_data, size_t itr, MV1& body_, MV1& bodylag_, MV1& col_) noexcept {
@@ -4420,7 +4345,7 @@ namespace FPS_n2 {
 					this->flag_calc_lag = true;
 					//身体コリジョン
 					col_.DuplicateonAnime(&this->obj_col, &this->obj_body);
-					for (int i = 0; i < this->obj_col.mesh_num(); ++i) { this->obj_col.SetupCollInfo(8, 8, 8, -1, i); }
+					PLAYER_COMMON::SetupCollInfo();
 					Set_Body(this->obj_body, this->obj_lag, this->obj_col);
 				}
 				//変数
@@ -4442,15 +4367,13 @@ namespace FPS_n2 {
 				this->audio.Duplicate(this->base.thisparts->audio);	//audio
 			}
 			//弾
-			void Set_bullet_Ptr() noexcept {
+			void Set_bullet_Ptr(void) noexcept {
 				SetUp_bullet_Ptr(MINE_c, (*MINE_c)->MINE_v);
 			}
 			/*キャラスポーン*/
-			void Spawn() noexcept override {
+			void Spawn(void) noexcept override {
 				PLAYER_COMMON::Spawn();
 				//
-				this->xrad_p = 0;
-
 				this->pos_tt = this->spawn.pos;
 				this->HMD.move.mat = this->spawn.mat;
 				this->HMD.mat_notlean = this->HMD.move.mat;
@@ -4462,8 +4385,6 @@ namespace FPS_n2 {
 				this->distance_to_cam = -1.f;
 				this->flag_calc_body = true;
 				this->flag_calc_lag = true;
-
-				Damage.Set((int)this->obj_col.mesh_num());
 
 				this->scores.Reset(false);
 
@@ -4561,22 +4482,88 @@ namespace FPS_n2 {
 #endif // _USE_OPENVR_
 				}
 				//プレイヤー操作
-				if (isRide()) {
-					this->operation_tank(!playing, fov_per, ismine ? 0 : 1);
+				{
+					float x_m = 0.f, y_m = 0.f;
+					operation_common(!playing, fov_per, ismine ? 0 : 1, &x_m, &y_m);
+					if (isRide()) {
+						operation_common2(x_m, y_m);
+					}
+					else {
+						if (!DrawPts->use_vr) {
+							operation_common2(x_m, y_m);
+							this->speed_base = (this->isRunning() ? 6.f : ((this->ads_on() ? 2.f : 4.f) * (this->isSquat() ? 0.7f : 1.f))) / FPS;
+							auto zv_t = this->GetHMDmat().zvec();
+							zv_t.y(0.f);
+							zv_t = zv_t.Norm();
+							auto xv_t = this->GetHMDmat().xvec();
+							xv_t.y(0.f);
+							xv_t = xv_t.Norm();
+							if (this->isRunning()) {
+								xv_t = xv_t.Norm() * 0.5f;
+							}
+							easing_set(&this->add_vec_buf,
+								VECTOR_ref(VECTOR_ref::zero())
+								+ (this->key_.wkey ? (zv_t * -this->speed_base) : VECTOR_ref::zero())
+								+ (this->key_.skey ? (zv_t * this->speed_base) : VECTOR_ref::zero())
+								+ (this->key_.akey ? (xv_t * this->speed_base) : VECTOR_ref::zero())
+								+ (this->key_.dkey ? (xv_t * -this->speed_base) : VECTOR_ref::zero())
+								, 0.95f);
+							this->mat_body = this->GetHMDmat();
+						}
+						//ジャンプ
+						{
+							if (!this->Get_jamping()) {
+								if (this->key_.jamp && this->Damage.Get_alive()) {
+									this->add_ypos = 0.05f * Frame_Rate / FPS;
+								}
+								this->move.vec = this->add_vec_buf;
+							}
+							else {
+								easing_set(&this->move.vec, VECTOR_ref::zero(), 0.995f);
+							}
+						}
+						//操作
+						{
+							if (isReload()) {
+								this->key_.aim = false;
+							}
+							//引き金(左クリック)
+							easing_set(&this->gunanime_trigger->per, float(this->key_.shoot && !this->isRunning()), 0.5f);
+							//マグキャッチ(Rキー)
+							easing_set(&this->gunanime_magcatch->per, float(this->key_.reload), 0.5f);
+						}
+						//壁その他の判定
+						this->wall_col();
+						this->Set_body(ismine);
+						//lag演算
+						//if (!this->Damage.Get_alive()) {
+						this->frame_s.copy_frame(this->obj_body, this->lagframe_, &this->obj_lag);
+						this->obj_lag.work_anime();
+						//}
+						//obj_col演算
+						if (this->Damage.Get_alive()) {
+							this->obj_col.work_anime();
+						}
+					}
 				}
-				else {
-					this->operation(!playing, fov_per, ismine ? 0 : 1);
-					//壁その他の判定
-					this->wall_col();
-					this->Set_body(ismine);
-					//lag演算
-					//if (!this->Damage.Get_alive()) {
-					this->frame_s.copy_frame(this->obj_body, this->lagframe_, &this->obj_lag);
-					this->obj_lag.work_anime();
-					//}
-					//obj_col演算
-					if (this->Damage.Get_alive()) {
-						this->obj_col.work_anime();
+				{
+					//乗り降り
+					this->canride_f = false;
+					if (!this->isRide()) {
+						for (auto& v : *ALL_v) {
+							if (((this->Get_pos() - v->Get_pos()).size() < 3.f) && !v->isRide() && v->Damage.Get_alive()) {
+								this->canride_f = true;
+								if (this->key_.ride) {
+									this->Ride_on(&v);	//乗るときの登録
+									break;
+								}
+							}
+						}
+					}
+					else {
+						if (this->key_.ride) {
+							this->Ride_on(nullptr);				//乗るときの登録
+						}
 					}
 				}
 
@@ -4611,7 +4598,7 @@ namespace FPS_n2 {
 					{
 						if (this->gunanime_first->per == 1.f) {
 							if ((this->gunanime_first->time > this->gunanime_first->alltime / 3.f) && this->slide_sound_f) {
-								Sounds.Get(EnumSound::Slide).Play_3D(audio.use_slide, GunControl::Get_pos_gun(), 15.f);
+								SE.Get(EnumSound::Slide).Play_3D(audio.use_slide, GunControl::Get_pos_gun(), 15.f);
 								this->slide_sound_f = false;
 							}
 							this->gunanime_first->Update(false, 0.35f);
@@ -4652,12 +4639,12 @@ namespace FPS_n2 {
 							if (!this->sort_f) {
 								this->sort_f = true;
 								this->sorting_timer = 1.f;
-								Sounds.Get(EnumSound::Sort_MAG).Play_3D(0, GunControl::Get_pos_gun(), 15.f);
+								SE.Get(EnumSound::Sort_MAG).Play_3D(0, GunControl::Get_pos_gun(), 15.f);
 								this->gun_stat_now->sort_magazine();
 							}
 							else {
 								this->sorting_timer = 3.f;
-								Sounds.Get(EnumSound::Cate_Load).Play_3D(0, GunControl::Get_pos_gun(), 15.f);
+								SE.Get(EnumSound::Cate_Load).Play_3D(0, GunControl::Get_pos_gun(), 15.f);
 								this->gun_stat_now->load_magazine();
 								//マガジン輩出(空)
 								if (this->Get_mag_in().back().m_cnt == 0) {
@@ -4686,7 +4673,7 @@ namespace FPS_n2 {
 											this->gunanime_first->per = 1.f;
 										}
 										this->gun_stat_now->chamber_in();//チャンバーに装填
-										Sounds.Get(EnumSound::MAG_Set).Play_3D(audio.use_magset, GunControl::Get_pos_gun(), 15.f);
+										SE.Get(EnumSound::MAG_Set).Play_3D(audio.use_magset, GunControl::Get_pos_gun(), 15.f);
 										this->reloadf = false;
 									}
 									if (DrawPts->use_vr) {
@@ -4716,14 +4703,14 @@ namespace FPS_n2 {
 						}
 
 						//射撃
-						if (GunControl::Calc_Gun((this->LEFT_hand ? 3.f : 1.f) * (this->isSquat() ? 1.75f : 1.0f), isReload(), this->view_ing)) {
+						if (GunControl::Calc((this->LEFT_hand ? 3.f : 1.f) * (this->isSquat() ? 1.75f : 1.0f), isReload(), this->view_ing)) {
 							//排莢、弾
 							GunControl::create_cart();
 							BulletControl::create_bullet(&this->base.thisparts->ammo[0], this->Get_maz());
 							//エフェクト
 							calc_shot_effect();
 							//サウンド
-							Sounds.Get(EnumSound::Shot).Play_3D(audio.use_shot, GunControl::Get_pos_gun(), 200.f, (this->Get_mazzuletype() == 1) ? 192 : 255);
+							SE.Get(EnumSound::Shot).Play_3D(audio.use_shot, GunControl::Get_pos_gun(), 200.f, (this->Get_mazzuletype() == 1) ? 192 : 255);
 						}
 						//弾の処理
 						BulletControl::Update();
@@ -4751,12 +4738,12 @@ namespace FPS_n2 {
 						if (this->breath_timer == 0.f) {
 							if (this->Damage.Get_alive()) {
 								if (this->isRunning()) {
-									Sounds.Get(EnumSound::Voice_Breath_Run).Play_3D(0, this->Get_pos(), 15.f, 163);
+									VOICE.Get(EnumSound::Voice_Breath_Run).Play_3D(0, this->Get_pos(), 15.f, 163);
 									this->breath_timer = 0.5f;
 								}
 								else {
-									Sounds.Get(EnumSound::Voice_Breath).Play_3D(0, this->Get_pos(), 10.f, 128);
-									this->breath_timer = 1.0f;
+									VOICE.Get(EnumSound::Voice_Breath).Play_3D(0, this->Get_pos(), 10.f, 128);
+									this->breath_timer = 1.2f;
 								}
 							}
 						}
@@ -4841,7 +4828,7 @@ namespace FPS_n2 {
 				}
 			}
 			/*キャラ+銃描画*/
-			void Draw_chara() noexcept {
+			void Draw_chara(void) noexcept {
 				if (this->flag_canlook_player) {
 					if (this->Damage.Get_alive()) {
 						this->obj_body.DrawModel();
@@ -4852,9 +4839,6 @@ namespace FPS_n2 {
 					}
 					Draw_gun();
 				}
-
-				//auto ttt = this->Get_pos(true);
-				//DrawCube3D((ttt + VECTOR_ref::vget(-1.8f, 0, -1.8f)).get(), (ttt + VECTOR_ref::vget(1.8f, 1.8f, 1.8f)).get(), GetColor(255, 0, 0), GetColor(255, 0, 0), FALSE);
 			}
 			//銃描画
 			void Draw_gun(int Drawlevel = 1) noexcept {
@@ -4890,7 +4874,6 @@ namespace FPS_n2 {
 					break;
 				}
 			}
-			/*UI描画*/
 			/*HPバーを表示する場所*/
 			const auto Set_HP_UI(void) noexcept {
 				if (this->Damage.IsShow()) {
@@ -4915,34 +4898,159 @@ namespace FPS_n2 {
 		};
 		//戦車
 		class PLAYER_VEHICLE : public PLAYER_COMMON, public GunControl_COMMON, public TankControl, public VEHICLE_HitControl {
-		public:
-			const bool ads_on(void) const noexcept override { return this->range == 0.f; }													//ADS中
 		private:
 			float view_xrad = 0.f;
 			float view_yrad = 0.f;
-			std::array<bool, 6> key{ false };											//キー
-			float engine_time = 0.f;													/*エンジン音声*/
+			std::array<bool, 6> key{ false };															//キー
+			float engine_time = 0.f;																	/*エンジン音声*/
 			float range = 6.0f;
 			float range_r = range;
 			float range_change = range / 10.f;
 			float ratio = 1.f;
 			bool changeview = false;
-		public:
 			MATRIX_ref lookvec;
 			HIT_ACTIVE Hit_active;
 		public:
-			void Reset_range(void) noexcept { range = 6.f; }
-			const VECTOR_ref& Get_pos() const noexcept { return this->move.pos; }
-			const float& Get_ratio(void) const noexcept { return this->ratio; }		//UI用
-			const bool Get_changeview(void) const noexcept { return this->changeview; }													//ADS中
-
-			bool HitCheck(int m, moves& ray) {
-				return HitCheck_t(m, ray, this->col_line(ray.repos, ray.pos, m));
+			void SetHit(const moves& this_move, const  VECTOR_ref& Put_pos, const  VECTOR_ref& Put_normal, const VECTOR_ref& ammo_nomal, const float&caliber, bool isPene) {
+				this->Hit_active.Set(this_move, Put_pos, Put_normal, ammo_nomal, caliber, isPene);
 			}
-			//const Audios_tanks& Get_audio() const noexcept { return this->audio; }																	//audio(メニューのみ)
-
+			const float& Get_body_yrad(void) const noexcept override { return TankControl::Get_body_yrad(); }			//ミニマップ用
+			const VECTOR_ref Get_pos(bool no_y = false) const noexcept override { return this->move.pos; }
+			const bool ads_on(void) const noexcept override { return this->range == 0.f; }								//ADS中
+			const auto& Get_ratio(void) const noexcept { return this->ratio; }											//UI用
+			const auto& Get_changeview(void) const noexcept { return this->changeview; }								//照準変更時
+			const MATRIX_ref& Get_lookvec(void) const noexcept { return this->lookvec; }								//照準変更時
+			void Reset_range(void) noexcept { range = 6.f; }
+			bool HitCheck(int m, moves& ray) { return VEHICLE_HitControl::HitCheck(m, ray.repos, this->col_line(ray.repos, ray.pos, m)); }
+			void Ride(std::shared_ptr<PLAYER_CHARA>* MINE_c_t) {
+				this->MINE_c = MINE_c_t;
+				this->Set_xradP((*MINE_c_t)->Get_xradP());
+				this->lookvec = (*MINE_c_t)->GetHMDmat();
+				this->Set_bullet_Ptr();
+			}
 		public:
 			using PLAYER_COMMON::PLAYER_COMMON;
+			void Set(Vehcs* vehc_data_t, const MV1& hit_pic) {
+				this->move = this->spawn;
+				this->use_veh = vehc_data_t;
+				{
+					//
+					this->obj_body = this->use_veh->Get_obj().Duplicate();
+					this->obj_body.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
+					//コリジョン
+					this->obj_col = this->use_veh->Get_col().Duplicate();
+					PLAYER_COMMON::SetupCollInfo();
+					VEHICLE_HitControl::Set(this->obj_col.mesh_num());
+				}
+				//戦車set
+				TankControl::Set(this->obj_body, this->move, MAPPTs->world, MINE_v);
+				//ヒットポイント
+				Damage.Set((int)this->obj_col.mesh_num(), this->use_veh->Get_HP());
+				//弾痕
+				Hit_active.Set(hit_pic);
+			}
+			/*戦車スポーン*/
+			void Spawn(void) noexcept override {
+				PLAYER_COMMON::Spawn();
+				this->move = this->spawn;
+				TankControl::Spawn(this->move);
+			}
+			/**/
+			void Update(const cam_info& cams, float fov_per) {
+				Damage.Update();
+				if (isRide() && Damage.Get_alive()) {
+					const opes& key_ = (*MINE_c)->Get_key_();
+					key[0] = key_.shoot;	//射撃
+					key[1] = key_.aim;		//マシンガン(現状無し)
+					key[2] = key_.wkey;		//前進
+					key[3] = key_.skey;		//後退
+					key[4] = key_.dkey;		//右
+					key[5] = key_.akey;		//左
+					{
+						if (false) { //砲塔ロック
+							view_yrad = 0.f;
+							view_xrad = 0.f;
+						}
+						else {
+							//狙い
+							float x_m = 0.f, y_m = 0.f;
+							PLAYER_COMMON::Get_MouseVec(&x_m, &y_m, fov_per);
+							if (ads_on()) {
+								easing_set(&view_yrad, deg2rad(x_m) * 0.1f, 0.1f);
+								easing_set(&view_xrad, deg2rad(-y_m) * 0.1f, 0.1f);
+								float limit = this->use_veh->Get_turret_rad_limit() / FPS;
+								lookvec = MATRIX_ref::RotX(-this->Get_xradP()) * lookvec;
+								lookvec *= MATRIX_ref::RotY(std::clamp(view_yrad, -limit, limit));										//y軸回転(旋回)
+								lookvec = MATRIX_ref::RotX(this->Add_xradP(view_xrad, -limit, limit)) * lookvec;						//x軸回転(仰俯)
+							}
+							else {
+								VECTOR_ref vec_a;
+								lookvec = MATRIX_ref::RotX(-this->Get_xradP()) * lookvec;
+								lookvec *= MATRIX_ref::RotY(deg2rad(x_m) * 0.1f);														//y軸回転(旋回)
+								lookvec = MATRIX_ref::RotX(this->Add_xradP(deg2rad(-y_m) * 0.1f, deg2rad(-80), deg2rad(60))) * lookvec;	//x軸回転(仰俯)
+								VECTOR_ref endpos = cams.campos + (cams.camvec - cams.campos).Norm() * (100.f);
+								MAPPTs->map_col_nearest(cams.campos, &endpos);															//マップに当たったか
+								vec_a = (this->obj_body.frame(TankControl::Guninfo(0).Get_frame2().first) - endpos).Norm();
+								//反映
+								auto vec_z = this->obj_body.frame(TankControl::Guninfo(0).Get_frame3().first) - this->obj_body.frame(TankControl::Guninfo(0).Get_frame2().first);
+								float z_hyp = std::hypotf(vec_z.x(), vec_z.z());
+								float a_hyp = std::hypotf(vec_a.x(), vec_a.z());
+								float cost = (vec_a.z() * vec_z.x() - vec_a.x() * vec_z.z()) / (a_hyp * z_hyp);
+
+								view_yrad = (atan2f(cost, sqrtf(std::abs(1.f - cost * cost)))) / 5.f; //cos取得2D
+								view_xrad = (atan2f(-vec_z.y(), z_hyp) - atan2f(vec_a.y(), a_hyp)) / 5.f;
+							}
+						}
+					}
+				}
+				else {
+					key[0] = false;	//射撃
+					key[1] = false;	//マシンガン
+					key[2] = false;	//前進
+					key[3] = false;	//後退
+					key[4] = false;	//右
+					key[5] = false;	//左
+					view_yrad = 0.f;
+					view_xrad = 0.f;
+				}
+				//戦車演算
+				{
+					this->speed_base = this->use_veh->Get_flont_speed_limit() / 3.6f;
+					this->nearhit = false;
+					//転輪
+					TankControl::Update_Tank(
+						this->obj_body, this->obj_col,
+						MAPPTs,
+						this->move,
+						(this->Get_pos().y() == -this->use_veh->Get_down_in_water()),
+						this->key, this->view_xrad, this->view_yrad);
+				}
+			}
+			void Update_after(void) noexcept {
+				//戦車演算
+				{
+					auto pos_t2 = this->obj_body.GetMatrix().pos();
+					//戦車座標反映
+					TankControl::Update_Tank2(this->obj_body, this->move);
+					this->add_vec_real = this->Get_pos() - pos_t2;
+					this->obj_col.SetMatrix(this->obj_body.GetMatrix());
+				}
+				//エンジン音
+				if (this->engine_time == 0.f) {
+					SE.Get(EnumSound::Tank_engine).Play_3D(0, this->Get_pos(), 50.f, 64);
+					this->engine_time = 1.f;
+				}
+				else {
+					this->engine_time -= 1.f / FPS;
+					if (this->engine_time <= 0.f) {
+						this->engine_time = 0.f;
+					}
+				}
+				//エフェクトの処理
+				Update_effect();
+				//弾痕
+				Hit_active.Update(this->move);
+			}
 			/*カメラ指定*/
 			void Set_cam(cam_info& camera_main, const float fov_base) noexcept {
 				VECTOR_ref eyepos, eyetgt;
@@ -4978,146 +5086,14 @@ namespace FPS_n2 {
 				camera_main.set_cam_pos(eyepos, eyetgt, this->move.mat.yvec());
 				camera_main.near_ = 0.1f;
 			}
-			void Set(std::vector<Vehcs>& vehc_data_t, int itr, const MV1& hit_pic) {
-				this->move = this->spawn;
-				this->use_veh = &vehc_data_t[itr];
-				//
-				this->obj_body = this->use_veh->Get_obj().Duplicate();
-				this->obj_body.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
-				//コリジョン
-				this->obj_col = this->use_veh->Get_col().Duplicate();
-				for (int j = 0; j < this->obj_col.mesh_num(); j++) {
-					this->obj_col.SetupCollInfo(8, 8, 8, -1, j);
-				}
-				Set_hitres(this->obj_col.mesh_num());
-				//戦車set
-				TankControl::Set(this->obj_body, this->move, MAPPTs->world, MINE_v);
-				//ヒットポイント
-				Damage.Set((int)this->obj_col.mesh_num(), this->use_veh->Get_HP());
-				//弾痕
-				Hit_active.Set(hit_pic);
-			}
-			/*戦車スポーン*/
-			void Spawn() noexcept override {
-				PLAYER_COMMON::Spawn();
-				this->move = this->spawn;
-				TankControl::Spawn(this->move);
-			}
-			/**/
-			void Update(const cam_info& cams, float fov_per) {
-				if (isRide()) {
-					const opes& key_ = (*MINE_c)->Get_key_();
-					key[0] = key_.shoot;	//射撃
-					key[1] = key_.aim;		//マシンガン(現状無し)
-					key[2] = key_.wkey;		//前進
-					key[3] = key_.skey;		//後退
-					key[4] = key_.dkey;		//右
-					key[5] = key_.akey;		//左
-					{
-						if (false) { //砲塔ロック
-							view_yrad = 0.f;
-							view_xrad = 0.f;
-						}
-						else {
-							//狙い
-							float x_m = 0.f, y_m = 0.f;
-							key_move(x_m, y_m, fov_per);
-							if (ads_on()) {
-								easing_set(&view_yrad, deg2rad(x_m) * 0.1f, 0.1f);
-								easing_set(&view_xrad, deg2rad(-y_m) * 0.1f, 0.1f);
-								{
-									float limit = this->use_veh->Get_turret_rad_limit() / FPS;
-									//y軸回転(旋回)
-									lookvec = MATRIX_ref::RotX(-this->xrad_p) * lookvec;
-									this->xrad_p += std::clamp(view_xrad, -limit, limit);
-									lookvec *= MATRIX_ref::RotY(std::clamp(view_yrad, -limit, limit));
-									//x軸回転(仰俯)
-									lookvec = MATRIX_ref::RotX(this->xrad_p) * lookvec;
-								}
-							}
-							else {
-								VECTOR_ref vec_a;
-								{
-									//y軸回転(旋回)
-									lookvec = MATRIX_ref::RotX(-this->xrad_p) * lookvec;
-									this->xrad_p = std::clamp(this->xrad_p - deg2rad(y_m) * 0.1f, deg2rad(-80), deg2rad(60));
-									lookvec *= MATRIX_ref::RotY(deg2rad(x_m) * 0.1f);
-									//x軸回転(仰俯)
-									lookvec = MATRIX_ref::RotX(this->xrad_p) * lookvec;
-
-
-									VECTOR_ref endpos = cams.campos + (cams.camvec - cams.campos).Norm() * (100.f);
-									//マップに当たったか
-									//mapparts->map_col_line_nearest(campos, &endpos);
-									vec_a = (this->obj_body.frame(TankControl::Guninfo(0).Get_frame2().first) - endpos).Norm();
-								}
-								//反映
-								auto vec_z = this->obj_body.frame(TankControl::Guninfo(0).Get_frame3().first) - this->obj_body.frame(TankControl::Guninfo(0).Get_frame2().first);
-								float z_hyp = std::hypotf(vec_z.x(), vec_z.z());
-								float a_hyp = std::hypotf(vec_a.x(), vec_a.z());
-								float cost = (vec_a.z() * vec_z.x() - vec_a.x() * vec_z.z()) / (a_hyp * z_hyp);
-
-								view_yrad = (atan2f(cost, sqrtf(std::abs(1.f - cost * cost)))) / 5.f; //cos取得2D
-								view_xrad = (atan2f(-vec_z.y(), z_hyp) - atan2f(vec_a.y(), a_hyp)) / 5.f;
-							}
-						}
-					}
-				}
-				else {
-					key[0] = false;	//射撃
-					key[1] = false;	//マシンガン
-					key[2] = false;	//前進
-					key[3] = false;	//後退
-					key[4] = false;	//右
-					key[5] = false;	//左
-					view_yrad = 0.f;
-					view_xrad = 0.f;
-				}
-				//戦車演算
-				{
-					this->nearhit = false;
-					//転輪
-					TankControl::Update_Tank(
-						this->obj_body, this->obj_col,
-						MAPPTs,
-						this->move,
-						(this->Get_pos().y() == -this->use_veh->Get_down_in_water()),
-						this->key, this->speed, this->view_xrad, this->view_yrad);
-				}
-			}
-			void Update_after(void) noexcept {
-				//戦車演算
-				{
-					auto pos_t2 = this->obj_body.GetMatrix().pos();
-					//戦車座標反映
-					TankControl::Update_Tank2(this->obj_body, this->move, this->speed);
-					this->add_vec_real = this->Get_pos() - pos_t2;
-					this->obj_col.SetMatrix(this->obj_body.GetMatrix());
-				}
-				//エンジン音
-				if (this->engine_time == 0.f) {
-					Sounds.Get(EnumSound::Tank_engine).Play_3D(0, this->Get_pos(), 50.f, 64);
-					this->engine_time = 1.f;
-				}
-				else {
-					this->engine_time -= 1.f / FPS;
-					if (this->engine_time <= 0.f) {
-						this->engine_time = 0.f;
-					}
-				}
-				//エフェクトの処理
-				Update_effect();
-				//弾痕
-				Hit_active.Update(this->move);
-			}
 			/*描画*/
 			void Draw(void) noexcept {
 				if (ads_on()) {
 				}
 				else {
-					MV1SetFrameTextureAddressTransform(this->obj_body.get(), 0, -this->wheel_Left * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
+					MV1SetFrameTextureAddressTransform(this->obj_body.get(), 0, -TankControl::Get_wheel_Left() * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
 					this->obj_body.DrawMesh(0);
-					MV1SetFrameTextureAddressTransform(this->obj_body.get(), 0, -this->wheel_Right * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
+					MV1SetFrameTextureAddressTransform(this->obj_body.get(), 0, -TankControl::Get_wheel_Right() * 0.1f, 0.f, 1.f, 1.f, 0.5f, 0.5f, 0.f);
 					this->obj_body.DrawMesh(1);
 					MV1ResetFrameTextureAddressTransform(this->obj_body.get(), 0);
 					for (int i = 2; i < this->obj_body.mesh_num(); i++) {
@@ -5128,24 +5104,23 @@ namespace FPS_n2 {
 				}
 			}
 			/*レーザー、ライト描画*/
-			void Draw_LAM_Effect() noexcept {
+			void Draw_LAM_Effect(void) noexcept {
 				if (isRide()) {
 					auto StartPos = this->obj_body.frame(TankControl::Guninfo(0).Get_frame3().first);
 					Draw_Lazer_Effect(StartPos, StartPos - this->obj_body.frame(TankControl::Guninfo(0).Get_frame2().first), !ads_on(), 1.f);
 				}
 			}
-			//
-			void Dispose() noexcept override {
+			/*おわり*/
+			void Dispose(void) noexcept override {
 				TankControl::Dispose();
 				PLAYER_COMMON::Dispose();
 				Hit_active.Dispose();
 				this->Reset();
 			}
-			void Reset() noexcept override {
+			void Reset(void) noexcept override {
 				TankControl::Reset();
 				PLAYER_COMMON::Reset();
-				this->move.vec.clear();
-				Reset_hitres();
+				VEHICLE_HitControl::Reset();
 			}
 		};
 	};

@@ -15,6 +15,8 @@ namespace FPS_n2 {
 			VECTOR_ref Light_vec;
 			COLOR_F Light_color = GetColorF(0, 0, 0, 0);
 		protected:
+			//キー
+			PLAYERclass::PLAYER_COMMON::opes key_;
 			//引き継ぐ
 			std::shared_ptr<OPTION> OPTPTs;
 			std::shared_ptr<GUNPARTS_Control> GunPartses;
@@ -114,8 +116,8 @@ namespace FPS_n2 {
 
 			virtual void Item_Draw(void) noexcept {}
 			virtual void LAST_Draw(void) noexcept {}
-			virtual void KeyOperation_VR() noexcept {}
-			virtual void KeyOperation() noexcept {}
+			virtual void KeyOperation_VR(void) noexcept {}
+			virtual void KeyOperation(void) noexcept {}
 		};
 		//
 		class LOADING : public TEMPSCENE {
@@ -309,20 +311,20 @@ namespace FPS_n2 {
 				//演算
 				{
 					SetMouseDispFlag(TRUE);
-					left.GetInput(mine->Get_key_().akey);
-					right.GetInput(mine->Get_key_().dkey);
+					left.GetInput(key_.akey);
+					right.GetInput(key_.dkey);
 					if (left.trigger()) {
-						Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						--P_select;
 						changef = true;
 					}
 					if (right.trigger()) {
-						Sounds.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						++P_select;
 						changef = true;
 					}
-					if (mine->Get_key_().jamp) {
-						Sounds.Get(EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					if (key_.jamp) {
+						SE.Get(EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
 					ControlSel();
 					if (changef) {
@@ -330,31 +332,29 @@ namespace FPS_n2 {
 						Load(putout_Preset());
 					}
 				}
-				return (!mine->Get_key_().jamp);
+				return (!key_.jamp);
 			}
 			void UI_Draw(void) noexcept override {
 				UIparts->UI_Draw(GunPartses, save_parts, putout_Preset());
 			}
-			void KeyOperation_VR() noexcept override {
+			void KeyOperation_VR(void) noexcept override {
 #ifdef _USE_OPENVR_
-				auto& mine_k = mine->set_key_();
 				if (DrawPts->get_hand2_num() != -1) {
 					auto ptr_ = DrawPts->get_device_hand2();
 					if (ptr_->turn && ptr_->now) {
-						mine_k.dkey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
-						mine_k.akey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() < -0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
-						mine_k.jamp = ((ptr_->on[0] & BUTTON_SIDE) != 0);																							//jamp
+						key_.dkey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
+						key_.akey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() < -0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
+						key_.jamp = ((ptr_->on[0] & BUTTON_SIDE) != 0);																							//jamp
 					}
 				}
 #endif // _USE_OPENVR_
 			}
-			void KeyOperation() noexcept override {
-				auto& mine_k = mine->set_key_();
+			void KeyOperation(void) noexcept override {
 				//設定
 				KeyBind->set_Mode(1);
-				mine_k.dkey = KeyBind->Get_key_use(EnumKeyBind::RIGHT);
-				mine_k.akey = KeyBind->Get_key_use(EnumKeyBind::LEFT);
-				mine_k.jamp = KeyBind->Get_key_use(EnumKeyBind::JUMP);
+				key_.dkey = KeyBind->Get_key_use(EnumKeyBind::RIGHT);
+				key_.akey = KeyBind->Get_key_use(EnumKeyBind::LEFT);
+				key_.jamp = KeyBind->Get_key_use(EnumKeyBind::JUMP);
 			}
 		};
 		//
@@ -620,12 +620,12 @@ namespace FPS_n2 {
 						mine->set_mag_pos();
 						mine->Mag_setpos_Nomal();
 						//キー
-						up.GetInput(mine->Get_key_().wkey);
-						down.GetInput(mine->Get_key_().skey);
-						left.GetInput(mine->Get_key_().akey);
-						right.GetInput(mine->Get_key_().dkey);
-						shot.GetInput(mine->Get_key_().shoot);
-						Rot.GetInput(mine->Get_key_().select);
+						up.GetInput(key_.wkey);
+						down.GetInput(key_.skey);
+						left.GetInput(key_.akey);
+						right.GetInput(key_.dkey);
+						shot.GetInput(key_.shoot);
+						Rot.GetInput(key_.select);
 						//
 						if (Start_b) {
 							Start_b = false;
@@ -691,7 +691,7 @@ namespace FPS_n2 {
 						{
 							change_per = 1.f;
 
-							Sounds.Get(EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							SE.Get(EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
 
 							xrad_t = viewparts_buf.y() * 1000.f;
 							yrad_t = ((viewparts_buf.x() > 0.f) ? 90.f - viewparts_buf.z() * 100.f : -90.f + viewparts_buf.z() * 100.f);
@@ -762,8 +762,8 @@ namespace FPS_n2 {
 						mine->Check_CameraViewClip(false);
 					}
 				}
-				if (mine->Get_key_().jamp) {
-					Sounds.Get(EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				if (key_.jamp) {
+					SE.Get(EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					return false;
 				}
 				return true;
@@ -794,39 +794,37 @@ namespace FPS_n2 {
 				mine->Draw_gun();
 				mine->Get_parts(EnumGunParts::PARTS_MAGAZINE)->Draw();
 			}
-			void KeyOperation_VR() noexcept override {
+			void KeyOperation_VR(void) noexcept override {
 #ifdef _USE_OPENVR_
-				auto& mine_k = mine->set_key_();
 				if (DrawPts->get_hand1_num() != -1) {
 					auto ptr_ = DrawPts->get_device_hand1();
 					if (ptr_->turn && ptr_->now) {
-						mine_k.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
-						mine_k.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);	//セレクター
+						key_.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
+						key_.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);	//セレクター
 					}
 				}
 				if (DrawPts->get_hand2_num() != -1) {
 					auto ptr_ = DrawPts->get_device_hand2();
 					if (ptr_->turn && ptr_->now) {
-						mine_k.wkey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.y() > 0.5f && ptr_->touch.x() < 0.5f && ptr_->touch.x() > -0.5f);		//running
-						mine_k.skey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.y() < -0.5f && ptr_->touch.x() < 0.5f && ptr_->touch.x() > -0.5f);		//running
-						mine_k.dkey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
-						mine_k.akey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() < -0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
-						mine_k.jamp = ((ptr_->on[0] & BUTTON_SIDE) != 0);									//jamp
+						key_.wkey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.y() > 0.5f && ptr_->touch.x() < 0.5f && ptr_->touch.x() > -0.5f);		//running
+						key_.skey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.y() < -0.5f && ptr_->touch.x() < 0.5f && ptr_->touch.x() > -0.5f);		//running
+						key_.dkey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
+						key_.akey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() < -0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
+						key_.jamp = ((ptr_->on[0] & BUTTON_SIDE) != 0);									//jamp
 					}
 				}
 #endif // _USE_OPENVR_
 			}
-			void KeyOperation() noexcept override {
-				auto& mine_k = mine->set_key_();
+			void KeyOperation(void) noexcept override {
 				//設定
 				KeyBind->set_Mode(1);
-				mine_k.wkey = KeyBind->Get_key_use(EnumKeyBind::FRONT);
-				mine_k.skey = KeyBind->Get_key_use(EnumKeyBind::BACK);
-				mine_k.dkey = KeyBind->Get_key_use(EnumKeyBind::RIGHT);
-				mine_k.akey = KeyBind->Get_key_use(EnumKeyBind::LEFT);
-				mine_k.jamp = KeyBind->Get_key_use(EnumKeyBind::JUMP);
-				mine_k.shoot = KeyBind->Get_mouse_use(EnumMouseBind::SHOOT);
-				mine_k.select = KeyBind->Get_mouse_use(EnumMouseBind::CHANGE_SEL);
+				key_.wkey = KeyBind->Get_key_use(EnumKeyBind::FRONT);
+				key_.skey = KeyBind->Get_key_use(EnumKeyBind::BACK);
+				key_.dkey = KeyBind->Get_key_use(EnumKeyBind::RIGHT);
+				key_.akey = KeyBind->Get_key_use(EnumKeyBind::LEFT);
+				key_.jamp = KeyBind->Get_key_use(EnumKeyBind::JUMP);
+				key_.shoot = KeyBind->Get_mouse_use(EnumMouseBind::SHOOT);
+				key_.select = KeyBind->Get_mouse_use(EnumMouseBind::CHANGE_SEL);
 			}
 		};
 		//
@@ -891,8 +889,8 @@ namespace FPS_n2 {
 						this->camera_TPS.camup = VECTOR_ref::up();
 					}
 				}
-				const auto ON() const noexcept { return key_TPS.on(); }
-				auto& Get_camera() noexcept { return camera_TPS; }
+				const auto ON(void) const noexcept { return key_TPS.on(); }
+				auto& Get_camera(void) noexcept { return camera_TPS; }
 			};
 			std::unique_ptr<TPS_parts> TPSparts;
 			std::unique_ptr<HostPassEffect> Hostpassparts_TPS;
@@ -963,7 +961,7 @@ namespace FPS_n2 {
 					v = std::make_shared<PLAYERclass::PLAYER_VEHICLE>();
 					v->Set_Ptr_Common(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
 					v->Set_Ptr(&this->chara, nullptr, &this->vehicle, &v);
-					v->Set(vehc_data, int(&v - &this->vehicle.front()), hit_pic);
+					v->Set(&vehc_data[&v - &this->vehicle.front()], hit_pic);
 				}
 			}
 		public:
@@ -1017,6 +1015,9 @@ namespace FPS_n2 {
 					v->SetUp_bullet(MAPPTs, DrawPts, &this->hit_obj_p, &this->hit_b_obj_p);
 					v->Set_bullet_Ptr();
 				}
+
+				this->chara[0]->Ride_on(&this->vehicle[0]);
+				this->chara[1]->Ride_on(&this->vehicle[1]);
 				//UI
 				UIparts->Set_Ptr_Common(MAPPTs, DrawPts);
 				//
@@ -1057,25 +1058,6 @@ namespace FPS_n2 {
 				//共通演算//2～3ms
 				for (auto& c : this->chara) {
 					c->Update(RULEparts->Get_Playing(), this->camera_main.fov / this->fov_base, this->meds_data, this->gres_data, &c == &this->Get_Mine());
-					//乗り降り
-					c->set_canride_f() = false;
-					if (!c->isRide()) {
-						for (auto& v : this->vehicle) {
-							auto range = c->Get_pos() - v->Get_pos();
-							if (range.size() < 3.f) {
-								c->set_canride_f() = true;
-								if ((&this->Get_Mine() == &c) && this->Get_Mine()->Get_key_().ride) {
-									c->Ride_on(&v);	//乗るときの登録
-									break;
-								}
-							}
-						}
-					}
-					else {
-						if (this->Get_Mine()->Get_key_().ride) {
-							this->Get_Mine()->Ride_on(nullptr);				//乗るときの登録
-						}
-					}
 				}
 				for (auto& v : this->vehicle) {
 					v->Update(this->camera_main, this->camera_main.fov / this->fov_base);
@@ -1096,7 +1078,7 @@ namespace FPS_n2 {
 				RULEparts->Update();
 				//TPS描画
 				TPSparts->Set_info(this->chara);
-				TPSparts->key_TPS.GetInput(this->Get_Mine()->Get_key_().TPS);
+				TPSparts->key_TPS.GetInput(key_.TPS);
 				if (TPSparts->ON()) {
 					//影用意
 					DrawPts->Ready_Shadow(TPSparts->Get_camera().campos, [&] {Shadow_Draw(); }, [&] {Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(15.f, 12.5f, 15.f));
@@ -1225,58 +1207,59 @@ namespace FPS_n2 {
 				MiniMAPPTs->Draw();
 			}
 
-			void KeyOperation_VR() noexcept override {
+			void KeyOperation_VR(void) noexcept override {
 #ifdef _USE_OPENVR_
-				auto& mine_k = Get_Mine()->set_key_();
 				if (DrawPts->get_hand1_num() != -1) {
 					auto ptr_ = DrawPts->get_device_hand1();
 					if (ptr_->turn && ptr_->now) {
-						mine_k.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
-						mine_k.reload = ((ptr_->on[0] & BUTTON_SIDE) != 0);																						//マグキャッチ
-						mine_k.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);	//セレクター
+						key_.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
+						key_.reload = ((ptr_->on[0] & BUTTON_SIDE) != 0);																						//マグキャッチ
+						key_.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);	//セレクター
 					}
 				}
 				if (DrawPts->get_hand2_num() != -1) {
 					auto ptr_ = DrawPts->get_device_hand2();
 					if (ptr_->turn && ptr_->now) {
-						mine_k.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);		//マガジン持つ
-						mine_k.have_item = ((ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0);	//アイテム取得
-						mine_k.sort_magazine = false;									//
-						mine_k.view_gun = false;										//
-						mine_k.drop_ = false;											//
-						mine_k.throw_gre = false;										//
-						mine_k.running = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0);		//running
-						mine_k.jamp = ((ptr_->on[0] & BUTTON_SIDE) != 0);				//jamp
+						key_.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);		//マガジン持つ
+						key_.have_item = ((ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0);	//アイテム取得
+						key_.sort_magazine = false;									//
+						key_.view_gun = false;										//
+						key_.drop_ = false;											//
+						key_.throw_gre = false;										//
+						key_.running = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0);		//running
+						key_.jamp = ((ptr_->on[0] & BUTTON_SIDE) != 0);				//jamp
 					}
 				}
+				Get_Mine()->set_key_() = key_;
 #endif // _USE_OPENVR_
 			}
-			void KeyOperation() noexcept override {
-				auto& mine_k = Get_Mine()->set_key_();
+			void KeyOperation(void) noexcept override {
 				//設定
 				KeyBind->set_Mode(0);
-				mine_k.have_mag = true;
-				mine_k.wkey = KeyBind->Get_key_use(EnumKeyBind::FRONT);
-				mine_k.skey = KeyBind->Get_key_use(EnumKeyBind::BACK);
-				mine_k.dkey = KeyBind->Get_key_use(EnumKeyBind::RIGHT);
-				mine_k.akey = KeyBind->Get_key_use(EnumKeyBind::LEFT);
-				mine_k.qkey = KeyBind->Get_key_use(EnumKeyBind::Q);
-				mine_k.ekey = KeyBind->Get_key_use(EnumKeyBind::E);
-				mine_k.reload = KeyBind->Get_key_use(EnumKeyBind::RELOAD);
-				mine_k.have_item = KeyBind->Get_key_use(EnumKeyBind::GET_ITEM);
-				mine_k.throw_gre = KeyBind->Get_key_use(EnumKeyBind::THROW_GRE);
-				KeyBind->Get_key_use_ID(EnumKeyBind::SIT).set_key(mine_k.squat);	//記憶
-				mine_k.squat = KeyBind->Get_key_use(EnumKeyBind::SIT);
-				mine_k.sort_magazine = KeyBind->Get_key_use(EnumKeyBind::SORT_MAG);
-				mine_k.running = KeyBind->Get_key_use(EnumKeyBind::RUN);
-				mine_k.jamp = KeyBind->Get_key_use(EnumKeyBind::JUMP);
-				mine_k.TPS = KeyBind->Get_key_use(EnumKeyBind::CHANGE_VIEW);
-				mine_k.view_gun = KeyBind->Get_key_use(EnumKeyBind::LOOKGUN);
-				mine_k.drop_ = KeyBind->Get_key_use(EnumKeyBind::MED);
-				mine_k.shoot = KeyBind->Get_mouse_use(EnumMouseBind::SHOOT);
-				mine_k.select = KeyBind->Get_mouse_use(EnumMouseBind::CHANGE_SEL);
-				mine_k.aim = KeyBind->Get_mouse_use(EnumMouseBind::AIM);
-				mine_k.ride = KeyBind->Get_key_use(EnumKeyBind::RIDE_ON);
+				key_.have_mag = true;
+				key_.wkey = KeyBind->Get_key_use(EnumKeyBind::FRONT);
+				key_.skey = KeyBind->Get_key_use(EnumKeyBind::BACK);
+				key_.dkey = KeyBind->Get_key_use(EnumKeyBind::RIGHT);
+				key_.akey = KeyBind->Get_key_use(EnumKeyBind::LEFT);
+				key_.qkey = KeyBind->Get_key_use(EnumKeyBind::Q);
+				key_.ekey = KeyBind->Get_key_use(EnumKeyBind::E);
+				key_.reload = KeyBind->Get_key_use(EnumKeyBind::RELOAD);
+				key_.have_item = KeyBind->Get_key_use(EnumKeyBind::GET_ITEM);
+				key_.throw_gre = KeyBind->Get_key_use(EnumKeyBind::THROW_GRE);
+				KeyBind->Get_key_use_ID(EnumKeyBind::SIT).set_key(key_.squat);	//記憶
+				key_.squat = KeyBind->Get_key_use(EnumKeyBind::SIT);
+				key_.sort_magazine = KeyBind->Get_key_use(EnumKeyBind::SORT_MAG);
+				key_.running = KeyBind->Get_key_use(EnumKeyBind::RUN);
+				key_.jamp = KeyBind->Get_key_use(EnumKeyBind::JUMP);
+				key_.TPS = KeyBind->Get_key_use(EnumKeyBind::CHANGE_VIEW);
+				key_.view_gun = KeyBind->Get_key_use(EnumKeyBind::LOOKGUN);
+				key_.drop_ = KeyBind->Get_key_use(EnumKeyBind::MED);
+				key_.shoot = KeyBind->Get_mouse_use(EnumMouseBind::SHOOT);
+				key_.select = KeyBind->Get_mouse_use(EnumMouseBind::CHANGE_SEL);
+				key_.aim = KeyBind->Get_mouse_use(EnumMouseBind::AIM);
+				key_.ride = KeyBind->Get_key_use(EnumKeyBind::RIDE_ON);
+
+				Get_Mine()->set_key_() = key_;
 			}
 
 		};
