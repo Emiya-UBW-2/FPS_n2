@@ -88,8 +88,8 @@ namespace FPS_n2 {
 				}
 				SetCreate3DSoundFlag(FALSE);
 			}
-			void Play(int Sel_t, const int& type, const int& flag = 1, int vol_t = -1) {
-				shandle[Sel_t].handle[now].play(type, flag);
+			void Play(int Sel_t, const int& type_t, const int& Flag_t = 1, int vol_t = -1) {
+				shandle[Sel_t].handle[now].play(type_t, Flag_t);
 				if (vol_t != -1) {
 					set_vol = vol_t;
 					shandle[Sel_t].handle[now].vol((int)(vol_rate * set_vol));
@@ -1067,9 +1067,9 @@ namespace FPS_n2 {
 		auto& Get_name(void) const noexcept { return name; }
 		auto& Get_path(void) const noexcept { return path; }
 		auto& Get_model(void) const noexcept { return model; }
-		const frames& getmagazine_ammo_f(int i) const noexcept { return magazine_ammo_f[i]; }
-		const frames& getLEFT_mag_frame(int i) const noexcept { return LEFT_mag_frame[i]; }
-		const frames& getmagazine_f(int i) const noexcept { return magazine_f[i]; }
+		const frames& Get_magazine_ammo_f(int i) const noexcept { return magazine_ammo_f[i]; }
+		const frames& Get_LEFT_mag_frame(int i) const noexcept { return LEFT_mag_frame[i]; }
+		const frames& Get_magazine_f(int i) const noexcept { return magazine_f[i]; }
 		void Ready(std::string path_, std::string named) noexcept {
 			this->name = named;
 			this->path = path_ + named;
@@ -1347,7 +1347,7 @@ namespace FPS_n2 {
 	};
 	class HIT_ACTIVE {
 		struct Hit {		      /**/
-			bool flug{ false };   /*弾痕フラグ*/
+			bool Flag{ false };   /*弾痕フラグ*/
 			int use{ 0 };	      /*使用フレーム*/
 			MV1 pic;	      /*弾痕モデル*/
 			VECTOR_ref pos;	      /*座標*/
@@ -1358,7 +1358,7 @@ namespace FPS_n2 {
 	public :
 		void Set(const MV1& hit_pic) {
 			for (auto& h : this->hit_obj) {
-				h.flug = false;
+				h.Flag = false;
 				h.pic = hit_pic.Duplicate();
 				h.use = 0;
 				h.mat = MGetIdent();
@@ -1374,13 +1374,13 @@ namespace FPS_n2 {
 			this->hit_obj[this->hitbuf].use = (isPene) ? 0 : 1;				//弾痕
 			this->hit_obj[this->hitbuf].mat = MATRIX_ref::GetScale(scale)* MATRIX_ref::Axis1_YZ(y_vec, z_vec);
 			this->hit_obj[this->hitbuf].pos = MATRIX_ref::Vtrans(Put_pos - this_move.pos, this_move.mat.Inverse()) + y_vec * 0.005f;
-			this->hit_obj[this->hitbuf].flug = true;
+			this->hit_obj[this->hitbuf].Flag = true;
 			++this->hitbuf %= this->hit_obj.size();
 		}
 		void Update(const moves& this_move) {
 			//弾痕
 			for (auto& h : this->hit_obj) {
-				if (h.flug) {
+				if (h.Flag) {
 					h.pic.SetMatrix(h.mat* this_move.mat*MATRIX_ref::Mtrans(this_move.pos + MATRIX_ref::Vtrans(h.pos, this_move.mat)));
 				}
 			}
@@ -1388,14 +1388,14 @@ namespace FPS_n2 {
 		void Draw() {
 			//弾痕
 			for (auto& h : this->hit_obj) {
-				if (h.flug) {
+				if (h.Flag) {
 					h.pic.DrawFrame(h.use);
 				}
 			}
 		}
 		void Dispose() {
 			for (auto& h : this->hit_obj) {
-				h.flug = false;
+				h.Flag = false;
 				h.use = 0;
 				h.pic.Dispose();
 				h.pos = VGet(0, 0, 0);
@@ -1452,7 +1452,7 @@ namespace FPS_n2 {
 		std::vector<Ammos> ammo;
 		Audios_Gun audio;
 		//magazine
-		size_t mag_cnt = 1;
+		size_t Ammo_cap = 1;
 	public:
 		//setter
 		void Set_type(EnumGunParts type_t) { this->type = type_t; }
@@ -1523,7 +1523,7 @@ namespace FPS_n2 {
 					Set_Ammos_data(this->mod.mdata);						//弾データ
 				}
 				if (this->type == EnumGunParts::PARTS_MAGAZINE) {
-					this->mag_cnt = getparams::_long(this->mod.mdata);			//弾数
+					this->Ammo_cap = getparams::_long(this->mod.mdata);			//弾数
 					Set_Ammos_data(this->mod.mdata);						//弾データ
 				}
 				if (this->type == EnumGunParts::PARTS_LAM) {
@@ -1662,6 +1662,7 @@ namespace FPS_n2 {
 		size_t id_t = 0;
 		//マガジン専用パラメーター
 		GUNPARTs* ptr_mag{ nullptr };
+		size_t Ammo_cnt{ 30 };						//入る最大数
 		GUNPARTs magazine_param;
 		//治療キット専用パラメーター
 		Meds* ptr_med{ nullptr };
@@ -1670,7 +1671,7 @@ namespace FPS_n2 {
 		Grenades* ptr_gre{ nullptr };
 		Grenades grenades;
 	public:
-		bool flag_canlook_player{ true };
+		bool Flag_canlook_player{ true };
 		auto& Get_ptr_mag(void) const noexcept { return ptr_mag; }
 		auto& Get_ptr_med(void) const noexcept { return ptr_med; }
 		auto& Get_magazine(void) const noexcept { return magazine_param; }
@@ -1683,11 +1684,11 @@ namespace FPS_n2 {
 			this->obj = this->ptr_mag->mod.Get_model().Duplicate();
 			if (dnm == SIZE_MAX) {
 				if (this->ptr_mag != nullptr) {
-					this->magazine_param.mag_cnt = int(this->ptr_mag->mag_cnt);
+					this->Ammo_cnt = int(this->ptr_mag->Ammo_cap);
 				}
 			}
 			else {
-				this->magazine_param.mag_cnt = dnm;
+				this->Ammo_cnt = dnm;
 			}
 			if (this->ptr_mag != nullptr) {
 				if (this->magazine_param.ammo.size() < this->ptr_mag->ammo.size()) {
@@ -1695,7 +1696,7 @@ namespace FPS_n2 {
 				}
 				this->magazine_param.ammo[0].Get_name() = this->ptr_mag->ammo[0].Get_name();
 			}
-			this->del_timer = (this->magazine_param.mag_cnt == 0) ? 5.f : 20.f;
+			this->del_timer = (this->Ammo_cnt == 0) ? 5.f : 20.f;
 		}
 		//med
 		void Set_item(Meds* meddata, const moves& move_) {
@@ -1789,7 +1790,7 @@ namespace FPS_n2 {
 		}
 		template<class PLAYER_CHARA>
 		void Get_item_2(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<PLAYER_CHARA>& chara, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) {
-			if (this->flag_canlook_player) {
+			if (this->Flag_canlook_player) {
 				bool zz = false;
 				if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
 					auto ColResGround = map_col_line(StartPos, EndPos);
@@ -1803,11 +1804,11 @@ namespace FPS_n2 {
 					chara->addf_canget_magitem(zz);
 					if (zz) {
 						chara->set_canget_mag(this->id_t, this->ptr_mag->mod.Get_name());
-						if (chara->getmagazine_push() && this->magazine_param.mag_cnt != 0 && (this->ptr_mag->ammo[0].Get_name() == this->magazine_param.ammo[0].Get_name())) {
-							chara->sort_f = false;
-							chara->gun_stat_now->magazine_plus(this);
-							if (chara->Get_mag_in().size() == 1) {
-								chara->reloadf = true;
+						if (chara->getmagazine_push() && this->Ammo_cnt != 0 && (this->ptr_mag->ammo[0].Get_name() == this->magazine_param.ammo[0].Get_name())) {
+							chara->Set_sort_f(false);
+							chara->Gun.gun_stat_now->magazine_plus(this);
+							if (chara->Gun.Get_mag_in().size() == 1) {
+								chara->Set_reloadf(true);
 							}
 							this->Detach_item();
 						}
@@ -1841,23 +1842,23 @@ namespace FPS_n2 {
 			}
 		}
 		void Check_CameraViewClip(bool use_occlusion, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) noexcept {
-			this->flag_canlook_player = true;
+			this->Flag_canlook_player = true;
 			auto ttt = this->move.pos;
 			if (CheckCameraViewClip_Box((ttt + VECTOR_ref::vget(-0.3f, 0, -0.3f)).get(), (ttt + VECTOR_ref::vget(0.3f, 0.3f, 0.3f)).get())) {
-				this->flag_canlook_player = false;
+				this->Flag_canlook_player = false;
 				return;
 			}
 			if (use_occlusion) {
 				if (map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.3f, 0)).HitFlag == TRUE &&
 					map_col_line(GetCameraPosition(), ttt + VECTOR_ref::vget(0, 0.0f, 0)).HitFlag == TRUE) {
-					this->flag_canlook_player = false;
+					this->Flag_canlook_player = false;
 					return;
 				}
 			}
 		}
 
 		void Draw_item(void) noexcept {
-			if (this->flag_canlook_player) {
+			if (this->Flag_canlook_player) {
 				if (this->ptr_mag != nullptr || this->ptr_med != nullptr || this->ptr_gre != nullptr) {
 					this->obj.DrawModel();
 				}

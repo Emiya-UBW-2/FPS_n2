@@ -245,7 +245,7 @@ namespace FPS_n2 {
 						break;
 					case scenes::MAP_LOAD:
 						MAPPTs->Start();																//マップパーツ生成
-						MAINLOOPscene->Ready_Chara(MAPPTs->Get_spawn_point().size());					//キャラ設定
+						MAINLOOPscene->Ready_Chara(2/*MAPPTs->Get_spawn_point().size()*/);					//キャラ設定
 						LOADscene->Start(MAINLOOPscene->Get_Mine());									//
 						break;
 					case scenes::LOAD:

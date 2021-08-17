@@ -300,8 +300,8 @@ namespace FPS_n2 {
 						}
 					}
 
-					Small->Get_handle().DrawStringFormat(y_r(100), y_r(700), GetColor(255, 0, 0), "weigt  : %5.2f", mine->Get_per_all().weight);
-					Small->Get_handle().DrawStringFormat(y_r(100), y_r(725), GetColor(255, 0, 0), "recoil : %5.2f", mine->Get_per_all().recoil);
+					Small->Get_handle().DrawStringFormat(y_r(100), y_r(700), GetColor(255, 0, 0), "weigt  : %5.2f", mine->Gun.Get_per_all().weight);
+					Small->Get_handle().DrawStringFormat(y_r(100), y_r(725), GetColor(255, 0, 0), "recoil : %5.2f", mine->Gun.Get_per_all().recoil);
 
 
 					Small->Get_handle().DrawString(y_r(100), y_r(575), "SPACE  :Go Battle", GetColor(255, 0, 0));
@@ -423,7 +423,7 @@ namespace FPS_n2 {
 				{
 					//スコープ
 					if (mine->isRide()) {
-						if ((*mine->MINE_v)->ads_on()) {
+						if ((*mine->MINE_v)->is_ADS()) {
 							aim_view.DrawExtendGraph(0, 0, DrawPts->disp_x, DrawPts->disp_y, true);
 
 
@@ -434,7 +434,7 @@ namespace FPS_n2 {
 							aim_ret1.DrawRotaGraph(int(DrawPts->disp_x / 2), int(DrawPts->disp_y / 2) - y_r(dist / 16), (float)(y_r(300)) / 200.f, 0.f, true);
 							aim_ret2.DrawRotaGraph(int(DrawPts->disp_x / 2), int(DrawPts->disp_y / 2), (float)(y_r(300)) / 200.f, 0.f, true);
 
-							Small->Get_handle().DrawStringFormat(x_r(1056), y_r(594), GetColor(0, 255, 0), "[%05.1f]", dist);
+							Small->Get_handle().DrawStringFormat(x_r(1056), y_r(594), GetColor(0, 255, 0), "[%05.1fm]", dist);
 							Small->Get_handle().DrawStringFormat(x_r(1056), y_r(648), GetColor(0, 255, 0), "[x%02.1f]", ratio);
 						}
 						if ((*mine->MINE_v)->Get_changeview()) {
@@ -513,10 +513,10 @@ namespace FPS_n2 {
 					}
 					//警告
 					{
-						if ((!DrawPts->use_vr && !mine->ads_on()) || DrawPts->use_vr) {
+						if ((!DrawPts->use_vr && !mine->is_ADS()) || DrawPts->use_vr) {
 							if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 								//空警告
-								if (!mine->gun_stat_now->not_chamber_EMPTY()) {
+								if (!mine->Gun.gun_stat_now->not_chamber_EMPTY()) {
 									if (DrawPts->use_vr) {
 										xp = DrawPts->disp_x / 2;
 										yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 8;
@@ -540,7 +540,7 @@ namespace FPS_n2 {
 							xp = DrawPts->disp_x / 2 + DrawPts->disp_y / 4;
 							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6;
 						}
-						switch ((EnumSELECTER)mine->Get_now_selector()) {
+						switch ((EnumSELECTER)mine->Gun.Get_now_selector()) {
 						case EnumSELECTER::SELECT_SEMI:
 							Middle->Get_handle().DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
 							break;
@@ -588,14 +588,14 @@ namespace FPS_n2 {
 							yp = DrawPts->disp_y - y_r(50);
 						}
 						if (!mine->isRide()) {
-							if ((!DrawPts->use_vr && !mine->ads_on()) || DrawPts->use_vr) {
+							if ((!DrawPts->use_vr && !mine->is_ADS()) || DrawPts->use_vr) {
 								//銃
 								{
-									Small->Get_handle().DrawString(xp, yp, mine->Get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
+									Small->Get_handle().DrawString(xp, yp, mine->Gun.Get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
 								}
 								//マガジン関連(仮)
 								{
-									int size = int(mine->Get_mag_in().size());
+									int size = int(mine->Gun.Get_mag_in().size());
 									if (DrawPts->use_vr) {
 										xp = DrawPts->disp_x / 2 - y_r(140) + Middle->Get_size();
 										yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20) - Middle->Get_size() * size;
@@ -604,11 +604,11 @@ namespace FPS_n2 {
 										xp = y_r(220) + Middle->Get_size();
 										yp = DrawPts->disp_y - y_r(20) - Middle->Get_size() * size;
 									}
-									for (auto& a : mine->Get_mag_in()) {
-										Middle->Get_handle().DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.m_cnt, a.cap);
-										if (&a == &mine->Get_mag_in().front()) {
-											if (mine->gun_stat_now->not_chamber_EMPTY()) {
-												Small->Get_handle().DrawString(xp + Middle->Get_handle().GetDrawWidthFormat("%d/%d", a.m_cnt, a.cap), yp + Middle->Get_size() - Small->Get_size(), " +1", GetColor(255, 0, 0));
+									for (auto& a : mine->Gun.Get_mag_in()) {
+										Middle->Get_handle().DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.Get_Cnt(), a.Get_Cap());
+										if (&a == &mine->Gun.Get_mag_in().front()) {
+											if (mine->Gun.gun_stat_now->not_chamber_EMPTY()) {
+												Small->Get_handle().DrawString(xp + Middle->Get_handle().GetDrawWidthFormat("%d/%d", a.Get_Cnt(), a.Get_Cap()), yp + Middle->Get_size() - Small->Get_size(), " +1", GetColor(255, 0, 0));
 											}
 											DrawTriangle(xp - y_r(10), yp + 5, xp, yp + Middle->Get_size() / 2, xp - y_r(10), yp + Middle->Get_size() - 5, GetColor(255, 255, 0), FALSE);
 											xp -= Middle->Get_size() / 3;
@@ -624,7 +624,7 @@ namespace FPS_n2 {
 							}
 							//マガジン関連(仮)
 							{
-								int size = int((*mine->MINE_v)->Get_Gun().size());
+								int size = int((*mine->MINE_v)->Get_Gunsize());
 								if (DrawPts->use_vr) {
 									xp = DrawPts->disp_x / 2 - y_r(140) + Middle->Get_size();
 									yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20) - (Small->Get_size() + Middle->Get_size() + Small->Get_size()) * size;
@@ -743,13 +743,13 @@ namespace FPS_n2 {
 				UI_TEMP::set_fonts();
 				//弾インジケーター
 				if (DrawPts->use_vr) {
-					auto pos_gun = mine->Get_parts(EnumGunParts::PARTS_BASE)->Get_objMatrix().pos();
+					auto pos_gun = mine->Gun.Get_parts(EnumGunParts::PARTS_BASE)->Get_objMatrix().pos();
 					VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 					if (p.z() >= 0.f && p.z() <= 1.f) {
 						int xp = int(p.x());
 						int yp = int(p.y());
-						int cnt = int(mine->Get_mag_in().front().m_cnt);
-						int per = 90 * cnt / int(mine->Get_mag_in().front().cap);
+						int cnt = int(mine->Gun.Get_mag_in().front().Get_Cnt());
+						int per = 90 * cnt / int(mine->Gun.Get_mag_in().front().Get_Cap());
 						float rad = deg2rad(90 - per);
 						int col_r = GetColor(std::clamp(int(255.f * sin(rad) * 2.f), 0, 255), std::clamp(int(255.f * cos(rad) * 2.f), 0, 255), 0);
 						if (std::max((pos_gun - GetCameraPosition()).size(), 1.f) <= 10.f) {
@@ -760,7 +760,7 @@ namespace FPS_n2 {
 							for (int i = 0; i < std::clamp(int(4 * per / 90) + int(per != 0), 0, 4); i++) {
 								DrawBox(xp - siz / 2 + siz * i / 4 + 2, yp - y_r(30) - i * 2, xp - siz / 2 + siz * (i + 1) / 4 - 2, yp - y_r(10), col_r, TRUE);
 							}
-							if (!mine->gun_stat_now->not_chamber_EMPTY()) {
+							if (!mine->Gun.gun_stat_now->not_chamber_EMPTY()) {
 								//空警告
 								if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 									Small->Get_handle().DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += Small->Get_size();
@@ -776,10 +776,10 @@ namespace FPS_n2 {
 				{
 					SetCameraNearFar(0.01f, 10.f);
 					for (auto& g : MAPPTs->item) {
-						if (g->flag_canlook_player) {
+						if (g->Flag_canlook_player) {
 							//mag
 							if (g->Get_ptr_mag() != nullptr) {
-								Draw_Item_UI(y_r(144), y_r(144), g->Get_pos_(), "%s %d/%d", g->Get_ptr_mag()->per.name.c_str(), g->Get_magazine().mag_cnt, g->Get_ptr_mag()->mag_cnt);
+								Draw_Item_UI(y_r(144), y_r(144), g->Get_pos_(), "%s %d/%d", g->Get_ptr_mag()->per.name.c_str(), g->Get_magazine().Ammo_cap, g->Get_ptr_mag()->Ammo_cap);
 							}
 							//med
 							if (g->Get_ptr_med() != nullptr) {
@@ -805,7 +805,7 @@ namespace FPS_n2 {
 				{
 					SetCameraNearFar(0.01f, 100.f);
 					for (auto& c : chara) {
-						c->Draw_Hit_UI(hit_Graph);
+						c->Gun.Draw_Hit_UI(hit_Graph);
 					}
 					for (auto& v : vehicle) {
 						v->Draw_Hit_UI(hit_Graph);

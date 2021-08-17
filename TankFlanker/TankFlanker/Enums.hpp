@@ -119,7 +119,7 @@ namespace FPS_n2 {
 		Voice_Breath,
 		Voice_Breath_Run,
 
-		//Gun
+		//this->Gun
 
 		Assemble,
 		Shot,

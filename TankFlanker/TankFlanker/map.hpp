@@ -580,7 +580,7 @@ namespace FPS_n2 {
 				for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs->Map_col_line); }
 			}
 			//
-			int Get_next_waypoint(std::vector<int> wayp_pre, VECTOR_ref poss) {
+			int Get_next_waypoint(std::vector<int> wayp_pre, VECTOR_ref poss, VECTOR_ref zvec = VECTOR_ref::zero()) {
 				int now = -1;
 				auto tmp = VECTOR_ref::vget(0, 100.f, 0);
 				for (auto& w : way_point) {
@@ -594,7 +594,12 @@ namespace FPS_n2 {
 					if (tt) {
 						if (tmp.size() >= (w - poss).size()) {
 							auto colres = map_col_line(w + VECTOR_ref::vget(0, 0.5f, 0), poss + VECTOR_ref::vget(0, 0.5f, 0));
-							if (!(colres.HitFlag == TRUE)) {
+							if (
+								!(colres.HitFlag == TRUE) && 
+								(
+									zvec == VECTOR_ref::zero() ||
+									zvec.Norm().dot((w - poss).Norm()) < 0.f
+								)) {
 								tmp = (w - poss);
 								now = int(id);
 							}
