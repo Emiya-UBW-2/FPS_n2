@@ -12,6 +12,22 @@ namespace std {
 }; // namespace std
 //
 namespace FPS_n2 {
+	std::vector<WIN32_FIND_DATA> data_t;
+	void GetFileNames(std::vector<WIN32_FIND_DATA>* data_tt, std::string path_t) {
+		data_tt->clear();
+		WIN32_FIND_DATA win32fdt;
+		HANDLE hFind = FindFirstFile((path_t + "*").c_str(), &win32fdt);
+		if (hFind != INVALID_HANDLE_VALUE) {
+			do {
+				if (win32fdt.cFileName[0] != '.') {
+					data_tt->resize(data_tt->size() + 1);
+					data_tt->back() = win32fdt;
+				}
+
+			} while (FindNextFile(hFind, &win32fdt));
+		} //else{ return false; }
+		FindClose(hFind);
+	}
 
 	//フォントプール
 	class FontPool {
@@ -60,7 +76,7 @@ namespace FPS_n2 {
 			EnumSound ID;
 			std::vector<handles> shandle;
 			size_t now = 0;
-			int set_vol = 255;
+			int Set_vol = 255;
 			float vol_rate = 1.f;
 		public:
 			const auto& Get_ID(void)const noexcept { return ID; }
@@ -91,8 +107,8 @@ namespace FPS_n2 {
 			void Play(int Sel_t, const int& type_t, const int& Flag_t = 1, int vol_t = -1) {
 				shandle[Sel_t].handle[now].play(type_t, Flag_t);
 				if (vol_t != -1) {
-					set_vol = vol_t;
-					shandle[Sel_t].handle[now].vol((int)(vol_rate * set_vol));
+					Set_vol = vol_t;
+					shandle[Sel_t].handle[now].vol((int)(vol_rate * Set_vol));
 				}
 				++now %= shandle[Sel_t].handle.size();
 			}
@@ -106,8 +122,8 @@ namespace FPS_n2 {
 				if (isplay) {
 					shandle[Sel_t].handle[now].play_3D(pos_t, radius);
 					if (vol_t != -1) {
-						set_vol = vol_t;
-						shandle[Sel_t].handle[now].vol((int)(vol_rate * set_vol));
+						Set_vol = vol_t;
+						shandle[Sel_t].handle[now].vol((int)(vol_rate * Set_vol));
 					}
 					++now %= shandle[Sel_t].handle.size();
 				}
@@ -117,7 +133,7 @@ namespace FPS_n2 {
 				vol_rate = vol;
 				for (auto& sh : this->shandle) {
 					for (auto& h : sh.handle) {
-						h.vol((int)(vol_rate * set_vol));
+						h.vol((int)(vol_rate * Set_vol));
 					}
 				}
 			}
@@ -154,21 +170,14 @@ namespace FPS_n2 {
 		std::vector<EffekseerEffectHandle> effsorce;	/*エフェクトリソース*/
 
 		void Init(void) noexcept {
-			std::string p;
-			WIN32_FIND_DATA win32fdt;
-			HANDLE hFind = FindFirstFile("data/effect/*", &win32fdt);
-			if (hFind != INVALID_HANDLE_VALUE) {
-				do {
-					{
-						p = win32fdt.cFileName;
-						if (p.find(".efk") != std::string::npos) {
-							effsorce.resize(effsorce.size() + 1);
-							effsorce.back() = EffekseerEffectHandle::load("data/effect/" + p);
-						}
-					}
-				} while (FindNextFile(hFind, &win32fdt));
-			} //else{ return false; }
-			FindClose(hFind);
+			GetFileNames(&data_t, "data/effect/");
+			for (auto& d : data_t) {
+				std::string p = d.cFileName;
+				if (p.find(".efk") != std::string::npos) {
+					effsorce.resize(effsorce.size() + 1);
+					effsorce.back() = EffekseerEffectHandle::load("data/effect/" + p);
+				}
+			}
 			effsorce.resize(effsorce.size() + 1);
 			effsorce.back() = EffekseerEffectHandle::load("data/effect/gndsmk.efk");								//戦車用エフェクト
 			Update_effect_was = GetNowHiPerformanceCount();
@@ -188,17 +197,135 @@ namespace FPS_n2 {
 		}
 	};
 	EffectControl effectControl;
-
-
-	class save_c {
+	//エフェクト利用コントロール
+	class Effect_UseControl {
+		std::array<EffectS, int(Effect::effects)> effcs;	/*エフェクト*/
 	public:
-		size_t cang_ = 0;						//パーツ選択
-		EnumGunParts type_ = EnumGunParts::PARTS_NONE;			//パーツの種類
-		EnumAttachPoint pt_cat_ = EnumAttachPoint::POINTS_NONE;	//ベースパーツの場所
-		EnumGunParts pt_type_ = EnumGunParts::PARTS_NONE;		//ベースパーツの種類
-		size_t pt_sel_ = 0;						//ベースパーツの番号(マウントなど)
+		void Set_Effect(Effect ef_, const VECTOR_ref& pos_t, const VECTOR_ref& nomal_t, float scale = 1.f) noexcept { this->effcs[(int)ef_].Set(pos_t, nomal_t, scale); }
+		//エフェクトの更新
+		void Update_Effect(void) noexcept {
+			for (auto& t : this->effcs) {
+				const size_t index = &t - &this->effcs.front();
+				if (index != (int)Effect::ef_smoke) {
+					t.put(effectControl.effsorce[index]);
+				}
+			}
+		}
+		/*おわり*/
+		void Dispose_Effect(void) noexcept {
+			for (auto& t : this->effcs) { t.handle.Dispose(); }
+		}
 	};
+	//パーツデータのセーブ指定
+	class PresetSaveControl {
+	public:
+		class save_c {
+		public:
+			size_t cang_ = 0;						//パーツ選択
+			EnumGunParts type_ = EnumGunParts::NONE;			//パーツの種類
+			EnumAttachPoint pt_cat_ = EnumAttachPoint::NONE;	//ベースパーツの場所
+			EnumGunParts pt_type_ = EnumGunParts::NONE;		//ベースパーツの種類
+			size_t pt_sel_ = 0;						//ベースパーツの番号(マウントなど)
+		};
+	protected:
+		std::vector<save_c> save_parts;
+		int P_select = 0;
+		int P_select_max = 0;
+	protected:
+		void ControlSel() {
+			if (P_select < 0) { P_select = P_select_max - 1; }
+			if (P_select > P_select_max - 1) { P_select = 0; }
+		}
 
+		/*パーツデータをロード*/
+		void Load(const std::string& PreSet_Path) noexcept {
+			std::fstream file;
+			save_parts.clear();
+			file.open(("data/save/" + PreSet_Path).c_str(), std::ios::binary | std::ios::in);
+			save_c savetmp;
+			while (true) {
+				file.read((char*)&savetmp, sizeof(savetmp));
+				if (file.eof()) {
+					break;
+				}
+				this->save_parts.emplace_back(savetmp);
+			}
+			file.close();
+		}
+		/*ベースデータを作成*/
+		void CreateData() {
+			save_parts.clear();
+			//magazine
+			save_parts.resize(save_parts.size() + 1);
+			save_parts.back().cang_ = 0;
+			save_parts.back().type_ = EnumGunParts::MAGAZINE;
+			save_parts.back().pt_cat_ = EnumAttachPoint::MAGAZINE_BASE;
+			save_parts.back().pt_type_ = EnumGunParts::BASE;
+			save_parts.back().pt_sel_ = 0;
+			//grip
+			save_parts.resize(save_parts.size() + 1);
+			save_parts.back().cang_ = 0;
+			save_parts.back().type_ = EnumGunParts::GRIP;
+			save_parts.back().pt_cat_ = EnumAttachPoint::GRIP_BASE;
+			save_parts.back().pt_type_ = EnumGunParts::BASE;
+			save_parts.back().pt_sel_ = 0;
+			//uperhandguard
+			save_parts.resize(save_parts.size() + 1);
+			save_parts.back().cang_ = 0;
+			save_parts.back().type_ = EnumGunParts::UPER_HANDGUARD;
+			save_parts.back().pt_cat_ = EnumAttachPoint::UPER_HANDGUARD;
+			save_parts.back().pt_type_ = EnumGunParts::BASE;
+			save_parts.back().pt_sel_ = 0;
+			//underhandguard
+			save_parts.resize(save_parts.size() + 1);
+			save_parts.back().cang_ = 0;
+			save_parts.back().type_ = EnumGunParts::UNDER_HANDGUARD;
+			save_parts.back().pt_cat_ = EnumAttachPoint::UNDER_HANDGUARD;
+			save_parts.back().pt_type_ = EnumGunParts::BASE;
+			save_parts.back().pt_sel_ = 0;
+			//マズル
+			save_parts.resize(save_parts.size() + 1);
+			save_parts.back().cang_ = 0;
+			save_parts.back().type_ = EnumGunParts::MAZZULE;
+			save_parts.back().pt_cat_ = EnumAttachPoint::MAZZULE_BASE;
+			save_parts.back().pt_type_ = EnumGunParts::BASE;
+			save_parts.back().pt_sel_ = 0;
+			//ダストカバー
+			save_parts.resize(save_parts.size() + 1);
+			save_parts.back().cang_ = 0;
+			save_parts.back().type_ = EnumGunParts::DUSTCOVER;
+			save_parts.back().pt_cat_ = EnumAttachPoint::DUSTCOVER_BASE;
+			save_parts.back().pt_type_ = EnumGunParts::BASE;
+			save_parts.back().pt_sel_ = 0;
+			//ストック
+			save_parts.resize(save_parts.size() + 1);
+			save_parts.back().cang_ = 0;
+			save_parts.back().type_ = EnumGunParts::STOCK;
+			save_parts.back().pt_cat_ = EnumAttachPoint::STOCK_BASE;
+			save_parts.back().pt_type_ = EnumGunParts::BASE;
+			save_parts.back().pt_sel_ = 0;
+		}
+		/*パーツのセーブ設定*/
+		void Set_PartsSave(size_t chang_t, EnumGunParts parts_cat_t, EnumAttachPoint port_cat_t, EnumGunParts port_type_t) {
+			if (save_parts.size() < size_t(P_select_max) + 1) {
+				save_parts.resize(size_t(P_select_max) + 1);
+			}
+			save_parts[P_select_max].cang_ = chang_t;
+			save_parts[P_select_max].type_ = parts_cat_t;
+			save_parts[P_select_max].pt_cat_ = port_cat_t;
+			save_parts[P_select_max].pt_type_ = port_type_t;
+			save_parts[P_select_max].pt_sel_ = 0;
+		}
+		/*パーツデータをセーブ*/
+		void Save(const std::string& PreSet_Path) {
+			std::fstream file;
+			file.open(("data/save/" + PreSet_Path).c_str(), std::ios::binary | std::ios::out);
+			for (auto& tmp_save : save_parts) {
+				file.write((char*)&tmp_save, sizeof(tmp_save));
+			}
+			file.close();
+		}
+	};
 	//キーバインド
 	class key_bind {
 	private:
@@ -263,7 +390,7 @@ namespace FPS_n2 {
 				}
 			}
 			//public:
-			void set_key(bool t) {
+			void Set_key(bool t) {
 				on_off.first = t;
 			}
 			bool Get_key_Auto(bool checkUpdate) {
@@ -293,7 +420,7 @@ namespace FPS_n2 {
 		std::vector<key_pair> mouse_use_ID;
 		size_t info = 0;
 	public:
-		void set_Mode(size_t now) { info = now; }
+		void Set_Mode(size_t now) { info = now; }
 		//
 		auto& Get_key_use_ID(EnumKeyBind id_t) {
 			return key_use_ID[(int)id_t];
@@ -463,7 +590,7 @@ namespace FPS_n2 {
 		//
 		const auto Esc_key(void) noexcept { return this->key_use_ID[(int)EnumKeyBind::ESCAPE].Get_key_Auto(true); }
 		//
-		void Reset_isalways(void) noexcept {
+		void ReSet_isalways(void) noexcept {
 			for (auto& i : this->key_use_ID) {
 				i.isalways = false;
 			}
@@ -704,7 +831,7 @@ namespace FPS_n2 {
 			if (On_Option) {
 				SetMouseDispFlag(TRUE);
 
-				KeyBind->set_Mode(1);
+				KeyBind->Set_Mode(1);
 				up.GetInput(KeyBind->Get_key_use(EnumKeyBind::FRONT));
 				down.GetInput(KeyBind->Get_key_use(EnumKeyBind::BACK));
 				left.GetInput(KeyBind->Get_key_use(EnumKeyBind::LEFT));
@@ -869,7 +996,7 @@ namespace FPS_n2 {
 			SetMouseDispFlag(TRUE);
 			bool selend = true;
 
-			KeyBind->set_Mode(1);
+			KeyBind->Set_Mode(1);
 			up.GetInput(KeyBind->Get_key_use(EnumKeyBind::FRONT) && !OptionMenu->Pause_key());
 			down.GetInput(KeyBind->Get_key_use(EnumKeyBind::BACK) && !OptionMenu->Pause_key());
 			left.GetInput(KeyBind->Get_key_use(EnumKeyBind::LEFT) && !OptionMenu->Pause_key());
@@ -896,12 +1023,12 @@ namespace FPS_n2 {
 				//戦闘に戻る
 				if (select == 1) {
 					SE.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
-					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).set_key(false);
+					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Set_key(false);
 				}
 				//強制帰還
 				if (select == 2) {
 					SE.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
-					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).set_key(false);
+					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Set_key(false);
 					selend = false;
 				}
 			}
@@ -1024,14 +1151,14 @@ namespace FPS_n2 {
 			this->pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
 			this->pshandle = LoadPixelShader(("shader/" + ps).c_str());		// ピクセルシェーダーバイナリコードの読み込み
 		}
-		void set_dispsize(int dispx, int dispy) {
+		void Set_dispsize(int dispx, int dispy) {
 			FLOAT2* dispsize = (FLOAT2*)GetBufferShaderConstantBuffer(this->pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
 			dispsize->u = float(dispx);
 			dispsize->v = float(dispy);
 			UpdateShaderConstantBuffer(this->pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
 			SetShaderConstantBuffer(this->pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
 		}
-		void set_param(float param1, float param2, float param3, float param4) {
+		void Set_param(float param1, float param2, float param3, float param4) {
 			FLOAT4* f4 = (FLOAT4*)GetBufferShaderConstantBuffer(this->pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
 			f4->x = param1;
 			f4->y = param2;
@@ -1119,10 +1246,10 @@ namespace FPS_n2 {
 			use_magdown = getparams::_int(mdata);
 			use_magset = getparams::_int(mdata);
 
-			shot_path = "data/audio/gun/fire/" + std::to_string(use_shot) + ".wav";
-			slide_path = "data/audio/gun/slide/" + std::to_string(use_slide) + ".wav";
+			shot_path = "data/Audio/gun/fire/" + std::to_string(use_shot) + ".wav";
+			slide_path = "data/Audio/gun/slide/" + std::to_string(use_slide) + ".wav";
 		}
-		void Duplicate(Audios_Gun& tgt) {
+		void Duplicate(const Audios_Gun& tgt) {
 			this->use_shot = tgt.use_shot;
 			this->use_slide = tgt.use_slide;
 			this->use_magdown = tgt.use_magdown;
@@ -1153,14 +1280,16 @@ namespace FPS_n2 {
 		float pene = 10.f;//貫通
 		int damage = 10;//ダメージ
 	public:
-		MV1& Get_model(void) noexcept { return model; }
+		void Set_name(const std::string& value) noexcept { name=value; }
+
+		const MV1& Get_model(void) const noexcept { return model; }
 
 		const auto& Get_model_full(void) const noexcept { return model_full; }
 		const float& Get_caliber(void) const noexcept { return caliber; }
 		const float& Get_speed(void) const noexcept { return speed; }
 		const float& Get_pene(void) const noexcept { return pene; }
 		const int& Get_damage(void) const noexcept { return damage; }
-		std::string& Get_name(void) noexcept { return name; }
+		const std::string& Get_name(void) const noexcept { return name; }
 
 		auto& Set_speed(void) noexcept { return speed; }
 
@@ -1317,6 +1446,7 @@ namespace FPS_n2 {
 			inst.Draw();
 		}
 	};
+	HIT_PASSIVE hit_obj_p;												//静的弾痕
 	class HIT_BLOOD_PASSIVE {
 		//雲
 		Model_Instance inst;
@@ -1345,6 +1475,7 @@ namespace FPS_n2 {
 			inst.Draw();
 		}
 	};
+	HIT_BLOOD_PASSIVE hit_b_obj_p;										//静的血痕
 	class HIT_ACTIVE {
 		struct Hit {		      /**/
 			bool Flag{ false };   /*弾痕フラグ*/
@@ -1404,18 +1535,18 @@ namespace FPS_n2 {
 		}
 	};
 	//パフォーマンス
-	class performance {
+	class Performance {
 	public:
 		float recoil = 0.f;
 		float weight = 0.f;
 		std::string name;
 		std::string info;
 
-		void operator+=(performance& t) {
+		void operator+=(const Performance& t) {
 			this->recoil += t.recoil;
 			this->weight += t.weight;
 		}
-		void operator-=(performance& t) {
+		void operator-=(const Performance& t) {
 			this->recoil -= t.recoil;
 			this->weight -= t.weight;
 		}
@@ -1432,47 +1563,70 @@ namespace FPS_n2 {
 	};
 	//パーツデータ
 	class GUNPARTs :public BASE_Obj {
-		EnumGunParts type = EnumGunParts::PARTS_NONE;
-	public:
-		float recoil_xup = 0.f;				//反動
-		float recoil_xdn = 0.f;				//反動
-		float recoil_yup = 0.f;				//反動
-		float recoil_ydn = 0.f;				//反動
-		float reload_time = 1.f;			//再装填時間
-		std::vector <EnumSELECTER> select;			//セレクター
-		std::vector <EnumSELECT_LAM> select_lam;	//ライト・レーザー
-		performance per;					//common
-		size_t mazzule_type = 0;			//mazzule
-		GraphHandle reticle;				//sight
-		float zoom = 1.f;					//sight
-		float reticle_size = 600.f;			//sight
-		float zoom_size = 600.f;			//sight
-		size_t stock_type = 0;				//stock
+		EnumGunParts type = EnumGunParts::NONE;
+		float recoil_xup = 0.f;							//反動
+		float recoil_xdn = 0.f;							//反動
+		float recoil_yup = 0.f;							//反動
+		float recoil_ydn = 0.f;							//反動
+		float reload_time = 1.f;						//再装填時間
+		std::vector <EnumSELECTER> select;				//セレクター
+		std::vector <EnumSELECT_LAM> select_lam;		//ライト・レーザー
 		std::vector<std::string> can_attach;
+		Performance per;								//common
+		size_t mazzule_type = 0;						//mazzule
+		GraphHandle reticle;							//sight
+		float zoom = 1.f;								//sight
+		float reticle_size = 600.f;						//sight
+		float zoom_size = 600.f;						//sight
+		size_t stock_type = 0;							//stock
 		std::vector<Ammos> ammo;
-		Audios_Gun audio;
+		Audios_Gun Audio;
 		//magazine
 		size_t Ammo_cap = 1;
 	public:
+		void Copy_Ammo(const GUNPARTs& tgt) {
+			if (this->ammo.size() < tgt.ammo.size()) {
+				this->ammo.resize(tgt.ammo.size());
+			}
+			for (int i = 0;i < this->ammo.size();i++) {
+				this->ammo[i].Set_name(tgt.ammo[i].Get_name());
+			}
+		}
 		//setter
-		void Set_type(EnumGunParts type_t) { this->type = type_t; }
+		void Set_type(EnumGunParts type_t) noexcept { this->type = type_t; }
+		auto& Set_Ammo(size_t ID_t) noexcept { return ammo[ID_t]; }
+		//getter
+		const auto& Get_recoil_xup(void) const noexcept { return  recoil_xup; }
+		const auto& Get_recoil_xdn(void) const noexcept { return  recoil_xdn; }
+		const auto& Get_recoil_yup(void) const noexcept { return  recoil_yup; }
+		const auto& Get_recoil_ydn(void) const noexcept { return  recoil_ydn; }
+		const auto& Get_reloadtime(void) const noexcept { return reload_time; }
+		const auto Get_selectsize(void)const noexcept { return select.size(); }
+		const auto& Get_select(size_t ID_t)const noexcept { return select[ID_t]; }
+		const auto& Get_lamtype(size_t ID_t) const noexcept { return this->select_lam[ID_t]; }
+		const auto& Get_can_attach(void)const noexcept { return can_attach; }
+		const auto& Get_Performance(void) const noexcept { return this->per; }
+		const auto& Get_mazzuletype(void) const noexcept { return this->mazzule_type; }
+		const auto& Get_reticle(void) const noexcept { return this->reticle; }
+		const auto& Get_zoom(void) const noexcept { return this->zoom; }
+		const auto& Get_reticle_size(void) const noexcept { return this->reticle_size; }
+		const auto& Get_zoom_size(void) const noexcept { return this->zoom_size; }
+		const auto& Get_stocktype(void) const noexcept { return this->stock_type; }
+		const auto& Set_Ammo(void) const noexcept { return ammo; }
+		const auto& Get_Ammo(size_t ID_t) const noexcept { return ammo[ID_t]; }
+		const auto& Get_Audio(void) const noexcept { return Audio; }
+		const auto& Get_Ammo_Cap()const noexcept { return Ammo_cap; }
 		//
-		static void Set_Pre(std::vector<GUNPARTs>* data, std::string file_name, EnumGunParts type_t = EnumGunParts::PARTS_NONE) noexcept {
+		static void Set_Pre(std::vector<GUNPARTs>* data, std::string file_name, EnumGunParts type_t = EnumGunParts::NONE) noexcept {
 			data->clear();
-			std::string p;
-			WIN32_FIND_DATA win32fdt;
-			HANDLE hFind;
-			hFind = FindFirstFile((file_name + "*").c_str(), &win32fdt);
-			if (hFind != INVALID_HANDLE_VALUE) {
-				do {
-					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
-						data->resize(data->size() + 1);
-						data->back().mod.Ready(file_name, win32fdt.cFileName);
-						data->back().Set_type(type_t);
-					}
-				} while (FindNextFile(hFind, &win32fdt));
-			} //else{ return false; }
-			FindClose(hFind);
+			GetFileNames(&data_t, file_name);
+			for (auto& d : data_t) {
+				if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+					data->resize(data->size() + 1);
+					data->back().mod.Ready(file_name, d.cFileName);
+					data->back().Set_type(type_t);
+				}
+			}
 		}
 		//
 		void Set(size_t id_) {
@@ -1485,13 +1639,13 @@ namespace FPS_n2 {
 					per.info = getparams::get_str(this->mod.mdata);		//説明
 				}
 				//
-				if (this->type == EnumGunParts::PARTS_MAZZULE) {
+				if (this->type == EnumGunParts::MAZZULE) {
 					mazzule_type = getparams::_ulong(this->mod.mdata);
 				}
-				if (this->type == EnumGunParts::PARTS_STOCK) {
+				if (this->type == EnumGunParts::STOCK) {
 					stock_type = getparams::_ulong(this->mod.mdata);
 				}
-				if (this->type == EnumGunParts::PARTS_BASE) {
+				if (this->type == EnumGunParts::BASE) {
 					//セレクター設定
 					while (true) {
 						auto p = getparams::_str(this->mod.mdata);
@@ -1499,22 +1653,22 @@ namespace FPS_n2 {
 							break;
 						}
 						else if (getparams::getright(p.c_str()) == "semi") {
-							this->select.emplace_back(EnumSELECTER::SELECT_SEMI);	//セミオート=1
+							this->select.emplace_back(EnumSELECTER::SEMI);	//セミオート=1
 						}
 						else if (getparams::getright(p.c_str()) == "full") {
-							this->select.emplace_back(EnumSELECTER::SELECT_FULL);	//フルオート=2
+							this->select.emplace_back(EnumSELECTER::FULL);	//フルオート=2
 						}
 						else if (getparams::getright(p.c_str()) == "3b") {
-							this->select.emplace_back(EnumSELECTER::SELECT_3B);	//3連バースト=3
+							this->select.emplace_back(EnumSELECTER::_3B);	//3連バースト=3
 						}
 						else if (getparams::getright(p.c_str()) == "2b") {
-							this->select.emplace_back(EnumSELECTER::SELECT_2B);	//2連バースト=4
+							this->select.emplace_back(EnumSELECTER::_2B);	//2連バースト=4
 						}
 						else {
-							this->select.emplace_back(EnumSELECTER::SELECT_SEMI);
+							this->select.emplace_back(EnumSELECTER::SEMI);
 						}
 					}
-					this->audio.Set(this->mod.mdata);						//サウンド
+					this->Audio.Set(this->mod.mdata);						//サウンド
 					this->recoil_xup = getparams::_float(this->mod.mdata);	//反動
 					this->recoil_xdn = getparams::_float(this->mod.mdata);	//反動
 					this->recoil_yup = getparams::_float(this->mod.mdata);	//反動
@@ -1522,11 +1676,11 @@ namespace FPS_n2 {
 					this->reload_time = getparams::_float(this->mod.mdata);	//リロードタイム
 					Set_Ammos_data(this->mod.mdata);						//弾データ
 				}
-				if (this->type == EnumGunParts::PARTS_MAGAZINE) {
+				if (this->type == EnumGunParts::MAGAZINE) {
 					this->Ammo_cap = getparams::_long(this->mod.mdata);			//弾数
 					Set_Ammos_data(this->mod.mdata);						//弾データ
 				}
-				if (this->type == EnumGunParts::PARTS_LAM) {
+				if (this->type == EnumGunParts::LAM) {
 					//レーザーかライトか
 					while (true) {
 						auto p = getparams::_str(this->mod.mdata);
@@ -1534,17 +1688,17 @@ namespace FPS_n2 {
 							break;
 						}
 						else if (getparams::getright(p.c_str()) == "laser") {
-							this->select_lam.emplace_back(EnumSELECT_LAM::SELECTLAM_LASER);	//レーザー
+							this->select_lam.emplace_back(EnumSELECT_LAM::LASER);	//レーザー
 						}
 						else if (getparams::getright(p.c_str()) == "light") {
-							this->select_lam.emplace_back(EnumSELECT_LAM::SELECTLAM_LIGHT);	//ライト
+							this->select_lam.emplace_back(EnumSELECT_LAM::LIGHT);	//ライト
 						}
 						else {
-							this->select_lam.emplace_back(EnumSELECT_LAM::SELECTLAM_LASER);	//レーザー
+							this->select_lam.emplace_back(EnumSELECT_LAM::LASER);	//レーザー
 						}
 					}
 				}
-				if (this->type == EnumGunParts::PARTS_SIGHT) {
+				if (this->type == EnumGunParts::SIGHT) {
 					this->zoom = getparams::_float(this->mod.mdata);
 					this->reticle_size = getparams::_float(this->mod.mdata);
 					this->zoom_size = getparams::_float(this->mod.mdata);
@@ -1561,12 +1715,12 @@ namespace FPS_n2 {
 					}
 				}
 			});
-			if (this->type == EnumGunParts::PARTS_SIGHT) {
+			if (this->type == EnumGunParts::SIGHT) {
 				SetUseASyncLoadFlag(FALSE);
 				this->reticle = GraphHandle::Load(this->mod.Get_path() + "/reticle.png");
 				SetUseASyncLoadFlag(FALSE);
 			}
-			if (this->type == EnumGunParts::PARTS_BASE) {
+			if (this->type == EnumGunParts::BASE) {
 				//フレーム
 				for (auto& a : this->ammo) {
 					a.Set();
@@ -1602,19 +1756,13 @@ namespace FPS_n2 {
 		int repair = 0;
 		static void Set_Pre(std::vector<Meds>* data, std::string file_name) noexcept {
 			data->clear();
-			std::string p;
-			WIN32_FIND_DATA win32fdt;
-			HANDLE hFind;
-			hFind = FindFirstFile((file_name + "*").c_str(), &win32fdt);
-			if (hFind != INVALID_HANDLE_VALUE) {
-				do {
-					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
-						data->resize(data->size() + 1);
-						data->back().mod.Ready(file_name, win32fdt.cFileName);
-					}
-				} while (FindNextFile(hFind, &win32fdt));
-			} //else{ return false; }
-			FindClose(hFind);
+			GetFileNames(&data_t, file_name);
+			for (auto& d : data_t) {
+				if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+					data->resize(data->size() + 1);
+					data->back().mod.Ready(file_name, d.cFileName);
+				}
+			}
 		}
 		void Set(size_t id_) {
 			BASE_Obj::Set(id_);
@@ -1630,19 +1778,13 @@ namespace FPS_n2 {
 		float time = 0;
 		static void Set_Pre(std::vector<Grenades>* data, std::string file_name) noexcept {
 			data->clear();
-			std::string p;
-			WIN32_FIND_DATA win32fdt;
-			HANDLE hFind;
-			hFind = FindFirstFile((file_name + "*").c_str(), &win32fdt);
-			if (hFind != INVALID_HANDLE_VALUE) {
-				do {
-					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
-						data->resize(data->size() + 1);
-						data->back().mod.Ready(file_name, win32fdt.cFileName);
-					}
-				} while (FindNextFile(hFind, &win32fdt));
-			} //else{ return false; }
-			FindClose(hFind);
+			GetFileNames(&data_t, file_name);
+			for (auto& d : data_t) {
+				if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+					data->resize(data->size() + 1);
+					data->back().mod.Ready(file_name, d.cFileName);
+				}
+			}
 		}
 		void Set(size_t id_) {
 			BASE_Obj::Set(id_);
@@ -1684,17 +1826,14 @@ namespace FPS_n2 {
 			this->obj = this->ptr_mag->mod.Get_model().Duplicate();
 			if (dnm == SIZE_MAX) {
 				if (this->ptr_mag != nullptr) {
-					this->Ammo_cnt = int(this->ptr_mag->Ammo_cap);
+					this->Ammo_cnt = int(this->ptr_mag->Get_Ammo_Cap());
 				}
 			}
 			else {
 				this->Ammo_cnt = dnm;
 			}
 			if (this->ptr_mag != nullptr) {
-				if (this->magazine_param.ammo.size() < this->ptr_mag->ammo.size()) {
-					this->magazine_param.ammo.resize(this->ptr_mag->ammo.size());
-				}
-				this->magazine_param.ammo[0].Get_name() = this->ptr_mag->ammo[0].Get_name();
+				this->magazine_param.Copy_Ammo(*this->ptr_mag);
 			}
 			this->del_timer = (this->Ammo_cnt == 0) ? 5.f : 20.f;
 		}
@@ -1803,11 +1942,11 @@ namespace FPS_n2 {
 				if (this->ptr_mag != nullptr) {
 					chara->addf_canget_magitem(zz);
 					if (zz) {
-						chara->set_canget_mag(this->id_t, this->ptr_mag->mod.Get_name());
-						if (chara->getmagazine_push() && this->Ammo_cnt != 0 && (this->ptr_mag->ammo[0].Get_name() == this->magazine_param.ammo[0].Get_name())) {
+						chara->Set_canget_mag(this->id_t, this->ptr_mag->mod.Get_name());
+						if (chara->getmagazine_push() && this->Ammo_cnt != 0 && (this->ptr_mag->Get_Ammo(0).Get_name() == this->magazine_param.Get_Ammo(0).Get_name())) {
 							chara->Set_sort_f(false);
-							chara->Gun.gun_stat_now->magazine_plus(this);
-							if (chara->Gun.Get_mag_in().size() == 1) {
+							chara->Set_Gun_().gun_stat_now->magazine_plus(this);
+							if (chara->Get_Gun_().Get_mag_in().size() == 1) {
 								chara->Set_reloadf(true);
 							}
 							this->Detach_item();
@@ -1818,27 +1957,13 @@ namespace FPS_n2 {
 				if (this->ptr_med != nullptr) {
 					chara->addf_canget_meditem(zz);
 					if (zz) {
-						chara->set_canget_med(this->id_t, this->ptr_med->mod.Get_name());
+						chara->Set_canget_med(this->id_t, this->ptr_med->mod.Get_name());
 						if (chara->getmagazine_push()) {
 							chara->Damage.AddHP(this->ptr_med->repair);
 							this->Detach_item();
 						}
 					}
 				}
-				//
-				/*
-				if (this->ptr_gre != nullptr) {
-					chara->addf_canget_meditem(zz);
-					if (zz) {
-						chara->set_canget_med(this->id_t, this->ptr_gre->mod.Get_name());
-						if (chara->getmagazine_push()) {
-							chara->HP = std::clamp<int>(chara->HP + this->ptr_gre->repair, 0, chara->HP_full);
-							this->Detach_item();
-						}
-					}
-				}
-				*/
-				//
 			}
 		}
 		void Check_CameraViewClip(bool use_occlusion, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) noexcept {
@@ -1881,7 +2006,7 @@ namespace FPS_n2 {
 		bool Detach_gre(std::shared_ptr<PLAYER_CHARA>& killer, std::vector<std::shared_ptr<PLAYER_CHARA>>& chara, std::function<MV1_COLL_RESULT_POLY(const VECTOR_ref&, const VECTOR_ref&)> map_col_line) noexcept {
 			if (this->ptr_gre != nullptr && this->del_timer <= 0.f) {
 				//effect
-				killer->Set_eff(Effect::ef_greexp, this->move.pos, VECTOR_ref::front(), 0.1f / 0.1f);
+				killer->Set_Effect(Effect::ef_greexp, this->move.pos, VECTOR_ref::front(), 0.1f / 0.1f);
 				//
 				SE.Get(EnumSound::Explosion).Play_3D(0, this->move.pos, 100.f, 255);
 				//グレ爆破
@@ -1893,80 +2018,62 @@ namespace FPS_n2 {
 			}
 			return false;
 		}
-
-		// コピーは禁止するが、ムーブは許可する
-		Items(const Items&) = delete;
-		Items& operator=(const Items&) = delete;
-
-		// 特殊メンバ関数を明示的に定義もしくはdeleteした場合、
-		// それ以外の特殊メンバ関数は明示的に定義もしくはdefault宣言しなければ
-		// 暗黙定義されない
-		Items(Items&&) = default;
-		Items() = default;
-		Items& operator=(Items&&) = default;
-
-		~Items(void) noexcept {}
 	};
 	//戦車砲データ
 	class gun_frame {
-		int type = 0;
-		int rounds = 0;
+		std::vector<std::string> useammo;//現状未使用
+
+		int Ammo_Cap = 0;
 		std::string name;
-		std::vector<std::string> useammo;
 		std::vector<Ammos> Spec;	/**/
 		float load_time = 0.f;
-		frames frame1;
-		frames frame2;
-		frames frame3;
+		std::array<frames, 3> frame;
 		int sound_use = 0;
 	public:
-		const auto& Get_rounds()const noexcept { return rounds; }
+		const auto& Get_Ammo_Cap()const noexcept { return Ammo_Cap; }
 		const auto& Get_name()const noexcept { return name; }
 		const auto& Get_Spec()const noexcept { return Spec; }
-		const auto& Get_sound()const noexcept { return sound_use; }
-
 		const auto& Get_load_time()const noexcept { return load_time; }
-		const auto& Get_frame1()const noexcept { return frame1; }
-		const auto& Get_frame2()const noexcept { return frame2; }
-		const auto& Get_frame3()const noexcept { return frame3; }
+		const auto& Get_frame(size_t ID_t)const noexcept { return frame[ID_t]; }
+		const auto& Get_sound()const noexcept { return sound_use; }
 		//const auto& Get_()const noexcept { return; }
 
 		gun_frame(void) noexcept {
-			frame1.first = -1;
-			frame2.first = -1;
-			frame3.first = -1;
+			frame[0].first = -1;
+			frame[1].first = -1;
+			frame[2].first = -1;
 		}
 
 		void Set(const MV1& obj, int i) {
-			this->frame1.Set_World(i, obj);
-			this->frame3.first = -1;
-			this->frame2.first = -1;
-			auto p2 = obj.frame_parent(this->frame1.first);
+			this->frame[0].Set_World(i, obj);
+			this->frame[2].first = -1;
+			this->frame[1].first = -1;
+			auto p2 = obj.frame_parent(this->frame[0].first);
 			if (p2 >= 0) {
-				this->frame1.second -= obj.frame(int(p2)); //親がいる時引いとく
+				this->frame[0].second -= obj.frame(int(p2)); //親がいる時引いとく
 			}
-			if (obj.frame_child_num(this->frame1.first) <= 0) {
+			if (obj.frame_child_num(this->frame[0].first) <= 0) {
 				return;
 			}
-			int child_num = (int)obj.frame_child(this->frame1.first, 0);
+			int child_num = (int)obj.frame_child(this->frame[0].first, 0);
 			if (obj.frame_name(child_num).find("仰角", 0) != std::string::npos) {
-				this->frame2.Set_Local(child_num, obj);
+				this->frame[1].Set_Local(child_num, obj);
 			}
-			if (this->frame2.first == -1) {
+			if (this->frame[1].first == -1) {
 				return;
 			}
-			if (obj.frame_child_num(this->frame2.first) <= 0) {
+			if (obj.frame_child_num(this->frame[1].first) <= 0) {
 				return;
 			}
 			{
-				this->frame3.Set_Local((int)obj.frame_child(this->frame2.first, 0), obj);
+				this->frame[2].Set_Local((int)obj.frame_child(this->frame[1].first, 0), obj);
 			}
 		}
 
-		void Set_performance(int mdata, const std::string& stt) {
+		void Set_Performance(int mdata, const std::string& stt) {
 			this->name = getparams::getright(stt);
 			this->load_time = getparams::_float(mdata);
-			this->rounds = getparams::_int(mdata);
+			this->Ammo_Cap = getparams::_int(mdata);
 			this->sound_use = getparams::_int(mdata);
 			this->Spec.resize(this->Spec.size() + 1);
 			this->Spec.back().Set_before("data/ammo/", getparams::_str(mdata));
@@ -2041,7 +2148,7 @@ namespace FPS_n2 {
 		std::vector<int> module_mesh;						/*装甲ID*/
 		bool isfloat{ false };								/*浮くかどうか*/
 		float down_in_water = 0.f;							/*沈む判定箇所*/
-		float flont_speed_limit = 0.f;						/*前進速度(km/h)*/
+		float front_speed_limit = 0.f;						/*前進速度(km/h)*/
 		float back_speed_limit = 0.f;						/*後退速度(km/h)*/
 		float body_rad_limit = 0.f;							/*旋回速度(度/秒)*/
 		float turret_rad_limit = 0.f;						/*砲塔駆動速度(度/秒)*/
@@ -2074,7 +2181,7 @@ namespace FPS_n2 {
 			this->module_mesh = t.module_mesh;
 			this->isfloat = t.isfloat;
 			this->down_in_water = t.down_in_water;
-			this->flont_speed_limit = t.flont_speed_limit;
+			this->front_speed_limit = t.front_speed_limit;
 			this->back_speed_limit = t.back_speed_limit;
 			this->body_rad_limit = t.body_rad_limit;
 			this->turret_rad_limit = t.turret_rad_limit;
@@ -2090,7 +2197,7 @@ namespace FPS_n2 {
 	public:
 		int Reload_ID = -1;
 		//
-		const auto& Get_name()const noexcept { return name; }
+		const auto& Get_name()const noexcept { return name; }//未使用
 
 		const auto& Get_obj()const noexcept { return obj; }
 		const auto& Get_col()const noexcept { return col; }
@@ -2106,7 +2213,7 @@ namespace FPS_n2 {
 		const auto& Get_module_mesh()const noexcept { return module_mesh; }
 		const auto& Get_isfloat()const noexcept { return isfloat; }
 		const auto& Get_down_in_water()const noexcept { return down_in_water; }
-		const auto& Get_flont_speed_limit()const noexcept { return flont_speed_limit; }
+		const auto& Get_front_speed_limit()const noexcept { return front_speed_limit; }
 		const auto& Get_back_speed_limit()const noexcept { return back_speed_limit; }
 		const auto& Get_body_rad_limit()const noexcept { return body_rad_limit; }
 		const auto& Get_turret_rad_limit()const noexcept { return turret_rad_limit; }
@@ -2121,36 +2228,57 @@ namespace FPS_n2 {
 		const auto& Get_b2downsideframe()const noexcept { return b2downsideframe; }
 		//コンストラクタ
 		Vehcs(void) noexcept { }
-		Vehcs(const Vehcs& t) {
-			this->copy(t);
-		}
-		void operator=(const Vehcs& t) {
-			this->copy(t);
-		}
+		Vehcs(const Vehcs& t) { this->copy(t); }
+		void operator=(const Vehcs& t) { this->copy(t); }
 		//事前読み込み
 		static void Set_Pre(std::vector<Vehcs>* veh_, const char* name) {
-			WIN32_FIND_DATA win32fdt;
-			HANDLE hFind;
-			hFind = FindFirstFile((std::string(name) + "*").c_str(), &win32fdt);
-			if (hFind != INVALID_HANDLE_VALUE) {
-				do {
-					if ((win32fdt.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (win32fdt.cFileName[0] != '.')) {
-						veh_->resize(veh_->size() + 1);
-						veh_->back().name = win32fdt.cFileName;
-					}
-				} while (FindNextFile(hFind, &win32fdt));
-			} //else{ return false; }
-			FindClose(hFind);
+			GetFileNames(&data_t, name);
+			for (auto& d : data_t) {
+				if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+					veh_->resize(veh_->size() + 1);
+					veh_->back().name = d.cFileName;
+				}
+			}
 			for (auto& t : *veh_) {
 				MV1::Load(std::string(name) + t.name + "/model.mv1", &t.obj, true);
 				MV1::Load(std::string(name) + t.name + "/col.mv1", &t.col, true);
 				t.ui_pic = GraphHandle::Load(std::string(name) + t.name + "/pic.png");
 			}
 		}
+
+		const int GetSide(bool isLeft, bool isFront) const noexcept {
+			int ans = 0;
+			float tmp = 0.f;
+			for (auto& f : this->wheelframe) {
+				if ((isLeft ? 1.f : -1.f) * f.second.x() >= 0) {
+					ans = f.first;
+					tmp = f.second.z();
+					break;
+				}
+			}
+			for (auto& f : this->wheelframe) {
+				if (ans != f.first) {
+					if ((isLeft ? 1.f : -1.f) * f.second.x() >= 0) {
+						if (isFront) {
+							if (tmp > f.second.z()) {
+								ans = f.first;
+								tmp = f.second.z();
+							}
+						}
+						else {
+							if (tmp < f.second.z()) {
+								ans = f.first;
+								tmp = f.second.z();
+							}
+						}
+					}
+				}
+			}
+			return ans;
+		}
 		//メイン読み込み
 		void Set(void) noexcept {
 			using namespace std::literals;
-
 			//αテスト
 			this->obj.material_AlphaTestAll(true, DX_CMP_GREATER, 128);
 			GetGraphSize(this->ui_pic.get(), &this->pic_x, &this->pic_y);
@@ -2213,92 +2341,12 @@ namespace FPS_n2 {
 						}
 					}
 				}
-
 			}
-			//2	左後部0
-			{
-				float tmp = 0.f;
-				for (auto& f : this->wheelframe) {
-					if (f.second.x() >= 0) {
-						this->square[0] = f.first;
-						tmp = f.second.z();
-						break;
-					}
-				}
-				for (auto& f : this->wheelframe) {
-					if (this->square[0] != f.first) {
-						if (f.second.x() >= 0) {
-							if (tmp < f.second.z()) {
-								this->square[0] = f.first;
-								tmp = f.second.z();
-							}
-						}
-					}
-				}
-			}
-			//10	左前部1
-			{
-				float tmp = 0.f;
-				for (auto& f : this->wheelframe) {
-					if (f.second.x() >= 0) {
-						this->square[1] = f.first;
-						tmp = f.second.z();
-						break;
-					}
-				}
-				for (auto& f : this->wheelframe) {
-					if (this->square[1] != f.first) {
-						if (f.second.x() >= 0) {
-							if (tmp > f.second.z()) {
-								this->square[1] = f.first;
-								tmp = f.second.z();
-							}
-						}
-					}
-				}
-			}
-			//3	右後部2
-			{
-				float tmp = 0.f;
-				for (auto& f : this->wheelframe) {
-					if (!(f.second.x() >= 0)) {
-						this->square[2] = f.first;
-						tmp = f.second.z();
-						break;
-					}
-				}
-				for (auto& f : this->wheelframe) {
-					if (this->square[2] != f.first) {
-						if (!(f.second.x() >= 0)) {
-							if (tmp < f.second.z()) {
-								this->square[2] = f.first;
-								tmp = f.second.z();
-							}
-						}
-					}
-				}
-			}
-			//11	右前部3
-			{
-				float tmp = 0.f;
-				for (auto& f : this->wheelframe) {
-					if (!(f.second.x() >= 0)) {
-						this->square[3] = f.first;
-						tmp = f.second.z();
-						break;
-					}
-				}
-				for (auto& f : this->wheelframe) {
-					if (this->square[3] != f.first) {
-						if (!(f.second.x() >= 0)) {
-							if (tmp > f.second.z()) {
-								this->square[3] = f.first;
-								tmp = f.second.z();
-							}
-						}
-					}
-				}
-			}
+			//4隅確定
+			this->square[0] = GetSide(true, false);			//2		左後部0
+			this->square[1] = GetSide(true, true);			//10	左前部1
+			this->square[2] = GetSide(false, false);		//3		右後部2
+			this->square[3] = GetSide(false, true);			//11	右前部3
 			//装甲
 			for (int i = 0; i < this->col.mesh_num(); i++) {
 				std::string p = this->col.material_name(i);
@@ -2316,13 +2364,13 @@ namespace FPS_n2 {
 			{
 				int mdata = FileRead_open(("data/tank/" + this->name + "/data.txt").c_str(), FALSE);
 				this->isfloat = getparams::_bool(mdata);
-				this->flont_speed_limit = getparams::_float(mdata);
+				this->front_speed_limit = getparams::_float(mdata);
 				this->back_speed_limit = getparams::_float(mdata);
 				this->body_rad_limit = getparams::_float(mdata);
 				this->turret_rad_limit = deg2rad(getparams::_float(mdata));
 				this->HP = getparams::_int(mdata);
 				auto stt = getparams::get_str(mdata);
-				for (auto& g : this->gunframe) { g.Set_performance(mdata, stt); }
+				for (auto& g : this->gunframe) { g.Set_Performance(mdata, stt); }
 				Reload_ID = getparams::_int(mdata);//サウンド
 				FileRead_close(mdata);
 				for (auto& g : this->gunframe) { g.Set_Ammos_after(); }
@@ -2330,7 +2378,7 @@ namespace FPS_n2 {
 		}
 	};
 	//パーツデータ管理
-	class GUNPARTS_Control {
+	class GunPartsControl {
 	private:
 		std::vector<GUNPARTs> magazine_data;		//GUNデータ
 		std::vector<GUNPARTs> mazzule_data;			//GUNデータ
@@ -2348,36 +2396,36 @@ namespace FPS_n2 {
 	public:
 		std::vector<GUNPARTs>* Get_Parts_Data_Ptr(EnumGunParts type_sel) noexcept {
 			switch (type_sel) {
-			case EnumGunParts::PARTS_MAGAZINE:
+			case EnumGunParts::MAGAZINE:
 				return &this->magazine_data;
-			case EnumGunParts::PARTS_MAZZULE:
+			case EnumGunParts::MAZZULE:
 				return &this->mazzule_data;
-			case EnumGunParts::PARTS_GRIP:
+			case EnumGunParts::GRIP:
 				return &this->grip_data;
-			case EnumGunParts::PARTS_UPER_HGUARD:
+			case EnumGunParts::UPER_HANDGUARD:
 				return &this->uperhandguard_data;
-			case EnumGunParts::PARTS_UNDER_HGUARD:
+			case EnumGunParts::UNDER_HANDGUARD:
 				return &this->underhandguard_data;
-			case EnumGunParts::PARTS_DUSTCOVER:
+			case EnumGunParts::DUSTCOVER:
 				return &this->dustcover_data;
-			case EnumGunParts::PARTS_STOCK:
+			case EnumGunParts::STOCK:
 				return &this->stock_data;
-			case EnumGunParts::PARTS_LAM:
+			case EnumGunParts::LAM:
 				return &this->lam_data;
-			case EnumGunParts::PARTS_MOUNT_BASE:
+			case EnumGunParts::MOUNT_BASE:
 				return &this->mount_base_data;
-			case EnumGunParts::PARTS_MOUNT:
+			case EnumGunParts::MOUNT:
 				return &this->mount_data;
-			case EnumGunParts::PARTS_SIGHT:
+			case EnumGunParts::SIGHT:
 				return &this->sight_data;
-			case EnumGunParts::PARTS_FOREGRIP:
+			case EnumGunParts::FOREGRIP:
 				return &this->foregrip_data;
-			case EnumGunParts::PARTS_GUN:
+			case EnumGunParts::GUN:
 				return &this->gun_data;
 			default:
 				/*
-				PARTS_NONE,
-				PARTS_BASE,
+				NONE,
+				BASE,
 				*/
 				return nullptr;
 			}
@@ -2386,7 +2434,7 @@ namespace FPS_n2 {
 			auto ptr = Get_Parts_Data_Ptr(type_sel);
 			return *ptr;
 		}
-		GUNPARTS_Control(void) noexcept {
+		GunPartsControl(void) noexcept {
 			GUNPARTs::Set_Pre(&this->grip_data, "data/Guns/parts/grip/");
 			GUNPARTs::Set_Pre(&this->uperhandguard_data, "data/Guns/parts/uper_handguard/");
 			GUNPARTs::Set_Pre(&this->underhandguard_data, "data/Guns/parts/under_handguard/");
@@ -2394,12 +2442,12 @@ namespace FPS_n2 {
 			GUNPARTs::Set_Pre(&this->mount_data, "data/Guns/parts/mount/");
 			GUNPARTs::Set_Pre(&this->dustcover_data, "data/Guns/parts/dustcover/");
 			GUNPARTs::Set_Pre(&this->foregrip_data, "data/Guns/parts/foregrip/");
-			GUNPARTs::Set_Pre(&this->mazzule_data, "data/Guns/parts/mazzule/", EnumGunParts::PARTS_MAZZULE);
-			GUNPARTs::Set_Pre(&this->stock_data, "data/Guns/parts/stock/", EnumGunParts::PARTS_STOCK);
-			GUNPARTs::Set_Pre(&this->sight_data, "data/Guns/parts/sight/", EnumGunParts::PARTS_SIGHT);
-			GUNPARTs::Set_Pre(&this->lam_data, "data/Guns/parts/lam/", EnumGunParts::PARTS_LAM);
-			GUNPARTs::Set_Pre(&this->gun_data, "data/Guns/gun/", EnumGunParts::PARTS_BASE);					//GUNデータ
-			GUNPARTs::Set_Pre(&this->magazine_data, "data/Guns/mag/", EnumGunParts::PARTS_MAGAZINE);		//MAGデータ
+			GUNPARTs::Set_Pre(&this->mazzule_data, "data/Guns/parts/mazzule/", EnumGunParts::MAZZULE);
+			GUNPARTs::Set_Pre(&this->stock_data, "data/Guns/parts/stock/", EnumGunParts::STOCK);
+			GUNPARTs::Set_Pre(&this->sight_data, "data/Guns/parts/sight/", EnumGunParts::SIGHT);
+			GUNPARTs::Set_Pre(&this->lam_data, "data/Guns/parts/lam/", EnumGunParts::LAM);
+			GUNPARTs::Set_Pre(&this->gun_data, "data/Guns/gun/", EnumGunParts::BASE);					//GUNデータ
+			GUNPARTs::Set_Pre(&this->magazine_data, "data/Guns/mag/", EnumGunParts::MAGAZINE);		//MAGデータ
 		}
 
 		void Set(void) noexcept {
@@ -2420,129 +2468,46 @@ namespace FPS_n2 {
 	};
 	//オーディオ管理
 	class Audio_Control {
+		static void AddSE_By_File(EnumSound ID_t, size_t buffersize = 1, std::string path_t = "") {
+			GetFileNames(&data_t, path_t);
+			for (auto& d : data_t) {
+				if (std::string(d.cFileName).find(".wav") != std::string::npos) {
+					SE.Add(ID_t, buffersize, path_t + d.cFileName);
+				}
+			}
+		}
 	public:
 		Audio_Control(void) noexcept {
-			std::string p;
-			WIN32_FIND_DATA win32fdt;
 			//環境音
-			SE.Add(EnumSound::MAP0_ENVI, 1, "data/audio/envi.wav", false);
+			SE.Add(EnumSound::MAP0_ENVI, 1, "data/Audio/envi.wav", false);
 			//キャラ用オーディオ
-			SE.Add(EnumSound::Sort_MAG, 2, "data/audio/chara/sort.wav");
-			SE.Add(EnumSound::Cate_Load, 2, "data/audio/chara/load.wav");
-			SE.Add(EnumSound::Foot_Sound, 3, "data/audio/chara/foot_sand.wav");
-			SE.Add(EnumSound::Explosion, 2, "data/audio/chara/explosion.wav");
-
-			VOICE.Add(EnumSound::Voice_Damage, 2, "data/audio/voice/damage.wav");
-			VOICE.Add(EnumSound::Voice_Death, 2, "data/audio/voice/death.wav");
-			VOICE.Add(EnumSound::Voice_Breath, 3, "data/audio/voice/breath.wav");
-			VOICE.Add(EnumSound::Voice_Breath_Run, 3, "data/audio/voice/breath_run.wav");
+			SE.Add(EnumSound::Sort_MAG, 2, "data/Audio/chara/sort.wav");
+			SE.Add(EnumSound::Cate_Load, 2, "data/Audio/chara/load.wav");
+			SE.Add(EnumSound::Foot_Sound, 3, "data/Audio/chara/foot_sand.wav");
+			SE.Add(EnumSound::Explosion, 2, "data/Audio/chara/explosion.wav");
+			//ボイス
+			VOICE.Add(EnumSound::Voice_Damage, 2, "data/Audio/voice/damage.wav");
+			VOICE.Add(EnumSound::Voice_Death, 2, "data/Audio/voice/death.wav");
+			VOICE.Add(EnumSound::Voice_Breath, 3, "data/Audio/voice/breath.wav");
+			VOICE.Add(EnumSound::Voice_Breath_Run, 3, "data/Audio/voice/breath_run.wav");
 			//銃用オーディオ
-			SE.Add(EnumSound::Cate_Down, 2, "data/audio/gun/cate/case_2.wav");
-			SE.Add(EnumSound::Assemble, 2, "data/audio/gun/assemble.wav");
-			SE.Add(EnumSound::Trigger, 2, "data/audio/gun/trigger.wav");
-			{
-				HANDLE hFind = FindFirstFile("data/audio/gun/mag_down/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							SE.Add(EnumSound::MAG_Down, 2, "data/audio/gun/mag_down/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			{
-				HANDLE hFind = FindFirstFile("data/audio/gun/mag_set/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							SE.Add(EnumSound::MAG_Set, 2, "data/audio/gun/mag_set/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			{
-				HANDLE hFind = FindFirstFile("data/audio/gun/fire/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							SE.Add(EnumSound::Shot, 5, "data/audio/gun/fire/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			{
-				HANDLE hFind = FindFirstFile("data/audio/gun/slide/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							SE.Add(EnumSound::Slide, 2, "data/audio/gun/slide/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
+			SE.Add(EnumSound::Cate_Down, 2, "data/Audio/gun/cate/case_2.wav");
+			SE.Add(EnumSound::Assemble, 2, "data/Audio/gun/assemble.wav");
+			SE.Add(EnumSound::Trigger, 2, "data/Audio/gun/trigger.wav");
+			AddSE_By_File(EnumSound::MAG_Down, 2, "data/Audio/gun/mag_down/");
+			AddSE_By_File(EnumSound::MAG_Set, 2, "data/Audio/gun/mag_set/");
+			AddSE_By_File(EnumSound::Shot, 5, "data/Audio/gun/fire/");
+			AddSE_By_File(EnumSound::Slide, 2, "data/Audio/gun/slide/");
 			//戦車用オーディオ
-			{
-				HANDLE hFind = FindFirstFile("data/audio/tank/damage/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							SE.Add(EnumSound::Tank_Damage, 2, "data/audio/tank/damage/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			{
-				HANDLE hFind = FindFirstFile("data/audio/tank/fire/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							SE.Add(EnumSound::Tank_Shot, 4, "data/audio/tank/fire/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			{
-				HANDLE hFind = FindFirstFile("data/audio/tank/reload/hand/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							SE.Add(EnumSound::Tank_Reload, 2, "data/audio/tank/reload/hand/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			{
-				HANDLE hFind = FindFirstFile("data/audio/tank/ricochet/*", &win32fdt);
-				if (hFind != INVALID_HANDLE_VALUE) {
-					do {
-						p = win32fdt.cFileName;
-						if (p.find(".wav") != std::string::npos) {
-							SE.Add(EnumSound::Tank_Ricochet, 2, "data/audio/tank/ricochet/" + p);
-						}
-					} while (FindNextFile(hFind, &win32fdt));
-				} //else{ return false; }
-				FindClose(hFind);
-			}
-			SE.Add(EnumSound::Tank_engine, 3, "data/audio/tank/engine.wav");
+			AddSE_By_File(EnumSound::Tank_Damage, 2, "data/Audio/tank/damage/");
+			AddSE_By_File(EnumSound::Tank_Shot, 4, "data/Audio/tank/fire/");
+			AddSE_By_File(EnumSound::Tank_Reload, 2, "data/Audio/tank/reload/hand/");
+			AddSE_By_File(EnumSound::Tank_Ricochet, 2, "data/Audio/tank/ricochet/");
+			SE.Add(EnumSound::Tank_engine, 3, "data/Audio/tank/engine.wav");
 			//UI用オーディオ
-			//SE.Get(EnumSound::Shot).Play_3D(2, VECTOR_ref::zero(), 1.f);//decision
-			SE.Add(EnumSound::CANCEL, 2, "data/audio/UI/cancel.wav", false);
-			SE.Add(EnumSound::CURSOR, 2, "data/audio/UI/cursor.wav", false);
-			SE.Add(EnumSound::TIMER, 2, "data/audio/UI/timer.wav", false);
+			SE.Add(EnumSound::CANCEL, 2, "data/Audio/UI/cancel.wav", false);
+			SE.Add(EnumSound::CURSOR, 2, "data/Audio/UI/cursor.wav", false);
+			SE.Add(EnumSound::TIMER, 2, "data/Audio/UI/timer.wav", false);
 			//
 		}
 	};

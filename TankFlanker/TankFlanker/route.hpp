@@ -28,74 +28,48 @@ namespace FPS_n2 {
 			shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");									//歪み
 			//MAP
 			auto MAPPTs = std::make_shared<MAPclass::Map>(OPTPTs->Get_grass_level(), DrawPts->disp_x, DrawPts->disp_y);
-			MAPPTs->Set_mine(MAPPTs);
 			//キー読み込み
 			auto KeyBind = std::make_shared<key_bind>(DrawPts);
 			auto OptionMenu = std::make_shared<option_menu>(OPTPTs, KeyBind, DrawPts);
 			auto PauseMenu = std::make_unique<pause_menu>(OptionMenu, KeyBind, DrawPts);
-			//シーン
-			auto UI_LOADPTs = std::make_shared<Sceneclass::LOADING>();
-			auto MAINLOOPscene = std::make_shared<Sceneclass::MAINLOOP>(MAPPTs, OPTPTs);
-			auto LOADscene = std::make_shared<Sceneclass::LOAD>();
-			auto SELECTscene = std::make_shared<Sceneclass::SELECT>();
 			//リソース
 			auto Audio_resource = std::make_shared<Audio_Control>();						//オーディオ
-			auto GunPartses = std::make_shared<GUNPARTS_Control>();							//銃パーツ
+			auto GunPartses = std::make_shared<GunPartsControl>();								//銃パーツ
 			effectControl.Init();															//エフェクト
 			OptionMenu->Set();
-			//
-			UI_LOADPTs->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);
-			LOADscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);
-			SELECTscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);
-			MAINLOOPscene->Init(DrawPts, OPTPTs, MAPPTs, GunPartses, KeyBind);
+			hit_obj_p.Init();																//弾痕
+			hit_b_obj_p.Init();																//血痕
+			//シーン
+			auto ITEMLOADscene = std::make_shared<Sceneclass::LOADING>(MAPPTs, DrawPts, OPTPTs, GunPartses, KeyBind);
+			auto MAPLOADscene = std::make_shared<Sceneclass::LOADING>(MAPPTs, DrawPts, OPTPTs, GunPartses, KeyBind);
+			auto MAINLOOPscene = std::make_shared<Sceneclass::MAINLOOP>(MAPPTs, DrawPts, OPTPTs, GunPartses, KeyBind);
+			auto LOADscene = std::make_shared<Sceneclass::LOAD>(MAPPTs, DrawPts, OPTPTs, GunPartses, KeyBind);
+			auto SELECTscene = std::make_shared<Sceneclass::SELECT>(MAPPTs, DrawPts, OPTPTs, GunPartses, KeyBind);
+			//開始処理
+			ITEMLOADscene->Awake();
+			MAPLOADscene->Awake();
+			LOADscene->Awake();
+			SELECTscene->Awake();
+			MAINLOOPscene->Awake();
 			//遷移先指定
+			ITEMLOADscene->Set_Next(MAPLOADscene, scenes::MAP_LOAD);
+			MAPLOADscene->Set_Next(LOADscene, scenes::LOAD);
 			LOADscene->Set_Next(SELECTscene, scenes::SELECT);
 			SELECTscene->Set_Next(MAINLOOPscene, scenes::MAIN_LOOP);
-			MAINLOOPscene->Set_Next(UI_LOADPTs, scenes::MAP_LOAD);
-
+			MAINLOOPscene->Set_Next(MAPLOADscene, scenes::MAP_LOAD);
+			//読み込み表示テキスト指定
+			ITEMLOADscene->settitle("アイテムデータ");		//アイテム読み込み
+			MAPLOADscene->settitle("マップ");				//マップ読み込み
+			//開始時遷移先
+			sel_scene = scenes::ITEM_LOAD;
+			scenes_ptr = ITEMLOADscene;
 			//繰り返し
 			do {
-				//遷移
-				{
-					//遷移前処理
-					switch (sel_scene) {
-					case scenes::ITEM_LOAD:
-						scenes_ptr->Set_Next(UI_LOADPTs, scenes::MAP_LOAD);
-						break;
-					case scenes::MAP_LOAD:
-						scenes_ptr->Set_Next(LOADscene, scenes::LOAD);
-						break;
-					default: break;
-					}
-					//遷移処理
-					switch (sel_scene) {
-					case scenes::NONE_SCENE://start
-						sel_scene = scenes::ITEM_LOAD;
-						scenes_ptr = UI_LOADPTs;
-						break;
-					default:
-						sel_scene = scenes_ptr->Next_scene;
-						scenes_ptr = scenes_ptr->Next_scenes_ptr;
-						break;
-					}
-					//遷移後処理
-					switch (sel_scene) {
-					case scenes::ITEM_LOAD:
-						UI_LOADPTs->settitle("アイテムデータ");	//アイテム読み込み
-						break;
-					case scenes::MAP_LOAD:
-						UI_LOADPTs->settitle("マップ");				//マップ読み込み
-						MAPPTs->Ready_map("data/map");				//マップ読み込み
-						break;
-					default: break;
-					}
-				}
 				//開始
 				{
+					if (sel_scene == scenes::MAP_LOAD) { MAPPTs->Ready_map("data/map"); }
 					scenes_ptr->Set();
-					if (sel_scene == scenes::MAIN_LOOP) {
-						MAPPTs->Start_Ray(scenes_ptr->Get_Light_vec());
-					}
+					if (sel_scene == scenes::MAIN_LOOP) { MAPPTs->Start_Ray(MAINLOOPscene->Get_Light_vec()); }
 					selend = true;
 					selpause = false;
 				}
@@ -112,7 +86,7 @@ namespace FPS_n2 {
 					{
 						//更新
 						{
-							KeyBind->Reset_isalways();
+							KeyBind->ReSet_isalways();
 							selpause = false;
 							if (sel_scene == scenes::MAIN_LOOP) {
 								selpause = PauseMenu->Pause_key();
@@ -129,6 +103,10 @@ namespace FPS_n2 {
 								OptionMenu->Update();
 							}
 							selend = (!selpause) ? scenes_ptr->Update() : PauseMenu->Update();
+
+							//弾痕の更新
+							hit_obj_p.Update();
+							hit_b_obj_p.Update();
 						}
 						//VR空間に適用
 						DrawPts->Move_Player();
@@ -160,8 +138,8 @@ namespace FPS_n2 {
 									SetUseTextureToShader(0, HostpassPTs->Get_MAIN_Screen().get());	//使用するテクスチャをセット
 									if (scenes_ptr->is_lens()) {
 										//レンズ描画
-										shader2D[0].set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
-										shader2D[0].set_param(float(DrawPts->disp_x) / 2.f, float(DrawPts->disp_y) / 2.f, scenes_ptr->size_lens(), scenes_ptr->zoom_lens());
+										shader2D[0].Set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
+										shader2D[0].Set_param(float(DrawPts->disp_x) / 2.f, float(DrawPts->disp_y) / 2.f, scenes_ptr->size_lens(), scenes_ptr->zoom_lens());
 										HostpassPTs->Get_BUF_Screen().SetDraw_Screen();
 										{
 											shader2D[0].Draw(Screen_vertex);
@@ -171,8 +149,8 @@ namespace FPS_n2 {
 
 									if (scenes_ptr->is_bless()) {
 										//歪み描画
-										shader2D[1].set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
-										shader2D[1].set_param(0, 0, scenes_ptr->ratio_bless(), (1.f - cos(scenes_ptr->time_bless())) / 2.f);
+										shader2D[1].Set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
+										shader2D[1].Set_param(0, 0, scenes_ptr->ratio_bless(), (1.f - cos(scenes_ptr->time_bless())) / 2.f);
 										HostpassPTs->Get_BUF_Screen().SetDraw_Screen();
 										{
 											shader2D[1].Draw(Screen_vertex);
@@ -242,24 +220,30 @@ namespace FPS_n2 {
 					case scenes::ITEM_LOAD:
 						GunPartses->Set();																//
 						MAINLOOPscene->Start();															//メインループ開始読み込み
+						hit_obj_p.Clear();																//弾痕
+						hit_b_obj_p.Clear();															//弾痕
 						break;
 					case scenes::MAP_LOAD:
 						MAPPTs->Start();																//マップパーツ生成
-						MAINLOOPscene->Ready_Chara(2/*MAPPTs->Get_spawn_point().size()*/);					//キャラ設定
-						LOADscene->Start(MAINLOOPscene->Get_Mine());									//
+						MAINLOOPscene->Ready_Chara(MAPPTs->Get_spawn_point().size());					//キャラ設定
 						break;
 					case scenes::LOAD:
-						SELECTscene->Start(LOADscene->putout_Preset(), MAINLOOPscene->Get_Mine());		//プリセットを指定
+						SELECTscene->Start(LOADscene->putout_Preset(), GunPartses->Get_Parts_Data(EnumGunParts::GUN), 0);								//プリセットを指定
 						break;
 					case scenes::SELECT:
-						MAINLOOPscene->Ready_Tank(2);													//戦車指定
+						SELECTscene->Load_Human(MAINLOOPscene->Get_Mine());
+						MAINLOOPscene->Ready_Tank(MAPPTs->Get_spawn_point().size());					//戦車指定
 						break;
 					case scenes::MAIN_LOOP:
 						MAPPTs->Dispose();																//マップを消去
 						break;
 					}
+					//遷移
+					{
+						sel_scene = scenes_ptr->Next_scene;
+						scenes_ptr = scenes_ptr->Next_ptr;
+					}
 				}
-				//
 			} while (this->ending);
 			//
 			//MAINLOOPscene->Dispose();//解放

@@ -10,7 +10,7 @@ namespace FPS_n2 {
 			FontPool::Fonthave* Large;
 			FontPool::Fonthave* Middle;
 			FontPool::Fonthave* Small;
-			void set_fonts(void) noexcept {
+			void Set_fonts(void) noexcept {
 				Large = &((DrawPts->use_vr) ? Fonts.Get(y_r(72)) : Fonts.Get(y_r(48)));
 				Middle = &((DrawPts->use_vr) ? Fonts.Get(y_r(36)) : Fonts.Get(y_r(24)));
 				Small = &((DrawPts->use_vr) ? Fonts.Get(y_r(24)) : Fonts.Get(y_r(18)));
@@ -22,7 +22,7 @@ namespace FPS_n2 {
 			int ypos = 0;
 			float ypos_real = 0.f;
 			void Draw_per_info(int xpos1, int ypos1, int xsize, int ysize, GUNPARTs* parts) noexcept {
-				UI_TEMP::set_fonts();
+				UI_TEMP::Set_fonts();
 
 				int back_siz = y_r(3);
 				int title_siz = y_r(6);
@@ -48,17 +48,17 @@ namespace FPS_n2 {
 				}
 				{
 					{
-						float siz = float(Middle->Get_handle().GetDrawWidth((parts != nullptr) ? parts->per.name : "NONE"));
+						float siz = float(Middle->Get_handle().GetDrawWidth((parts != nullptr) ? parts->Get_Performance().name : "NONE"));
 						int base_siz = (xsize - title_siz * 2);
 						if (siz < base_siz) {
-							Middle->Get_handle().DrawString(xpos1 + title_siz, ypos1 + title_siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+							Middle->Get_handle().DrawString(xpos1 + title_siz, ypos1 + title_siz, (parts != nullptr) ? parts->Get_Performance().name : "NONE", GetColor(0, 255, 0));
 						}
 						else {
-							Middle->Get_handle().DrawExtendString(xpos1 + title_siz, ypos1 + title_siz, base_siz / siz, base_siz / siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+							Middle->Get_handle().DrawExtendString(xpos1 + title_siz, ypos1 + title_siz, base_siz / siz, base_siz / siz, (parts != nullptr) ? parts->Get_Performance().name : "NONE", GetColor(0, 255, 0));
 						}
 					}
 					if (parts != nullptr) {
-						std::wstring msg = StringToWString(parts->per.info);
+						std::wstring msg = StringToWString(parts->Get_Performance().info);
 						int i = 0, siz = (xsize - main_siz * 2) / (Small->Get_size() * 5 / 4) - 1;//todo
 						while (true) {
 							if ((title_siz * 2 + Middle->Get_size() + Small->Get_size() * (i + 1)) > ysize) {
@@ -78,8 +78,8 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 		public:
-			void UI_Draw(std::shared_ptr<GUNPARTS_Control>& GunPartses, std::vector<save_c>& save_parts, std::string_view set_name) noexcept {
-				UI_TEMP::set_fonts();
+			void UI_Draw(std::shared_ptr<GunPartsControl>& GunPartses, std::vector<PresetSaveControl::save_c>& save_parts, std::string_view Set_name) noexcept {
+				UI_TEMP::Set_fonts();
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{
 					xs = y_r(800);
@@ -120,7 +120,7 @@ namespace FPS_n2 {
 						}
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-					Middle->Get_handle().DrawString(xp, y_r(25), set_name, GetColor(255, 0, 0));
+					Middle->Get_handle().DrawString(xp, y_r(25), Set_name, GetColor(255, 0, 0));
 
 					//
 					if ((GetNowHiPerformanceCount() / 100000) % 10 <= 5) {
@@ -135,7 +135,7 @@ namespace FPS_n2 {
 		class UI_CUSTOM : public UI_TEMP {
 		private:
 			void Draw_per_info(int xpos1, int ypos1, int xsize, int ysize, GUNPARTs* parts, const float& change_per) noexcept {
-				UI_TEMP::set_fonts();
+				UI_TEMP::Set_fonts();
 
 				int back_siz = y_r(3);
 				int title_siz = y_r(6);
@@ -145,17 +145,17 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(255.f * (1.f - change_per)));
 				{
 					{
-						float siz = float(Middle->Get_handle().GetDrawWidth((parts != nullptr) ? parts->per.name : "NONE"));
+						float siz = float(Middle->Get_handle().GetDrawWidth((parts != nullptr) ? parts->Get_Performance().name : "NONE"));
 						int base_siz = (xsize - title_siz * 2);
 						if (siz < base_siz) {
-							Middle->Get_handle().DrawString(xpos1 + title_siz, ypos1 + title_siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+							Middle->Get_handle().DrawString(xpos1 + title_siz, ypos1 + title_siz, (parts != nullptr) ? parts->Get_Performance().name : "NONE", GetColor(0, 255, 0));
 						}
 						else {
-							Middle->Get_handle().DrawExtendString(xpos1 + title_siz, ypos1 + title_siz, base_siz / siz, base_siz / siz, (parts != nullptr) ? parts->per.name : "NONE", GetColor(0, 255, 0));
+							Middle->Get_handle().DrawExtendString(xpos1 + title_siz, ypos1 + title_siz, base_siz / siz, base_siz / siz, (parts != nullptr) ? parts->Get_Performance().name : "NONE", GetColor(0, 255, 0));
 						}
 					}
 					if (parts != nullptr) {
-						std::wstring msg = StringToWString(parts->per.info);
+						std::wstring msg = StringToWString(parts->Get_Performance().info);
 						int i = 0, siz = (xsize - main_siz * 2) / Small->Get_size() - 1;
 						while (true) {
 							if ((title_siz * 2 + Middle->Get_size() + Small->Get_size() * (i + 1)) > ysize * (1.f - change_per)) {
@@ -175,8 +175,8 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 		public:
-			void UI_Draw(std::shared_ptr<GUNPARTS_Control>& GunPartses, EnumGunParts parts_cat, const bool& Rot, const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine, GUNPARTs* parts_p, float& change_per) noexcept {
-				UI_TEMP::set_fonts();
+			void UI_Draw(std::shared_ptr<GunPartsControl>& GunPartses, EnumGunParts parts_cat, const bool& Rot, PLAYERclass::PLAYER_CHARA::Guns* mine_Gun, GUNPARTs* parts_p, float& change_per) noexcept {
+				UI_TEMP::Set_fonts();
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{
 					int i = 0;
@@ -199,62 +199,62 @@ namespace FPS_n2 {
 					}
 					//*/
 
-					if (parts_cat != EnumGunParts::PARTS_NONE) {
+					if (parts_cat != EnumGunParts::NONE) {
 						std::string parts_type = "";
 						std::vector<GUNPARTs>* parts_t = nullptr;
 
 						switch (parts_cat) {
-						case EnumGunParts::PARTS_MAZZULE:
+						case EnumGunParts::MAZZULE:
 						{
 							parts_type = "MAZZULE";
 							break;
 						}
-						case EnumGunParts::PARTS_MAGAZINE:
+						case EnumGunParts::MAGAZINE:
 						{
 							parts_type = "MAGAZINE";
 							break;
 						}
-						case EnumGunParts::PARTS_GRIP:
+						case EnumGunParts::GRIP:
 						{
 							parts_type = "GRIP";
 							break;
 						}
-						case EnumGunParts::PARTS_UPER_HGUARD:
+						case EnumGunParts::UPER_HANDGUARD:
 						{
 							parts_type = "UPER HANDGUARD";
 							break;
 						}
-						case EnumGunParts::PARTS_UNDER_HGUARD:
+						case EnumGunParts::UNDER_HANDGUARD:
 						{
 							parts_type = "UNDER HANDGUARD";
 							break;
 						}
-						case EnumGunParts::PARTS_DUSTCOVER:
+						case EnumGunParts::DUSTCOVER:
 						{
 							parts_type = "DUSTCOVER";
 							break;
 						}
-						case EnumGunParts::PARTS_STOCK:
+						case EnumGunParts::STOCK:
 						{
 							parts_type = "STOCK";
 							break;
 						}
-						case EnumGunParts::PARTS_LAM:
+						case EnumGunParts::LAM:
 						{
 							parts_type = "LASER/LIGHT";
 							break;
 						}
-						case EnumGunParts::PARTS_FOREGRIP:
+						case EnumGunParts::FOREGRIP:
 						{
 							parts_type = "FOREGRIP";
 							break;
 						}
-						case EnumGunParts::PARTS_MOUNT:
+						case EnumGunParts::MOUNT:
 						{
 							parts_type = "MOUNT";
 							break;
 						}
-						case EnumGunParts::PARTS_SIGHT:
+						case EnumGunParts::SIGHT:
 						{
 							parts_type = "SIGHT";
 							break;
@@ -275,10 +275,10 @@ namespace FPS_n2 {
 							i = 0;
 							for (auto& p : *parts_t) {
 								auto ytmp = yp + Middle->Get_size() + Small->Get_size() * i;
-								std::string strtmp = p.per.name;
+								std::string strtmp = p.Get_Performance().name;
 								int base_siz = (xs + y_r(100) - xs_1) / Small->Get_size();//todo 100で合う?
-								if (p.per.name.length() > base_siz) {
-									strtmp = p.per.name.substr(0, base_siz) + "…";
+								if (p.Get_Performance().name.length() > base_siz) {
+									strtmp = p.Get_Performance().name.substr(0, base_siz) + "…";
 								}
 								Small->Get_handle().DrawString(xp + xs_1, ytmp, strtmp, (&p == parts_p) ? GetColor(255, 0, 0) : GetColor(128, 0, 0));
 								if (&p == parts_p) {
@@ -300,8 +300,8 @@ namespace FPS_n2 {
 						}
 					}
 
-					Small->Get_handle().DrawStringFormat(y_r(100), y_r(700), GetColor(255, 0, 0), "weigt  : %5.2f", mine->Gun.Get_per_all().weight);
-					Small->Get_handle().DrawStringFormat(y_r(100), y_r(725), GetColor(255, 0, 0), "recoil : %5.2f", mine->Gun.Get_per_all().recoil);
+					Small->Get_handle().DrawStringFormat(y_r(100), y_r(700), GetColor(255, 0, 0), "weigt  : %5.2f", mine_Gun->Get_per_all().weight);
+					Small->Get_handle().DrawStringFormat(y_r(100), y_r(725), GetColor(255, 0, 0), "recoil : %5.2f", mine_Gun->Get_per_all().recoil);
 
 
 					Small->Get_handle().DrawString(y_r(100), y_r(575), "SPACE  :Go Battle", GetColor(255, 0, 0));
@@ -418,7 +418,7 @@ namespace FPS_n2 {
 				this->timer = std::max(RULEparts->Get_timer(), 0.f);
 			}
 			void UI_Draw(const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine, std::shared_ptr<key_bind>& KeyBind) noexcept {
-				UI_TEMP::set_fonts();
+				UI_TEMP::Set_fonts();
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{
 					//スコープ
@@ -516,7 +516,7 @@ namespace FPS_n2 {
 						if ((!DrawPts->use_vr && !mine->is_ADS()) || DrawPts->use_vr) {
 							if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 								//空警告
-								if (!mine->Gun.gun_stat_now->not_chamber_EMPTY()) {
+								if (!mine->Set_Gun_().gun_stat_now->not_chamber_EMPTY()) {
 									if (DrawPts->use_vr) {
 										xp = DrawPts->disp_x / 2;
 										yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 8;
@@ -540,17 +540,17 @@ namespace FPS_n2 {
 							xp = DrawPts->disp_x / 2 + DrawPts->disp_y / 4;
 							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6;
 						}
-						switch ((EnumSELECTER)mine->Gun.Get_now_selector()) {
-						case EnumSELECTER::SELECT_SEMI:
+						switch ((EnumSELECTER)mine->Set_Gun_().Get_now_selector()) {
+						case EnumSELECTER::SEMI:
 							Middle->Get_handle().DrawString_MID(xp, yp, "SEMI AUTO", GetColor(0, 255, 0));
 							break;
-						case EnumSELECTER::SELECT_FULL:
+						case EnumSELECTER::FULL:
 							Middle->Get_handle().DrawString_MID(xp, yp, "FULL AUTO", GetColor(0, 255, 0));
 							break;
-						case EnumSELECTER::SELECT_3B:
+						case EnumSELECTER::_3B:
 							Middle->Get_handle().DrawString_MID(xp, yp, "3B", GetColor(0, 255, 0));
 							break;
-						case EnumSELECTER::SELECT_2B:
+						case EnumSELECTER::_2B:
 							Middle->Get_handle().DrawString_MID(xp, yp, "2B", GetColor(0, 255, 0));
 							break;
 						}
@@ -591,11 +591,11 @@ namespace FPS_n2 {
 							if ((!DrawPts->use_vr && !mine->is_ADS()) || DrawPts->use_vr) {
 								//銃
 								{
-									Small->Get_handle().DrawString(xp, yp, mine->Gun.Get_parts(EnumGunParts::PARTS_BASE)->thisparts->per.name, GetColor(255, 255, 255));
+									Small->Get_handle().DrawString(xp, yp, mine->Set_Gun_().Get_parts(EnumGunParts::BASE)->thisparts->Get_Performance().name, GetColor(255, 255, 255));
 								}
 								//マガジン関連(仮)
 								{
-									int size = int(mine->Gun.Get_mag_in().size());
+									int size = int(mine->Set_Gun_().Get_mag_in().size());
 									if (DrawPts->use_vr) {
 										xp = DrawPts->disp_x / 2 - y_r(140) + Middle->Get_size();
 										yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20) - Middle->Get_size() * size;
@@ -604,10 +604,10 @@ namespace FPS_n2 {
 										xp = y_r(220) + Middle->Get_size();
 										yp = DrawPts->disp_y - y_r(20) - Middle->Get_size() * size;
 									}
-									for (auto& a : mine->Gun.Get_mag_in()) {
+									for (auto& a : mine->Set_Gun_().Get_mag_in()) {
 										Middle->Get_handle().DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.Get_Cnt(), a.Get_Cap());
-										if (&a == &mine->Gun.Get_mag_in().front()) {
-											if (mine->Gun.gun_stat_now->not_chamber_EMPTY()) {
+										if (&a == &mine->Set_Gun_().Get_mag_in().front()) {
+											if (mine->Set_Gun_().gun_stat_now->not_chamber_EMPTY()) {
 												Small->Get_handle().DrawString(xp + Middle->Get_handle().GetDrawWidthFormat("%d/%d", a.Get_Cnt(), a.Get_Cap()), yp + Middle->Get_size() - Small->Get_size(), " +1", GetColor(255, 0, 0));
 											}
 											DrawTriangle(xp - y_r(10), yp + 5, xp, yp + Middle->Get_size() / 2, xp - y_r(10), yp + Middle->Get_size() - 5, GetColor(255, 255, 0), FALSE);
@@ -636,7 +636,7 @@ namespace FPS_n2 {
 								for (auto t = 0; t < size; t++) {
 									Small->Get_handle().DrawString(xp, yp, (*mine->MINE_v)->Guninfo(t).Get_name(), GetColor(255, 255, 255));
 									yp += Small->Get_size();
-									Middle->Get_handle().DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", (*mine->MINE_v)->Gunround(t), (*mine->MINE_v)->Guninfo(t).Get_rounds());
+									Middle->Get_handle().DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", (*mine->MINE_v)->Gunround(t), (*mine->MINE_v)->Guninfo(t).Get_Ammo_Cap());
 									yp += Middle->Get_size();
 									if ((*mine->MINE_v)->Gunround(t) != 0) {
 										int color = ((*mine->MINE_v)->Gunloadtime(t) == 0.f) ? GetColor(0, 255, 0) : GetColor(255, 0, 0);
@@ -740,16 +740,16 @@ namespace FPS_n2 {
 				const std::vector<std::shared_ptr<PLAYERclass::PLAYER_CHARA>>& chara,
 				const std::vector<std::shared_ptr<PLAYERclass::PLAYER_VEHICLE>>& vehicle,
 				const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine) noexcept {
-				UI_TEMP::set_fonts();
+				UI_TEMP::Set_fonts();
 				//弾インジケーター
 				if (DrawPts->use_vr) {
-					auto pos_gun = mine->Gun.Get_parts(EnumGunParts::PARTS_BASE)->Get_objMatrix().pos();
+					auto pos_gun = mine->Set_Gun_().Get_parts(EnumGunParts::BASE)->Get_objMatrix().pos();
 					VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 					if (p.z() >= 0.f && p.z() <= 1.f) {
 						int xp = int(p.x());
 						int yp = int(p.y());
-						int cnt = int(mine->Gun.Get_mag_in().front().Get_Cnt());
-						int per = 90 * cnt / int(mine->Gun.Get_mag_in().front().Get_Cap());
+						int cnt = int(mine->Set_Gun_().Get_mag_in().front().Get_Cnt());
+						int per = 90 * cnt / int(mine->Set_Gun_().Get_mag_in().front().Get_Cap());
 						float rad = deg2rad(90 - per);
 						int col_r = GetColor(std::clamp(int(255.f * sin(rad) * 2.f), 0, 255), std::clamp(int(255.f * cos(rad) * 2.f), 0, 255), 0);
 						if (std::max((pos_gun - GetCameraPosition()).size(), 1.f) <= 10.f) {
@@ -760,7 +760,7 @@ namespace FPS_n2 {
 							for (int i = 0; i < std::clamp(int(4 * per / 90) + int(per != 0), 0, 4); i++) {
 								DrawBox(xp - siz / 2 + siz * i / 4 + 2, yp - y_r(30) - i * 2, xp - siz / 2 + siz * (i + 1) / 4 - 2, yp - y_r(10), col_r, TRUE);
 							}
-							if (!mine->Gun.gun_stat_now->not_chamber_EMPTY()) {
+							if (!mine->Set_Gun_().gun_stat_now->not_chamber_EMPTY()) {
 								//空警告
 								if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 									Small->Get_handle().DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += Small->Get_size();
@@ -779,7 +779,7 @@ namespace FPS_n2 {
 						if (g->Flag_canlook_player) {
 							//mag
 							if (g->Get_ptr_mag() != nullptr) {
-								Draw_Item_UI(y_r(144), y_r(144), g->Get_pos_(), "%s %d/%d", g->Get_ptr_mag()->per.name.c_str(), g->Get_magazine().Ammo_cap, g->Get_ptr_mag()->Ammo_cap);
+								Draw_Item_UI(y_r(144), y_r(144), g->Get_pos_(), "%s %d/%d", g->Get_ptr_mag()->Get_Performance().name.c_str(), g->Get_magazine().Get_Ammo_Cap(), g->Get_ptr_mag()->Get_Ammo_Cap());
 							}
 							//med
 							if (g->Get_ptr_med() != nullptr) {
@@ -805,7 +805,7 @@ namespace FPS_n2 {
 				{
 					SetCameraNearFar(0.01f, 100.f);
 					for (auto& c : chara) {
-						c->Gun.Draw_Hit_UI(hit_Graph);
+						c->Draw_Hit_UI(hit_Graph);
 					}
 					for (auto& v : vehicle) {
 						v->Draw_Hit_UI(hit_Graph);
@@ -843,7 +843,7 @@ namespace FPS_n2 {
 				return true;
 			}
 			void UI_Draw(void) noexcept {
-				UI_TEMP::set_fonts();
+				UI_TEMP::Set_fonts();
 				DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
 				Small->Get_handle().DrawStringFormat(0, DrawPts->disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
 				Small->Get_handle().DrawStringFormat_RIGHT(DrawPts->disp_x, DrawPts->disp_y - y_r(70), GetColor(0, 255, 0), "%s 読み込み中 ", message.c_str());

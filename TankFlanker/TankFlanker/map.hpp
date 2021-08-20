@@ -29,9 +29,7 @@ namespace FPS_n2 {
 			return VECTOR_ref::vget((float)(x_t * pos_x) / 100.0f, 0.f, (float)(z_t * pos_z) / 100.0f);
 		}
 
-		class Map {
-		private:
-			std::shared_ptr<Map> MAPPTs{ nullptr };
+		class Map : public std::enable_shared_from_this<Map> {
 		private:
 			std::string path;
 			MV1 map, map_col, mapcol_tank;		//’n–Ê
@@ -62,7 +60,7 @@ namespace FPS_n2 {
 				Model_Instance inst;
 			public:
 
-				void Init(int total, std::shared_ptr<Map>& MAPPTs_t) {
+				void Init(int total, const std::shared_ptr<Map>& MAPPTs_t) {
 					MAPPTs = MAPPTs_t;
 
 					this->inst.Init("data/model/grass/grass.png", "data/model/grass/model.mv1");
@@ -73,7 +71,7 @@ namespace FPS_n2 {
 					this->inst.Set_start();
 				}
 
-				void set_one(void) noexcept {
+				void Set_one(void) noexcept {
 					this->inst.Set_one();
 				}
 				void put(void) noexcept {
@@ -151,10 +149,6 @@ namespace FPS_n2 {
 			int dispx = deskx;
 			int dispy = desky;
 		public:
-			void Set_mine(std::shared_ptr<Map>& MAPPTs_t) {
-				MAPPTs = MAPPTs_t;
-			}
-
 			const std::vector<VECTOR_ref>& Get_waypoint(void) const noexcept { return way_point; }
 			const std::vector<VECTOR_ref>& Get_leanpoint_q(void) const noexcept { return lean_point_q; }
 			const std::vector<VECTOR_ref>& Get_leanpoint_e(void) const noexcept { return lean_point_e; }
@@ -325,7 +319,7 @@ namespace FPS_n2 {
 					for (int x_ = 0; x_ < grassDiv; x_++) {
 						for (int z_ = 0; z_ < grassDiv; z_++) {
 							auto& tgt_g = grass__[x_][z_];
-							tgt_g.Init(grasss, MAPPTs);
+							tgt_g.Init(grasss, shared_from_this());
 							for (int i = 0; i < grasss; ++i) {
 								VECTOR_ref min = Get_Chunk(x_, z_, int(x_max - x_min), int(z_max - z_min), true);
 								VECTOR_ref max = Get_Chunk(x_, z_, int(x_max - x_min), int(z_max - z_min), false);
@@ -353,7 +347,7 @@ namespace FPS_n2 {
 								//
 								tgt_g.inst.hits.SetMatrix((MATRIX_ref::RotY(deg2rad(GetRand(90))) * MATRIX_ref::GetScale(VECTOR_ref::vget(1.f, float(100 - 20 + GetRand(20 * 2)) / 100.f, 1.f))) * MATRIX_ref::Mtrans(tmpvect));
 								//
-								tgt_g.set_one();
+								tgt_g.Set_one();
 							}
 							tgt_g.put();
 						}
@@ -576,8 +570,8 @@ namespace FPS_n2 {
 			//
 			template<class PLAYER_CHARA>
 			void Get_item(VECTOR_ref StartPos, VECTOR_ref EndPos, const std::shared_ptr<PLAYER_CHARA>& chara) noexcept {
-				chara->Reset_canget_item();
-				for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, MAPPTs->Map_col_line); }
+				chara->ReSet_canget_item();
+				for (auto& g : this->item) { g->Get_item_2(StartPos, EndPos, chara, shared_from_this()->Map_col_line); }
 			}
 			//
 			int Get_next_waypoint(std::vector<int> wayp_pre, VECTOR_ref poss, VECTOR_ref zvec = VECTOR_ref::zero()) {
@@ -594,12 +588,7 @@ namespace FPS_n2 {
 					if (tt) {
 						if (tmp.size() >= (w - poss).size()) {
 							auto colres = map_col_line(w + VECTOR_ref::vget(0, 0.5f, 0), poss + VECTOR_ref::vget(0, 0.5f, 0));
-							if (
-								!(colres.HitFlag == TRUE) && 
-								(
-									zvec == VECTOR_ref::zero() ||
-									zvec.Norm().dot((w - poss).Norm()) < 0.f
-								)) {
+							if (!(colres.HitFlag == TRUE) && (zvec == VECTOR_ref::zero() || zvec.Norm().dot((w - poss).Norm()) < 0.f)) {
 								tmp = (w - poss);
 								now = int(id);
 							}
@@ -666,9 +655,9 @@ namespace FPS_n2 {
 					float radp = 0.f;
 					{
 						easing_set(&xcam, 1.f + mine->Get_pseed_per() * 0.2f, 0.9f);
-						radp = -mine->Get_body_yrad();
+						radp = -mine->Get_yrad();
 						int xpos = 0, ypos = 0;
-						Set_pos_chara(&xpos, &ypos, mine->Get_pos(), radp);
+						Set_pos_chara(&xpos, &ypos, mine->Get_Pos_Map(), radp);
 						xp = x_size / 2 - xpos;
 						yp = y_size / 2 - ypos;
 					}
@@ -676,11 +665,11 @@ namespace FPS_n2 {
 					MAPPTs->Get_minmap().DrawRotaGraph(xp, yp, xcam, radp, true);
 					for (auto& c : chara) {
 						int xpos = 0, ypos = 0;
-						Set_pos_chara(&xpos, &ypos, c->Get_pos(), radp);
+						Set_pos_chara(&xpos, &ypos, c->Get_Pos_Map(), radp);
 						int xt = xp + xpos;
 						int yt = yp + ypos;
 
-						UI_player.DrawRotaGraph(xt, yt, xcam, radp + c->Get_body_yrad(), true);
+						UI_player.DrawRotaGraph(xt, yt, xcam, radp + c->Get_yrad(), true);
 					}
 				}
 			}
