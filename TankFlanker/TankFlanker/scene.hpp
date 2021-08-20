@@ -230,7 +230,7 @@ namespace FPS_n2 {
 			}
 		};
 		//
-		class SELECT : public TEMPSCENE, public PresetSaveControl,public Effect_UseControl {
+		class SELECT : public TEMPSCENE, public PresetSaveControl, public Effect_UseControl {
 		private:
 			//sound
 			SoundHandle shot_se;
@@ -404,7 +404,7 @@ namespace FPS_n2 {
 
 			void Start(std::string_view Set_str, std::vector<GUNPARTs>& gun_data, size_t itr) {
 				Preset = Set_str;
-				 this->gun_stat.emplace_back(PLAYERclass::GunControl::GUN_STATUS());					//gunstat
+				this->gun_stat.emplace_back(PLAYERclass::GunControl::GUN_STATUS());					//gunstat
 				mine_Gun.Set_Gun(gun_data, itr, this->gun_stat.back());
 			}
 
@@ -418,7 +418,7 @@ namespace FPS_n2 {
 					}
 				}
 				mine_t->gun_stat.emplace_back(PLAYERclass::GunControl::GUN_STATUS());					//gunstat
-				mine_t->Set_Gun_().Copy_Gun(mine_Gun, GunPartses,mine_t->gun_stat.back());
+				mine_t->Set_Gun_().Copy_Gun(mine_Gun, GunPartses, mine_t->gun_stat.back());
 			}
 
 			void Set(void) noexcept  override {
@@ -804,8 +804,8 @@ namespace FPS_n2 {
 					v->Set_Ptr_Common(MAPPTs, DrawPts);
 					v->Set_Ptr(&this->chara, nullptr, &this->vehicle, &v);
 					v->Set(&vehc_data[
-					//	(&v - &this->vehicle.front())% vehc_data.size()
-					0
+						//	(&v - &this->vehicle.front())% vehc_data.size()
+						0
 					], hit_pic);
 				}
 			}

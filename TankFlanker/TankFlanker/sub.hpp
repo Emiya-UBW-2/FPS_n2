@@ -862,7 +862,7 @@ namespace FPS_n2 {
 					//
 					if (right.press()) { SE_right_timer += 1.f / FPS; }
 					else { SE_right_timer = 0.f; }
-					if (right.trigger() || (SE_right_timer >1.f && ((int)(SE_right_timer * 10.f) % 2 == 0))) {
+					if (right.trigger() || (SE_right_timer > 1.f && ((int)(SE_right_timer * 10.f) % 2 == 0))) {
 						SE_vol_per = std::clamp(SE_vol_per + 0.01f, 0.f, 1.f);
 						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						SE.SetVol(SE_vol_per);
@@ -1280,7 +1280,7 @@ namespace FPS_n2 {
 		float pene = 10.f;//貫通
 		int damage = 10;//ダメージ
 	public:
-		void Set_name(const std::string& value) noexcept { name=value; }
+		void Set_name(const std::string& value) noexcept { name = value; }
 
 		const MV1& Get_model(void) const noexcept { return model; }
 
@@ -1486,7 +1486,7 @@ namespace FPS_n2 {
 		};								      /**/
 		std::array<Hit, 24> hit_obj;					      /*弾痕*/
 		int hitbuf = 0;		       /*使用弾痕*/
-	public :
+	public:
 		void Set(const MV1& hit_pic) {
 			for (auto& h : this->hit_obj) {
 				h.Flag = false;
@@ -1496,7 +1496,7 @@ namespace FPS_n2 {
 				h.pos = VGet(0.f, 0.f, 0.f);
 			}
 		}
-		void Set(const moves& this_move, const  VECTOR_ref& Put_pos, const  VECTOR_ref& Put_normal,const VECTOR_ref& ammo_nomal/*this->move.vec.Norm()*/,const float&caliber,bool isPene) {
+		void Set(const moves& this_move, const  VECTOR_ref& Put_pos, const  VECTOR_ref& Put_normal, const VECTOR_ref& ammo_nomal/*this->move.vec.Norm()*/, const float&caliber, bool isPene) {
 			float asize = 200.f*caliber;
 			auto y_vec = MATRIX_ref::Vtrans(Put_normal, this_move.mat.Inverse());
 			auto z_vec = MATRIX_ref::Vtrans(Put_normal.cross(ammo_nomal).Norm(), this_move.mat.Inverse());
@@ -1588,7 +1588,7 @@ namespace FPS_n2 {
 			if (this->ammo.size() < tgt.ammo.size()) {
 				this->ammo.resize(tgt.ammo.size());
 			}
-			for (int i = 0;i < this->ammo.size();i++) {
+			for (int i = 0; i < this->ammo.size(); i++) {
 				this->ammo[i].Set_name(tgt.ammo[i].Get_name());
 			}
 		}

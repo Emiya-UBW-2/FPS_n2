@@ -64,7 +64,7 @@ namespace FPS_n2 {
 			}
 		};
 		//操作共通
-		class PLAYER_COMMON : public PTR_COMMON, public SHARED_COMMON, public Effect_UseControl{
+		class PLAYER_COMMON : public PTR_COMMON, public SHARED_COMMON, public Effect_UseControl {
 		public:
 			//HP関連
 			class Damages {
@@ -2756,12 +2756,12 @@ namespace FPS_n2 {
 				}
 
 				void Draw_Debug(std::shared_ptr<MAPclass::Map>& MAPPTs_t) {
-					for (size_t i = 0; i < this->wayp_pre.size()-1; i++) {
+					for (size_t i = 0; i < this->wayp_pre.size() - 1; i++) {
 						VECTOR_ref startpos = MAPPTs_t->Get_waypoint()[this->wayp_pre[i]];
 						VECTOR_ref endpos = MAPPTs_t->Get_waypoint()[this->wayp_pre[i + 1]];
 						startpos.y(3.f);
 						endpos.y(3.f);
-						DXDraw::Capsule3D(startpos, endpos,1.f, GetColor(0, 255, 0), GetColor(0, 255, 0));
+						DXDraw::Capsule3D(startpos, endpos, 1.f, GetColor(0, 255, 0), GetColor(0, 255, 0));
 					}
 				}
 			};
@@ -2837,14 +2837,14 @@ namespace FPS_n2 {
 			const auto Get_yrad(void) const noexcept { return (isRide()) ? (*MINE_v)->Get_body_yrad() : this->Get_body_yrad(); }			//ミニマップ用
 			const auto Get_head_pos(void) const noexcept { return this->obj_body.frame(this->frame_s.head_f.first); }						//頭部座標
 			const auto Get_position(bool no_y = false) const noexcept {
-					if (DrawPts->use_vr) {
+				if (DrawPts->use_vr) {
 #ifdef _USE_OPENVR_
-						return (!no_y) ? (this->pos_tt + this->HMD.move.pos - this->HMD.move_start.pos) : (this->pos_tt + this->HMD.Get_pos_noY() - this->HMD.move_start.pos);
+					return (!no_y) ? (this->pos_tt + this->HMD.move.pos - this->HMD.move_start.pos) : (this->pos_tt + this->HMD.Get_pos_noY() - this->HMD.move_start.pos);
 #endif // _USE_OPENVR_
-					}
-					else {
-						return (!no_y) ? this->pos_tt + this->HMD.move.pos : this->pos_tt;
-					}
+				}
+				else {
+					return (!no_y) ? this->pos_tt + this->HMD.move.pos : this->pos_tt;
+				}
 			}
 			const auto& Get_key_(void) const noexcept { return key_; }																		//key
 			const auto& getmagazine_push(void) const noexcept { return this->key_.have_item; }												//item関連
@@ -3340,7 +3340,7 @@ namespace FPS_n2 {
 					}
 					else {
 						if ((ai_phase_old == 1 && this->cpu_do.ai_phase != 1) || (this->add_vec_real.size() <= this->move.vec.size() * 0.8f)) {
-							int now = MAPPTs->Get_next_waypoint(this->cpu_do.wayp_pre, this->Get_Pos_Map(),vec_z);
+							int now = MAPPTs->Get_next_waypoint(this->cpu_do.wayp_pre, this->Get_Pos_Map(), vec_z);
 							if (now != -1) {
 								this->cpu_do.Set_wayp_pre(now);
 							}
@@ -3403,7 +3403,7 @@ namespace FPS_n2 {
 					else {
 						vec_to = Get_NowWaypoint();
 					}
-					SetNextWaypoint(vec_to,vec_z);
+					SetNextWaypoint(vec_to, vec_z);
 					x_m = -int(vec_x.dot(vec_to.Norm()) * 120);
 					y_m = -int(vec_y.dot(vec_to.Norm()) * 10);
 				}
@@ -3491,7 +3491,7 @@ namespace FPS_n2 {
 						this->cpu_do.ai_reload = false;
 					}
 					vec_to = Get_NowWaypoint();
-					SetNextWaypoint(vec_to,vec_z);
+					SetNextWaypoint(vec_to, vec_z);
 					x_m = -int(vec_x.dot(vec_to.Norm()) * 40);
 					y_m = -int(vec_y.dot(vec_to.Norm()) * 40);
 				}
@@ -3502,7 +3502,7 @@ namespace FPS_n2 {
 
 					vec_to = Get_NowWaypoint();
 					vec_z = (*MINE_v)->Get_move().mat.zvec();
-					SetNextWaypoint(vec_to,vec_z,1.5f);
+					SetNextWaypoint(vec_to, vec_z, 1.5f);
 
 					x_m = -int(vec_x.dot(vec_to.Norm()) * 40);
 					y_m = -int(vec_y.dot(vec_to.Norm()) * 40);
@@ -3555,7 +3555,7 @@ namespace FPS_n2 {
 						}
 					}
 				}
-					break;
+				break;
 				default:
 					break;
 				}
@@ -5093,7 +5093,8 @@ namespace FPS_n2 {
 
 									view_yrad = (atan2f(cost, sqrtf(std::abs(1.f - cost * cost)))) / 5.f; //cos取得2D
 									view_xrad = (atan2f(-vec_z.y(), z_hyp) - atan2f(vec_a.y(), a_hyp)) / 5.f;
-								}else{
+								}
+								else {
 									easing_set(&view_yrad, x_m, 0.1f);
 									easing_set(&view_xrad, y_m, 0.1f);
 									float limit = this->use_veh->Get_turret_rad_limit() / FPS;

@@ -338,7 +338,7 @@ namespace FPS_n2 {
 					dam = &mine->Damage;
 				}
 
-				
+
 
 				auto size = y_r(2);
 				int x1 = xpos - xsize / 2;
