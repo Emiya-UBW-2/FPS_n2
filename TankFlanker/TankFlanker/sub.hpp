@@ -793,6 +793,7 @@ namespace FPS_n2 {
 		switchs right;
 		switchs shot;
 
+		std::shared_ptr<OPTION> OPTPTs;
 		float SE_vol_per = 1.f;
 		float Voice_vol_per = 1.f;
 
@@ -812,11 +813,11 @@ namespace FPS_n2 {
 	public:
 		//
 		option_menu(std::shared_ptr<OPTION>& OPTPTs_t, std::shared_ptr<key_bind>& KeyBind_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+			OPTPTs = OPTPTs_t;
 			KeyBind = KeyBind_t;
 			DrawPts = DrawPts_t;
-			SE_vol_per = OPTPTs_t->Get_SE();
-			Voice_vol_per = OPTPTs_t->Get_VOICE();
-
+			SE_vol_per = OPTPTs->Get_SE();
+			Voice_vol_per = OPTPTs->Get_VOICE();
 		}
 		//
 		const auto& Pause_key(void) const noexcept { return On_Option; }
@@ -858,6 +859,7 @@ namespace FPS_n2 {
 						SE_vol_per = std::clamp(SE_vol_per - 0.01f, 0.f, 1.f);
 						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						SE.SetVol(SE_vol_per);
+						OPTPTs->Set_SE(SE_vol_per);
 					}
 					//
 					if (right.press()) { SE_right_timer += 1.f / FPS; }
@@ -866,6 +868,7 @@ namespace FPS_n2 {
 						SE_vol_per = std::clamp(SE_vol_per + 0.01f, 0.f, 1.f);
 						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						SE.SetVol(SE_vol_per);
+						OPTPTs->Set_SE(SE_vol_per);
 					}
 				}
 				//ƒTƒEƒ“ƒh
@@ -877,6 +880,7 @@ namespace FPS_n2 {
 						Voice_vol_per = std::clamp(Voice_vol_per - 0.01f, 0.f, 1.f);
 						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						VOICE.SetVol(Voice_vol_per);
+						OPTPTs->Set_VOICE(Voice_vol_per);
 					}
 					//
 					if (right.press()) { Voice_right_timer += 1.f / FPS; }
@@ -885,6 +889,7 @@ namespace FPS_n2 {
 						Voice_vol_per = std::clamp(Voice_vol_per + 0.01f, 0.f, 1.f);
 						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						VOICE.SetVol(Voice_vol_per);
+						OPTPTs->Set_VOICE(Voice_vol_per);
 					}
 				}
 
@@ -893,6 +898,7 @@ namespace FPS_n2 {
 					if (shot.trigger()) {
 						SE.Get(EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						On_Option = false;
+						OPTPTs->Save();
 					}
 				}
 			}
