@@ -329,7 +329,7 @@ namespace FPS_n2 {
 			float ratio{ 1.f };
 			float changeview = 0.f;
 		private:
-			void Draw_HP(int xpos, int ypos, int xsize, int ysize, const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine) noexcept {
+			void Draw_HP(int xpos, int ypos, int xsize, int ysize, const std::shared_ptr<PLAYERclass::PLAYER_COMMON>& mine) noexcept {
 				PLAYERclass::PLAYER_COMMON::Damages* dam = nullptr;
 				if (mine->isRide()) {
 					dam = &(*mine->MINE_v)->Damage;
@@ -360,7 +360,7 @@ namespace FPS_n2 {
 				}
 				Small->Get_handle().DrawExtendStringFormat_MID(xpos + size, ypos + size, size_y, size_y, GetColor(255, 255, 255), "%d/%d", dam->Get_HP(), dam->Get_HP_full());
 
-				if (1.f - dam->Get_got_damage_f() >= 0.01f) {
+				if (1.f - dam->Get_got_damage_f() >= 0.01f && dam->Get_got_damage() > 0) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * (1.f - powf(1.f - dam->Get_got_damage_f(), 5.f))), 0, 255));
 					Small->Get_handle().DrawExtendStringFormat_MID(xpos + (xsize / 2 * dam->Get_got_damage_x() / 255), ypos + size - int(100 * (1.f - dam->Get_got_damage_f())), size_y, size_y, dam->Get_got_damage_color(), "%d", dam->Get_got_damage());
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
@@ -798,6 +798,12 @@ namespace FPS_n2 {
 						auto p = c->Set_HP_UI();
 						if (p.z() >= 0.f && p.z() <= 1.f) {
 							this->Draw_HP(int(p.x()), int(p.y()), y_r(140), y_r(20), c);
+						}
+					}
+					for (auto& v : vehicle) {
+						auto p = v->Set_HP_UI();
+						if (p.z() >= 0.f && p.z() <= 1.f) {
+							this->Draw_HP(int(p.x()), int(p.y()), y_r(140), y_r(20), v);
 						}
 					}
 				}

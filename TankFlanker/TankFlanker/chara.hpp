@@ -104,7 +104,7 @@ namespace FPS_n2 {
 				void SubHP_Parts(int damage_t, int parts_Set_t) noexcept {
 					this->HP_parts[parts_Set_t] = std::max<int>(this->HP_parts[parts_Set_t] - damage_t, 0); //
 				}
-				void SubHP(int damage_t, float rad_t)  noexcept {
+				void SubHP(int damage_t, float rad_t,bool isshow = true)  noexcept {
 					auto old = this->HP;
 					this->HP = std::max<int>(this->HP - damage_t, 0); //
 					this->got_damage = old - this->HP;
@@ -126,6 +126,9 @@ namespace FPS_n2 {
 					this->got_damage_rad.back().alpfa = 1.f;
 					this->got_damage_rad.back().rad = rad_t;
 
+					if (!isshow) {
+						this->HP_r = this->HP;
+					}
 				}
 				void AddHP(int repair_t) noexcept {
 					this->HP = std::clamp<int>(this->HP + repair_t, 0, this->HP_full);
@@ -339,7 +342,7 @@ namespace FPS_n2 {
 						(*tgt->MINE_c)->scores.Set_death(MINE_c - &ALL_c->front());
 					}
 					if (tgt->isRide()) {
-						(*tgt->MINE_c)->Damage.SubHP(100, rad);
+						(*tgt->MINE_c)->Damage.SubHP(100, rad, false);
 						(*tgt->MINE_c)->Ride_on(nullptr);
 					}
 				}
@@ -3291,54 +3294,98 @@ namespace FPS_n2 {
 				auto vec_z = vec_mat.zvec() * -1.f;
 				//狙うキャラを探索+AIのフェーズ選択
 				{
-					bool pp = true;
-					{
-						auto StartPos = this->Get_head_pos();//todo
-						VECTOR_ref EndPos;
-						for (auto& tgt : *ALL_c) {
-							if (MINE_c == &tgt || tgt->isRide()) { continue; }
-							const size_t index = &tgt - &ALL_c->front();
-							if (tgt->Get_Gun_().Flag_gun) { turn = int(index); }
-							EndPos = (this->cpu_do.ai_time_shoot < 0.f) ? tgt->Get_head_pos() : tgt->obj_body.frame(tgt->frame_s.bodyb_f.first);
-							if (vec_to == VECTOR_ref::zero()) { vec_to = EndPos - StartPos; }//基準の作成
-							if (!tgt->Damage.Get_alive()) { continue; }
-							if (MAPPTs->map_col_line(StartPos, EndPos).HitFlag == TRUE) { continue; }
-							EndPos = EndPos - StartPos;
-							if (vec_to.size() >= EndPos.size()) {
-								vec_to = EndPos;
-								is_player = (index == 0);
-								pp = false;
-							}
-						}
-						for (auto& tgt : *ALL_v) {
-							if (MINE_v == &tgt || tgt->isRide()) { continue; }
-							const size_t index = &tgt - &ALL_v->front();
-							EndPos = tgt->Get_pos() + VECTOR_ref::vget(0.f, 1.5f, 0.f);
-							if (vec_to == VECTOR_ref::zero()) { vec_to = EndPos - StartPos; }//基準の作成
-							if (!tgt->Damage.Get_alive()) { continue; }
-							if (MAPPTs->map_col_line(StartPos, EndPos).HitFlag == TRUE) { continue; }
-							EndPos = EndPos - StartPos;
-							if (vec_to.size() >= EndPos.size()) {
-								vec_to = EndPos;
-								is_player = (index == 0);
-								pp = false;
-							}
-						}
-					}
-					auto ai_phase_old = this->cpu_do.ai_phase;
-					if (pp) {
-						this->cpu_do.ai_phase = 0;
-					}
-					else if (vec_z.dot(vec_to.Norm()) >= 0 && vec_to.size() <= 60.f) {
-						this->cpu_do.ai_phase = 1;
-					}
-					if (isReload()) {
-						this->cpu_do.ai_phase = 2;
-					}
 					if (isRide()) {
-						this->cpu_do.ai_phase = 3;
+						vec_mat = (*MINE_v)->gun_mat();
+						vec_x = vec_mat.xvec();
+						vec_y = vec_mat.yvec();
+						vec_z = vec_mat.zvec() * -1.f;
+
+						bool pp = true;
+						{
+							auto StartPos = (*MINE_v)->Get_EyePos_Base();//todo
+							VECTOR_ref EndPos;
+							for (auto& tgt : *ALL_c) {
+								if (MINE_c == &tgt || tgt->isRide()) { continue; }
+								const size_t index = &tgt - &ALL_c->front();
+								if (tgt->Get_Gun_().Flag_gun) { turn = int(index); }
+								EndPos = (this->cpu_do.ai_time_shoot < 0.f) ? tgt->Get_head_pos() : tgt->obj_body.frame(tgt->frame_s.bodyb_f.first);
+								if (vec_to == VECTOR_ref::zero()) { vec_to = EndPos - StartPos; }//基準の作成
+								if (!tgt->Damage.Get_alive()) { continue; }
+								if (MAPPTs->map_col_line(StartPos, EndPos).HitFlag == TRUE) { continue; }
+								EndPos = EndPos - StartPos;
+								if (vec_to.size() >= EndPos.size()) {
+									vec_to = EndPos;
+									is_player = (index == 0);
+									pp = false;
+								}
+							}
+							for (auto& tgt : *ALL_v) {
+								if (MINE_v == &tgt || !tgt->isRide()) { continue; }
+								const size_t index = &tgt - &ALL_v->front();
+								EndPos = tgt->Get_pos() + VECTOR_ref::vget(0.f, 1.5f, 0.f);
+								if (vec_to == VECTOR_ref::zero()) { vec_to = EndPos - StartPos; }//基準の作成
+								if (!tgt->Damage.Get_alive()) { continue; }
+								if (MAPPTs->map_col_line(StartPos, EndPos).HitFlag == TRUE) { continue; }
+								EndPos = EndPos - StartPos;
+								if (vec_to.size() >= EndPos.size()) {
+									vec_to = EndPos;
+									is_player = (index == 0);
+									pp = false;
+								}
+							}
+						}
+						if (pp) {
+							this->cpu_do.ai_phase = 3;
+						}
+						else if (vec_z.dot(vec_to.Norm()) >= 0 && vec_to.size() <= 300.f) {
+							this->cpu_do.ai_phase = 4;
+						}
 					}
 					else {
+						bool pp = true;
+						{
+							auto StartPos = this->Get_head_pos();//todo
+							VECTOR_ref EndPos;
+							for (auto& tgt : *ALL_c) {
+								if (MINE_c == &tgt || tgt->isRide()) { continue; }
+								const size_t index = &tgt - &ALL_c->front();
+								if (tgt->Get_Gun_().Flag_gun) { turn = int(index); }
+								EndPos = (this->cpu_do.ai_time_shoot < 0.f) ? tgt->Get_head_pos() : tgt->obj_body.frame(tgt->frame_s.bodyb_f.first);
+								if (vec_to == VECTOR_ref::zero()) { vec_to = EndPos - StartPos; }//基準の作成
+								if (!tgt->Damage.Get_alive()) { continue; }
+								if (MAPPTs->map_col_line(StartPos, EndPos).HitFlag == TRUE) { continue; }
+								EndPos = EndPos - StartPos;
+								if (vec_to.size() >= EndPos.size()) {
+									vec_to = EndPos;
+									is_player = (index == 0);
+									pp = false;
+								}
+							}
+							for (auto& tgt : *ALL_v) {
+								if (MINE_v == &tgt || tgt->isRide()) { continue; }
+								const size_t index = &tgt - &ALL_v->front();
+								EndPos = tgt->Get_pos() + VECTOR_ref::vget(0.f, 1.5f, 0.f);
+								if (vec_to == VECTOR_ref::zero()) { vec_to = EndPos - StartPos; }//基準の作成
+								if (!tgt->Damage.Get_alive()) { continue; }
+								if (MAPPTs->map_col_line(StartPos, EndPos).HitFlag == TRUE) { continue; }
+								EndPos = EndPos - StartPos;
+								if (vec_to.size() >= EndPos.size()) {
+									vec_to = EndPos;
+									is_player = (index == 0);
+									pp = false;
+								}
+							}
+						}
+						auto ai_phase_old = this->cpu_do.ai_phase;
+						if (pp) {
+							this->cpu_do.ai_phase = 0;
+						}
+						else if (vec_z.dot(vec_to.Norm()) >= 0 && vec_to.size() <= 60.f) {
+							this->cpu_do.ai_phase = 1;
+						}
+						if (isReload()) {
+							this->cpu_do.ai_phase = 2;
+						}
 						if ((ai_phase_old == 1 && this->cpu_do.ai_phase != 1) || (this->add_vec_real.size() <= this->move.vec.size() * 0.8f)) {
 							int now = MAPPTs->Get_next_waypoint(this->cpu_do.wayp_pre, this->Get_Pos_Map(), vec_z);
 							if (now != -1) {
@@ -3496,7 +3543,7 @@ namespace FPS_n2 {
 					y_m = -int(vec_y.dot(vec_to.Norm()) * 40);
 				}
 				break;
-				case 3://戦車乗車中
+				case 3://戦車乗車中通常フェイズ
 				{
 					this->key_.wkey = true;
 
@@ -3556,6 +3603,13 @@ namespace FPS_n2 {
 					}
 				}
 				break;
+				case 4://戦車乗車中戦闘フェイズ
+				{
+					this->key_.akey = (GetRand(100) > 50);
+					this->key_.dkey = !this->key_.akey;
+					this->key_.skey = true;
+				}
+					break;
 				default:
 					break;
 				}
@@ -4621,6 +4675,7 @@ namespace FPS_n2 {
 		public:
 			VEHICLE_HitControl hitControl;
 			Vehcs* use_veh;																/*固有値*/
+			const MATRIX_ref gun_mat(size_t ID_t = 0)const noexcept { return BodyFrameMatrix(this->obj_body, Gun_[ID_t].Getgun_info().Get_frame(1)); }
 		private:
 			void Set_Tank() {
 				VECTOR_ref minmaxsub = this->use_veh->Get_maxpos() - this->use_veh->Get_minpos();
@@ -4991,7 +5046,7 @@ namespace FPS_n2 {
 			const auto Get_Gunsize(void) const noexcept { return this->Gun_.size(); }
 			const auto& Get_ratio(void) const noexcept { return this->ratio; }											//UI用
 			const auto& Get_changeview(void) const noexcept { return this->changeview; }								//照準変更時
-			const auto Get_EyePos_Base(void) const noexcept { return this->Get_pos() + (this->move.mat.yvec() * 3.f); }
+			const VECTOR_ref Get_EyePos_Base(void) const noexcept { return this->Get_pos() + (this->move.mat.yvec() * 3.f); }
 			//
 			void ReSet_range(void) noexcept { range = 6.f; }
 			//
@@ -5018,6 +5073,16 @@ namespace FPS_n2 {
 				(*MINE_c_t)->Set_basepos(this->Get_pos());
 				(*MINE_c_t)->SetHMDmat(this->lookvec);
 				(*MINE_c_t)->Set_bullet_Ptr();
+			}
+			/*HPバーを表示する場所*/
+			const auto Set_HP_UI(void) noexcept {
+				if (this->Damage.IsShow()) {
+					auto head = this->Get_EyePos_Base();
+					return VECTOR_ref(ConvWorldPosToScreenPos((head + VECTOR_ref::vget(0, 0.3f + 2.7f * std::max((head - GetCameraPosition()).size(), 1.f) / 100.f, 0)).get()));
+				}
+				else {
+					return VECTOR_ref::front() * -1.f;
+				}
 			}
 		public:
 			using PLAYER_COMMON::PLAYER_COMMON;

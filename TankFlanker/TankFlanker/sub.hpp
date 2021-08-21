@@ -797,10 +797,14 @@ namespace FPS_n2 {
 		float SE_vol_per = 1.f;
 		float Voice_vol_per = 1.f;
 
+		float SE_left_timer_border = 0.f;
+		float SE_right_timer_border = 0.f;
 		float SE_left_timer = 0.f;
 		float SE_right_timer = 0.f;
 		float Voice_left_timer = 0.f;
 		float Voice_right_timer = 0.f;
+		float Voice_left_timer_border = 0.f;
+		float Voice_right_timer_border = 0.f;
 	private:
 		std::vector<float> sel_x;
 		auto& Sel_X(size_t size) {
@@ -809,6 +813,29 @@ namespace FPS_n2 {
 				sel_x[size] = 0.f;
 			}
 			return sel_x[size];
+		}
+
+		void Draw_Guage(int xp, int yp, int xs, int ys, float per) {
+			int edge = y_r(2);
+			for (int x = 0; x < 256; x++) {
+				int x1 = xp + ((xs - xp)*x / 255);
+				int y1 = ys - int(float(ys - yp) *0.2) - int((float(ys - yp) *0.8)*std::powf(float(x) / 255.f, 1.25f));
+				int x2 = xp + ((xs - xp)*(x + 1) / 255);
+				if (x == 0) {
+					DrawBox(x1 - edge, y1 - edge, x1, ys + edge, GetColor(128, 128, 128), TRUE);
+				}
+				DrawBox(x1, y1 - edge, x2, ys + edge, GetColor(128, 128, 128), TRUE);
+				DrawBox(x1, y1, x2, ys, GetColor(64, 64, 64), TRUE);
+				if (x == 255) {
+					DrawBox(x2, y1 - edge, x2 + edge, ys + edge, GetColor(128, 128, 128), TRUE);
+				}
+				if (x < (int)(255.f*per)) {
+					int r_ = (x >= 0 && x <= 85) ? 255 : (255 * 2 - 3 * x);
+					int g_ = (x >= 85 && x <= 170) ? 255 : ((x < 85) ? (3 * x) : (255 * 3 - 3 * x));
+					int b_ = (x >= 170 && x <= 255) ? 255 : (-255 + 3 * x);
+					DrawBox(x1, y1, x2, ys, GetColor(std::max(r_, 0), std::max(g_, 0), std::max(b_, 0)), TRUE);
+				}
+			}
 		}
 	public:
 		//
@@ -854,42 +881,66 @@ namespace FPS_n2 {
 				if (select == 0) {
 					//
 					if (left.press()) { SE_left_timer += 1.f / FPS; }
-					else { SE_left_timer = 0.f; }
-					if (left.trigger() || (SE_left_timer > 1.f && ((int)(SE_left_timer * 10.f) % 2 == 0))) {
+					else {
+						SE_left_timer = 0.f;
+						SE_left_timer_border = 1.f;
+					}
+					if (left.trigger() || (SE_left_timer > SE_left_timer_border)) {
+						if (SE_vol_per > 0.f) {
+							SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						}
 						SE_vol_per = std::clamp(SE_vol_per - 0.01f, 0.f, 1.f);
-						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						SE.SetVol(SE_vol_per);
 						OPTPTs->Set_SE(SE_vol_per);
+						SE_left_timer_border += 0.1f;
 					}
 					//
 					if (right.press()) { SE_right_timer += 1.f / FPS; }
-					else { SE_right_timer = 0.f; }
-					if (right.trigger() || (SE_right_timer > 1.f && ((int)(SE_right_timer * 10.f) % 2 == 0))) {
+					else {
+						SE_right_timer = 0.f;
+						SE_right_timer_border = 1.f;
+					}
+					if (right.trigger() || (SE_right_timer > SE_right_timer_border)) {
+						if (SE_vol_per < 1.f) {
+							SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						}
 						SE_vol_per = std::clamp(SE_vol_per + 0.01f, 0.f, 1.f);
-						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						SE.SetVol(SE_vol_per);
 						OPTPTs->Set_SE(SE_vol_per);
+						SE_right_timer_border += 0.1f;
 					}
 				}
 				//ƒTƒEƒ“ƒh
 				if (select == 1) {
 					//
 					if (left.press()) { Voice_left_timer += 1.f / FPS; }
-					else { Voice_left_timer = 0.f; }
-					if (left.trigger() || (Voice_left_timer > 1.f && ((int)(Voice_left_timer * 10.f) % 2 == 0))) {
+					else {
+						Voice_left_timer = 0.f;
+						Voice_left_timer_border = 1.f;
+					}
+					if (left.trigger() || (Voice_left_timer > Voice_left_timer_border)) {
+						if (Voice_vol_per > 0 && Voice_vol_per < 1.f) {
+							SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						}
 						Voice_vol_per = std::clamp(Voice_vol_per - 0.01f, 0.f, 1.f);
-						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						VOICE.SetVol(Voice_vol_per);
 						OPTPTs->Set_VOICE(Voice_vol_per);
+						Voice_left_timer_border += 0.1f;
 					}
 					//
 					if (right.press()) { Voice_right_timer += 1.f / FPS; }
-					else { Voice_right_timer = 0.f; }
-					if (right.trigger() || (Voice_right_timer > 1.f && ((int)(Voice_right_timer * 10.f) % 2 == 0))) {
+					else {
+						Voice_right_timer = 0.f;
+						Voice_right_timer_border = 1.f;
+					}
+					if (right.trigger() || (Voice_right_timer > Voice_right_timer_border)) {
+						if (Voice_vol_per > 0 && Voice_vol_per < 1.f) {
+							SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						}
 						Voice_vol_per = std::clamp(Voice_vol_per + 0.01f, 0.f, 1.f);
-						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						VOICE.SetVol(Voice_vol_per);
 						OPTPTs->Set_VOICE(Voice_vol_per);
+						Voice_right_timer_border += 0.1f;
 					}
 				}
 
@@ -925,11 +976,17 @@ namespace FPS_n2 {
 					int now = 0;
 					//
 					Fonts.Get(y_r(24)).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "SE:%03.0f%%", SE_vol_per * 100.f);
+					if (select == now) {
+						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24)).Get_size(), SE_vol_per);
+					}
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;
 					//
 					Fonts.Get(y_r(24)).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "VOICE:%03.0f%%", Voice_vol_per * 100.f);
+					if (select == now) {
+						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24)).Get_size(), Voice_vol_per);
+					}
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
 					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
 					now++;

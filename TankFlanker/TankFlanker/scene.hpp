@@ -67,7 +67,6 @@ namespace FPS_n2 {
 			virtual void Set(void) noexcept {
 				fov_base = deg2rad(DrawPts->use_vr ? 120 : OPTPTs->Get_Fov());	//fov
 				SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
-				SetMousePoint(DrawPts->disp_x / 2, DrawPts->disp_y / 2);											//
 				if (DrawPts->use_vr) {
 					camera_main.set_cam_info(fov_base, 0.001f, 100.f);//1P
 				}
@@ -425,6 +424,7 @@ namespace FPS_n2 {
 				//ライティング
 				TEMPSCENE::Set_EnvLight(VECTOR_ref::vget(1.f, 1.f, 1.f), VECTOR_ref::vget(-1.f, -1.f, -1.f), VECTOR_ref::vget(0.5f, -0.5f, 0.5f), GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				TEMPSCENE::Set();
+				SetMousePoint(DrawPts->disp_x / 2, DrawPts->disp_y / 2);											//
 				UIparts->Set_Ptr_Common(MAPPTs, DrawPts);
 				{
 					up.Init(false);
@@ -813,6 +813,7 @@ namespace FPS_n2 {
 			void Set(void) noexcept override {
 				TEMPSCENE::Set_EnvLight(MAPPTs->map_col_get().mesh_maxpos(0), MAPPTs->map_col_get().mesh_minpos(0), VECTOR_ref::vget(0.5f, -0.5f, 0.5f), GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				TEMPSCENE::Set();
+				SetMousePoint(DrawPts->disp_x / 2, DrawPts->disp_y / 2);											//
 				//NPCのカスタムattach
 				for (auto& c : this->chara) {
 					if (c != Get_Mine()) {
