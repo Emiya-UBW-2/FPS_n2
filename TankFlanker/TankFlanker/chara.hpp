@@ -104,7 +104,7 @@ namespace FPS_n2 {
 				void SubHP_Parts(int damage_t, int parts_Set_t) noexcept {
 					this->HP_parts[parts_Set_t] = std::max<int>(this->HP_parts[parts_Set_t] - damage_t, 0); //
 				}
-				void SubHP(int damage_t, float rad_t,bool isshow = true)  noexcept {
+				void SubHP(int damage_t, float rad_t, bool isshow = true)  noexcept {
 					auto old = this->HP;
 					this->HP = std::max<int>(this->HP - damage_t, 0); //
 					this->got_damage = old - this->HP;
@@ -127,7 +127,7 @@ namespace FPS_n2 {
 					this->got_damage_rad.back().rad = rad_t;
 
 					if (!isshow) {
-						this->HP_r = this->HP;
+						this->HP_r = float(this->HP);
 					}
 				}
 				void AddHP(int repair_t) noexcept {
@@ -309,6 +309,15 @@ namespace FPS_n2 {
 					}
 					SetUseLighting(TRUE);
 					SetFogEnable(TRUE);
+				}
+			}
+			/*HPバーを表示する場所*/
+			const auto Set_HP_UI_Common(const VECTOR_ref& head) noexcept {
+				if (this->Damage.IsShow()) {
+					return VECTOR_ref(ConvWorldPosToScreenPos((head + VECTOR_ref::vget(0, 0.3f + 2.7f * std::max((head - GetCameraPosition()).size(), 1.f) / 100.f, 0)).get()));
+				}
+				else {
+					return VECTOR_ref::front() * -1.f;
 				}
 			}
 			//物理
@@ -1012,10 +1021,10 @@ namespace FPS_n2 {
 				GUNPARTs* ptr_mag{ nullptr };			//パーツデータ
 				MV1 obj_mag_;							//マガジンオブジェ
 				std::array<MV1, 2> obj_ammo;			//弾オブジェ
-				size_t Ammo_cnt{ 0 };					//マガジン内の弾数
+				int Ammo_cnt{ 0 };					//マガジン内の弾数
 			public:
 				//setter
-				void Add_Cnt(int ad) noexcept { this->Ammo_cnt = size_t(int(this->Ammo_cnt) + ad); }
+				void Add_Cnt(int ad) noexcept { this->Ammo_cnt = this->Ammo_cnt + ad; }
 				//getter
 				auto* Get_Info(void) noexcept { return this->ptr_mag; }
 				const auto& Get_Cnt()const noexcept { return this->Ammo_cnt; }
@@ -1024,9 +1033,9 @@ namespace FPS_n2 {
 				const auto Get_mag_frame(int ID_t) const noexcept { return this->obj_mag_.frame(ID_t); }
 				const auto Get_mag_frameLocalMatrix(int ID_t) const noexcept { return this->obj_mag_.GetFrameLocalMatrix(ID_t); }
 				const auto Get_L_mag_pos(void) const noexcept { return this->Get_mag_frame(this->ptr_mag->mod.Get_LEFT_mag_frame(0).first); }
-				const auto isFull()const noexcept { return this->Ammo_cnt == this->Get_Cap(); }
+				const auto isFull()const noexcept { return this->Ammo_cnt == int(this->Get_Cap()); }
 
-				void Set(GUNPARTs* ptr_mag_t, size_t Ammo_cnt_t) {
+				void Set(GUNPARTs* ptr_mag_t, int Ammo_cnt_t) {
 					if (ptr_mag_t != nullptr) {
 						this->Ammo_cnt = Ammo_cnt_t;
 						this->ptr_mag = ptr_mag_t;
@@ -1094,12 +1103,12 @@ namespace FPS_n2 {
 				//マガジンを1つ追加(装填無し)
 				void magazine_plus(Items* magazine_item) noexcept {
 					this->magazine_in.resize(this->magazine_in.size() + 1);
-					this->magazine_in.back().Set(magazine_item->Get_ptr_mag(), magazine_item->Get_magazine().Get_Ammo_Cap());
+					this->magazine_in.back().Set(magazine_item->Get_ptr_mag(), (int)magazine_item->Get_magazine().Get_Ammo_Cap());
 				}
 				//マガジンを1つ追加
 				void magazine_pushback(GUNPARTs* magazine_parts) noexcept {
 					this->magazine_in.resize(this->magazine_in.size() + 1);
-					this->magazine_in.back().Set(magazine_parts, magazine_parts->Get_Ammo_Cap());
+					this->magazine_in.back().Set(magazine_parts, (int)magazine_parts->Get_Ammo_Cap());
 
 					if (this->magazine_in.size() == 1) {
 						this->magazine_in.back().Add_Cnt(-1);
@@ -1646,7 +1655,7 @@ namespace FPS_n2 {
 			GUN_STATUS* gun_stat_now{ nullptr };			/*所持弾数などの武器データ*/
 			Audios_Gun Audio;								/*音声*/
 		private://保存用
-			GUNPARTs* parts_ptr;
+			GUNPARTs* parts_ptr{ nullptr };
 			std::vector<PresetSaveControl::save_c> save_parts;
 		private:
 			//自分についているパーツがある場合削除
@@ -2275,8 +2284,8 @@ namespace FPS_n2 {
 				int cnt{ 0 };
 				Ammos* spec{ nullptr };
 				moves move;
-				float speed;
-				float pene;
+				float speed{ 0.f };
+				float pene{ 0.f };
 				VECTOR_ref base_pos;
 			public:
 				float Hit_alpha{ 0.f };
@@ -3609,7 +3618,7 @@ namespace FPS_n2 {
 					this->key_.dkey = !this->key_.akey;
 					this->key_.skey = true;
 				}
-					break;
+				break;
 				default:
 					break;
 				}
@@ -4487,13 +4496,7 @@ namespace FPS_n2 {
 			}
 			/*HPバーを表示する場所*/
 			const auto Set_HP_UI(void) noexcept {
-				if (this->Damage.IsShow()) {
-					auto head = this->Get_head_pos();
-					return VECTOR_ref(ConvWorldPosToScreenPos((head + VECTOR_ref::vget(0, 0.3f + 2.7f * std::max((head - GetCameraPosition()).size(), 1.f) / 100.f, 0)).get()));
-				}
-				else {
-					return VECTOR_ref::front() * -1.f;
-				}
+				return Set_HP_UI_Common(this->Get_head_pos());
 			}
 			/*おわり*/
 			void Dispose(void) noexcept override {
@@ -4620,7 +4623,7 @@ namespace FPS_n2 {
 			public:
 				frames frame;
 				float will_y = 0.f;
-				MV1_COLL_RESULT_POLY colres;
+				MV1_COLL_RESULT_POLY colres{};
 				EffectS gndsmkeffcs;
 				float gndsmksize = 1.f;
 
@@ -5076,13 +5079,7 @@ namespace FPS_n2 {
 			}
 			/*HPバーを表示する場所*/
 			const auto Set_HP_UI(void) noexcept {
-				if (this->Damage.IsShow()) {
-					auto head = this->Get_EyePos_Base();
-					return VECTOR_ref(ConvWorldPosToScreenPos((head + VECTOR_ref::vget(0, 0.3f + 2.7f * std::max((head - GetCameraPosition()).size(), 1.f) / 100.f, 0)).get()));
-				}
-				else {
-					return VECTOR_ref::front() * -1.f;
-				}
+				return Set_HP_UI_Common(this->Get_EyePos_Base());
 			}
 		public:
 			using PLAYER_COMMON::PLAYER_COMMON;

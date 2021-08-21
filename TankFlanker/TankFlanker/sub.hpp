@@ -67,13 +67,13 @@ namespace FPS_n2 {
 		class Soundhave {
 			class handles {
 			public:
-				size_t ID_2;
+				size_t ID_2{ 0 };
 				std::string path;
 				std::vector<SoundHandle> handle;
 
 			};
 
-			EnumSound ID;
+			EnumSound ID{ EnumSound::Shot };
 			std::vector<handles> shandle;
 			size_t now = 0;
 			int Set_vol = 255;
@@ -1401,7 +1401,7 @@ namespace FPS_n2 {
 		GraphHandle hits_pic;			/*‰æ‘œƒnƒ“ƒhƒ‹*/
 		int IndexNum = -1, VerNum = -1;	/*hits*/
 		int vnum = -1, pnum = -1;		/*hits*/
-		MV1_REF_POLYGONLIST RefMesh;	/*hits*/
+		MV1_REF_POLYGONLIST RefMesh{};	/*hits*/
 		//‰Šú‰»
 		void Init(std::string pngpath, std::string mv1path) noexcept {
 			SetUseASyncLoadFlag(FALSE);

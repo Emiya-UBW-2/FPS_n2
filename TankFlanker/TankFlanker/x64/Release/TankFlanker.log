@@ -109,15 +109,38 @@ c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1623
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1642): warning C4100: 'size': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1642): warning C4100: 'data': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseerrendererdx11.h(89): warning C4100: 'renderer': 引数は関数の本体部で 1 度も参照されません。
-c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\chara.hpp(130): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'nShowCmd': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'hPrevInstance': 引数は関数の本体部で 1 度も参照されません。
 c:\users\yabushita_maki\documents\github\fps_n2\tankflanker\tankflanker\main.cpp(3): warning C4100: 'hInstance': 引数は関数の本体部で 1 度も参照されません。
   コード生成しています。
-  2 of 6895 functions (<0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    2 functions had inline decision re-evaluated but remain unchanged
+  All 6895 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   コード生成が終了しました。
 EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2017.pdb' が 'EffekseerForDXLib_vs2017_x64.lib(EffekseerForDXLib.obj)' で、または 'C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\EffekseerForDXLib_vs2017.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   TankFlanker.vcxproj -> C:\Users\Yabushita_Maki\Documents\GitHub\FPS_n2\TankFlanker\x64\Release\FPS_n2.exe
+c:\users\yabushita_maki\documents\github\openvr\openvr.h(4856): warning C26495: Variable 'vr::COpenVRContext::m_pVRSystem' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1233): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1233): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1239): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1243): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1243): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1244): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1244): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1244): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1244): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1244): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1244): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1244): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1244): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1250): warning C26495: Variable 'Effekseer::Curve::mKnotCount' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1263): warning C6385: 'p' から無効なデータを読み取っています: 読み取り可能なサイズは '_Old_6`size' バイトですが、'4' バイトを読み取る可能性があります。
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1313): warning C26451: Arithmetic overflow: Using operator '-' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '-' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\dxlib_vc\dx_vc\effekseer.modules.h(1350): warning C26451: Arithmetic overflow: Using operator '*' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '*' to avoid overflow (io.2).
+c:\users\yabushita_maki\documents\github\box2d\box2d\common\b2math.h(56): warning C26495: Variable 'b2Vec2::x' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\box2d\box2d\common\b2math.h(147): warning C26495: Variable 'b2Vec3::y' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\box2d\box2d\common\b2math.h(301): warning C26495: Variable 'b2Rot::c' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\box2d\box2d\common\b2draw.h(27): warning C26495: Variable 'b2Color::r' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\box2d\box2d\collision\shapes\b2shape.h(94): warning C26495: Variable 'b2Shape::m_type' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\box2d\box2d\dynamics\contacts\b2contact.h(186): warning C26495: Variable 'b2Contact::m_nodeA' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\box2d\box2d\collision\b2collision.h(107): warning C26495: Variable 'b2Manifold::type' is uninitialized. Always initialize a member variable (type.6).
+c:\users\yabushita_maki\documents\github\box2d\box2d\collision\b2collision.h(75): warning C26495: Variable 'b2ManifoldPoint::tangentImpulse' is uninitialized. Always initialize a member variable (type.6).

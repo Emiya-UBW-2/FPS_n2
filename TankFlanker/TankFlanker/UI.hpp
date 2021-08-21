@@ -7,9 +7,9 @@ namespace FPS_n2 {
 		class UI_TEMP : public PTR_COMMON {
 		protected:
 			//font
-			FontPool::Fonthave* Large;
-			FontPool::Fonthave* Middle;
-			FontPool::Fonthave* Small;
+			FontPool::Fonthave* Large{ nullptr };
+			FontPool::Fonthave* Middle{ nullptr };
+			FontPool::Fonthave* Small{ nullptr };
 			void Set_fonts(void) noexcept {
 				Large = &((DrawPts->use_vr) ? Fonts.Get(y_r(72)) : Fonts.Get(y_r(48)));
 				Middle = &((DrawPts->use_vr) ? Fonts.Get(y_r(36)) : Fonts.Get(y_r(24)));
