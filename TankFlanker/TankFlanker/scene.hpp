@@ -272,8 +272,9 @@ namespace FPS_n2 {
 			//
 			std::string Preset;
 
-			PLAYERclass::PLAYER_CHARA::Guns mine_Gun;
+			PLAYERclass::GunControl mine_Gun;
 			std::vector<PLAYERclass::GunControl::GUN_STATUS> gun_stat;			/*所持弾数などの武器データ*/
+			GraphHandle light;													//ライトテクスチャ
 		private:
 			//必須品
 			void Set_Parts_Vital(EnumGunParts port_type_t, EnumAttachPoint port_cat_t, EnumGunParts parts_cat_t) {
@@ -321,8 +322,14 @@ namespace FPS_n2 {
 						}
 						//*/
 						viewparts_buf = port_ptr->Get_rail_pos(port_cat);
+						if (parts_cat == EnumGunParts::MAGAZINE) {
+							mine_Gun.gun_stat_now->Reset();
+						}
 						mine_Gun.Detach_parts(parts_cat);
 						mine_Gun.Attach_parts(parts_p, parts_cat, port_ptr, port_cat);
+						if (parts_cat == EnumGunParts::MAGAZINE) {
+							mine_Gun.gun_stat_now->magazine_pushback(mine_Gun.Get_parts(EnumGunParts::MAGAZINE)->thisparts);
+						}
 					}
 					Set_PartsSave(size_t(change_select), parts_cat, port_cat, port_type);
 				}
@@ -399,6 +406,7 @@ namespace FPS_n2 {
 			void Awake(void) noexcept override {
 				TEMPSCENE::Awake();
 				UIparts = std::make_unique<UIclass::UI_CUSTOM>();
+				light = GraphHandle::Load("data/light.png");								//ライト
 			}
 
 			void Start(std::string_view Set_str, std::vector<GUNPARTs>& gun_data, size_t itr) {
@@ -466,6 +474,7 @@ namespace FPS_n2 {
 				}
 				//読み込み
 				mine_Gun.Load_Gun(save_parts, GunPartses);
+				mine_Gun.gun_stat_now->magazine_pushback(mine_Gun.Get_parts(EnumGunParts::MAGAZINE)->thisparts);
 			}
 			bool Update(void) noexcept override {
 				TEMPSCENE::Update();
@@ -474,10 +483,9 @@ namespace FPS_n2 {
 				{
 					{
 						moves tmp;
-						mine_Gun.Set_gun_pos(tmp);
+						mine_Gun.Set_move_gun(tmp);
 						mine_Gun.Put_gun();
-						mine_Gun.Set_mag_pos();
-						mine_Gun.Mag_setpos_Nomal();
+						mine_Gun.Set_Magazine();
 						//キー
 						up.GetInput(key_.wkey);
 						down.GetInput(key_.skey);
@@ -573,6 +581,7 @@ namespace FPS_n2 {
 					mine_Gun.Set_select_anime();				//銃セレクターアニメ
 					mine_Gun.Set_shot_anime(rate, true);		//銃発砲アニメ
 					mine_Gun.Update_Gun(MAPPTs, rate);			//銃更新
+					mine_Gun.Set_LightHandle();					//ライト
 					Update_Effect();							//エフェクトの更新
 				}
 				//campos,camvec,camupの指定
@@ -615,7 +624,7 @@ namespace FPS_n2 {
 			void Dispose(void) noexcept override {
 				//データセーブ
 				Save(save_tgt);
-				mine_Gun.gun_stat_now->selector_set(EnumSELECTER::SEMI);
+				mine_Gun.gun_stat_now->Reset();
 				shot_se.Dispose();
 				slide_se.Dispose();
 				trigger_se.Dispose();
@@ -629,19 +638,21 @@ namespace FPS_n2 {
 				mine_Gun.Draw_Gun_Base();
 				mine_Gun.Draw_Gun_Cart();
 				mine_Gun.Draw_Gun_Else();
-				mine_Gun.Get_parts(EnumGunParts::MAGAZINE)->Draw();
+				mine_Gun.Draw_Mag();
 			}
 			void Shadow_Draw(void) noexcept override {
 				mine_Gun.Draw_Gun_Base();
 				mine_Gun.Draw_Gun_Cart();
 				mine_Gun.Draw_Gun_Else();
-				mine_Gun.Get_parts(EnumGunParts::MAGAZINE)->Draw();
+				mine_Gun.Draw_Mag();
 			}
 			void Main_Draw(void) noexcept override {
 				mine_Gun.Draw_Gun_Base();
 				mine_Gun.Draw_Gun_Cart();
 				mine_Gun.Draw_Gun_Else();
-				mine_Gun.Get_parts(EnumGunParts::MAGAZINE)->Draw();
+				mine_Gun.Draw_Mag();
+
+				mine_Gun.Draw_LAM_Effect(light);
 			}
 			void KeyOperation_VR(void) noexcept override {
 #ifdef _USE_OPENVR_
@@ -794,6 +805,10 @@ namespace FPS_n2 {
 					c->Set_Ptr_Common(MAPPTs, DrawPts);
 					c->Set_Ptr(&this->chara, &c, &this->vehicle, nullptr);
 					c->Set(GunPartses->Get_Parts_Data(EnumGunParts::GUN), 0, body_obj, body_obj_lag, body_col);
+				}
+				Gun_S.resize(this->chara.size());
+				for (auto& g : Gun_S) {
+					g.Guns.Set_Gun(GunPartses->Get_Parts_Data(EnumGunParts::GUN), 0, this->chara[&g - &Gun_S.front()]->gun_stat.back());
 				}
 			}
 			void Ready_Tank(const size_t& spawn_total) {
@@ -959,6 +974,13 @@ namespace FPS_n2 {
 					c->Dispose();
 				}
 				this->chara.clear();
+				//
+				for (auto& g : Gun_S) {
+					g.Guns.Dispose_Gun();
+					g.Guns.Dispose();
+				}
+				Gun_S.clear();
+				//
 				for (auto& v : this->vehicle) {
 					v->Dispose();
 				}
@@ -1008,10 +1030,17 @@ namespace FPS_n2 {
 				hit_obj_p.Draw();
 				hit_b_obj_p.Draw();
 				//キャラ
-				for (auto& c : this->chara) { c->Draw_chara(); }
-				for (auto& v : this->vehicle) { v->Draw(); }
+				for (auto& c : this->chara) {
+					c->Draw_chara();
+				}
+				for (auto& v : this->vehicle) {
+					v->Draw();
+				}
 				//レーザー
-				for (auto& c : this->chara) { c->Draw_LAM_Effect(light); }
+				for (auto& c : this->chara) {
+					c->Set_Gun_().Draw_LAM_Effect(light);
+					c->Draw_LAM_Effect();
+				}
 				for (auto& v : this->vehicle) {
 					if (v->MINE_c == &this->Get_Mine()) {
 						v->Draw_LAM_Effect();

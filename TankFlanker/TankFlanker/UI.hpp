@@ -175,7 +175,7 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 		public:
-			void UI_Draw(std::shared_ptr<GunPartsControl>& GunPartses, EnumGunParts parts_cat, const bool& Rot, PLAYERclass::PLAYER_CHARA::Guns* mine_Gun, GUNPARTs* parts_p, float& change_per) noexcept {
+			void UI_Draw(std::shared_ptr<GunPartsControl>& GunPartses, EnumGunParts parts_cat, const bool& Rot, PLAYERclass::GunControl* mine_Gun, GUNPARTs* parts_p, float& change_per) noexcept {
 				UI_TEMP::Set_fonts();
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{

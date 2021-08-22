@@ -2009,7 +2009,7 @@ namespace FPS_n2 {
 						if (chara->getmagazine_push() && this->Ammo_cnt != 0 && (this->ptr_mag->Get_Ammo(0).Get_name() == this->magazine_param.Get_Ammo(0).Get_name())) {
 							chara->Set_sort_f(false);
 							chara->Set_Gun_().gun_stat_now->magazine_plus(this);
-							if (chara->Get_Gun_().Get_mag_in().size() == 1) {
+							if (chara->Set_Gun_().Get_mag_in().size() == 1) {
 								chara->Set_reloadf(true);
 							}
 							this->Detach_item();
