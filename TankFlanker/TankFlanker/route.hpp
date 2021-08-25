@@ -23,7 +23,7 @@ namespace FPS_n2 {
 			//シェーダー
 			auto HostpassPTs = std::make_shared<HostPassEffect>(OPTPTs, DrawPts->disp_x, DrawPts->disp_y);				//ホストパスエフェクト(VR、フルスクリーン共用)
 			//シェーダー
-			Screen_vertex.Set(DrawPts);			// 頂点データの準備
+			Screen_vertex.Set(DrawPts);																					// 頂点データの準備
 			shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
 			shader2D[1].Init("ShaderPolygon3DTestVS.vso", "ShaderPolygon3DTestPS.pso");									//歪み
 			//MAP
@@ -33,12 +33,12 @@ namespace FPS_n2 {
 			auto OptionMenu = std::make_shared<option_menu>(OPTPTs, KeyBind, DrawPts);
 			auto PauseMenu = std::make_unique<pause_menu>(OptionMenu, KeyBind, DrawPts);
 			//リソース
-			auto Audio_resource = std::make_shared<Audio_Control>();						//オーディオ
-			auto GunPartses = std::make_shared<GunPartsControl>();								//銃パーツ
-			effectControl.Init();															//エフェクト
+			auto Audio_resource = std::make_shared<Audio_Control>();													//オーディオ
+			auto GunPartses = std::make_shared<GunPartsControl>();														//銃パーツ
+			effectControl.Init();																						//エフェクト
 			OptionMenu->Set();
-			hit_obj_p.Init();																//弾痕
-			hit_b_obj_p.Init();																//血痕
+			hit_obj_p.Init();																							//弾痕
+			hit_b_obj_p.Init();																							//血痕
 			//シーン
 			auto ITEMLOADscene = std::make_shared<Sceneclass::LOADING>(MAPPTs, DrawPts, OPTPTs, GunPartses, KeyBind);
 			auto MAPLOADscene = std::make_shared<Sceneclass::LOADING>(MAPPTs, DrawPts, OPTPTs, GunPartses, KeyBind);
@@ -66,13 +66,9 @@ namespace FPS_n2 {
 			//繰り返し
 			do {
 				//開始
-				{
-					if (sel_scene == scenes::MAP_LOAD) { MAPPTs->Ready_map("data/map"); }
-					scenes_ptr->Set();
-					if (sel_scene == scenes::MAIN_LOOP) { MAPPTs->Start_Ray(MAINLOOPscene->Get_Light_vec()); }
-					selend = true;
-					selpause = false;
-				}
+				scenes_ptr->Set();
+				selend = true;
+				selpause = false;
 				//
 				while (ProcessMessage() == 0) {
 #ifdef DEBUG
@@ -166,7 +162,7 @@ namespace FPS_n2 {
 									HostpassPTs->DrawUI(&scenes_ptr->Get_Camera(), DrawPts->use_vr);	//UI1
 									scenes_ptr->Item_Draw();											//UI2
 								}
-							}, scenes_ptr->Get_Camera());
+								}, scenes_ptr->Get_Camera());
 						}
 						//ディスプレイ描画
 						GraphHandle::SetDraw_Screen((int32_t)(DX_SCREEN_BACK), true);
@@ -226,13 +222,10 @@ namespace FPS_n2 {
 					case scenes::MAP_LOAD:
 						MAPPTs->Start();																//マップパーツ生成
 						MAINLOOPscene->Ready_Chara(MAPPTs->Get_spawn_point().size());					//キャラ設定
+						MAINLOOPscene->Ready_Tank(MAPPTs->Get_spawn_point().size());					//戦車指定
 						break;
 					case scenes::LOAD:
-						SELECTscene->Start(LOADscene->putout_Preset(), GunPartses->Get_Parts_Data(EnumGunParts::GUN), 0);								//プリセットを指定
-						break;
-					case scenes::SELECT:
-						SELECTscene->Load_Human(MAINLOOPscene->Get_Mine());
-						MAINLOOPscene->Ready_Tank(MAPPTs->Get_spawn_point().size());					//戦車指定
+						SELECTscene->Start(LOADscene->putout_Preset());									//プリセットを指定
 						break;
 					case scenes::MAIN_LOOP:
 						MAPPTs->Dispose();																//マップを消去
@@ -243,12 +236,9 @@ namespace FPS_n2 {
 						sel_scene = scenes_ptr->Next_scene;
 						scenes_ptr = scenes_ptr->Next_ptr;
 					}
+					if (sel_scene == scenes::MAP_LOAD) { MAPPTs->Ready_map("data/map"); }
 				}
 			} while (this->ending);
-			//
-			//MAINLOOPscene->Dispose();//解放
-			MAPPTs->Dispose();
-			DrawPts->Delete_Shadow();
 			effectControl.Dispose();
 		}
 	};

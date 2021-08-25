@@ -12,23 +12,23 @@ namespace std {
 }; // namespace std
 //
 namespace FPS_n2 {
+	//ファイル走査
 	std::vector<WIN32_FIND_DATA> data_t;
-	void GetFileNames(std::vector<WIN32_FIND_DATA>* data_tt, std::string path_t) {
-		data_tt->clear();
+	void GetFileNames(std::string path_t) {
+		data_t.clear();
 		WIN32_FIND_DATA win32fdt;
 		HANDLE hFind = FindFirstFile((path_t + "*").c_str(), &win32fdt);
 		if (hFind != INVALID_HANDLE_VALUE) {
 			do {
 				if (win32fdt.cFileName[0] != '.') {
-					data_tt->resize(data_tt->size() + 1);
-					data_tt->back() = win32fdt;
+					data_t.resize(data_t.size() + 1);
+					data_t.back() = win32fdt;
 				}
 
 			} while (FindNextFile(hFind, &win32fdt));
 		} //else{ return false; }
 		FindClose(hFind);
 	}
-
 	//フォントプール
 	class FontPool {
 	public:
@@ -164,13 +164,13 @@ namespace FPS_n2 {
 	SoundPool VOICE;
 	//エフェクトリソース
 	class EffectControl {
-	public:
 		LONGLONG Update_effect_was = 0;					//エフェクトのアップデートタイミングタイマー
+	public:
 		bool Update_effect_f{ true };					//エフェクトのアップデートタイミングフラグ
 		std::vector<EffekseerEffectHandle> effsorce;	/*エフェクトリソース*/
 
 		void Init(void) noexcept {
-			GetFileNames(&data_t, "data/effect/");
+			GetFileNames("data/effect/");
 			for (auto& d : data_t) {
 				std::string p = d.cFileName;
 				if (p.find(".efk") != std::string::npos) {
@@ -1682,7 +1682,7 @@ namespace FPS_n2 {
 		//
 		static void Set_Pre(std::vector<GUNPARTs>* data, std::string file_name, EnumGunParts type_t = EnumGunParts::NONE) noexcept {
 			data->clear();
-			GetFileNames(&data_t, file_name);
+			GetFileNames(file_name);
 			for (auto& d : data_t) {
 				if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 					data->resize(data->size() + 1);
@@ -1819,7 +1819,7 @@ namespace FPS_n2 {
 		int repair = 0;
 		static void Set_Pre(std::vector<Meds>* data, std::string file_name) noexcept {
 			data->clear();
-			GetFileNames(&data_t, file_name);
+			GetFileNames(file_name);
 			for (auto& d : data_t) {
 				if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 					data->resize(data->size() + 1);
@@ -1841,7 +1841,7 @@ namespace FPS_n2 {
 		float time = 0;
 		static void Set_Pre(std::vector<Grenades>* data, std::string file_name) noexcept {
 			data->clear();
-			GetFileNames(&data_t, file_name);
+			GetFileNames(file_name);
 			for (auto& d : data_t) {
 				if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 					data->resize(data->size() + 1);
@@ -2295,7 +2295,7 @@ namespace FPS_n2 {
 		void operator=(const Vehcs& t) { this->copy(t); }
 		//事前読み込み
 		static void Set_Pre(std::vector<Vehcs>* veh_, const char* name) {
-			GetFileNames(&data_t, name);
+			GetFileNames(name);
 			for (auto& d : data_t) {
 				if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 					veh_->resize(veh_->size() + 1);
@@ -2532,7 +2532,7 @@ namespace FPS_n2 {
 	//オーディオ管理
 	class Audio_Control {
 		static void AddSE_By_File(EnumSound ID_t, size_t buffersize = 1, std::string path_t = "") {
-			GetFileNames(&data_t, path_t);
+			GetFileNames(path_t);
 			for (auto& d : data_t) {
 				if (std::string(d.cFileName).find(".wav") != std::string::npos) {
 					SE.Add(ID_t, buffersize, path_t + d.cFileName);

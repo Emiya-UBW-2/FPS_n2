@@ -182,7 +182,9 @@ namespace FPS_n2 {
 
 				this->world = std::make_shared<b2World>(b2Vec2(0.0f, 0.0f)); /* 剛体を保持およびシミュレートするワールドオブジェクトを構築*/
 			}
-			~Map(void) noexcept { }
+			~Map(void) noexcept {
+				Dispose();
+			}
 			void Ready_map(std::string dir) noexcept {
 				this->path = dir + "/";
 				MV1::Load(this->path + "model.mv1", &map, true);					//map

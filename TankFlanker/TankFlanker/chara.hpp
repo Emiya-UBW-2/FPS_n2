@@ -1842,7 +1842,7 @@ namespace FPS_n2 {
 					per_all += this->thisparts->Get_Performance();
 				}
 				void attach_(Performance& per_all, GUNPARTs& partsptr, EnumGunParts type_t, Performance& per_minimam) noexcept {
-					Detach(per_all);
+					this->Detach(per_all);
 					per_minimam.recoil = per_all.recoil;
 					per_minimam.weight = per_all.weight;
 					attach_mini(per_all, partsptr, type_t);
@@ -1850,11 +1850,11 @@ namespace FPS_n2 {
 					per_minimam.weight = per_all.weight - per_minimam.weight;
 				}
 				void attach_(Performance& per_all, GUNPARTs& partsptr, EnumGunParts type_t) noexcept {
-					Detach(per_all);
+					this->Detach(per_all);
 					attach_mini(per_all, partsptr, type_t);
 				}
 				void attach_(Performance& per_all, GUNPARTs& partsptr, EnumGunParts type_t, GParts_COMMON* parents, EnumAttachPoint side) noexcept {
-					Detach(per_all);
+					this->Detach(per_all);
 					this->attach = false;
 					if (parents != nullptr) {
 						if (parents->thisparts != nullptr) {
@@ -1955,6 +1955,7 @@ namespace FPS_n2 {
 			bool Flag_gun{ false };							//射撃フラグ
 			GUN_STATUS* gun_stat_now{ nullptr };			/*所持弾数などの武器データ*/
 			Audios_Gun Audio;								/*音声*/
+			float distance_to_cam{ -1.f };					//カメラとの距離
 		private://保存用
 			GUNPARTs* parts_ptr{ nullptr };
 			std::vector<PresetSaveControl::save_c> save_parts;
@@ -2388,6 +2389,7 @@ namespace FPS_n2 {
 				this->gunanime_first->Reset();
 				for (auto& s : this->gunanime_sel) { s->Reset(); }
 				this->gunanime_Changesel->Reset();
+				this->distance_to_cam = -1.f;
 			}
 			void Start(void) {
 				this->gunanime_first->per = 1.f;
@@ -2569,24 +2571,24 @@ namespace FPS_n2 {
 				}
 			}
 			//銃描画
-			void Draw_Gun_Base(void)const noexcept {
+			void Draw_Gun_Common(void)const noexcept {
 				this->base.Draw();
-			}
-			void Draw_Gun_Cart(void)const noexcept {
-				for (auto& a : this->Cart) { a.Draw(); }
-			}
-			void Draw_Gun_Else(void)const noexcept {
-				this->mazzule.Draw();
-				this->grip.Draw();
-				this->uperhandguard.Draw();
-				this->underhandguard.Draw();
-				this->mount_base.Draw();
-				this->mount_.Draw();
-				this->dustcover.Draw();
-				this->stock.Draw();
-				this->foregrip.Draw();
-				this->lam.Draw();
-				for (auto& s : sight_) { s.Draw(); }
+				if (this->distance_to_cam <= 5.f) {
+					for (auto& a : this->Cart) { a.Draw(); }
+				}
+				if (this->distance_to_cam <= 10.f) {
+					this->mazzule.Draw();
+					this->grip.Draw();
+					this->uperhandguard.Draw();
+					this->underhandguard.Draw();
+					this->mount_base.Draw();
+					this->mount_.Draw();
+					this->dustcover.Draw();
+					this->stock.Draw();
+					this->foregrip.Draw();
+					this->lam.Draw();
+					for (auto& s : sight_) { s.Draw(); }
+				}
 			}
 			/*おわり*/
 			void Dispose_Gun(void) noexcept {
@@ -2796,11 +2798,10 @@ namespace FPS_n2 {
 			};
 		public:
 			score_s scores;
-			std::vector<GunControl::GUN_STATUS> gun_stat;			/*所持弾数などの武器データ*/
+			std::vector<GunControl::GUN_STATUS> gun_stat;	/*所持弾数などの武器データ*/
 		private:
 			size_t sel_Gun = 0;
 			GunControl* Gun_Ptr{ nullptr };
-			std::vector<GunControl> Gun_;							/**/
 			AI cpu_do;										//AI用
 			bool have_magazine{ true };						//マガジンを持つか
 			bool throw_grenades{ false };					//グレネードを投げるか
@@ -2824,7 +2825,6 @@ namespace FPS_n2 {
 			float add_ypos{ 0.f };							//垂直加速度
 			float body_xrad{ 0.f };							//胴体角度
 			float body_zrad{ 0.f };							//胴体角度
-			float distance_to_cam{ -1.f };					//カメラとの距離
 			size_t canget_id{ 0 };							//取得可能アイテムID
 			std::string canget_mag;							//取得可能アイテム(マガジン)
 			std::string canget_med;							//取得可能アイテム(衣料品)
@@ -2859,7 +2859,7 @@ namespace FPS_n2 {
 				return;
 			}
 			//setter
-			auto& Set_Gun_(void) noexcept { return this->Gun_[this->sel_Gun]; }
+			auto& Set_Gun_(void) noexcept { return *this->Gun_Ptr; }
 			auto& Set_key_(void) noexcept { return key_; }	//key
 			void Set_gre_eff(bool f_t) noexcept { gre_eff = f_t; }																			//item関連
 			void Set_reloadf(bool f_t) noexcept { reloadf = f_t; }																			//item関連
@@ -2886,7 +2886,7 @@ namespace FPS_n2 {
 			const auto& Get_canget_med_f(void) const noexcept { return canget_meditem_f; }													//item関連
 			const auto& Get_canget_mag_s(void) const noexcept { return canget_mag; }														//item関連
 			const auto& Get_canget_med(void) const noexcept { return canget_med; }															//item関連
-			const auto& Get_Gun_(void) const noexcept { return this->Gun_[this->sel_Gun]; }
+			const auto& Get_Gun_(void) const noexcept { return *this->Gun_Ptr; }
 
 			const bool is_ADS(void) const noexcept override { return this->key_.aim && !this->view_ing; }									//ADS中
 			const bool isJamping(void) const noexcept override { return this->add_ypos != 0.f; }											//ジャンプ中
@@ -2894,12 +2894,6 @@ namespace FPS_n2 {
 			const bool isRunning(void) const noexcept override { return this->key_.running; }
 			const VECTOR_ref Get_pos(void) const noexcept override { return Get_position(); }
 		public:
-			virtual void Draw_Hit_UI(GraphHandle& Hit_Graph) noexcept {
-				for (auto& g : this->Gun_) {
-					g.Draw_Hit_UI(Hit_Graph);
-				}
-			}
-
 			//
 			void Set_basepos(const VECTOR_ref& pos_t) noexcept { this->pos_tt = pos_t; }
 			//
@@ -3977,7 +3971,7 @@ namespace FPS_n2 {
 			}
 		public:
 			using PLAYER_COMMON::PLAYER_COMMON;
-			void Set(std::vector<GUNPARTs>& gun_data, size_t itr, MV1& body_, MV1& bodylag_, MV1& col_) noexcept {
+			void Set(MV1& body_, MV1& bodylag_, MV1& col_) noexcept {
 				//身体
 				{
 					//身体
@@ -4003,10 +3997,11 @@ namespace FPS_n2 {
 					//
 					Damage.Set((int)this->obj_col.mesh_num());
 				}
+			}
+			void Set_GunInfo(GunControl* Gun_Ptr_t) noexcept {
 				//gun
-				this->Gun_.resize(1);
+				this->Gun_Ptr = Gun_Ptr_t;
 				this->gun_stat.emplace_back(GunControl::GUN_STATUS());				//gunstat
-				Set_Gun_().Set_Gun(gun_data, itr, this->gun_stat.back());
 			}
 			//弾
 			void Set_bullet_Ptr(void) noexcept {
@@ -4024,7 +4019,6 @@ namespace FPS_n2 {
 
 				this->add_ypos = 0.f;
 				this->add_vec_buf.clear();
-				this->distance_to_cam = -1.f;
 				this->Flag_calc_body = true;
 				this->Flag_calc_lag = true;
 
@@ -4346,7 +4340,7 @@ namespace FPS_n2 {
 				this->Flag_canlook_player = true;
 				auto ttt = this->Get_position(true);
 
-				this->distance_to_cam = (ttt - GetCameraPosition()).size();
+				this->Set_Gun_().distance_to_cam = (ttt - GetCameraPosition()).size();
 				if (
 					CheckCameraViewClip_Box((ttt + VECTOR_ref::vget(-1.8f, 0, -1.8f)).get(), (ttt + VECTOR_ref::vget(1.8f, 1.8f, 1.8f)).get())
 					) {
@@ -4354,7 +4348,7 @@ namespace FPS_n2 {
 
 					this->Flag_canlook_player = false;
 					this->Flag_calc_body = true;
-					this->distance_to_cam = -1.f;
+					this->Set_Gun_().distance_to_cam = -1.f;
 					return;
 				}
 				if (use_occlusion) {
@@ -4362,7 +4356,7 @@ namespace FPS_n2 {
 						MAPPTs->map_col_line(GetCameraPosition(), ttt + VECTOR_ref::zero()).HitFlag == TRUE) {
 						this->Flag_canlook_player = false;
 						this->Flag_calc_body = true;
-						this->distance_to_cam = -1.f;
+						this->Set_Gun_().distance_to_cam = -1.f;
 						return;
 					}
 				}
@@ -4417,17 +4411,10 @@ namespace FPS_n2 {
 					else {
 						this->obj_lag.DrawModel();
 					}
-					Set_Gun_().Draw_Gun_Base();
 					if (!isReload() || this->have_magazine) {
 						Set_Gun_().Draw_Mag();
 					}
-					//
-					if (this->distance_to_cam <= 5.f) {
-						Set_Gun_().Draw_Gun_Cart();
-					}
-					if (this->distance_to_cam <= 10.f) {
-						Set_Gun_().Draw_Gun_Else();
-					}
+					Set_Gun_().Draw_Gun_Common();
 				}
 				if (MINE_c == &(*ALL_c)[1]) {
 					//cpu_do.Draw_Debug(MAPPTs);
@@ -4448,8 +4435,6 @@ namespace FPS_n2 {
 				PLAYER_COMMON::Reset();
 				PLAYER_COMMON::Dispose();
 				this->gun_stat.clear();
-				Set_Gun_().Dispose_Gun();
-				Set_Gun_().Dispose();
 			}
 		};
 		//戦車
@@ -5241,12 +5226,5 @@ namespace FPS_n2 {
 		};
 	};
 	//銃
-	class GUNclass {
-	public:
-		class Gunclass {
-		public:
-			PLAYERclass::GunControl Guns;
-		};
-	};
-	std::vector<GUNclass::Gunclass> Gun_S;
+	std::vector<PLAYERclass::GunControl> Gun_S;
 }

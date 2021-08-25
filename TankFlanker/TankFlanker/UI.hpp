@@ -337,9 +337,6 @@ namespace FPS_n2 {
 				else {
 					dam = &mine->Damage;
 				}
-
-
-
 				auto size = y_r(2);
 				int x1 = xpos - xsize / 2;
 				float size_y = float(ysize - size) / Small->Get_size();
@@ -791,9 +788,9 @@ namespace FPS_n2 {
 					//
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
+				SetCameraNearFar(0.01f, 100.f);
 				//HP
 				{
-					SetCameraNearFar(0.01f, 100.f);
 					for (auto& c : chara) {
 						auto p = c->Set_HP_UI();
 						if (p.z() >= 0.f && p.z() <= 1.f) {
@@ -809,15 +806,13 @@ namespace FPS_n2 {
 				}
 				//ÉqÉbÉg
 				{
-					SetCameraNearFar(0.01f, 100.f);
-					for (auto& c : chara) {
-						c->Draw_Hit_UI(hit_Graph);
+					for (auto& g : Gun_S) {
+						g.Draw_Hit_UI(hit_Graph);
 					}
 					for (auto& v : vehicle) {
 						v->Draw_Hit_UI(hit_Graph);
 					}
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-					//todo:êÌé‘ÇÃï\é¶Ç‡
 				}
 				//
 			}
@@ -830,10 +825,8 @@ namespace FPS_n2 {
 			int all = 0;
 			std::string message;
 		public:
-			UI_LOADING(void) noexcept {
-			}
-			~UI_LOADING(void) noexcept {
-			}
+			UI_LOADING(void) noexcept { }
+			~UI_LOADING(void) noexcept { }
 			void Set(const std::string& mes) noexcept {
 				SetUseASyncLoadFlag(FALSE);
 				bar = 0.f;
