@@ -197,6 +197,40 @@ namespace FPS_n2 {
 		}
 	};
 	EffectControl effectControl;
+	//ライト
+	class LightPool {
+		class Lights {
+		public:
+			LightHandle handle;
+			LONGLONG time{ 0 };
+		};
+		std::array<Lights, 2> handles;
+		int now = 0;
+		VECTOR_ref campos;
+	public:
+		void Put(const VECTOR_ref& pos) {
+			if ((pos - campos).size() >= 10.f) { return; }
+			if (handles[now].handle.get() != -1) {
+				handles[now].handle.Dispose();
+			}
+			handles[now].time = GetNowHiPerformanceCount();
+			handles[now].handle = LightHandle::Create(pos, 2.5f, 0.5f, 1.5f, 0.5f);
+			SetLightDifColorHandle(handles[now].handle.get(), GetColorF(1.f, 1.f, 0.f, 1.f));
+			++now %= handles.size();
+		}
+
+		void Update(const VECTOR_ref& campos_t) {
+			campos = campos_t;
+			for (auto& h : handles) {
+				if (h.handle.get() != -1) {
+					if ((GetNowHiPerformanceCount() - h.time) >= 1000000 / 30) {
+						h.handle.Dispose();
+					}
+				}
+			}
+		}
+	};
+	LightPool Light_pool;
 	//エフェクト利用コントロール
 	class Effect_UseControl {
 		std::array<EffectS, int(Effect::effects)> effcs;	/*エフェクト*/

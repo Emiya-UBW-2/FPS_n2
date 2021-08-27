@@ -860,7 +860,7 @@ namespace FPS_n2 {
 				//this->chara[0]->Ride_on(&this->vehicle[0]);
 				//this->chara[1]->Ride_on(&this->vehicle[1]);
 				for (auto& c : this->chara) {
-					c->Ride_on(&this->vehicle[&c - &this->chara.front()]);
+					//c->Ride_on(&this->vehicle[&c - &this->chara.front()]);
 				}
 				//UI
 				UIparts->Set_Ptr_Common(MAPPTs, DrawPts);

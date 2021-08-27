@@ -103,6 +103,8 @@ namespace FPS_n2 {
 							//弾痕の更新
 							hit_obj_p.Update();
 							hit_b_obj_p.Update();
+							//ライトの更新
+							Light_pool.Update(scenes_ptr->Get_Camera().campos);
 						}
 						//VR空間に適用
 						DrawPts->Move_Player();

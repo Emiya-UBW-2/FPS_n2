@@ -4284,6 +4284,7 @@ namespace FPS_n2 {
 							//排莢、弾
 							Set_Gun_().Create_Cart();
 							Set_Gun_().Create_bullet();
+							Light_pool.Put(Set_Gun_().Get_maz());
 							//エフェクト
 							calc_shot_effect();
 							//サウンド
