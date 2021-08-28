@@ -175,7 +175,7 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 		public:
-			void UI_Draw(std::shared_ptr<GunPartsControl>& GunPartses, EnumGunParts parts_cat, const bool& Rot, PLAYERclass::GunControl* mine_Gun, GUNPARTs* parts_p, float& change_per) noexcept {
+			void UI_Draw(std::shared_ptr<GunPartsControl>& GunPartses, EnumGunParts parts_cat, const bool& Rot, std::shared_ptr<PLAYERclass::GunControl>& mine_Gun, GUNPARTs* parts_p, float& change_per) noexcept {
 				UI_TEMP::Set_fonts();
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{
@@ -513,7 +513,7 @@ namespace FPS_n2 {
 						if ((!DrawPts->use_vr && !mine->is_ADS()) || DrawPts->use_vr) {
 							if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 								//空警告
-								if (!mine->Set_Gun_().gun_stat_now->not_chamber_EMPTY()) {
+								if (mine->Damage.Get_alive() && !mine->Set_Gun_().Get_in_chamber()) {
 									if (DrawPts->use_vr) {
 										xp = DrawPts->disp_x / 2;
 										yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 8;
@@ -528,7 +528,7 @@ namespace FPS_n2 {
 						}
 					}
 					//セレクター
-					{
+					if(mine->Damage.Get_alive()){
 						if (DrawPts->use_vr) {
 							xp = DrawPts->disp_x / 2 - DrawPts->disp_y / 10;
 							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 8;
@@ -585,32 +585,34 @@ namespace FPS_n2 {
 							yp = DrawPts->disp_y - y_r(50);
 						}
 						if (!mine->isRide()) {
-							if ((!DrawPts->use_vr && !mine->is_ADS()) || DrawPts->use_vr) {
-								//銃
-								{
-									Small->Get_handle().DrawString(xp, yp, mine->Set_Gun_().Get_parts(EnumGunParts::BASE)->thisparts->Get_Performance().name, GetColor(255, 255, 255));
-								}
-								//マガジン関連(仮)
-								{
-									int size = int(mine->Set_Gun_().Get_mag_in().size());
-									if (DrawPts->use_vr) {
-										xp = DrawPts->disp_x / 2 - y_r(140) + Middle->Get_size();
-										yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20) - Middle->Get_size() * size;
+							if (mine->Damage.Get_alive()) {
+								if ((!DrawPts->use_vr && !mine->is_ADS()) || DrawPts->use_vr) {
+									//銃
+									{
+										Small->Get_handle().DrawString(xp, yp, mine->Set_Gun_().Get_parts(EnumGunParts::BASE)->thisparts->Get_Performance().name, GetColor(255, 255, 255));
 									}
-									else {
-										xp = y_r(220) + Middle->Get_size();
-										yp = DrawPts->disp_y - y_r(20) - Middle->Get_size() * size;
-									}
-									for (auto& a : mine->Set_Gun_().Get_mag_in()) {
-										Middle->Get_handle().DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.Get_Cnt(), a.Get_Cap());
-										if (&a == &mine->Set_Gun_().Get_mag_in().front()) {
-											if (mine->Set_Gun_().gun_stat_now->not_chamber_EMPTY()) {
-												Small->Get_handle().DrawString(xp + Middle->Get_handle().GetDrawWidthFormat("%d/%d", a.Get_Cnt(), a.Get_Cap()), yp + Middle->Get_size() - Small->Get_size(), " +1", GetColor(255, 0, 0));
-											}
-											DrawTriangle(xp - y_r(10), yp + 5, xp, yp + Middle->Get_size() / 2, xp - y_r(10), yp + Middle->Get_size() - 5, GetColor(255, 255, 0), FALSE);
-											xp -= Middle->Get_size() / 3;
+									//マガジン関連(仮)
+									{
+										int size = int(mine->Set_Gun_().Get_mag_in().size());
+										if (DrawPts->use_vr) {
+											xp = DrawPts->disp_x / 2 - y_r(140) + Middle->Get_size();
+											yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20) - Middle->Get_size() * size;
 										}
-										yp += Middle->Get_size();
+										else {
+											xp = y_r(220) + Middle->Get_size();
+											yp = DrawPts->disp_y - y_r(20) - Middle->Get_size() * size;
+										}
+										for (auto& a : mine->Set_Gun_().Get_mag_in()) {
+											Middle->Get_handle().DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.Get_Cnt(), a.Get_Cap());
+											if (&a == &mine->Set_Gun_().Get_mag_in().front()) {
+												if (mine->Set_Gun_().Get_in_chamber()) {
+													Small->Get_handle().DrawString(xp + Middle->Get_handle().GetDrawWidthFormat("%d/%d", a.Get_Cnt(), a.Get_Cap()), yp + Middle->Get_size() - Small->Get_size(), " +1", GetColor(255, 0, 0));
+												}
+												DrawTriangle(xp - y_r(10), yp + 5, xp, yp + Middle->Get_size() / 2, xp - y_r(10), yp + Middle->Get_size() - 5, GetColor(255, 255, 0), FALSE);
+												xp -= Middle->Get_size() / 3;
+											}
+											yp += Middle->Get_size();
+										}
 									}
 								}
 							}
@@ -739,7 +741,7 @@ namespace FPS_n2 {
 				const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine) noexcept {
 				UI_TEMP::Set_fonts();
 				//弾インジケーター
-				if (DrawPts->use_vr) {
+				if (mine->Damage.Get_alive() && DrawPts->use_vr) {
 					auto pos_gun = mine->Set_Gun_().Get_parts(EnumGunParts::BASE)->Get_objMatrix().pos();
 					VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 					if (p.z() >= 0.f && p.z() <= 1.f) {
@@ -757,7 +759,7 @@ namespace FPS_n2 {
 							for (int i = 0; i < std::clamp(int(4 * per / 90) + int(per != 0), 0, 4); i++) {
 								DrawBox(xp - siz / 2 + siz * i / 4 + 2, yp - y_r(30) - i * 2, xp - siz / 2 + siz * (i + 1) / 4 - 2, yp - y_r(10), col_r, TRUE);
 							}
-							if (!mine->Set_Gun_().gun_stat_now->not_chamber_EMPTY()) {
+							if (!mine->Set_Gun_().Get_in_chamber()) {
 								//空警告
 								if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 									Small->Get_handle().DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0)); yp += Small->Get_size();
@@ -807,7 +809,7 @@ namespace FPS_n2 {
 				//ヒット
 				{
 					for (auto& g : Gun_S) {
-						g.Draw_Hit_UI(hit_Graph);
+						g->Draw_Hit_UI(hit_Graph);
 					}
 					for (auto& v : vehicle) {
 						v->Draw_Hit_UI(hit_Graph);

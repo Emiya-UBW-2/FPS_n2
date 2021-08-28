@@ -216,21 +216,21 @@ namespace FPS_n2 {
 					switch (sel_scene) {
 					default: break;
 					case scenes::ITEM_LOAD:
-						GunPartses->Set();																//
-						MAINLOOPscene->Start();															//メインループ開始読み込み
-						hit_obj_p.Clear();																//弾痕
-						hit_b_obj_p.Clear();															//弾痕
+						GunPartses->Set();												//
+						MAINLOOPscene->Start();											//メインループ開始読み込み
+						hit_obj_p.Clear();												//弾痕
+						hit_b_obj_p.Clear();											//弾痕
 						break;
 					case scenes::MAP_LOAD:
-						MAPPTs->Start();																//マップパーツ生成
-						MAINLOOPscene->Ready_Chara(MAPPTs->Get_spawn_point().size());					//キャラ設定
-						MAINLOOPscene->Ready_Tank(MAPPTs->Get_spawn_point().size());					//戦車指定
+						MAPPTs->Start();												//マップパーツ生成
+						MAINLOOPscene->Ready_Chara(MAPPTs->Get_spawn_point().size());	//キャラ設定
+						MAINLOOPscene->Ready_Tank(MAPPTs->Get_spawn_point().size());	//戦車指定
 						break;
 					case scenes::LOAD:
-						SELECTscene->Start(LOADscene->putout_Preset());									//プリセットを指定
+						SELECTscene->Start(LOADscene->putout_Preset());					//プリセットを指定
 						break;
 					case scenes::MAIN_LOOP:
-						MAPPTs->Dispose();																//マップを消去
+						MAPPTs->Dispose();												//マップを消去
 						break;
 					}
 					//遷移

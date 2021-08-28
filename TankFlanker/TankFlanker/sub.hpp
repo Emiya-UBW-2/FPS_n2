@@ -255,11 +255,11 @@ namespace FPS_n2 {
 	public:
 		class save_c {
 		public:
-			size_t cang_ = 0;						//パーツ選択
+			size_t cang_ = 0;									//パーツ選択
 			EnumGunParts type_ = EnumGunParts::NONE;			//パーツの種類
 			EnumAttachPoint pt_cat_ = EnumAttachPoint::NONE;	//ベースパーツの場所
-			EnumGunParts pt_type_ = EnumGunParts::NONE;		//ベースパーツの種類
-			size_t pt_sel_ = 0;						//ベースパーツの番号(マウントなど)
+			EnumGunParts pt_type_ = EnumGunParts::NONE;			//ベースパーツの種類
+			size_t pt_sel_ = 0;									//ベースパーツの番号(マウントなど)
 		};
 	protected:
 		std::vector<save_c> save_parts;
@@ -358,6 +358,35 @@ namespace FPS_n2 {
 				file.write((char*)&tmp_save, sizeof(tmp_save));
 			}
 			file.close();
+		}
+		/*セーブデータのクリーンアップ*/
+		void CleanUP() {
+			/*
+			//セーブデータのクリーンアップ
+			bool sav = true;
+			int cnt = 0;
+			do {
+				sav = false;
+				for (auto&s : save_parts) {
+					if (s.type_ != EnumGunParts::SIGHT) {
+						if (erase_savedata(mine_Gun->Get_parts(s.type_))) {
+							save_parts.erase(save_parts.begin() + (&s - &save_parts.front()));
+							sav = true;
+							break;
+						}
+					}
+					else if (cnt < mine_Gun->Get_sight_size()) {
+						auto* stt = mine_Gun->Get_parts(s.type_, cnt);
+						cnt++;
+						if (erase_savedata(stt) || s.cang_ > 10) {
+							save_parts.erase(save_parts.begin() + (&s - &save_parts.front()));
+							sav = true;
+							break;
+						}
+					}
+				}
+			} while (sav);
+			*/
 		}
 	};
 	//キーバインド
@@ -2040,9 +2069,9 @@ namespace FPS_n2 {
 					chara->addf_canget_magitem(zz);
 					if (zz) {
 						chara->Set_canget_mag(this->id_t, this->ptr_mag->mod.Get_name());
-						if (chara->getmagazine_push() && this->Ammo_cnt != 0 && (this->ptr_mag->Get_Ammo(0).Get_name() == this->magazine_param.Get_Ammo(0).Get_name())) {
+						if (chara->getItem_push() && this->Ammo_cnt != 0 && (this->ptr_mag->Get_Ammo(0).Get_name() == this->magazine_param.Get_Ammo(0).Get_name())) {
 							chara->Set_sort_f(false);
-							chara->Set_Gun_().gun_stat_now->magazine_plus(this);
+							chara->Set_Gun_().Get_gun_stat_now()->magazine_plus(this);        
 							if (chara->Set_Gun_().Get_mag_in().size() == 1) {
 								chara->Set_reloadf(true);
 							}
@@ -2055,7 +2084,7 @@ namespace FPS_n2 {
 					chara->addf_canget_meditem(zz);
 					if (zz) {
 						chara->Set_canget_med(this->id_t, this->ptr_med->mod.Get_name());
-						if (chara->getmagazine_push()) {
+						if (chara->getItem_push()) {
 							chara->Damage.AddHP(this->ptr_med->repair);
 							this->Detach_item();
 						}
