@@ -778,7 +778,7 @@ namespace FPS_n2 {
 						if (g->Flag_canlook_player) {
 							//mag
 							if (g->Get_ptr_mag() != nullptr) {
-								Draw_Item_UI(y_r(144), y_r(144), g->Get_pos_(), "%s %d/%d", g->Get_ptr_mag()->Get_Performance().name.c_str(), g->Get_magazine().Get_Ammo_Cap(), g->Get_ptr_mag()->Get_Ammo_Cap());
+								Draw_Item_UI(y_r(144), y_r(144), g->Get_pos_(), "%s %d/%d", g->Get_ptr_mag()->Get_Performance().name.c_str(), g->Get_Ammo_Cnt(), g->Get_ptr_mag()->Get_Ammo_Cap());
 							}
 							//med
 							if (g->Get_ptr_med() != nullptr) {

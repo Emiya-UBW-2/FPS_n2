@@ -736,7 +736,7 @@ namespace FPS_n2 {
 				int sel_cam = 0;
 				void Set(const float& fov_pc) noexcept {
 					this->key_TPS.Init(false);
-					this->camera_TPS.campos = VECTOR_ref::vget(0, 55.8f, -10);
+					this->camera_TPS.campos = VECTOR_ref::vget(0, 1.8f, -10);
 					this->camera_TPS.set_cam_info(deg2rad(fov_pc), 0.1f, 200.f);
 				}
 				void Set_info(std::vector<std::shared_ptr<PLAYERclass::PLAYER_CHARA>>& chara) noexcept {
@@ -1040,6 +1040,7 @@ namespace FPS_n2 {
 				//キャラ
 				for (auto& c : this->chara) {
 					c->Draw_chara();
+					c->Draw_LAM_Effect();				//レーザー
 				}
 				for (auto& g : Gun_S) {
 					g->Draw_Gun_Common();

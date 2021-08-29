@@ -712,7 +712,8 @@ namespace FPS_n2 {
 			void Frame_Copy_Lag(MV1& obj_body_t, MV1* obj_lag_t) { this->frame_s.copy_frame(obj_body_t, this->lagframe_, obj_lag_t); }
 			//
 			void Set_ReloadTime(float reload_time) noexcept {
-				this->ani_timeline[3].total = reload_time - this->ani_timeline[2].total - 0.2f;//マガジン装着
+				this->ani_timeline[3].total = reload_time -
+					(this->ani_timeline[2].total + this->ani_timeline[15].total + this->ani_timeline[16].total + this->ani_timeline[17].total + this->ani_timeline[4].total);//マガジン装着
 			}
 			void Set_Body(MV1& obj_body_t, MV1& obj_lag_t, MV1& obj_col_t) noexcept {
 				//身体
@@ -733,14 +734,19 @@ namespace FPS_n2 {
 			}
 			//
 			void Init_Anim(void) noexcept {
-				this->ani_timeline.resize(15);
-				this->ani_lefthand.resize(3);
+				this->ani_timeline.resize(18);
+				this->ani_lefthand.resize(4);
 				this->ani_righthand.resize(1);
 				this->ani_timeline[0].total = 0.4f;//構える
 				this->ani_timeline[1].total = 0.4f;//走る
+
 				this->ani_timeline[2].total = 0.85f;//マガジンリリース
-				this->ani_timeline[3].total = 0.2f;//マガジン装着
-				this->ani_timeline[4].total = 0.2f;//マガジン装着
+				this->ani_timeline[15].total = 0.55f;//マガジン装着//1.4
+				this->ani_timeline[16].total = 0.25f;//マガジン装着//1.65
+				this->ani_timeline[3].total = 0.3f;//マガジン装着(可変)//1.95
+				this->ani_timeline[17].total = 0.15f;//マガジン装着//2.1
+				this->ani_timeline[4].total = 0.2f;//マガジン装着//2.3
+
 				this->ani_timeline[5].total = 0.2f;//マグ整頓
 				this->ani_timeline[6].total = 0.2f;//初段装填
 				this->ani_timeline[7].total = 0.4f;//眺め1
@@ -1396,7 +1402,7 @@ namespace FPS_n2 {
 				//マガジンを1つ追加(装填無し)
 				void magazine_plus(Items* magazine_item) noexcept {
 					this->magazine_in.resize(this->magazine_in.size() + 1);
-					this->magazine_in.back().Set(magazine_item->Get_ptr_mag(), (int)magazine_item->Get_magazine().Get_Ammo_Cap());
+					this->magazine_in.back().Set(magazine_item->Get_ptr_mag(), (int)magazine_item->Get_Ammo_Cnt());
 				}
 				//マガジンを1つ追加
 				bool magazine_pushback(GUNPARTs* magazine_parts) noexcept {
@@ -1706,6 +1712,7 @@ namespace FPS_n2 {
 				std::array<frames, 3> RIGHT_frame;		//右手座標
 				std::array<frames, 3> LEFT_frame;		//左手座標
 				std::array<frames, 3> LEFT_mag_frame;	//左手座標(マガジン保持時)
+				std::array<frames, 3> LEFT_mag_frame_ready;	//左手座標(マガジン装着用意時)
 				/*LAM専用*/
 				frames Lightsource_frame;				//光源
 				LightHandle Light;						//ライト
@@ -1732,6 +1739,7 @@ namespace FPS_n2 {
 				const auto Get_RIGHT_pos(size_t sel_t) const noexcept { return (IsActive()) ? this->obj.frame(this->RIGHT_frame[sel_t].first) : VECTOR_ref::zero(); }
 				const auto Get_LEFT_pos(size_t sel_t) const noexcept { return (IsActive()) ? this->obj.frame(this->LEFT_frame[sel_t].first) : VECTOR_ref::zero(); }
 				const auto Get_L_mag_pos(size_t sel_t) const noexcept { return (IsActive()) ? this->obj.frame(this->LEFT_mag_frame[sel_t].first) : VECTOR_ref::zero(); }
+				const auto Get_L_mag_pos_ready(size_t sel_t) const noexcept { return (IsActive()) ? this->obj.frame(this->LEFT_mag_frame_ready[sel_t].first) : VECTOR_ref::zero(); }
 
 				const auto Get_Cart_pos(void) const noexcept { return (IsActive()) ? this->obj.frame(this->Cart_frame.first) : VECTOR_ref::zero(); }
 				const auto Get_Cart_vec(void) const noexcept { return (this->obj.frame(this->Cart_frame.first + 1) - this->Get_Cart_pos()).Norm(); }
@@ -1768,6 +1776,11 @@ namespace FPS_n2 {
 								this->LEFT_mag_frame[0] = this->thisparts->mod.Get_LEFT_mag_frame(0);
 								this->LEFT_mag_frame[1] = this->thisparts->mod.Get_LEFT_mag_frame(1);
 								this->LEFT_mag_frame[2] = this->thisparts->mod.Get_LEFT_mag_frame(2);
+							}
+							else if (p == "LEFT_mag_ready") {
+								this->LEFT_mag_frame_ready[0] = this->thisparts->mod.Get_LEFT_mag_frame_ready(0);
+								this->LEFT_mag_frame_ready[1] = this->thisparts->mod.Get_LEFT_mag_frame_ready(1);
+								this->LEFT_mag_frame_ready[2] = this->thisparts->mod.Get_LEFT_mag_frame_ready(2);
 							}
 							else if (p == "RIGHT") {
 								this->RIGHT_frame[0].Set_World(i, this->obj);
@@ -2064,6 +2077,7 @@ namespace FPS_n2 {
 			}
 			//左腕座標(マガジン)
 			const auto LEFT_pos_mag(size_t sel_t) const noexcept { return base.Get_L_mag_pos(sel_t); }
+			const auto LEFT_pos_mag_ready(size_t sel_t) const noexcept { return base.Get_L_mag_pos_ready(sel_t); }
 			//銃座標指定
 			void Set_gun_posmat(const VECTOR_ref& pos_t, const MATRIX_ref& mat_t) noexcept {
 				this->gun_m.SetPos(pos_t);
@@ -2960,6 +2974,7 @@ namespace FPS_n2 {
 					Set_lefthand(0, sel_t, Set_Gun_().LEFT_pos_gun(sel_t));
 					Set_lefthand(1, sel_t, Set_Gun_().LEFT_pos_mag(sel_t));
 					Set_lefthand(2, sel_t, this->obj_body.frame(this->frame_s.LEFTBodyFrame[sel_t].first));
+					Set_lefthand(3, sel_t, Set_Gun_().LEFT_pos_mag_ready(sel_t));
 				}
 			}
 		private:
@@ -2996,12 +3011,36 @@ namespace FPS_n2 {
 						case 1:
 						{
 							//マガジン装着
-							if (Func_Set_LEFT_pos_Anim(3, 1, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 0.f)) {
+							if (Func_Set_LEFT_pos_Anim(15, 3, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 0.f)) {
 								this->reload_ings++;
 							}
 							return;
 						}
 						case 2:
+						{
+							//マガジン装着
+							if (Func_Set_LEFT_pos_Anim(16, 3, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 10.f)) {
+								this->reload_ings++;
+							}
+							return;
+						}
+						case 3:
+						{
+							//マガジン装着
+							if (Func_Set_LEFT_pos_Anim(3, 1, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 10.f)) {
+								this->reload_ings++;
+							}
+							return;
+						}
+						case 4:
+						{
+							//マガジン装着
+							if (Func_Set_LEFT_pos_Anim(17, 1, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 10.f)) {
+								this->reload_ings++;
+							}
+							return;
+						}
+						case 5:
 						{
 							//マガジン装着後
 							if (Func_Set_LEFT_pos_Anim(4, 1, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 0.f)) {
@@ -3091,11 +3130,33 @@ namespace FPS_n2 {
 						}
 					}
 					else {
-						if (this->Damage.Get_HP_parts()[2] == 0) {
-							Func_Set_LEFT_pos_Anim(11, 2, VECTOR_ref::front(), VECTOR_ref::zero(), 0.f);
+						float buf = 0.f;
+						if (!this->isSquat()) {
+							buf = DX_PI_F / 2.f*Head_bobbing(this->anime_walk);
 						}
 						else {
-							Func_Set_LEFT_pos_Anim(0, 0, VECTOR_ref::front(), VECTOR_ref::zero(), 0.f);
+							buf = DX_PI_F / 2.f*Head_bobbing(this->anime_swalk);
+						}
+
+						VECTOR_ref vec = VECTOR_ref::front();
+						vec.x(0.001f * sin(buf));
+						vec.y(0.002f * sin(buf*2.f));
+						vec = vec.Norm();
+
+						VECTOR_ref pos = VECTOR_ref::zero();
+						pos.x(-0.001f * sin(buf)*sin(buf / 2.f));
+						pos.y(0.001f * sin(buf));
+						pos.z(0.0015f * sin(buf / 2.f)*sin(buf / 3.f));
+						float rad = 0.f;
+
+						rad = 1.5f*sin(buf)*sin(buf/3.f);
+
+
+						if (this->Damage.Get_HP_parts()[2] == 0) {
+							Func_Set_LEFT_pos_Anim(11, 2, vec, pos, rad);
+						}
+						else {
+							Func_Set_LEFT_pos_Anim(0, 0, vec, pos, rad);
 						}
 					}
 					return;
@@ -4013,8 +4074,11 @@ namespace FPS_n2 {
 			}
 			//銃を捨てる
 			void Dispose_GunInfo() {
-				this->Gun_Ptr->Set_gun_stat_now(nullptr);
-				this->Gun_Ptr.reset();
+				if (this->Gun_Ptr != nullptr) {
+					this->Gun_Ptr->Set_gun_stat_now(nullptr);
+					this->Gun_Ptr.reset();
+					this->Gun_Ptr = nullptr;
+				}
 			}
 			//弾
 			void Set_bullet_Ptr(void) noexcept {
@@ -4457,8 +4521,10 @@ namespace FPS_n2 {
 			}
 			/*レーザー、ライト描画*/
 			void Draw_LAM_Effect(void) noexcept {
-				if (Set_Gun_().Get_lamtype() == EnumSELECT_LAM::LASER) {
-					Draw_Lazer_Effect(Set_Gun_().Get_source_pos(), Set_Gun_().Get_move_gun().mat.zvec() * -1.f, true, 0.1f);
+				if (Gun_Ptr != nullptr) {
+					if (Set_Gun_().Get_lamtype() == EnumSELECT_LAM::LASER) {
+						Draw_Lazer_Effect(Set_Gun_().Get_source_pos(), Set_Gun_().Get_move_gun().mat.zvec() * -1.f, true, 0.05f);
+					}
 				}
 			}
 			/*HPバーを表示する場所*/

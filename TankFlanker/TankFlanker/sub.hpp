@@ -1315,6 +1315,7 @@ namespace FPS_n2 {
 		MV1 col;
 		std::array<frames, 2> magazine_ammo_f;	//マガジン用弾フレーム
 		std::array<frames, 3> LEFT_mag_frame;	//左手座標(マガジン保持時)
+		std::array<frames, 3> LEFT_mag_frame_ready;	//左手座標(マガジン装着用意時)
 		std::array<frames, 2> magazine_f;		//マガジンフレーム
 	public:
 		auto& Get_name(void) const noexcept { return name; }
@@ -1322,6 +1323,7 @@ namespace FPS_n2 {
 		auto& Get_model(void) const noexcept { return model; }
 		const frames& Get_magazine_ammo_f(int i) const noexcept { return magazine_ammo_f[i]; }
 		const frames& Get_LEFT_mag_frame(int i) const noexcept { return LEFT_mag_frame[i]; }
+		const frames& Get_LEFT_mag_frame_ready(int i) const noexcept { return LEFT_mag_frame_ready[i]; }
 		const frames& Get_magazine_f(int i) const noexcept { return magazine_f[i]; }
 		void Ready(std::string path_, std::string named) noexcept {
 			this->name = named;
@@ -1344,6 +1346,11 @@ namespace FPS_n2 {
 					this->LEFT_mag_frame[0].Set_World(i, this->model);
 					this->LEFT_mag_frame[1].Set_Local(i + 1, this->model);
 					this->LEFT_mag_frame[2].Set_Local(i + 2, this->model);
+				}
+				if (p == std::string("LEFT_mag_ready")) {
+					this->LEFT_mag_frame_ready[0].Set_World(i, this->model);
+					this->LEFT_mag_frame_ready[1].Set_Local(i + 1, this->model);
+					this->LEFT_mag_frame_ready[2].Set_Local(i + 2, this->model);
 				}
 				if (p == std::string("magazine_fall")) {
 					this->magazine_f[0].Set_World(i, this->model);
@@ -1931,7 +1938,6 @@ namespace FPS_n2 {
 		//マガジン専用パラメーター
 		GUNPARTs* ptr_mag{ nullptr };
 		size_t Ammo_cnt{ 30 };						//入る最大数
-		GUNPARTs magazine_param;
 		//治療キット専用パラメーター
 		Meds* ptr_med{ nullptr };
 		Meds medkit;
@@ -1942,7 +1948,7 @@ namespace FPS_n2 {
 		bool Flag_canlook_player{ true };
 		auto& Get_ptr_mag(void) const noexcept { return ptr_mag; }
 		auto& Get_ptr_med(void) const noexcept { return ptr_med; }
-		auto& Get_magazine(void) const noexcept { return magazine_param; }
+		const auto& Get_Ammo_Cnt() const noexcept { return Ammo_cnt; }
 		auto& Get_pos_(void) const noexcept { return move.pos; }
 	private:
 		//mag
@@ -1957,9 +1963,6 @@ namespace FPS_n2 {
 			}
 			else {
 				this->Ammo_cnt = dnm;
-			}
-			if (this->ptr_mag != nullptr) {
-				this->magazine_param.Copy_Ammo(*this->ptr_mag);
 			}
 			this->del_timer = (this->Ammo_cnt == 0) ? 5.f : 20.f;
 		}
@@ -2069,9 +2072,9 @@ namespace FPS_n2 {
 					chara->addf_canget_magitem(zz);
 					if (zz) {
 						chara->Set_canget_mag(this->id_t, this->ptr_mag->mod.Get_name());
-						if (chara->getItem_push() && this->Ammo_cnt != 0 && (this->ptr_mag->Get_Ammo(0).Get_name() == this->magazine_param.Get_Ammo(0).Get_name())) {
+						if (chara->getItem_push() && this->Ammo_cnt != 0) {//&& (this->ptr_mag->Get_Ammo(0).Get_name() == this->ptr_mag->Get_Ammo(0).Get_name())
 							chara->Set_sort_f(false);
-							chara->Set_Gun_().Get_gun_stat_now()->magazine_plus(this);        
+							chara->Set_Gun_().Get_gun_stat_now()->magazine_plus(this);
 							if (chara->Set_Gun_().Get_mag_in().size() == 1) {
 								chara->Set_reloadf(true);
 							}
