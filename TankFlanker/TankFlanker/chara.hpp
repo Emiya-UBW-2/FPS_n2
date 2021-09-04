@@ -713,7 +713,9 @@ namespace FPS_n2 {
 			//
 			void Set_ReloadTime(float reload_time) noexcept {
 				this->ani_timeline[3].total = reload_time -
-					(this->ani_timeline[2].total + this->ani_timeline[15].total + this->ani_timeline[16].total + this->ani_timeline[17].total + this->ani_timeline[4].total);//マガジン装着
+					(
+						this->ani_timeline[18].total + this->ani_timeline[19].total +
+						this->ani_timeline[2].total + this->ani_timeline[15].total + this->ani_timeline[16].total + this->ani_timeline[17].total + this->ani_timeline[4].total);//マガジン装着
 			}
 			void Set_Body(MV1& obj_body_t, MV1& obj_lag_t, MV1& obj_col_t) noexcept {
 				//身体
@@ -734,15 +736,17 @@ namespace FPS_n2 {
 			}
 			//
 			void Init_Anim(void) noexcept {
-				this->ani_timeline.resize(18);
+				this->ani_timeline.resize(21);
 				this->ani_lefthand.resize(4);
 				this->ani_righthand.resize(1);
 				this->ani_timeline[0].total = 0.4f;//構える
 				this->ani_timeline[1].total = 0.4f;//走る
 
-				this->ani_timeline[2].total = 0.85f;//マガジンリリース
+				this->ani_timeline[18].total = 0.05f;//マガジン装着//1.65
+				this->ani_timeline[19].total = 0.075f;//マガジン装着//1.65
+				this->ani_timeline[2].total = 0.725f;//マガジンリリース
 				this->ani_timeline[15].total = 0.55f;//マガジン装着//1.4
-				this->ani_timeline[16].total = 0.25f;//マガジン装着//1.65
+				this->ani_timeline[16].total = 0.15f;//マガジン装着//1.65
 				this->ani_timeline[3].total = 0.3f;//マガジン装着(可変)//1.95
 				this->ani_timeline[17].total = 0.15f;//マガジン装着//2.1
 				this->ani_timeline[4].total = 0.2f;//マガジン装着//2.3
@@ -759,6 +763,8 @@ namespace FPS_n2 {
 				this->ani_timeline[13].total = 0.8f;//セレクターセット
 
 				this->ani_timeline[14].total = 0.4f;//構える
+
+				this->ani_timeline[20].total = 0.75f;//確認
 			}
 			void Init_Left(void) noexcept {
 				this->prev_ani_lefthand = &this->ani_lefthand[0];
@@ -2529,6 +2535,7 @@ namespace FPS_n2 {
 				}
 				return ans;
 			}
+			const bool Get_Trigger() const noexcept { return this->trigger.trigger(); }
 			void Calc_Gunanime(int Slide_Audio) {
 				if (this->gunanime_first->per == 1.f) {
 					if ((this->gunanime_first->time > this->gunanime_first->alltime / 3.f) && this->slide_sound_f) {
@@ -2843,6 +2850,7 @@ namespace FPS_n2 {
 			bool sort_ing{ false };							//整頓
 			float sorting_timer{ 0.f };
 			bool view_ing{ false };							//眺める
+			bool check_ing{ false };
 			size_t view_ings{ 0 };							//
 			size_t reload_ings{ 0 };						//
 			size_t throw_gre_ings{ 0 };						//
@@ -2915,8 +2923,8 @@ namespace FPS_n2 {
 			const auto& Get_canget_med(void) const noexcept { return canget_med; }															//item関連
 			const auto& Get_Gun_(void) const noexcept { return *this->Gun_Ptr; }
 
-			const bool is_ADS(void) const noexcept override { return this->key_.aim && !this->view_ing; }									//ADS中
-			const bool isJamping(void) const noexcept override { return this->add_ypos != 0.f; }											//ジャンプ中
+			const bool is_ADS(void) const noexcept override { return this->key_.aim && !this->view_ing && !(Get_Gun_().Get_gunanime_Changesel()->per == 1.f); }		//ADS中
+			const bool isJamping(void) const noexcept override { return this->add_ypos != 0.f; }																	//ジャンプ中
 			const bool isSquat(void) const noexcept override { return this->key_.squat; }
 			const bool isRunning(void) const noexcept override { return this->key_.running; }
 			const VECTOR_ref Get_pos(void) const noexcept override { return Get_position(); }
@@ -2989,7 +2997,7 @@ namespace FPS_n2 {
 				//
 				Set_ReloadTime(Set_Gun_().Get_reloadtime());
 				//
-				if (this->isRunning() && !isReload() && !this->sort_ing && !this->view_ing) {
+				if (this->isRunning() && !isReload() && !this->sort_ing && !this->view_ing && !this->check_ing && !(Get_Gun_().Get_gunanime_Changesel()->per == 1.f)) {
 					//走る
 					Func_Set_LEFT_pos_Anim(1, 0, 
 						VECTOR_ref::vget(-0.75f, 0.15f, 0.35f),
@@ -3001,6 +3009,22 @@ namespace FPS_n2 {
 						switch (this->reload_ings) {
 						case 0:
 						{
+							//マガジン装着
+							if (Func_Set_LEFT_pos_Anim(18, 3, VECTOR_ref::vget(0.35f, -0.25f, 0.9f), VECTOR_ref::vget(0, 0.1f, -0.025f), 15.f)) {
+								this->reload_ings++;
+							}
+							return;
+						}
+						case 1:
+						{
+							//マガジン装着
+							if (Func_Set_LEFT_pos_Anim(19, 3, VECTOR_ref::vget(0.35f, -0.25f, 0.9f), VECTOR_ref::vget(0, 0.1f, -0.025f), 15.f)) {
+								this->reload_ings++;
+							}
+							return;
+						}
+						case 2:
+						{
 							//リロード開始
 							if (Func_Set_LEFT_pos_Anim(2, 2, VECTOR_ref::vget(0.35f, -0.25f, 0.9f), VECTOR_ref::vget(0, 0.1f, -0.025f), 15.f)) {
 								this->reload_ings++;
@@ -3008,7 +3032,7 @@ namespace FPS_n2 {
 							}
 							return;
 						}
-						case 1:
+						case 3:
 						{
 							//マガジン装着
 							if (Func_Set_LEFT_pos_Anim(15, 3, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 0.f)) {
@@ -3016,7 +3040,7 @@ namespace FPS_n2 {
 							}
 							return;
 						}
-						case 2:
+						case 4:
 						{
 							//マガジン装着
 							if (Func_Set_LEFT_pos_Anim(16, 3, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 10.f)) {
@@ -3024,7 +3048,7 @@ namespace FPS_n2 {
 							}
 							return;
 						}
-						case 3:
+						case 5:
 						{
 							//マガジン装着
 							if (Func_Set_LEFT_pos_Anim(3, 1, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 10.f)) {
@@ -3032,7 +3056,7 @@ namespace FPS_n2 {
 							}
 							return;
 						}
-						case 4:
+						case 6:
 						{
 							//マガジン装着
 							if (Func_Set_LEFT_pos_Anim(17, 1, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 10.f)) {
@@ -3040,7 +3064,7 @@ namespace FPS_n2 {
 							}
 							return;
 						}
-						case 5:
+						case 7:
 						{
 							//マガジン装着後
 							if (Func_Set_LEFT_pos_Anim(4, 1, VECTOR_ref::vget(0.f, -0.25f, 0.9f), VECTOR_ref::vget(0.f, 0.05f, -0.025f), 0.f)) {
@@ -3058,7 +3082,7 @@ namespace FPS_n2 {
 						return;
 					}
 					//初段装填
-					if (Set_Gun_().Get_gunanime_first()->per == 1.f) {
+					if (Get_Gun_().Get_gunanime_first()->per == 1.f) {
 						Func_Set_LEFT_pos_Anim(6, 0, VECTOR_ref::vget(0.f, -0.75f, 0.9f), VECTOR_ref::vget(0.05f, -0.035f, -0.055f), -40.f);
 						return;
 					}
@@ -3114,8 +3138,16 @@ namespace FPS_n2 {
 							break;
 						}
 					}
-					if (Set_Gun_().Get_gunanime_Changesel()->per == 1.f) {
-						if (Func_Set_LEFT_pos_Anim(13, 0, VECTOR_ref::vget(0.f, -0.75f, 0.9f), VECTOR_ref::vget(0.05f, -0.0025f, -0.075f), -60.f)) {
+					//確認
+					if (this->check_ing) {
+						if (Func_Set_LEFT_pos_Anim(20, 0, VECTOR_ref::vget(0.f, -0.05f, 1.f), VECTOR_ref::vget(0.0f, 0.0f, 0.0f), -30.f)) {
+							this->check_ing = false;
+						}
+						return;
+					}
+					//セレクターセット
+					if (Get_Gun_().Get_gunanime_Changesel()->per == 1.f) {
+						if (Func_Set_LEFT_pos_Anim(13, 0, VECTOR_ref::vget(-0.15f, -0.75f, 0.9f), VECTOR_ref::vget(0.05f, -0.0025f, -0.075f), -40.f)) {
 							Set_Gun_().ReSet_gunanime_Changesel();
 						}
 						return;
@@ -4327,7 +4359,6 @@ namespace FPS_n2 {
 						if (!this->view_ing && this->key_.view_gun) {
 							this->view_ing = true;
 						}
-						//マガジン整頓
 						if (!this->sort_ing && this->key_.sort_magazine && Set_Gun_().Get_gun_stat_now()->hav_mags()) {
 							this->sort_ing = true;
 							if (!this->sort_f) {
@@ -4379,7 +4410,7 @@ namespace FPS_n2 {
 							Set_Gun_().Set_Magazine();
 						}
 						Set_Gun_().Set_select_anime();						//セレクター
-						Set_Gun_().Set_selecter(this->key_.select);
+						Set_Gun_().Set_selecter(this->key_.select & !isReload());
 						//射撃
 						if (Set_Gun_().Calc((this->LEFT_hand ? 3.f : 1.f) * (this->isSquat() ? 1.75f : 1.0f), isReload(), this->view_ing)) {
 							//排莢、弾
@@ -4390,6 +4421,10 @@ namespace FPS_n2 {
 							calc_shot_effect();
 							//サウンド
 							SE.Get(EnumSound::Shot).Play_3D(Set_Gun_().Audio.use_shot, Set_Gun_().Get_move_gun().pos, 200.f, (Set_Gun_().Get_mazzuletype() == 1) ? 192 : 255);
+						}
+						else if (Get_Gun_().Get_Trigger()) {
+							//確認
+							this->check_ing = true;
 						}
 						Set_Gun_().Update_bullet();						//弾の処理
 						Set_Gun_().Update_Gun(MAPPTs, 1.f);				//銃の処理
