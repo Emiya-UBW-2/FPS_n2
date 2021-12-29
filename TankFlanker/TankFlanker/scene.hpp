@@ -185,17 +185,17 @@ namespace FPS_n2 {
 					left.GetInput(key_.akey);
 					right.GetInput(key_.dkey);
 					if (left.trigger()) {
-						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						--P_select;
 						changef = true;
 					}
 					if (right.trigger()) {
-						SE.Get(EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						++P_select;
 						changef = true;
 					}
 					if (key_.jamp) {
-						SE.Get(EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						SE.Get((int)EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
 					ControlSel();
 					if (changef) {
@@ -576,7 +576,7 @@ namespace FPS_n2 {
 						{
 							change_per = 1.f;
 
-							SE.Get(EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							SE.Get((int)EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
 
 							xrad_t = viewparts_buf.y() * 1000.f;
 							yrad_t = ((viewparts_buf.x() > 0.f) ? 90.f - viewparts_buf.z() * 100.f : -90.f + viewparts_buf.z() * 100.f);
@@ -634,7 +634,7 @@ namespace FPS_n2 {
 					camera_main.camup = VECTOR_ref::up();
 				}
 				if (key_.jamp) {
-					SE.Get(EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					SE.Get((int)EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					//セーブデータのクリーンアップ
 					{
 						bool sav = true;

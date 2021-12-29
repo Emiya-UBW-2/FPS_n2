@@ -1048,7 +1048,7 @@ namespace FPS_n2 {
 			void Penetration(const std::pair<int, float>& a, const std::shared_ptr<PLAYER_VEHICLE>& tgt, const  VECTOR_ref& position, const  VECTOR_ref& normal) noexcept {
 				//貫通
 				if (this->pene > a.second * (1.0f / std::abs(this->move.vec.Norm().dot(normal)))) {
-					SE.Get(EnumSound::Tank_Damage).Play_3D(0, position, 50.f, 64);
+					SE.Get((int)EnumSound::Tank_Damage).Play_3D(0, position, 50.f, 64);
 					if ((*MINE_v)->Damage_Calc(a.first, this->spec->Get_damage(), tgt)) {
 						//撃破時エフェクト
 					}
@@ -1060,7 +1060,7 @@ namespace FPS_n2 {
 				//はじく
 				else {
 					//this->pene *= 0.8f;
-					SE.Get(EnumSound::Tank_Ricochet).Play_3D(0, position, 50.f, 64);
+					SE.Get((int)EnumSound::Tank_Ricochet).Play_3D(0, position, 50.f, 64);
 					this->pene_cnt++;
 				}
 				//はじく処理
@@ -1524,7 +1524,7 @@ namespace FPS_n2 {
 								this->move.vec += map_nomal * (map_nomal.dot(this->move.vec * -1.f) * 1.25f);
 								easing_set(&this->move.vec, VECTOR_ref::zero(), 0.95f);
 								if (!this->se_use) {
-									SE.Get(EnumSound::Cate_Down).Play_3D(0, this->move.pos, 2.f);
+									SE.Get((int)EnumSound::Cate_Down).Play_3D(0, this->move.pos, 2.f);
 									this->se_use = true;
 								}
 								this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.yvec(), map_nomal);
@@ -2431,7 +2431,7 @@ namespace FPS_n2 {
 					this->gunanime_first->per = 1.f;
 					this->gun_stat_now->chamber_in();//チャンバーに装填
 				}
-				SE.Get(EnumSound::MAG_Set).Play_3D(Audio.use_magset, gun_m.pos, 15.f);
+				SE.Get((int)EnumSound::MAG_Set).Play_3D(Audio.use_magset, gun_m.pos, 15.f);
 			}
 			//
 			void Calc_blur(void) noexcept {
@@ -2539,7 +2539,7 @@ namespace FPS_n2 {
 			void Calc_Gunanime(int Slide_Audio) {
 				if (this->gunanime_first->per == 1.f) {
 					if ((this->gunanime_first->time > this->gunanime_first->alltime / 3.f) && this->slide_sound_f) {
-						SE.Get(EnumSound::Slide).Play_3D(Slide_Audio, this->gun_m.pos, 15.f);
+						SE.Get((int)EnumSound::Slide).Play_3D(Slide_Audio, this->gun_m.pos, 15.f);
 						this->slide_sound_f = false;
 					}
 					this->gunanime_first->Update(false, 0.35f);
@@ -2886,10 +2886,10 @@ namespace FPS_n2 {
 				}
 				//
 				if ((*MINE_c)->Damage_Calc(sel, damage, tgt)) {
-					VOICE.Get(EnumSound::Voice_Death).Play_3D(0, tgt->Get_pos(), 10.f);
+					VOICE.Get((int)EnumSound::Voice_Death).Play_3D(0, tgt->Get_pos(), 10.f);
 				}
 				else {
-					VOICE.Get(EnumSound::Voice_Damage).Play_3D(0, tgt->Get_pos(), 10.f);
+					VOICE.Get((int)EnumSound::Voice_Damage).Play_3D(0, tgt->Get_pos(), 10.f);
 				}
 				return;
 			}
@@ -3236,7 +3236,7 @@ namespace FPS_n2 {
 			void magrelease_t(size_t test_) noexcept {
 				if (Set_Gun_().Get_gun_stat_now()->hav_mag()) {
 					//音
-					SE.Get(EnumSound::MAG_Down).Play_3D(Set_Gun_().Audio.use_magdown, Set_Gun_().Get_move_gun().pos, 15.f, 255);
+					SE.Get((int)EnumSound::MAG_Down).Play_3D(Set_Gun_().Audio.use_magdown, Set_Gun_().Get_move_gun().pos, 15.f, 255);
 					//弾数
 					if (test_ == 0) {//全排出
 						while (true) {
@@ -3957,20 +3957,20 @@ namespace FPS_n2 {
 							if (this->foot_timer == 0.f) {
 								if (this->isRunning()) {
 									if (abs(Head_bobbing(this->anime_run)) >= 0.8f) {
-										SE.Get(EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f, 255);
+										SE.Get((int)EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f, 255);
 										this->foot_timer = 0.2f;
 									}
 								}
 								else {
 									if (!this->isSquat()) {
 										if (abs(Head_bobbing(this->anime_walk)) >= 0.8f) {
-											SE.Get(EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 5.f, 128);
+											SE.Get((int)EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 5.f, 128);
 											this->foot_timer = 0.2f;
 										}
 									}
 									else {
 										if (abs(Head_bobbing(this->anime_swalk)) >= 0.8f) {
-											SE.Get(EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 1.5f, 64);
+											SE.Get((int)EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 1.5f, 64);
 											this->foot_timer = 0.2f;
 										}
 									}
@@ -4286,6 +4286,7 @@ namespace FPS_n2 {
 						this->Set_body(ismine);
 						//lag演算
 						//if (!this->Damage.Get_alive()) {
+						MV1SetPrioritizePhysicsOverAnimFlag(this->obj_lag.get(), TRUE);
 						HumanControl::Frame_Copy_Lag(this->obj_body, &this->obj_lag);
 						this->obj_lag.work_anime();
 						//}
@@ -4364,12 +4365,12 @@ namespace FPS_n2 {
 							if (!this->sort_f) {
 								this->sort_f = true;
 								this->sorting_timer = 1.f;
-								SE.Get(EnumSound::Sort_MAG).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f);
+								SE.Get((int)EnumSound::Sort_MAG).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f);
 								Set_Gun_().Get_gun_stat_now()->sort_magazine();
 							}
 							else {
 								this->sorting_timer = 3.f;
-								SE.Get(EnumSound::Cate_Load).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f);
+								SE.Get((int)EnumSound::Cate_Load).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f);
 								Set_Gun_().Get_gun_stat_now()->load_magazine();
 								//マガジン輩出(空)
 								if (Set_Gun_().Get_mag_in().back().Get_Cnt() == 0) {
@@ -4420,7 +4421,7 @@ namespace FPS_n2 {
 							//エフェクト
 							calc_shot_effect();
 							//サウンド
-							SE.Get(EnumSound::Shot).Play_3D(Set_Gun_().Audio.use_shot, Set_Gun_().Get_move_gun().pos, 200.f, (Set_Gun_().Get_mazzuletype() == 1) ? 192 : 255);
+							SE.Get((int)EnumSound::Shot).Play_3D(Set_Gun_().Audio.use_shot, Set_Gun_().Get_move_gun().pos, 200.f, (Set_Gun_().Get_mazzuletype() == 1) ? 192 : 255);
 						}
 						else if (Get_Gun_().Get_Trigger()) {
 							//確認
@@ -4448,11 +4449,11 @@ namespace FPS_n2 {
 						//息
 						if (this->breath_timer == 0.f) {
 							if (this->isRunning()) {
-								VOICE.Get(EnumSound::Voice_Breath_Run).Play_3D(0, this->Get_pos(), 15.f, 163);
+								VOICE.Get((int)EnumSound::Voice_Breath_Run).Play_3D(0, this->Get_pos(), 15.f, 163);
 								this->breath_timer = 0.5f;
 							}
 							else {
-								VOICE.Get(EnumSound::Voice_Breath).Play_3D(0, this->Get_pos(), 10.f, 128);
+								VOICE.Get((int)EnumSound::Voice_Breath).Play_3D(0, this->Get_pos(), 10.f, 128);
 								this->breath_timer = 1.2f;
 							}
 						}
@@ -4604,7 +4605,7 @@ namespace FPS_n2 {
 					if (this->reload_se_f && this->loadcnt < 1.f) {
 						this->reload_se_f = false;
 						//サウンド
-						SE.Get(EnumSound::Tank_Reload).Play_3D((*MINE_v)->use_veh->Reload_ID, (*MINE_v)->Get_pos(), 3.f, 128);
+						SE.Get((int)EnumSound::Tank_Reload).Play_3D((*MINE_v)->use_veh->Reload_ID, (*MINE_v)->Get_pos(), 3.f, 128);
 					}
 					this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
 					this->fired = std::max(this->fired - 1.f / FPS, 0.f);
@@ -4668,7 +4669,7 @@ namespace FPS_n2 {
 						//エフェクト
 						calc_shot_effect(pos_t);
 						//サウンド
-						SE.Get(EnumSound::Tank_Shot).Play_3D(this->gun_info.Get_sound(), (*MINE_v)->Get_pos(), 250.f, 128);
+						SE.Get((int)EnumSound::Tank_Shot).Play_3D(this->gun_info.Get_sound(), (*MINE_v)->Get_pos(), 250.f, 128);
 					}
 					//弾の処理
 					BulletControl_Common::Update_bullet();
@@ -5267,7 +5268,7 @@ namespace FPS_n2 {
 				}
 				//エンジン音
 				if (this->engine_time == 0.f) {
-					SE.Get(EnumSound::Tank_engine).Play_3D(0, this->Get_pos(), 50.f, 64);
+					SE.Get((int)EnumSound::Tank_engine).Play_3D(0, this->Get_pos(), 50.f, 64);
 					this->engine_time = 1.f;
 				}
 				else {

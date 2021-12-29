@@ -362,7 +362,7 @@ namespace FPS_n2 {
 				this->sun_pos = ray.Norm() * -1500.f;
 			}
 			void Set(void) noexcept {
-				SE.Get(EnumSound::MAP0_ENVI).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+				SE.Get((int)EnumSound::MAP0_ENVI).Play(0, DX_PLAYTYPE_LOOP, TRUE);
 			}
 			void Dispose(void) noexcept {
 				if (isDispose) {
