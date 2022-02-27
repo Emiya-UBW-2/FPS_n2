@@ -349,8 +349,6 @@ namespace FPS_n2 {
 		GraphHandle keyboad;
 		GraphHandle mousehandle;
 
-		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
-
 		std::vector<key_pair> key_use_ID;
 		std::vector<key_pair> mouse_use_ID;
 		size_t info = 0;
@@ -367,7 +365,7 @@ namespace FPS_n2 {
 			return mouse_use_ID[(int)id_t].Get_key_Auto(true);
 		}
 		//
-		key_bind(std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+		key_bind() noexcept {
 			SetUseASyncLoadFlag(FALSE);
 			mousehandle = GraphHandle::Load("data/key/mouse.png");
 			SetTransColor(0, 255, 0);
@@ -519,8 +517,6 @@ namespace FPS_n2 {
 				}
 				//*/
 			}
-
-			DrawPts = DrawPts_t;
 		}
 		//
 		const auto Esc_key(void) noexcept { return this->key_use_ID[(int)EnumKeyBind::ESCAPE].Get_key_Auto(true); }
@@ -535,6 +531,7 @@ namespace FPS_n2 {
 		}
 		//
 		void Draw(void) noexcept {
+			auto* DrawParts = DXDraw::Instance();
 			auto tmp_f1 = this->key_use_ID[(int)EnumKeyBind::INFO].Get_key_Auto(true);
 			easing_set(&F1_f, float(tmp_f1), 0.9f);
 			noF1_f = std::max(noF1_f - 1.f / FPS, 0.f);
@@ -545,10 +542,10 @@ namespace FPS_n2 {
 				int xp_s = y_r(1500), yp_s = y_r(200), y_size = y_r(32);
 				//背景
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * F1_f));
-				DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
+				DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(0, 0, 0), TRUE);
 				if (F1_f > 0.9f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
-					keyboad.DrawExtendGraph(0, 0, DrawPts->disp_x, DrawPts->disp_y, true);
+					keyboad.DrawExtendGraph(0, 0, DrawParts->disp_x, DrawParts->disp_y, true);
 				}
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				//前面
@@ -601,7 +598,7 @@ namespace FPS_n2 {
 									yss = int(float(yss) * siz_t);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, siz_t, 0.f, false);
 								}
-								Fonts.Get(y_r(24)).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24)).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255));
+								Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255));
 								yp_s += y_size;
 							}
 						}
@@ -619,7 +616,7 @@ namespace FPS_n2 {
 									i.use_handle->offhandle.GetSize(nullptr, &yss);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
-								Fonts.Get(y_r(24)).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24)).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255)); yp_s += y_size;
+								Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255)); yp_s += y_size;
 							}
 						}
 					}
@@ -629,7 +626,7 @@ namespace FPS_n2 {
 			if (!tmp_f1) {
 				if (noF1_f >= 0.1f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * std::clamp(noF1_f, 0.f, 1.f)));
-					int xp_s = DrawPts->disp_x - y_r(700), yp_s = DrawPts->disp_y - y_r(28), x_size = y_r(26), y_size = y_r(24);
+					int xp_s = DrawParts->disp_x - y_r(700), yp_s = DrawParts->disp_y - y_r(28), x_size = y_r(26), y_size = y_r(24);
 					int xss = 0, yss = 0;
 					float siz_t = float(y_size - 4) / 25.f;
 					for (auto& i : this->key_use_ID) {
@@ -714,7 +711,6 @@ namespace FPS_n2 {
 	class option_menu {
 	private:
 		std::shared_ptr<key_bind> KeyBind{ nullptr };
-		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
 		float P_f = 0.0f;
 		bool old = false;
 		bool On_Option = false;
@@ -728,7 +724,6 @@ namespace FPS_n2 {
 		switchs right;
 		switchs shot;
 
-		std::shared_ptr<OPTION> OPTPTs;
 		float SE_vol_per = 1.f;
 		float Voice_vol_per = 1.f;
 
@@ -774,12 +769,11 @@ namespace FPS_n2 {
 		}
 	public:
 		//
-		option_menu(std::shared_ptr<OPTION>& OPTPTs_t, std::shared_ptr<key_bind>& KeyBind_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
-			OPTPTs = OPTPTs_t;
+		option_menu(std::shared_ptr<key_bind>& KeyBind_t) noexcept {
+			auto* OptionParts = OPTION::Instance();
 			KeyBind = KeyBind_t;
-			DrawPts = DrawPts_t;
-			SE_vol_per = OPTPTs->Get_SE();
-			Voice_vol_per = OPTPTs->Get_VOICE();
+			SE_vol_per = OptionParts->Get_SE();
+			Voice_vol_per = OptionParts->Get_VOICE();
 		}
 		//
 		const auto& Pause_key(void) const noexcept { return On_Option; }
@@ -791,6 +785,7 @@ namespace FPS_n2 {
 		}
 		//
 		bool Update(void) noexcept {
+			auto* OptionParts = OPTION::Instance();
 			if (On_Option) {
 				SetMouseDispFlag(TRUE);
 
@@ -826,7 +821,7 @@ namespace FPS_n2 {
 						}
 						SE_vol_per = std::clamp(SE_vol_per - 0.01f, 0.f, 1.f);
 						SE.SetVol(SE_vol_per);
-						OPTPTs->Set_SE(SE_vol_per);
+						OptionParts->Set_SE(SE_vol_per);
 						SE_left_timer_border += 0.1f;
 					}
 					//
@@ -841,7 +836,7 @@ namespace FPS_n2 {
 						}
 						SE_vol_per = std::clamp(SE_vol_per + 0.01f, 0.f, 1.f);
 						SE.SetVol(SE_vol_per);
-						OPTPTs->Set_SE(SE_vol_per);
+						OptionParts->Set_SE(SE_vol_per);
 						SE_right_timer_border += 0.1f;
 					}
 				}
@@ -859,7 +854,7 @@ namespace FPS_n2 {
 						}
 						Voice_vol_per = std::clamp(Voice_vol_per - 0.01f, 0.f, 1.f);
 						VOICE.SetVol(Voice_vol_per);
-						OPTPTs->Set_VOICE(Voice_vol_per);
+						OptionParts->Set_VOICE(Voice_vol_per);
 						Voice_left_timer_border += 0.1f;
 					}
 					//
@@ -874,7 +869,7 @@ namespace FPS_n2 {
 						}
 						Voice_vol_per = std::clamp(Voice_vol_per + 0.01f, 0.f, 1.f);
 						VOICE.SetVol(Voice_vol_per);
-						OPTPTs->Set_VOICE(Voice_vol_per);
+						OptionParts->Set_VOICE(Voice_vol_per);
 						Voice_right_timer_border += 0.1f;
 					}
 				}
@@ -884,7 +879,7 @@ namespace FPS_n2 {
 					if (shot.trigger()) {
 						SE.Get((int)EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						On_Option = false;
-						OPTPTs->Save();
+						OptionParts->Save();
 					}
 				}
 			}
@@ -892,13 +887,14 @@ namespace FPS_n2 {
 		}
 		//
 		void Draw(void) noexcept {
+			auto* DrawParts = DXDraw::Instance();
 			auto tmp_P = On_Option;
 			easing_set(&P_f, float(tmp_P), 0.9f);
 			//インフォ
 			if (P_f > 0.1f) {
 				//背景
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * P_f));
-				DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
+				DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(0, 0, 0), TRUE);
 				if (P_f > 0.9f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 					//背景画像
@@ -906,29 +902,29 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				//前面
 				if (P_f > 0.9f) {
-					int xp_t = DrawPts->disp_x - (y_r(100) + y_r(140));
+					int xp_t = DrawParts->disp_x - (y_r(100) + y_r(140));
 					int yp_t = y_r(100);
 					int now = 0;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "SE:%03.0f%%", SE_vol_per * 100.f);
+					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "SE:%03.0f%%", SE_vol_per * 100.f);
 					if (select == now) {
-						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24)).Get_size(), SE_vol_per);
+						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size(), SE_vol_per);
 					}
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "VOICE:%03.0f%%", Voice_vol_per * 100.f);
+					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "VOICE:%03.0f%%", Voice_vol_per * 100.f);
 					if (select == now) {
-						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24)).Get_size(), Voice_vol_per);
+						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size(), Voice_vol_per);
 					}
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
 					now++;
 					//
 				}
@@ -947,7 +943,6 @@ namespace FPS_n2 {
 	private:
 		std::shared_ptr<option_menu> OptionMenu{ nullptr };
 		std::shared_ptr<key_bind> KeyBind{ nullptr };
-		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
 		float P_f = 0.0f;
 		bool old = false;
 
@@ -970,10 +965,9 @@ namespace FPS_n2 {
 		}
 	public:
 		//
-		pause_menu(std::shared_ptr<option_menu>& OptionMenu_t, std::shared_ptr<key_bind>& KeyBind_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+		pause_menu(std::shared_ptr<option_menu>& OptionMenu_t, std::shared_ptr<key_bind>& KeyBind_t) noexcept {
 			OptionMenu = OptionMenu_t;
 			KeyBind = KeyBind_t;
-			DrawPts = DrawPts_t;
 			SetUseASyncLoadFlag(FALSE);
 		}
 		//
@@ -1035,13 +1029,14 @@ namespace FPS_n2 {
 		}
 		//
 		void Draw(void) noexcept {
+			auto* DrawParts = DXDraw::Instance();
 			auto tmp_P = KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Get_key_Auto(false);
 			easing_set(&P_f, float(tmp_P), 0.9f);
 			//インフォ
 			if (P_f > 0.1f) {
 				//背景
 				SetDrawBlendMode(DX_BLENDMODE_ALPHA, int(192.f * P_f));
-				DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
+				DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(0, 0, 0), TRUE);
 				if (P_f > 0.9f) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 					//背景画像
@@ -1049,23 +1044,23 @@ namespace FPS_n2 {
 				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				//前面
 				if (P_f > 0.9f) {
-					int xp_t = DrawPts->disp_x - y_r(100);
+					int xp_t = DrawParts->disp_x - y_r(100);
 					int yp_t = y_r(100);
 					int now = 0;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "オプション", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "オプション", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戦闘に戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戦闘に戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24)).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "強制帰還", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "強制帰還", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
 					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24)).Get_size() + y_r(30);
+					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
 					now++;
 					//
 				}
@@ -1107,75 +1102,6 @@ namespace FPS_n2 {
 				}
 				Ready -= 1.f / FPS;
 			}
-		}
-	};
-	//シェーダー
-	class shaders {
-	public:
-		class shader_Vertex {
-		public:
-			VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
-
-			// 頂点データの準備
-			void Set(std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
-				int xp1 = 0;
-				int yp1 = 0;
-				int xp2 = DrawPts_t->disp_x;
-				int yp2 = DrawPts_t->disp_y;
-				Screen_vertex[0].pos = VGet(float(xp1), float(DrawPts_t->disp_y - yp1), 0.0f);
-				Screen_vertex[1].pos = VGet(float(xp2), float(DrawPts_t->disp_y - yp1), 0.0f);
-				Screen_vertex[2].pos = VGet(float(xp1), float(DrawPts_t->disp_y - yp2), 0.0f);
-				Screen_vertex[3].pos = VGet(float(xp2), float(DrawPts_t->disp_y - yp2), 0.0f);
-				Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
-				Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
-				Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
-				Screen_vertex[3].dif = GetColorU8(255, 255, 255, 255);
-				Screen_vertex[0].u = 0.0f; Screen_vertex[0].v = 0.0f;
-				Screen_vertex[1].u = 1.0f; Screen_vertex[1].v = 0.0f;
-				Screen_vertex[2].u = 0.0f; Screen_vertex[3].v = 1.0f;
-				Screen_vertex[3].u = 1.0f; Screen_vertex[2].v = 1.0f;
-				Screen_vertex[4] = Screen_vertex[2];
-				Screen_vertex[5] = Screen_vertex[1];
-			}
-		};
-	private:
-		int pshandle{ -1 }, vshandle{ -1 };
-		int pscbhandle{ -1 };
-		int pscbhandle2{ -1 };
-	public:
-		void Init(std::string vs, std::string ps) {
-			this->vshandle = LoadVertexShader(("shader/" + vs).c_str());	// 頂点シェーダーバイナリコードの読み込み
-			this->pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
-			this->pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
-			this->pshandle = LoadPixelShader(("shader/" + ps).c_str());		// ピクセルシェーダーバイナリコードの読み込み
-		}
-		void Set_dispsize(int dispx, int dispy) {
-			FLOAT2* dispsize = (FLOAT2*)GetBufferShaderConstantBuffer(this->pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-			dispsize->u = float(dispx);
-			dispsize->v = float(dispy);
-			UpdateShaderConstantBuffer(this->pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-			SetShaderConstantBuffer(this->pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
-		}
-		void Set_param(float param1, float param2, float param3, float param4) {
-			FLOAT4* f4 = (FLOAT4*)GetBufferShaderConstantBuffer(this->pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-			f4->x = param1;
-			f4->y = param2;
-			f4->z = param3;
-			f4->w = param4;
-			UpdateShaderConstantBuffer(this->pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-			SetShaderConstantBuffer(this->pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
-		}
-		void Draw_lamda(std::function<void()> doing) {
-			SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
-			SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
-			MV1SetUseOrigShader(TRUE);
-			doing();
-			MV1SetUseOrigShader(FALSE);
-			SetUseVertexShader(-1);					// 使用する頂点シェーダーをセット
-			SetUsePixelShader(-1);					// 使用するピクセルシェーダーをセット
-		}
-		void Draw(shader_Vertex& Screen_vertex) {
-			Draw_lamda([&] {DrawPolygon3DToShader(Screen_vertex.Screen_vertex, 2); });
 		}
 	};
 	//銃、マガジン共通モデル

@@ -601,7 +601,6 @@ namespace FPS_n2 {
 			public:
 				moves move_start;
 			private:
-				std::shared_ptr<DXDraw> DrawPts{ nullptr };
 				bool oldv_2{ false };
 				bool oldv_2_2{ false };
 			public:
@@ -609,29 +608,31 @@ namespace FPS_n2 {
 				auto Get_pos_old_noY(void) const noexcept { return VECTOR_ref::vget(this->move.repos.x(), 0.f, this->move.repos.z()); }
 				MATRIX_ref Get_mat_XZ(void) const noexcept { return MATRIX_ref::Axis1(this->move.mat.xvec() * -1.f, this->move.mat.yvec(), this->move.mat.zvec() * -1.f); }
 
-				void Set(std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
-					DrawPts = DrawPts_t;
+				void Set() noexcept {
 					oldv_2 = true;
 					oldv_2_2 = true;
 				}
 				void Update_none(const char& device_num) noexcept {
-					DrawPts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
+					auto* DrawParts = DXDraw::Instance();
+					DrawParts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
 					this->move.mat = Get_mat_XZ();
 				}
 				void Update_pos(const char& device_num, const bool Flag_start_loop_t) noexcept {
-					DrawPts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
+					auto* DrawParts = DXDraw::Instance();
+					DrawParts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
 
-					auto ptr_ = &(*DrawPts->get_device())[device_num];
+					auto ptr_ = &(*DrawParts->get_device())[device_num];
 					if (Flag_start_loop_t || (ptr_->turn && ptr_->now) != this->oldv_2) {
 						this->move_start.SetPos(Get_pos_noY());
 					}
 					this->oldv_2 = ptr_->turn && ptr_->now;
 				}
 				void Update_mat(const char& device_num, const bool Flag_start_loop_t) noexcept {
-					DrawPts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
+					auto* DrawParts = DXDraw::Instance();
+					DrawParts->GetDevicePositionVR(device_num, &this->move.pos, &this->move.mat);
 					this->move.mat = Get_mat_XZ();
 
-					auto ptr_ = &(*DrawPts->get_device())[device_num];
+					auto ptr_ = &(*DrawParts->get_device())[device_num];
 					if ((Flag_start_loop_t || (ptr_->turn && ptr_->now) != this->oldv_2) && this->oldv_2_2) {
 						this->move_start.mat = this->move.mat;
 					}
@@ -806,24 +807,25 @@ namespace FPS_n2 {
 				tmp->mat = MATRIX_ref::RotZ(deg2rad(zrad_gunani)) * MATRIX_ref::RotVec2(VECTOR_ref::front(), vec_gunani) * base.mat;
 			}
 			//腕のフレーム操作
-			void move_LeftArm(std::shared_ptr<DXDraw>& DrawPts, const MV1& obj_body_t, const bool isusewaist, const MATRIX_ref& m_inv) noexcept {
+			void move_LeftArm(const MV1& obj_body_t, const bool isusewaist, const MATRIX_ref& m_inv) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				//基準
 				auto vec_a1 = MATRIX_ref::Vtrans((this->LEFTHAND.move.pos - obj_body_t.frame(this->frame_s.LEFTarm1_f.first)).Norm(), m_inv.Inverse());//基準
 				auto vec_a1L1 = VECTOR_ref(VECTOR_ref::vget(0.f, -1.f, vec_a1.y() / -abs(vec_a1.z()))).Norm();//x=0とする
 				float cos_t = getcos_tri((obj_body_t.frame(this->frame_s.LEFThand_f.first) - obj_body_t.frame(this->frame_s.LEFTarm2_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTarm2_f.first) - obj_body_t.frame(this->frame_s.LEFTarm1_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTarm1_f.first) - this->LEFTHAND.move.pos).size());
 				auto vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 				//上腕
-				if ((DrawPts->use_vr && !isusewaist) || !DrawPts->use_vr) {
+				if ((DrawParts->use_vr && !isusewaist) || !DrawParts->use_vr) {
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.LEFTarm1_f);
 				}
-				if (DrawPts->use_vr && isusewaist) {
+				if (DrawParts->use_vr && isusewaist) {
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.LEFTarm1_f, (this->WAIST.move.mat * m_inv.Inverse()).Inverse());
 				}
 				MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(obj_body_t.frame(this->frame_s.LEFTarm2_f.first) - obj_body_t.frame(this->frame_s.LEFTarm1_f.first), m_inv.Inverse()), vec_t);
-				if ((DrawPts->use_vr && !isusewaist) || !DrawPts->use_vr) {
+				if ((DrawParts->use_vr && !isusewaist) || !DrawParts->use_vr) {
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.LEFTarm1_f, a1_inv);
 				}
-				if (DrawPts->use_vr && isusewaist) {
+				if (DrawParts->use_vr && isusewaist) {
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.LEFTarm1_f, a1_inv * (this->WAIST.move.mat * m_inv.Inverse()).Inverse());
 				}
 				//下腕
@@ -849,24 +851,25 @@ namespace FPS_n2 {
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.LEFThand_f, a3_yvec * a3_inv);
 				}
 			}
-			void move_RightArm(std::shared_ptr<DXDraw>& DrawPts, const MV1& obj_body_t, const bool isusewaist, const MATRIX_ref& m_inv) noexcept {
+			void move_RightArm(const MV1& obj_body_t, const bool isusewaist, const MATRIX_ref& m_inv) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				//基準
 				auto vec_a1 = MATRIX_ref::Vtrans((this->RIGHTHAND.move.pos - obj_body_t.frame(this->frame_s.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());
 				auto vec_a1L1 = VECTOR_ref(VECTOR_ref::vget(-1.f * sin(deg2rad(30)), -1.f * cos(deg2rad(30)), vec_a1.y() / -abs(vec_a1.z()))).Norm();//x=0とする
 				float cos_t = getcos_tri((obj_body_t.frame(this->frame_s.RIGHThand_f.first) - obj_body_t.frame(this->frame_s.RIGHTarm2_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTarm2_f.first) - obj_body_t.frame(this->frame_s.RIGHTarm1_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTarm1_f.first) - this->RIGHTHAND.move.pos).size());
 				auto vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 				//上腕
-				if ((DrawPts->use_vr && !isusewaist) || !DrawPts->use_vr) {
+				if ((DrawParts->use_vr && !isusewaist) || !DrawParts->use_vr) {
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.RIGHTarm1_f);
 				}
-				if (DrawPts->use_vr && isusewaist) {
+				if (DrawParts->use_vr && isusewaist) {
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.RIGHTarm1_f, (this->WAIST.move.mat * m_inv.Inverse()).Inverse());
 				}
 				MATRIX_ref a1_inv = MATRIX_ref::RotVec2(MATRIX_ref::Vtrans(obj_body_t.frame(this->frame_s.RIGHTarm2_f.first) - obj_body_t.frame(this->frame_s.RIGHTarm1_f.first), m_inv.Inverse()), vec_t);
-				if ((DrawPts->use_vr && !isusewaist) || !DrawPts->use_vr) {
+				if ((DrawParts->use_vr && !isusewaist) || !DrawParts->use_vr) {
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.RIGHTarm1_f, a1_inv);
 				}
-				if (DrawPts->use_vr && isusewaist) {
+				if (DrawParts->use_vr && isusewaist) {
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.RIGHTarm1_f, a1_inv * (this->WAIST.move.mat * m_inv.Inverse()).Inverse());
 				}
 				//下腕
@@ -1296,9 +1299,9 @@ namespace FPS_n2 {
 				++this->use_bullet %= this->bullet.size();
 			}
 			//弾
-			virtual void SetUp_bullet(std::shared_ptr<MAPclass::Map>& MAPPTs_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+			virtual void SetUp_bullet(std::shared_ptr<MAPclass::Map>& MAPPTs_t) noexcept {
 				for (auto& a : this->bullet) {
-					a.Set_Ptr_Common(MAPPTs_t, DrawPts_t);
+					a.Set_Ptr_Common(MAPPTs_t);
 				}
 			}
 			virtual void SetUp_bullet_Ptr(std::shared_ptr<PLAYER_CHARA>* mine_c, std::shared_ptr<PLAYER_VEHICLE>* mine_v) noexcept {
@@ -2904,7 +2907,8 @@ namespace FPS_n2 {
 			const auto Get_yrad(void) const noexcept { return (isRide()) ? (*MINE_v)->Get_body_yrad() : this->Get_body_yrad(); }			//ミニマップ用
 			const VECTOR_ref Get_head_pos(void) const noexcept { return this->obj_body.frame(this->frame_s.head_f.first); }						//頭部座標
 			const auto Get_position(bool no_y = false) const noexcept {
-				if (DrawPts->use_vr) {
+				auto* DrawParts = DXDraw::Instance();
+				if (DrawParts->use_vr) {
 #ifdef _USE_OPENVR_
 					return (!no_y) ? (this->pos_tt + this->HMD.move.pos - this->HMD.move_start.pos) : (this->pos_tt + this->HMD.Get_pos_noY() - this->HMD.move_start.pos);
 #endif // _USE_OPENVR_
@@ -3259,14 +3263,14 @@ namespace FPS_n2 {
 			//腕のフレーム操作
 			void move_Lefthand(const bool isusewaist, const MATRIX_ref& m_inv) noexcept {
 				//左
-				move_LeftArm(DrawPts, this->obj_body, isusewaist, m_inv);
+				move_LeftArm(this->obj_body, isusewaist, m_inv);
 			}
 			void move_Righthand(const bool isusewaist, const MATRIX_ref& m_inv) noexcept {
 				//右
 				Set_Righthand(0, 0, Set_Gun_().RIGHT_pos_gun(0));
 				Set_Righthand(0, 1, Set_Gun_().RIGHT_pos_gun(1));
 				Set_Righthand(0, 2, Set_Gun_().RIGHT_pos_gun(2));
-				move_RightArm(DrawPts, this->obj_body, isusewaist, m_inv);
+				move_RightArm(this->obj_body, isusewaist, m_inv);
 			}
 			//銃器の位置指定(右手が沿うため)
 			void move_nomal_gun(void) noexcept {
@@ -3286,7 +3290,8 @@ namespace FPS_n2 {
 				//通常
 				{
 					MATRIX_ref recoil = Set_Gun_().Get_res_blur(1.f) * this->GetHMDmat();//リコイル
-					if (DrawPts->use_vr) {
+					auto* DrawParts = DXDraw::Instance();
+					if (DrawParts->use_vr) {
 #ifdef _USE_OPENVR_
 						Set_Gun_().Set_gun_posmat(this->Get_pos() + MATRIX_ref::Vtrans(this->gunpos, recoil) - this->HMD.move_start.pos, recoil);
 #endif // _USE_OPENVR_
@@ -3334,14 +3339,15 @@ namespace FPS_n2 {
 			//VR操作
 			void vr_move(void) noexcept {
 #ifdef _USE_OPENVR_
-				if (DrawPts->get_hand2_num() != -1) {
-					auto ptr_ = DrawPts->get_device_hand2();
+				auto* DrawParts = DXDraw::Instance();
+				if (DrawParts->get_hand2_num() != -1) {
+					auto ptr_ = DrawParts->get_device_hand2();
 					if (ptr_->turn && ptr_->now) {
 						//移動
 						if ((ptr_->on[1] & BUTTON_TOUCHPAD) != 0) {
 							this->speed_base = (this->isRunning() ? 8.f : 6.f) / FPS;
 
-							if (DrawPts->tracker_num.size() > 0) {
+							if (DrawParts->tracker_num.size() > 0) {
 								auto p = BodyFrameMatrix(this->obj_body, this->frame_s.bodyb_f);
 								easing_set(&this->add_vec_buf, (p.zvec() * -ptr_->touch.y() + p.xvec() * -ptr_->touch.x()) * this->speed_base, 0.95f);
 							}
@@ -3704,15 +3710,16 @@ namespace FPS_n2 {
 		private:
 			//操作
 			void operation_common(const bool cannotmove, const float fov_per, int move_mode, float* x_m, float* y_m) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				const bool& alive = this->Damage.Get_alive();
 				if (alive) {
 					switch (move_mode) {
 					case 0://player move
-						if (DrawPts->use_vr) {
+						if (DrawParts->use_vr) {
 							vr_move();//player move(VR)
 						}
 						else if (!isRide()) {
-							Get_MouseVec(x_m, y_m, fov_per, DrawPts->disp_x, DrawPts->disp_y);//player move
+							Get_MouseVec(x_m, y_m, fov_per, DrawParts->disp_x, DrawParts->disp_y);//player move
 						}
 						break;
 					case 1://AI move
@@ -3728,11 +3735,11 @@ namespace FPS_n2 {
 					//移動
 					easing_set(&this->add_vec_buf, VECTOR_ref::zero(), 0.95f);
 				}
-				if (DrawPts->use_vr) {
+				if (DrawParts->use_vr) {
 					//HMD_mat+視点取得
 #ifdef _USE_OPENVR_
 					this->HMD.move.repos = this->HMD.move.pos;
-					this->HMD.Update_pos(DrawPts->get_hmd_num(), Flag_start_loop);
+					this->HMD.Update_pos(DrawParts->get_hmd_num(), Flag_start_loop);
 #endif // _USE_OPENVR_
 				}
 			}
@@ -3762,9 +3769,10 @@ namespace FPS_n2 {
 		private:
 			//壁、床判定
 			void wall_col(void) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				VECTOR_ref pos_t2, pos_t;
 				//VR専用
-				if (DrawPts->use_vr) {
+				if (DrawParts->use_vr) {
 #ifdef _USE_OPENVR_
 					pos_t2 = this->pos_tt + (this->HMD.Get_pos_old_noY() - this->HMD.move_start.pos);
 					pos_t = this->Get_position(true);
@@ -3774,7 +3782,7 @@ namespace FPS_n2 {
 				}
 				//共通
 				{
-					if (DrawPts->use_vr) {
+					if (DrawParts->use_vr) {
 #ifdef _USE_OPENVR_
 						pos_t2 = this->pos_tt - this->HMD.move_start.pos;
 #endif // _USE_OPENVR_
@@ -3805,7 +3813,7 @@ namespace FPS_n2 {
 						}
 					}
 					//反映
-					if (DrawPts->use_vr) {
+					if (DrawParts->use_vr) {
 #ifdef _USE_OPENVR_
 						this->pos_tt = pos_t + this->HMD.move_start.pos;
 #endif // _USE_OPENVR_
@@ -3820,7 +3828,8 @@ namespace FPS_n2 {
 		private:
 			//体の動作を決定
 			void Set_body(bool ismine) noexcept {
-				if (DrawPts->use_vr && ismine) {
+				auto* DrawParts = DXDraw::Instance();
+				if (DrawParts->use_vr && ismine) {
 #ifdef _USE_OPENVR_
 					//動き以外の操作
 					{
@@ -3828,7 +3837,7 @@ namespace FPS_n2 {
 						if (this->Damage.Get_alive()) {
 							{
 								auto v_ = this->GetHMDmat().zvec();
-								if (DrawPts->tracker_num.size() > 0) {
+								if (DrawParts->tracker_num.size() > 0) {
 									v_ = this->WAIST.move.mat.zvec();
 								}
 								float x_1 = -sinf(this->body_yrad);
@@ -3844,7 +3853,7 @@ namespace FPS_n2 {
 						//身体,頭部,腰
 						MATRIX_ref m_inv;
 						{
-							if (DrawPts->tracker_num.size() > 0) {
+							if (DrawParts->tracker_num.size() > 0) {
 								m_inv = MATRIX_ref::RotY(DX_PI_F);
 								this->obj_body.SetMatrix(m_inv);
 								//腰
@@ -3863,9 +3872,9 @@ namespace FPS_n2 {
 						//足
 						{
 							//左
-							if (DrawPts->tracker_num.size() > 1) {
+							if (DrawParts->tracker_num.size() > 1) {
 
-								LEFTREG.Update_mat(DrawPts->tracker_num[1], Flag_start_loop);
+								LEFTREG.Update_mat(DrawParts->tracker_num[1], Flag_start_loop);
 								this->LEFTREG.move.mat = MATRIX_ref::RotY(deg2rad(90 + 60 - 10)) * this->LEFTREG.move_start.mat.Inverse() * this->LEFTREG.move.mat;
 								this->LEFTREG.move.pos = this->LEFTREG.move.pos + this->pos_tt - this->HMD.move_start.pos;
 								move_LeftLeg(this->obj_body, m_inv);
@@ -3880,8 +3889,8 @@ namespace FPS_n2 {
 								move_LeftLeg(this->obj_body, m_inv);
 							}
 							//右
-							if (DrawPts->tracker_num.size() > 2) {
-								this->RIGHTREG.Update_mat(DrawPts->tracker_num[2], Flag_start_loop);
+							if (DrawParts->tracker_num.size() > 2) {
+								this->RIGHTREG.Update_mat(DrawParts->tracker_num[2], Flag_start_loop);
 								this->RIGHTREG.move.mat = MATRIX_ref::RotY(deg2rad(180 - 22 - 10)) * this->RIGHTREG.move_start.mat.Inverse() * this->RIGHTREG.move.mat;
 								this->RIGHTREG.move.pos += this->pos_tt - this->HMD.move_start.pos;
 								move_RightLeg(this->obj_body, m_inv);
@@ -3900,7 +3909,7 @@ namespace FPS_n2 {
 						{
 							//右手+銃器の位置決め
 							{
-								this->RIGHTHAND.Update_none(DrawPts->get_hand1_num());
+								this->RIGHTHAND.Update_none(DrawParts->get_hand1_num());
 								this->RIGHTHAND.move.mat = this->RIGHTHAND.move.mat * MATRIX_ref::RotAxis(this->RIGHTHAND.move.mat.xvec(), deg2rad(-60));
 								this->RIGHTHAND.move.pos += (this->pos_tt - this->HMD.move_start.pos);
 								this->RIGHTHAND.move.mat = Set_Gun_().Get_res_blur(1.f) * this->RIGHTHAND.move.mat;//リコイル
@@ -3910,16 +3919,16 @@ namespace FPS_n2 {
 								this->Set_GUN_pos_Anim();
 								//右手
 								this->RIGHTHAND.move.pos = Set_Gun_().RIGHT_pos_gun(0);
-								move_Righthand(DrawPts->tracker_num.size() > 0, m_inv);
+								move_Righthand(DrawParts->tracker_num.size() > 0, m_inv);
 							}
 							//左手
 							{
-								this->LEFTHAND.Update_none(DrawPts->get_hand2_num());
+								this->LEFTHAND.Update_none(DrawParts->get_hand2_num());
 								this->LEFTHAND.move.mat *= MATRIX_ref::RotAxis(this->LEFTHAND.move.mat.xvec(), deg2rad(-60));
 								this->LEFTHAND.move.pos += (this->pos_tt - this->HMD.move_start.pos);
 								this->LEFT_hand = (this->LEFTHAND.move.pos - this->LEFT_pos_Anim(0)).size() <= 0.1f && (!isReload() || !this->key_.have_mag);
 								if (this->LEFT_hand) { this->LEFTHAND.move.pos = this->LEFT_pos_Anim(0); }
-								move_Lefthand(DrawPts->tracker_num.size() > 0, m_inv);
+								move_Lefthand(DrawParts->tracker_num.size() > 0, m_inv);
 							}
 							//指
 							move_Finger(Set_Gun_().Get_gunanime_trigger()->per);
@@ -4057,7 +4066,7 @@ namespace FPS_n2 {
 					Set_Gun_().Set_Gun_Physics(this->move.vec);
 				}
 				//nomal限定
-				if (!(DrawPts->use_vr && ismine)) {
+				if (!(DrawParts->use_vr && ismine)) {
 					if (this->Damage.Get_alive()) {
 						move_nomal_gun();
 					}
@@ -4159,7 +4168,7 @@ namespace FPS_n2 {
 
 				}
 				g.Init();
-				g.SetUp_bullet(MAPPTs, DrawPts);
+				g.SetUp_bullet(MAPPTs);
 				this->Set_bullet_Ptr();
 				//g.Set_gunanime_shot(1.f);
 				Init_Left();
@@ -4172,12 +4181,12 @@ namespace FPS_n2 {
 			void Start(void) noexcept override {
 				PLAYER_COMMON::Start();
 #ifdef _USE_OPENVR_
-				this->HMD.Set(DrawPts);
-				this->WAIST.Set(DrawPts);
-				this->LEFTREG.Set(DrawPts);
-				this->RIGHTREG.Set(DrawPts);
-				this->RIGHTHAND.Set(DrawPts);							//右手座標系
-				this->LEFTHAND.Set(DrawPts);							//左手座標系
+				this->HMD.Set();
+				this->WAIST.Set();
+				this->LEFTREG.Set();
+				this->RIGHTREG.Set();
+				this->RIGHTHAND.Set();							//右手座標系
+				this->LEFTHAND.Set();							//左手座標系
 #endif // _USE_OPENVR_
 				this->Flag_start_loop = true;
 				this->ratio_move = 0.f;
@@ -4202,6 +4211,8 @@ namespace FPS_n2 {
 				const bool playing, const float fov_per, std::vector <Meds>& meds_data, std::vector<Grenades>& gres_data, bool ismine,
 				std::vector<std::shared_ptr<PLAYERclass::GunControl>>& Gun_S, const std::shared_ptr<GunPartsControl>& GunPartses
 			) noexcept {
+			auto* DrawParts = DXDraw::Instance();
+
 				this->chage_ride = false;
 				this->nearhit = false;
 				{
@@ -4226,8 +4237,8 @@ namespace FPS_n2 {
 				//座標取得
 				if (ismine) {
 #ifdef _USE_OPENVR_
-					if (DrawPts->tracker_num.size() > 0) {
-						this->WAIST.Update_pos(DrawPts->tracker_num[0], Flag_start_loop);
+					if (DrawParts->tracker_num.size() > 0) {
+						this->WAIST.Update_pos(DrawParts->tracker_num[0], Flag_start_loop);
 						this->WAIST.move.pos = this->WAIST.move.pos - this->WAIST.move_start.pos;
 					}
 #endif // _USE_OPENVR_
@@ -4240,7 +4251,7 @@ namespace FPS_n2 {
 						operation_common2(x_m, y_m);
 					}
 					else {
-						if (!DrawPts->use_vr) {
+						if (!DrawParts->use_vr) {
 							operation_common2(x_m, y_m);
 							this->speed_base = (this->isRunning() ? 6.f : ((this->is_ADS() ? 2.f : 4.f) * (this->isSquat() ? 0.7f : 1.f))) / FPS;
 							auto zv_t = this->GetHMDmat().zvec();
@@ -4315,7 +4326,7 @@ namespace FPS_n2 {
 					}
 				}
 				//
-				if (!(DrawPts->use_vr && ismine)) {
+				if (!(DrawParts->use_vr && ismine)) {
 					Set_HMDpos();								//視点取得
 					//銃器
 					if (this->Damage.Get_alive()) {
@@ -4380,7 +4391,7 @@ namespace FPS_n2 {
 						}
 						//マガジン挿入
 						if (isReload()) {
-							if (DrawPts->use_vr && this->reload_cnt < Set_Gun_().Get_reloadtime()) {
+							if (DrawParts->use_vr && this->reload_cnt < Set_Gun_().Get_reloadtime()) {
 								this->key_.have_mag = false;
 							}
 							if (this->key_.have_mag) {
@@ -4388,14 +4399,14 @@ namespace FPS_n2 {
 									auto mag0 = Set_Gun_().Get_mag_in().front().Get_magazine_f(0).first;
 									auto mag1 = Set_Gun_().Get_mag_in().front().Get_magazine_f(1).first;
 									if (
-										(DrawPts->use_vr) ?
+										(DrawParts->use_vr) ?
 										((Set_Gun_().Get_mag_in().front().Get_mag_frame(mag1) - Set_Gun_().Get_magf_pos()).size() <= 0.1f) :
 										(this->reload_cnt > Set_Gun_().Get_reloadtime())
 										) {
 										Set_Gun_().Load_Mag();
 										this->reloadf = false;
 									}
-									if (DrawPts->use_vr) {
+									if (DrawParts->use_vr) {
 										Set_Gun_().Set_Magazine(
 											this->LEFTHAND.move.pos,
 											Set_Gun_().Get_mag_in().front().Get_mag_frameLocalMatrix(mag1) * Set_Gun_().Get_mag_in().front().Get_mag_frameLocalMatrix(mag0) *
@@ -4502,15 +4513,16 @@ namespace FPS_n2 {
 			}
 			/*カメラ指定*/
 			void Set_cam(cam_info& camera_main, const float fov_base) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				if (this->Damage.Get_alive()) {
 					auto mat_T = Set_Gun_().Get_res_blur(0.7f) * this->GetHMDmat();//リコイル
 
 					auto ppsh = MATRIX_ref::Vtrans(VECTOR_ref::right() * -0.035f, mat_T);
-					if (DrawPts->use_vr) {
+					if (DrawParts->use_vr) {
 						mat_T = this->GetHMDmat();
 						ppsh.clear();
 					}
-					camera_main.set_cam_pos(this->Get_pos() + ppsh, this->Get_pos() + ppsh + mat_T.zvec() * (DrawPts->use_vr ? 1.f : -1.f), mat_T.yvec());
+					camera_main.set_cam_pos(this->Get_pos() + ppsh, this->Get_pos() + ppsh + mat_T.zvec() * (DrawParts->use_vr ? 1.f : -1.f), mat_T.yvec());
 					camera_main.near_ = 0.1f;
 					if (this->is_ADS()) {
 						
@@ -5129,7 +5141,7 @@ namespace FPS_n2 {
 			//
 			void Set_bullet_Ptr(void) noexcept { for (auto& g : this->Gun_) { g.Set_bullet_Ptr(); } }
 			//
-			void SetUp_bullet(std::shared_ptr<MAPclass::Map>& MAPPTs_t, std::shared_ptr<DXDraw>& DrawPts_t) { for (auto& g : this->Gun_) { g.SetUp_bullet(MAPPTs_t, DrawPts_t); } }
+			void SetUp_bullet(std::shared_ptr<MAPclass::Map>& MAPPTs_t) { for (auto& g : this->Gun_) { g.SetUp_bullet(MAPPTs_t); } }
 			void Set_Draw_bullet() { for (auto& g : this->Gun_) { g.Set_Draw_bullet(); } }
 			//弾痕セット
 			void SetHit(const moves& this_move, const  VECTOR_ref& Put_pos, const  VECTOR_ref& Put_normal, const VECTOR_ref& ammo_nomal, const float& caliber, bool isPene) { this->Hit_active.Set(this_move, Put_pos, Put_normal, ammo_nomal, caliber, isPene); }
@@ -5182,6 +5194,7 @@ namespace FPS_n2 {
 			}
 			/**/
 			void Update(const cam_info& cams, float fov_per) {
+				auto* DrawParts = DXDraw::Instance();
 				Damage.Update();
 				if (isRide() && Damage.Get_alive()) {
 					key[0] = (*MINE_c)->Get_key_().shoot;	//射撃
@@ -5199,7 +5212,7 @@ namespace FPS_n2 {
 							//狙い
 							float x_m = 0.f, y_m = 0.f;
 							if (MINE_c == &ALL_c->front()) {
-								Get_MouseVec(&x_m, &y_m, fov_per, DrawPts->disp_x, DrawPts->disp_y);
+								Get_MouseVec(&x_m, &y_m, fov_per, DrawParts->disp_x, DrawParts->disp_y);
 								x_m = deg2rad(x_m) * 0.1f;
 								y_m = deg2rad(-y_m) * 0.1f;
 							}

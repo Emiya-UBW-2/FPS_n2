@@ -11,9 +11,10 @@ namespace FPS_n2 {
 			FontPool::Fonthave* Middle{ nullptr };
 			FontPool::Fonthave* Small{ nullptr };
 			void Set_fonts(void) noexcept {
-				Large = &((DrawPts->use_vr) ? Fonts.Get(y_r(72)) : Fonts.Get(y_r(48)));
-				Middle = &((DrawPts->use_vr) ? Fonts.Get(y_r(36)) : Fonts.Get(y_r(24)));
-				Small = &((DrawPts->use_vr) ? Fonts.Get(y_r(24)) : Fonts.Get(y_r(18)));
+				auto* DrawParts = DXDraw::Instance();
+				Large = &((DrawParts->use_vr) ? Fonts.Get(y_r(72), DX_FONTTYPE_NORMAL) : Fonts.Get(y_r(48), DX_FONTTYPE_NORMAL));
+				Middle = &((DrawParts->use_vr) ? Fonts.Get(y_r(36), DX_FONTTYPE_NORMAL) : Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL));
+				Small = &((DrawParts->use_vr) ? Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL) : Fonts.Get(y_r(18), DX_FONTTYPE_NORMAL));
 			}
 		};
 		//ロードするセーブデータを指定する
@@ -22,6 +23,7 @@ namespace FPS_n2 {
 			int ypos = 0;
 			float ypos_real = 0.f;
 			void Draw_per_info(int xpos1, int ypos1, int xsize, int ysize, GUNPARTs* parts) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				UI_TEMP::Set_fonts();
 
 				int back_siz = y_r(3);
@@ -30,8 +32,8 @@ namespace FPS_n2 {
 				if (ypos1 < 100) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(128 * (ypos1 - 50) / 50, 0, 128));
 				}
-				else if (DrawPts->disp_y - (ypos1 + ysize + 25) < 0) {
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(128 * ((DrawPts->disp_y - (ypos1 + ysize + 25)) + 100) / 50, 0, 128));
+				else if (DrawParts->disp_y - (ypos1 + ysize + 25) < 0) {
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(128 * ((DrawParts->disp_y - (ypos1 + ysize + 25)) + 100) / 50, 0, 128));
 				}
 				else {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
@@ -40,8 +42,8 @@ namespace FPS_n2 {
 				if (ypos1 < 100) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * (ypos1 - 50) / 50, 0, 255));
 				}
-				else if (DrawPts->disp_y - (ypos1 + ysize + 25) < 0) {
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * ((DrawPts->disp_y - (ypos1 + ysize + 25)) + 100) / 50, 0, 255));
+				else if (DrawParts->disp_y - (ypos1 + ysize + 25) < 0) {
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * ((DrawParts->disp_y - (ypos1 + ysize + 25)) + 100) / 50, 0, 255));
 				}
 				else {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
@@ -79,13 +81,14 @@ namespace FPS_n2 {
 			}
 		public:
 			void UI_Draw(std::shared_ptr<GunPartsControl>& GunPartses, std::vector<PresetSaveControl::save_c>& save_parts, std::string_view Set_name) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				UI_TEMP::Set_fonts();
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{
 					xs = y_r(800);
 					ys = y_r(175);
 
-					ypos = std::clamp(ypos + GetMouseWheelRotVol() * y_r(30), DrawPts->disp_y - (y_r(100) + (ys + y_r(25)) * int(save_parts.size())), 0);
+					ypos = std::clamp(ypos + GetMouseWheelRotVol() * y_r(30), DrawParts->disp_y - (y_r(100) + (ys + y_r(25)) * int(save_parts.size())), 0);
 					easing_set(&ypos_real, float(ypos), 0.8f);
 
 					int i = 0;
@@ -95,18 +98,18 @@ namespace FPS_n2 {
 						temp_p = nullptr;
 						auto& tmp_save = save_parts[y_cnt]; ++y_cnt %= save_parts.size();
 
-						xp = DrawPts->disp_x - (xs + y_r(100));
+						xp = DrawParts->disp_x - (xs + y_r(100));
 						yp = y_r(100) + int(ypos_real) + (ys + y_r(25)) * i;
 						i++;
 						if (yp + ys < 0) { continue; }
-						if (yp > DrawPts->disp_y) { break; }
+						if (yp > DrawParts->disp_y) { break; }
 						if (i > save_parts.size()) { break; }
 						if (tmp_save.cang_ != SIZE_MAX) {
 							auto& vec_data = GunPartses->Get_Parts_Data(tmp_save.type_);
 							if (&vec_data != nullptr) { temp_p = &vec_data[tmp_save.cang_]; }
 						}
 						{
-							int down_limit = DrawPts->disp_y - (yp + ys + y_r(25));
+							int down_limit = DrawParts->disp_y - (yp + ys + y_r(25));
 							if (yp < 100) {
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 * (yp - y_r(50)) / y_r(50), 0, 255));
 							}
@@ -176,6 +179,7 @@ namespace FPS_n2 {
 			}
 		public:
 			void UI_Draw(std::shared_ptr<GunPartsControl>& GunPartses, EnumGunParts parts_cat, const bool& Rot, std::shared_ptr<PLAYERclass::GunControl>& mine_Gun, GUNPARTs* parts_p, float& change_per) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				UI_TEMP::Set_fonts();
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{
@@ -264,8 +268,8 @@ namespace FPS_n2 {
 						}
 						parts_t = &GunPartses->Get_Parts_Data(parts_cat);
 						//
-						xp = DrawPts->disp_x - y_r(600);
-						yp = DrawPts->disp_y - y_r(400);
+						xp = DrawParts->disp_x - y_r(600);
+						yp = DrawParts->disp_y - y_r(400);
 
 						xs = y_r(500);
 						ys = y_r(175);
@@ -415,21 +419,22 @@ namespace FPS_n2 {
 				this->timer = std::max(RULEparts->Get_timer(), 0.f);
 			}
 			void UI_Draw(const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine, std::shared_ptr<key_bind>& KeyBind) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				UI_TEMP::Set_fonts();
 				int xs = 0, ys = 0, xp = 0, yp = 0;
 				{
 					//スコープ
 					if (mine->isRide()) {
 						if ((*mine->MINE_v)->is_ADS()) {
-							aim_view.DrawExtendGraph(0, 0, DrawPts->disp_x, DrawPts->disp_y, true);
+							aim_view.DrawExtendGraph(0, 0, DrawParts->disp_x, DrawParts->disp_y, true);
 
 
 							easing_set(&dist, (*mine->MINE_v)->Get_dist(), 0.9f);
 							easing_set(&ratio, (*mine->MINE_v)->Get_ratio(), 0.9f);
 
-							aim_ret0.DrawRotaGraph(int(DrawPts->disp_x / 2), int(DrawPts->disp_y / 2), (float)(y_r(300)) / 200.f, 0.f, true);
-							aim_ret1.DrawRotaGraph(int(DrawPts->disp_x / 2), int(DrawPts->disp_y / 2) - y_r(dist / 16), (float)(y_r(300)) / 200.f, 0.f, true);
-							aim_ret2.DrawRotaGraph(int(DrawPts->disp_x / 2), int(DrawPts->disp_y / 2), (float)(y_r(300)) / 200.f, 0.f, true);
+							aim_ret0.DrawRotaGraph(int(DrawParts->disp_x / 2), int(DrawParts->disp_y / 2), (float)(y_r(300)) / 200.f, 0.f, true);
+							aim_ret1.DrawRotaGraph(int(DrawParts->disp_x / 2), int(DrawParts->disp_y / 2) - y_r(dist / 16), (float)(y_r(300)) / 200.f, 0.f, true);
+							aim_ret2.DrawRotaGraph(int(DrawParts->disp_x / 2), int(DrawParts->disp_y / 2), (float)(y_r(300)) / 200.f, 0.f, true);
 
 							Small->Get_handle().DrawStringFormat(x_r(1056), y_r(594), GetColor(0, 255, 0), "[%05.1fm]", dist);
 							Small->Get_handle().DrawStringFormat(x_r(1056), y_r(648), GetColor(0, 255, 0), "[x%02.1f]", ratio);
@@ -444,7 +449,7 @@ namespace FPS_n2 {
 					}
 
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * changeview), 0, 255));
-					DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
+					DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(0, 0, 0), TRUE);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					easing_set(&changeview, 0.f, 0.9f);
 
@@ -461,48 +466,48 @@ namespace FPS_n2 {
 
 						auto ratio_t = (1.f - dam->HP_Per());
 						if (ratio_t > 1.f / 255.f) {
-							if (DrawPts->use_vr) {
+							if (DrawParts->use_vr) {
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(128.f * ratio_t), 0, 255));
-								DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 0, 0), TRUE);
+								DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(128, 0, 0), TRUE);
 							}
 							else {
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * ratio_t), 0, 255));
-								dmg.DrawExtendGraph(0, 0, DrawPts->disp_x, DrawPts->disp_y, true);
+								dmg.DrawExtendGraph(0, 0, DrawParts->disp_x, DrawParts->disp_y, true);
 							}
 						}
 						//ダメージ
 						ratio_t = (float(int(dam->Get_HP_r()) - dam->Get_HP()) / 50.f);
 						if (ratio_t > 1.f / 255.f) {
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * ratio_t), 0, 255));
-							DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 0, 0), TRUE);
+							DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(128, 0, 0), TRUE);
 						}
 					}
 					//
-					if (DrawPts->use_vr) {
+					if (DrawParts->use_vr) {
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-						aim.DrawRotaGraph(int(DrawPts->disp_x / 2), int(DrawPts->disp_y / 2), (float)(y_r(64)) / 200.f, 0.f, true);
+						aim.DrawRotaGraph(int(DrawParts->disp_x / 2), int(DrawParts->disp_y / 2), (float)(y_r(64)) / 200.f, 0.f, true);
 					}
 					//タイマー
 					{
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 						if (Ready >= 0.f) {
-							if (DrawPts->use_vr) {
-								xp = DrawPts->disp_x / 2;
-								yp = DrawPts->disp_y / 2 - DrawPts->disp_y / 3;
+							if (DrawParts->use_vr) {
+								xp = DrawParts->disp_x / 2;
+								yp = DrawParts->disp_y / 2 - DrawParts->disp_y / 3;
 							}
 							else {
-								xp = DrawPts->disp_x / 2;
-								yp = DrawPts->disp_y / 2 - DrawPts->disp_y / 8;
+								xp = DrawParts->disp_x / 2;
+								yp = DrawParts->disp_y / 2 - DrawParts->disp_y / 8;
 							}
 							Large->Get_handle().DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "%02d:%02d", int(this->Ready) / 60, int(this->Ready) % 60); yp += Large->Get_size();
 						}
 						else {
-							if (DrawPts->use_vr) {
-								xp = DrawPts->disp_x / 2;
-								yp = DrawPts->disp_y / 2 - DrawPts->disp_y / 8;
+							if (DrawParts->use_vr) {
+								xp = DrawParts->disp_x / 2;
+								yp = DrawParts->disp_y / 2 - DrawParts->disp_y / 8;
 							}
 							else {
-								xp = DrawPts->disp_x / 2;
+								xp = DrawParts->disp_x / 2;
 								yp = Small->Get_size();
 							}
 							Middle->Get_handle().DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "%02d:%02d", int(this->timer) / 60, int(this->timer) % 60); yp += Middle->Get_size();
@@ -510,17 +515,17 @@ namespace FPS_n2 {
 					}
 					//警告
 					{
-						if ((!DrawPts->use_vr && !mine->is_ADS()) || DrawPts->use_vr) {
+						if ((!DrawParts->use_vr && !mine->is_ADS()) || DrawParts->use_vr) {
 							if ((GetNowHiPerformanceCount() / 100000) % 4 <= 2) {
 								//空警告
 								if (mine->Damage.Get_alive() && !mine->Set_Gun_().Get_in_chamber()) {
-									if (DrawPts->use_vr) {
-										xp = DrawPts->disp_x / 2;
-										yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 8;
+									if (DrawParts->use_vr) {
+										xp = DrawParts->disp_x / 2;
+										yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 8;
 									}
 									else {
-										xp = DrawPts->disp_x / 2;
-										yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 8;
+										xp = DrawParts->disp_x / 2;
+										yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 8;
 									}
 									Small->Get_handle().DrawString_MID(xp, yp, "EMPTY", GetColor(255, 0, 0));
 								}
@@ -529,13 +534,13 @@ namespace FPS_n2 {
 					}
 					//セレクター
 					if(mine->Damage.Get_alive()){
-						if (DrawPts->use_vr) {
-							xp = DrawPts->disp_x / 2 - DrawPts->disp_y / 10;
-							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 8;
+						if (DrawParts->use_vr) {
+							xp = DrawParts->disp_x / 2 - DrawParts->disp_y / 10;
+							yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 8;
 						}
 						else {
-							xp = DrawPts->disp_x / 2 + DrawPts->disp_y / 4;
-							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6;
+							xp = DrawParts->disp_x / 2 + DrawParts->disp_y / 4;
+							yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 6;
 						}
 						switch ((EnumSELECTER)mine->Set_Gun_().Get_now_selector()) {
 						case EnumSELECTER::SEMI:
@@ -554,13 +559,13 @@ namespace FPS_n2 {
 					}
 					//アイテムを拾う
 					{
-						if (DrawPts->use_vr) {
-							xp = DrawPts->disp_x / 2;
-							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 12;
+						if (DrawParts->use_vr) {
+							xp = DrawParts->disp_x / 2;
+							yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 12;
 						}
 						else {
-							xp = DrawPts->disp_x / 2;
-							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 12;
+							xp = DrawParts->disp_x / 2;
+							yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 12;
 						}
 						if (mine->Get_canget_mag_f()) {
 							Small->Get_handle().DrawString_MID(xp, yp, KeyBind->Get_key_use_ID(EnumKeyBind::GET_ITEM).Get_second(0) + ": " + mine->Get_canget_mag_s(), GetColor(255, 255, 0)); yp += Small->Get_size();
@@ -576,17 +581,17 @@ namespace FPS_n2 {
 					}
 					//弾薬
 					{
-						if (DrawPts->use_vr) {
-							xp = DrawPts->disp_x / 2 - y_r(20) - y_r(200);
-							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20);
+						if (DrawParts->use_vr) {
+							xp = DrawParts->disp_x / 2 - y_r(20) - y_r(200);
+							yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 6 + y_r(20);
 						}
 						else {
 							xp = y_r(20);
-							yp = DrawPts->disp_y - y_r(50);
+							yp = DrawParts->disp_y - y_r(50);
 						}
 						if (!mine->isRide()) {
 							if (mine->Damage.Get_alive()) {
-								if ((!DrawPts->use_vr && !mine->is_ADS()) || DrawPts->use_vr) {
+								if ((!DrawParts->use_vr && !mine->is_ADS()) || DrawParts->use_vr) {
 									//銃
 									{
 										Small->Get_handle().DrawString(xp, yp, mine->Set_Gun_().Get_parts(EnumGunParts::BASE)->thisparts->Get_Performance().name, GetColor(255, 255, 255));
@@ -594,13 +599,13 @@ namespace FPS_n2 {
 									//マガジン関連(仮)
 									{
 										int size = int(mine->Set_Gun_().Get_mag_in().size());
-										if (DrawPts->use_vr) {
-											xp = DrawPts->disp_x / 2 - y_r(140) + Middle->Get_size();
-											yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20) - Middle->Get_size() * size;
+										if (DrawParts->use_vr) {
+											xp = DrawParts->disp_x / 2 - y_r(140) + Middle->Get_size();
+											yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 6 + y_r(20) - Middle->Get_size() * size;
 										}
 										else {
 											xp = y_r(220) + Middle->Get_size();
-											yp = DrawPts->disp_y - y_r(20) - Middle->Get_size() * size;
+											yp = DrawParts->disp_y - y_r(20) - Middle->Get_size() * size;
 										}
 										for (auto& a : mine->Set_Gun_().Get_mag_in()) {
 											Middle->Get_handle().DrawStringFormat(xp, yp, GetColor(255, 0, 0), "%d/%d", a.Get_Cnt(), a.Get_Cap());
@@ -624,13 +629,13 @@ namespace FPS_n2 {
 							//マガジン関連(仮)
 							{
 								int size = int((*mine->MINE_v)->Get_Gunsize());
-								if (DrawPts->use_vr) {
-									xp = DrawPts->disp_x / 2 - y_r(140) + Middle->Get_size();
-									yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6 + y_r(20) - (Small->Get_size() + Middle->Get_size() + Small->Get_size()) * size;
+								if (DrawParts->use_vr) {
+									xp = DrawParts->disp_x / 2 - y_r(140) + Middle->Get_size();
+									yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 6 + y_r(20) - (Small->Get_size() + Middle->Get_size() + Small->Get_size()) * size;
 								}
 								else {
 									xp = y_r(20) + Middle->Get_size();
-									yp = DrawPts->disp_y - y_r(20) - (Small->Get_size() + Middle->Get_size() + Small->Get_size()) * size;
+									yp = DrawParts->disp_y - y_r(20) - (Small->Get_size() + Middle->Get_size() + Small->Get_size()) * size;
 								}
 								for (auto t = 0; t < size; t++) {
 									Small->Get_handle().DrawString(xp, yp, (*mine->MINE_v)->Guninfo(t).Get_name(), GetColor(255, 255, 255));
@@ -652,24 +657,24 @@ namespace FPS_n2 {
 					//キル
 					if (mine->scores.kill_f) {
 						auto killt = mine->scores.kill_timer;
-						if (DrawPts->use_vr) {
-							xp = DrawPts->disp_x / 2;
-							yp = DrawPts->disp_y / 2 - DrawPts->disp_y / 6;
+						if (DrawParts->use_vr) {
+							xp = DrawParts->disp_x / 2;
+							yp = DrawParts->disp_y / 2 - DrawParts->disp_y / 6;
 						}
 						else {
-							xp = DrawPts->disp_x / 2;
-							yp = DrawPts->disp_y / 2 - DrawPts->disp_y / 6;
+							xp = DrawParts->disp_x / 2;
+							yp = DrawParts->disp_y / 2 - DrawParts->disp_y / 6;
 						}
 						int per = std::clamp(int(255.f * ((killt * 7) / 7.f)) - 255 * 6, 0, 255);
 
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-						DrawBox(xp - int(pow(per, 2)) * DrawPts->disp_x / 2 / int(pow(255, 2)), yp, xp + int(pow(per, 2)) * DrawPts->disp_x / 2 / int(pow(255, 2)), yp + Middle->Get_size() + 2, GetColor(255, 255, 255), TRUE);
+						DrawBox(xp - int(pow(per, 2)) * DrawParts->disp_x / 2 / int(pow(255, 2)), yp, xp + int(pow(per, 2)) * DrawParts->disp_x / 2 / int(pow(255, 2)), yp + Middle->Get_size() + 2, GetColor(255, 255, 255), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * ((killt * 2) / 7.f)), 0, 255));
 						Middle->Get_handle().DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "プレイヤー%d をキルしました", mine->scores.kill_id); yp += Middle->Get_size() * 2;	//キル
 
 						if (mine->scores.kill_streak > 0) {
 							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-							DrawBox(xp - int(pow(per, 4)) * DrawPts->disp_x / 2 / int(pow(255, 4)), yp, xp + int(pow(per, 4)) * DrawPts->disp_x / 2 / int(pow(255, 4)), yp + Middle->Get_size() + 2, GetColor(255, 255, 255), TRUE);
+							DrawBox(xp - int(pow(per, 4)) * DrawParts->disp_x / 2 / int(pow(255, 4)), yp, xp + int(pow(per, 4)) * DrawParts->disp_x / 2 / int(pow(255, 4)), yp + Middle->Get_size() + 2, GetColor(255, 255, 255), TRUE);
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(int(255.f * ((killt * 2) / 7.f)), 0, 255));
 							Middle->Get_handle().DrawStringFormat_MID(xp, yp, GetColor(255, 0, 0), "kill streak! x%d", mine->scores.kill_streak); yp += Middle->Get_size();			//キルストリーク
 						}
@@ -677,13 +682,13 @@ namespace FPS_n2 {
 					}
 					//被弾方向
 					{
-						if (DrawPts->use_vr) {
-							xp = DrawPts->disp_x / 2;
-							yp = DrawPts->disp_y / 2;
+						if (DrawParts->use_vr) {
+							xp = DrawParts->disp_x / 2;
+							yp = DrawParts->disp_y / 2;
 						}
 						else {
-							xp = DrawPts->disp_x / 2;
-							yp = DrawPts->disp_y / 2;
+							xp = DrawParts->disp_x / 2;
+							yp = DrawParts->disp_y / 2;
 						}
 						PLAYERclass::PLAYER_COMMON::Damages* dam = nullptr;
 						if (mine->isRide()) {
@@ -701,15 +706,15 @@ namespace FPS_n2 {
 					}
 					//HP
 					{
-						if (DrawPts->use_vr) {
-							xp = DrawPts->disp_x / 2 + DrawPts->disp_y / 12;
-							yp = DrawPts->disp_y / 2 + DrawPts->disp_y / 6;
+						if (DrawParts->use_vr) {
+							xp = DrawParts->disp_x / 2 + DrawParts->disp_y / 12;
+							yp = DrawParts->disp_y / 2 + DrawParts->disp_y / 6;
 							xs = y_r(200);
 							ys = y_r(18) + y_r(2);
 						}
 						else {
-							xp = DrawPts->disp_x / 2;
-							yp = DrawPts->disp_y - Middle->Get_size() * 2;
+							xp = DrawParts->disp_x / 2;
+							yp = DrawParts->disp_y - Middle->Get_size() * 2;
 							xs = y_r(600);
 							ys = y_r(18) + y_r(2);
 						}
@@ -718,13 +723,13 @@ namespace FPS_n2 {
 					//スコアその他
 					{
 						/*
-						if (DrawPts->use_vr) {
-							xp = DrawPts->disp_x / 2 + DrawPts->disp_y / 6 + Middle->Get_size();
-							yp = DrawPts->disp_y / 2 - DrawPts->disp_y / 12 + Middle->Get_size();
+						if (DrawParts->use_vr) {
+							xp = DrawParts->disp_x / 2 + DrawParts->disp_y / 6 + Middle->Get_size();
+							yp = DrawParts->disp_y / 2 - DrawParts->disp_y / 12 + Middle->Get_size();
 						}
 						else {
-							xp = DrawPts->disp_x - Middle->Get_size();
-							yp = DrawPts->disp_y / 2 - DrawPts->disp_y / 12 + Middle->Get_size();
+							xp = DrawParts->disp_x - Middle->Get_size();
+							yp = DrawParts->disp_y / 2 - DrawParts->disp_y / 12 + Middle->Get_size();
 						}
 						Middle->Get_handle().DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "score      : %d", mine->scores.score); yp += Middle->Get_size();			//スコア
 						Middle->Get_handle().DrawStringFormat_RIGHT(xp, yp, GetColor(255, 0, 0), "kill       : %d", mine->scores.kill_cnt); yp += Middle->Get_size();			//キルデス
@@ -739,9 +744,10 @@ namespace FPS_n2 {
 				const std::vector<std::shared_ptr<PLAYERclass::PLAYER_CHARA>>& chara,
 				const std::vector<std::shared_ptr<PLAYERclass::PLAYER_VEHICLE>>& vehicle,
 				const std::shared_ptr<PLAYERclass::PLAYER_CHARA>& mine) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				UI_TEMP::Set_fonts();
 				//弾インジケーター
-				if (mine->Damage.Get_alive() && DrawPts->use_vr) {
+				if (mine->Damage.Get_alive() && DrawParts->use_vr) {
 					auto pos_gun = mine->Set_Gun_().Get_parts(EnumGunParts::BASE)->Get_objMatrix().pos();
 					VECTOR_ref p = ConvWorldPosToScreenPos(pos_gun.get());
 					if (p.z() >= 0.f && p.z() <= 1.f) {
@@ -844,11 +850,12 @@ namespace FPS_n2 {
 				return true;
 			}
 			void UI_Draw(void) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				UI_TEMP::Set_fonts();
-				DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
-				Small->Get_handle().DrawStringFormat(0, DrawPts->disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
-				Small->Get_handle().DrawStringFormat_RIGHT(DrawPts->disp_x, DrawPts->disp_y - y_r(70), GetColor(0, 255, 0), "%s 読み込み中 ", message.c_str());
-				DrawBox(0, DrawPts->disp_y - y_r(50), int(float(DrawPts->disp_x) * bar / float(all)), DrawPts->disp_y - y_r(40), GetColor(0, 255, 0), TRUE);
+				DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(0, 0, 0), TRUE);
+				Small->Get_handle().DrawStringFormat(0, DrawParts->disp_y - y_r(70), GetColor(0, 255, 0), " loading... : %04d/%04d  ", tmp, all);
+				Small->Get_handle().DrawStringFormat_RIGHT(DrawParts->disp_x, DrawParts->disp_y - y_r(70), GetColor(0, 255, 0), "%s 読み込み中 ", message.c_str());
+				DrawBox(0, DrawParts->disp_y - y_r(50), int(float(DrawParts->disp_x) * bar / float(all)), DrawParts->disp_y - y_r(40), GetColor(0, 255, 0), TRUE);
 			}
 		};
 	};

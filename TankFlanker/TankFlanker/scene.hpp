@@ -18,7 +18,6 @@ namespace FPS_n2 {
 			//キー
 			PLAYERclass::PLAYER_COMMON::opes key_;
 			//引き継ぐ
-			std::shared_ptr<OPTION> OPTPTs;
 			std::shared_ptr<GunPartsControl> GunPartses;
 			std::shared_ptr<key_bind> KeyBind;
 			//カメラ
@@ -45,13 +44,10 @@ namespace FPS_n2 {
 
 			TEMPSCENE(
 				std::shared_ptr<MAPclass::Map>& MAPPTs_t,
-				std::shared_ptr<DXDraw>& DrawPts_t,
-				const std::shared_ptr<OPTION>& OPTPTs_t,
 				const std::shared_ptr<GunPartsControl>& GunPartses_t,
 				const std::shared_ptr<key_bind>& KeyBind_t
 			) noexcept {
-				PTR_COMMON::Set_Ptr_Common(MAPPTs_t, DrawPts_t);
-				OPTPTs = OPTPTs_t;
+				PTR_COMMON::Set_Ptr_Common(MAPPTs_t);
 				GunPartses = GunPartses_t;
 				KeyBind = KeyBind_t;
 			}
@@ -65,16 +61,18 @@ namespace FPS_n2 {
 
 			virtual void Awake(void) noexcept {}
 			virtual void Set(void) noexcept {
-				fov_base = deg2rad(DrawPts->use_vr ? 120 : OPTPTs->Get_Fov());	//fov
+				auto* OptionParts = OPTION::Instance();
+				auto* DrawParts = DXDraw::Instance();
+				fov_base = deg2rad(DrawParts->use_vr ? 120 : OptionParts->Get_Fov());	//fov
 				SetUseMaskScreenFlag(FALSE);//←カスタム画面でエフェクトが出なくなるため入れる
-				if (DrawPts->use_vr) {
+				if (DrawParts->use_vr) {
 					camera_main.set_cam_info(fov_base, 0.001f, 100.f);//1P
 				}
 				else {
 					camera_main.set_cam_info(fov_base, 0.05f, 200.f);//1P
 				}
 
-				DrawPts->Set_Light_Shadow(Shadow_maxpos, Shadow_minpos, Light_vec, [&] {Shadow_Draw_Far(); });
+				DrawParts->Set_Light_Shadow(Shadow_maxpos, Shadow_minpos, Light_vec, [&] {Shadow_Draw_Far(); });
 				SetGlobalAmbientLight(Light_color);
 			}
 			virtual bool Update(void) noexcept {
@@ -90,14 +88,16 @@ namespace FPS_n2 {
 			virtual void Dispose(void) noexcept {}
 
 			virtual void ReadyDraw(void) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				//音位置指定
 				Set3DSoundListenerPosAndFrontPosAndUpVec(camera_main.campos.get(), camera_main.camvec.get(), camera_main.camup.get());
 				//影用意
-				DrawPts->Ready_Shadow(camera_main.campos, [&] { Shadow_Draw(); }, [&] { Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.5f, 2.5f, 2.5f), VECTOR_ref::vget(15.f, 2.5f, 15.f));//MAIN_LOOPのnearはこれ (Get_Mine()->Damage.Get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
+				DrawParts->Ready_Shadow(camera_main.campos, [&] { Shadow_Draw(); }, [&] { Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.5f, 2.5f, 2.5f), VECTOR_ref::vget(15.f, 2.5f, 15.f));//MAIN_LOOPのnearはこれ (Get_Mine()->Damage.Get_alive()) ? VECTOR_ref::vget(2.f, 2.5f, 2.f) : VECTOR_ref::vget(10.f, 2.5f, 10.f)
 			}
 			virtual void UI_Draw(void) noexcept {}
 			virtual void BG_Draw(void) noexcept {
-				DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_x, GetColor(192, 192, 192), TRUE);
+				auto* DrawParts = DXDraw::Instance();
+				DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_x, GetColor(192, 192, 192), TRUE);
 			}
 			virtual void Shadow_Draw_Far(void) noexcept {}
 			virtual void Shadow_Draw_NearFar(void) noexcept {}
@@ -134,7 +134,7 @@ namespace FPS_n2 {
 			}
 			void Set(void) noexcept override {
 				TEMPSCENE::Set();
-				UIparts->Set_Ptr_Common(MAPPTs, DrawPts);
+				UIparts->Set_Ptr_Common(MAPPTs);
 				UIparts->Set(title);
 			}
 			bool Update(void) noexcept override {
@@ -163,7 +163,7 @@ namespace FPS_n2 {
 			}
 			void Set(void) noexcept override {
 				TEMPSCENE::Set();
-				UIparts->Set_Ptr_Common(MAPPTs, DrawPts);
+				UIparts->Set_Ptr_Common(MAPPTs);
 				left.Init(false);
 				right.Init(false);
 				Save_Presets.clear();
@@ -210,8 +210,9 @@ namespace FPS_n2 {
 			}
 			void KeyOperation_VR(void) noexcept override {
 #ifdef _USE_OPENVR_
-				if (DrawPts->get_hand2_num() != -1) {
-					auto ptr_ = DrawPts->get_device_hand2();
+				auto* DrawParts = DXDraw::Instance();
+				if (DrawParts->get_hand2_num() != -1) {
+					auto ptr_ = DrawParts->get_device_hand2();
 					if (ptr_->turn && ptr_->now) {
 						key_.dkey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
 						key_.akey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() < -0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);		//running
@@ -414,13 +415,13 @@ namespace FPS_n2 {
 				Preset = Set_str;
 				mine_Gun = Gun_S[0];
 			}
-
 			void Set(void) noexcept  override {
+				auto* DrawParts = DXDraw::Instance();
 				//ライティング
 				TEMPSCENE::Set_EnvLight(VECTOR_ref::vget(1.f, 1.f, 1.f), VECTOR_ref::vget(-1.f, -1.f, -1.f), VECTOR_ref::vget(0.5f, -0.5f, 0.5f), GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				TEMPSCENE::Set();
-				SetMousePoint(DrawPts->disp_x / 2, DrawPts->disp_y / 2);											//
-				UIparts->Set_Ptr_Common(MAPPTs, DrawPts);
+				SetMousePoint(DrawParts->disp_x / 2, DrawParts->disp_y / 2);											//
+				UIparts->Set_Ptr_Common(MAPPTs);
 				{
 					up.Init(false);
 					down.Init(false);
@@ -495,6 +496,7 @@ namespace FPS_n2 {
 				return ((parts == nullptr) || (!parts->IsActive()));
 			}
 			bool Update(void) noexcept override {
+				auto* DrawParts = DXDraw::Instance();
 				TEMPSCENE::Update();
 				bool changef = false;
 				//演算
@@ -609,9 +611,9 @@ namespace FPS_n2 {
 					{
 						int x_m, y_m;
 						GetMousePoint(&x_m, &y_m);
-						x_m -= DrawPts->disp_x / 2;
-						y_m -= DrawPts->disp_y / 2;
-						SetMousePoint(DrawPts->disp_x / 2, DrawPts->disp_y / 2);
+						x_m -= DrawParts->disp_x / 2;
+						y_m -= DrawParts->disp_y / 2;
+						SetMousePoint(DrawParts->disp_x / 2, DrawParts->disp_y / 2);
 						SetMouseDispFlag(FALSE);
 						xrad_t = std::clamp(xrad_t + float(std::clamp(y_m, -60, 60)) * 0.1f, -80.f, 80.f);
 						yrad_t += float(std::clamp(x_m, -60, 60)) * 0.1f;
@@ -690,15 +692,16 @@ namespace FPS_n2 {
 			}
 			void KeyOperation_VR(void) noexcept override {
 #ifdef _USE_OPENVR_
-				if (DrawPts->get_hand1_num() != -1) {
-					auto ptr_ = DrawPts->get_device_hand1();
+				auto* DrawParts = DXDraw::Instance();
+				if (DrawParts->get_hand1_num() != -1) {
+					auto ptr_ = DrawParts->get_device_hand1();
 					if (ptr_->turn && ptr_->now) {
 						key_.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
 						key_.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);	//セレクター
 					}
 				}
-				if (DrawPts->get_hand2_num() != -1) {
-					auto ptr_ = DrawPts->get_device_hand2();
+				if (DrawParts->get_hand2_num() != -1) {
+					auto ptr_ = DrawParts->get_device_hand2();
 					if (ptr_->turn && ptr_->now) {
 						key_.wkey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.y() > 0.5f && ptr_->touch.x() < 0.5f && ptr_->touch.x() > -0.5f);		//running
 						key_.skey = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.y() < -0.5f && ptr_->touch.x() < 0.5f && ptr_->touch.x() > -0.5f);		//running
@@ -787,7 +790,6 @@ namespace FPS_n2 {
 				auto& Get_camera(void) noexcept { return camera_TPS; }
 			};
 			std::unique_ptr<TPS_parts> TPSparts;
-			std::unique_ptr<HostPassEffect> Hostpassparts_TPS;
 			//データ
 			MV1 body_obj, body_obj_lag, body_col;								//身体モデル
 			MV1 hit_pic;														//弾痕  
@@ -811,8 +813,7 @@ namespace FPS_n2 {
 			void Awake(void) noexcept override {
 				TEMPSCENE::Awake();
 				TPSparts = std::make_unique<TPS_parts>();
-				TPSparts->Set_Ptr_Common(MAPPTs, DrawPts);
-				Hostpassparts_TPS = std::make_unique<HostPassEffect>(OPTPTs, deskx, desky);	//ホストパスエフェクト(フルスクリーン向け、TPS用)
+				TPSparts->Set_Ptr_Common(MAPPTs);
 				RULEparts = std::make_shared<RULE_parts>();
 				UIparts = std::make_unique<UIclass::UI_MAINLOOP>(RULEparts);
 				MiniMAPPTs = std::make_unique<MAPclass::MiniMap>(MAPPTs);					//ミニマップ
@@ -836,7 +837,7 @@ namespace FPS_n2 {
 				this->chara.resize(spawn_total);
 				for (auto& c : this->chara) {
 					c = std::make_shared<PLAYERclass::PLAYER_CHARA>();
-					c->Set_Ptr_Common(MAPPTs, DrawPts);
+					c->Set_Ptr_Common(MAPPTs);
 					c->Set_Ptr(&this->chara, &c, &this->vehicle, nullptr);
 					c->Set(body_obj, body_obj_lag, body_col);
 					c->Add_Guninfo(Gun_S, GunPartses);
@@ -847,17 +848,19 @@ namespace FPS_n2 {
 				vehicle.resize(spawn_total);
 				for (auto& v : this->vehicle) {
 					v = std::make_shared<PLAYERclass::PLAYER_VEHICLE>();
-					v->Set_Ptr_Common(MAPPTs, DrawPts);
+					v->Set_Ptr_Common(MAPPTs);
 					v->Set_Ptr(&this->chara, nullptr, &this->vehicle, &v);
 					v->Set(&vehc_data[/*(&v - &this->vehicle.front())% vehc_data.size()*/0], hit_pic);
 				}
 			}
 		public:
 			void Set(void) noexcept override {
+				auto* DrawParts = DXDraw::Instance();
+				auto* OptionParts = OPTION::Instance();
 				TEMPSCENE::Set_EnvLight(MAPPTs->map_col_get().mesh_maxpos(0), MAPPTs->map_col_get().mesh_minpos(0), VECTOR_ref::vget(0.5f, -0.5f, 0.5f), GetColorF(0.42f, 0.41f, 0.40f, 0.0f));
 				TEMPSCENE::Set();
 				MAPPTs->Start_Ray(Get_Light_vec());
-				SetMousePoint(DrawPts->disp_x / 2, DrawPts->disp_y / 2);											//
+				SetMousePoint(DrawParts->disp_x / 2, DrawParts->disp_y / 2);											//
 				//初回スポーン位置設定
 				moves temp;
 				for (auto& c : this->chara) {
@@ -876,7 +879,7 @@ namespace FPS_n2 {
 					v->Spawn();
 					v->Start();
 					//弾薬設定
-					v->SetUp_bullet(MAPPTs, DrawPts);
+					v->SetUp_bullet(MAPPTs);
 					v->Set_bullet_Ptr();
 				}
 				/*
@@ -884,8 +887,8 @@ namespace FPS_n2 {
 					c->Ride_on(&this->vehicle[&c - &this->chara.front()]);
 				}
 				*/
-				UIparts->Set_Ptr_Common(MAPPTs, DrawPts);	//UI
-				TPSparts->Set(OPTPTs->Get_Fov());			//TPS
+				UIparts->Set_Ptr_Common(MAPPTs);	//UI
+				TPSparts->Set(OptionParts->Get_Fov());			//TPS
 				RULEparts->Set();							//ルール
 				MAPPTs->Set();								//環境
 			}
@@ -944,11 +947,13 @@ namespace FPS_n2 {
 				TPSparts->Set_info(this->chara);
 				TPSparts->key_TPS.GetInput(key_.TPS);
 				if (TPSparts->ON()) {
+					auto* DrawParts = DXDraw::Instance();
 					//影用意
-					DrawPts->Ready_Shadow(TPSparts->Get_camera().campos, [&] {Shadow_Draw(); }, [&] {Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(15.f, 12.5f, 15.f));
+					DrawParts->Ready_Shadow(TPSparts->Get_camera().campos, [&] {Shadow_Draw(); }, [&] {Shadow_Draw_NearFar(); }, VECTOR_ref::vget(2.f, 2.5f, 2.f), VECTOR_ref::vget(15.f, 12.5f, 15.f));
 					//書き込み
-					Hostpassparts_TPS->BUF_Draw([&] { BG_Draw(); }, [&] {DrawPts->Draw_by_Shadow([&] {Main_Draw(); }); }, TPSparts->Get_camera(), false);	//被写体深度描画
-					Hostpassparts_TPS->Set_MAIN_Draw();																												//最終描画
+					auto PostPassParts = PostPassEffect::Instance();
+					PostPassParts->BUF_Draw([&] { BG_Draw(); }, [&] {DrawParts->Draw_by_Shadow([&] {Main_Draw(); }); }, TPSparts->Get_camera(), false);	//被写体深度描画
+					PostPassParts->Set_MAIN_Draw();																												//最終描画
 				}
 				//表示の如何
 				{
@@ -1089,7 +1094,9 @@ namespace FPS_n2 {
 			void LAST_Draw(void) noexcept override {
 				//TPS視点
 				if (TPSparts->ON()) {
-					Hostpassparts_TPS->MAIN_Draw();
+					auto PostPassParts = PostPassEffect::Instance();
+
+					PostPassParts->MAIN_Draw();
 				}
 				//minimap
 				MiniMAPPTs->Draw();
@@ -1097,16 +1104,17 @@ namespace FPS_n2 {
 
 			void KeyOperation_VR(void) noexcept override {
 #ifdef _USE_OPENVR_
-				if (DrawPts->get_hand1_num() != -1) {
-					auto ptr_ = DrawPts->get_device_hand1();
+				auto* DrawParts = DXDraw::Instance();
+				if (DrawParts->get_hand1_num() != -1) {
+					auto ptr_ = DrawParts->get_device_hand1();
 					if (ptr_->turn && ptr_->now) {
 						key_.shoot = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);																					//射撃
 						key_.reload = ((ptr_->on[0] & BUTTON_SIDE) != 0);																						//マグキャッチ
 						key_.select = ((ptr_->on[0] & BUTTON_TOUCHPAD) != 0) && (ptr_->touch.x() > 0.5f && ptr_->touch.y() < 0.5f && ptr_->touch.y() > -0.5f);	//セレクター
 					}
 				}
-				if (DrawPts->get_hand2_num() != -1) {
-					auto ptr_ = DrawPts->get_device_hand2();
+				if (DrawParts->get_hand2_num() != -1) {
+					auto ptr_ = DrawParts->get_device_hand2();
 					if (ptr_->turn && ptr_->now) {
 						key_.have_mag = ((ptr_->on[0] & BUTTON_TRIGGER) != 0);		//マガジン持つ
 						key_.have_item = ((ptr_->on[0] & BUTTON_TOPBUTTON_B) != 0);	//アイテム取得

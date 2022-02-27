@@ -6,14 +6,11 @@ namespace FPS_n2 {
 	class PTR_COMMON {
 	protected:
 		std::shared_ptr<MAPclass::Map> MAPPTs{ nullptr };	//ˆø‚«Œp‚®
-		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//ˆø‚«Œp‚®
 	public:
-		virtual void Set_Ptr_Common(std::shared_ptr<MAPclass::Map>& MAPPTs_t, std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
-			DrawPts = DrawPts_t;
+		virtual void Set_Ptr_Common(std::shared_ptr<MAPclass::Map>& MAPPTs_t) noexcept {
 			MAPPTs = MAPPTs_t;
 		}
 		virtual void Dispose_Ptr_Common(void) noexcept {
-			DrawPts.reset();
 			MAPPTs.reset();
 		}
 	};
