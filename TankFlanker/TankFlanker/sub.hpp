@@ -1126,8 +1126,8 @@ namespace FPS_n2 {
 		void Ready(std::string path_, std::string named) noexcept {
 			this->name = named;
 			this->path = path_ + named;
-			MV1::Load(this->path + "/model.mv1", &this->model, true);
-			MV1::Load(this->path + "/col.mv1", &this->col, true);
+			MV1::Load(this->path + "/model.mv1", &this->model);
+			MV1::Load(this->path + "/col.mv1", &this->col);
 		}
 		int mdata = -1;
 		void Set_(std::function<void()> doing) {
@@ -1227,8 +1227,8 @@ namespace FPS_n2 {
 		void Set_before(std::string path_, std::string named) {
 			this->name = named;
 			this->path = path_ + named;
-			MV1::Load(this->path + "/ammo.mv1", &this->model, true);
-			MV1::Load(this->path + "/ammo2.mv1", &this->model_full, true);
+			MV1::Load(this->path + "/ammo.mv1", &this->model);
+			MV1::Load(this->path + "/ammo2.mv1", &this->model_full);
 		}
 		void Set(void) noexcept {
 			int mdata = FileRead_open((this->path + "/data.txt").c_str(), FALSE);
@@ -1274,7 +1274,7 @@ namespace FPS_n2 {
 		void Init(std::string pngpath, std::string mv1path) noexcept {
 			SetUseASyncLoadFlag(FALSE);
 			this->hits_pic = GraphHandle::Load(pngpath);		 /*grass*/
-			MV1::Load(mv1path, &this->hits, false);	//íeç≠
+			MV1::Load(mv1path, &this->hits);	//íeç≠
 			Init_one();
 		}
 		void Init_one(void) noexcept {
@@ -2167,8 +2167,8 @@ namespace FPS_n2 {
 				}
 			}
 			for (auto& t : *veh_) {
-				MV1::Load(std::string(name) + t.name + "/model.mv1", &t.obj, true);
-				MV1::Load(std::string(name) + t.name + "/col.mv1", &t.col, true);
+				MV1::Load(std::string(name) + t.name + "/model.mv1", &t.obj);
+				MV1::Load(std::string(name) + t.name + "/col.mv1", &t.col);
 				t.ui_pic = GraphHandle::Load(std::string(name) + t.name + "/pic.png");
 			}
 		}

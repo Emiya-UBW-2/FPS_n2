@@ -2,8 +2,10 @@
 
 namespace FPS_n2 {
 	//’è”
-	static const float Frame_Rate{ 90.f };
+	static const float Frame_Rate{ 60.f };
 	static const size_t max_bullet{ 64 };
+
+	constexpr float M_GR{ -9.8f };				/*d—Í‰Á‘¬“x*/
 
 	enum class Effect {
 		ef_fire,	//”­–C‰Š

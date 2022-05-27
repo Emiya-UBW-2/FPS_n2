@@ -818,10 +818,10 @@ namespace FPS_n2 {
 				UIparts = std::make_unique<UIclass::UI_MAINLOOP>(RULEparts);
 				MiniMAPPTs = std::make_unique<MAPclass::MiniMap>(MAPPTs);					//ミニマップ
 				light = GraphHandle::Load("data/light.png");								//ライト
-				MV1::Load("data/model/hit/model.mv1", &this->hit_pic, true);				//弾痕モデル
-				MV1::Load("data/model/body/model.mv1", &this->body_obj, true);				//身体モデル
-				MV1::Load("data/model/body/col.mv1", &this->body_col, true);				//身体colモデル
-				MV1::Load("data/model/body/model_lag.mv1", &this->body_obj_lag, true, -1.f);//身体ラグドール
+				MV1::Load("data/model/hit/model.mv1", &this->hit_pic);						//弾痕モデル
+				MV1::Load("data/model/body/model.mv1", &this->body_obj);					//身体モデル
+				MV1::Load("data/model/body/col.mv1", &this->body_col);						//身体colモデル
+				MV1::Load("data/model/body/model_lag.mv1", &this->body_obj_lag, DX_LOADMODEL_PHYSICS_REALTIME, -1.f);//身体ラグドール
 				Meds::Set_Pre(&this->meds_data, "data/Items/medkit/");						//MEDデータ
 				Grenades::Set_Pre(&this->gres_data, "data/Items/grenade/");					//グレネード
 				Vehcs::Set_Pre(&this->vehc_data, "data/tank/");								//戦車

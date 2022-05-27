@@ -1594,7 +1594,8 @@ namespace FPS_n2 {
 						this->type = type_t;
 						SetUseASyncLoadFlag(FALSE);
 						if (this->type == EnumGunParts::BASE) {
-							this->thisparts->mod.Get_model().DuplicateonAnime(&this->obj, &this->obj);
+							this->obj = this->thisparts->mod.Get_model().Duplicate();
+							this->obj.SetAnime(&(this->obj), this->obj);
 						}
 						else {
 							this->obj = this->thisparts->mod.Get_model().Duplicate();
@@ -4083,12 +4084,17 @@ namespace FPS_n2 {
 				//身体
 				{
 					//身体
-					body_.DuplicateonAnime(&this->obj_body, &this->obj_body);
+					this->obj_body = body_.Duplicate();
+					this->obj_body.SetAnime(&(this->obj_body), this->obj_body);
 					//ラグドール
-					bodylag_.DuplicateonAnime(&this->obj_lag, &this->obj_body);
+					this->obj_lag = bodylag_.Duplicate();
+					this->obj_lag.SetAnime(&(this->obj_lag), this->obj_body);
+
 					this->Flag_calc_lag = true;
 					//身体コリジョン
-					col_.DuplicateonAnime(&this->obj_col, &this->obj_body);
+					this->obj_col = col_.Duplicate();
+					this->obj_col.SetAnime(&(this->obj_col), this->obj_body);
+
 					PLAYER_COMMON::SetupCollInfo();
 					Set_Body(this->obj_body, this->obj_lag, this->obj_col);
 				}

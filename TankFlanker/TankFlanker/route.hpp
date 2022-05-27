@@ -142,7 +142,7 @@ namespace FPS_n2 {
 									SetUseTextureToShader(0, PostPassParts->Get_MAIN_Screen().get());	//使用するテクスチャをセット
 									if (scenes_ptr->is_lens()) {
 										//レンズ描画
-										shader2D[0].Set_dispsize(DrawParts->disp_x, DrawParts->disp_y);
+										shader2D[0].Set_dispsize();
 										shader2D[0].Set_param(float(DrawParts->disp_x) / 2.f, float(DrawParts->disp_y) / 2.f, scenes_ptr->size_lens(), scenes_ptr->zoom_lens());
 										PostPassParts->Get_BUF_Screen().SetDraw_Screen();
 										{
@@ -153,7 +153,7 @@ namespace FPS_n2 {
 
 									if (scenes_ptr->is_bless()) {
 										//歪み描画
-										shader2D[1].Set_dispsize(DrawParts->disp_x, DrawParts->disp_y);
+										shader2D[1].Set_dispsize();
 										shader2D[1].Set_param(0, 0, scenes_ptr->ratio_bless(), (1.f - cos(scenes_ptr->time_bless())) / 2.f);
 										PostPassParts->Get_BUF_Screen().SetDraw_Screen();
 										{

@@ -187,10 +187,10 @@ namespace FPS_n2 {
 			}
 			void Ready_map(std::string dir) noexcept {
 				this->path = dir + "/";
-				MV1::Load(this->path + "model.mv1", &map, true);					//map
-				MV1::Load(this->path + "col.mv1", &map_col, true);					//mapコリジョン
-				MV1::Load(this->path + "col_tank.mv1", &mapcol_tank, true);			//mapコリジョン
-				MV1::Load(this->path + "sky/model.mv1", &sky, true);				//空
+				MV1::Load(this->path + "model.mv1", &map);							//map
+				MV1::Load(this->path + "col.mv1", &map_col);						//mapコリジョン
+				MV1::Load(this->path + "col_tank.mv1", &mapcol_tank);				//mapコリジョン
+				MV1::Load(this->path + "sky/model.mv1", &sky);						//空
 
 				SetUseASyncLoadFlag(TRUE);
 				minmap = GraphHandle::Load(this->path + "minimap.png");				/*minimap*/
