@@ -185,17 +185,17 @@ namespace FPS_n2 {
 					left.GetInput(key_.akey);
 					right.GetInput(key_.dkey);
 					if (left.trigger()) {
-						SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						--P_select;
 						changef = true;
 					}
 					if (right.trigger()) {
-						SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						++P_select;
 						changef = true;
 					}
 					if (key_.jamp) {
-						SE.Get((int)EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						//SE.Get((int)EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					}
 					ControlSel();
 					if (changef) {
@@ -578,14 +578,14 @@ namespace FPS_n2 {
 						{
 							change_per = 1.f;
 
-							SE.Get((int)EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							//SE.Get((int)EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
 
 							xrad_t = viewparts_buf.y() * 1000.f;
 							yrad_t = ((viewparts_buf.x() > 0.f) ? 90.f - viewparts_buf.z() * 100.f : -90.f + viewparts_buf.z() * 100.f);
 						}
 					}
 					//
-					easing_set(&mine_Gun->Get_gunanime_trigger()->per, float(shot.press()), 0.5f);
+					Easing(&mine_Gun->Get_gunanime_trigger()->per, float(shot.press()), 0.5f, EasingType::OutExpo);
 					if (shot.trigger()) {
 						if (mine_Gun->Set_Flag_gun()) {
 							//todo ディレイつける
@@ -630,13 +630,13 @@ namespace FPS_n2 {
 					range_tgt = std::hypotf(sin(deg2rad(yrad_t)) * 0.25f, cos(deg2rad(yrad_t)) * (std::abs((((std::abs(yrad_t) > 90) ? mine_Gun->Get_maz().z() : 0.5f) - viewparts.z())) + camera_main.near_ * 2.f));
 					range_t = (Rot.on() && !changef) ? std::clamp(range_t - float(GetMouseWheelRotVol()) * 0.1f, range_tgt, 5.f) : range_tgt;
 
-					easing_set(&camparts, VECTOR_ref::vget(cos(deg2rad(xrad_t)) * sin(deg2rad(yrad_t)), sin(deg2rad(xrad_t)), cos(deg2rad(xrad_t)) * cos(deg2rad(yrad_t))) * range_t, 0.8f);
+					Easing(&camparts, VECTOR_ref::vget(cos(deg2rad(xrad_t)) * sin(deg2rad(yrad_t)), sin(deg2rad(xrad_t)), cos(deg2rad(xrad_t)) * cos(deg2rad(yrad_t))) * range_t, 0.8f, EasingType::OutExpo);
 					camera_main.camvec = viewparts;
 					camera_main.campos = camera_main.camvec + camparts;
 					camera_main.camup = VECTOR_ref::up();
 				}
 				if (key_.jamp) {
-					SE.Get((int)EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					//SE.Get((int)EnumSound::Assemble).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					//セーブデータのクリーンアップ
 					{
 						bool sav = true;
@@ -678,7 +678,7 @@ namespace FPS_n2 {
 			}
 			void UI_Draw(void) noexcept  override {
 				UIparts->UI_Draw(GunPartses, parts_cat, Rot.on(), mine_Gun, parts_p, change_per);
-				easing_set(&change_per, 0.f, 0.5f);
+				Easing(&change_per, 0.f, 0.5f, EasingType::OutExpo);
 			}
 			void Shadow_Draw_NearFar(void) noexcept override {
 				mine_Gun->Draw_Gun_Common();

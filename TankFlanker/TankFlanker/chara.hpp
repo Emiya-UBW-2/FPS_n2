@@ -145,11 +145,11 @@ namespace FPS_n2 {
 
 				}
 				void Update(void) noexcept {
-					easing_set(&this->HP_r, float(this->HP), 0.95f);
-					easing_set(&this->got_damage_f, 0.f, 0.95f);
+					Easing(&this->HP_r, float(this->HP), 0.95f, EasingType::OutExpo);
+					Easing(&this->got_damage_f, 0.f, 0.95f, EasingType::OutExpo);
 
 					{
-						for (auto& d : this->got_damage_rad) { easing_set(&d.alpfa, 0.f, 0.975f); }
+						for (auto& d : this->got_damage_rad) { Easing(&d.alpfa, 0.f, 0.975f, EasingType::OutExpo); }
 						while (true) {
 							bool none = true;
 							for (auto& d : this->got_damage_rad) {
@@ -306,8 +306,8 @@ namespace FPS_n2 {
 					SetUseLighting(FALSE);
 					SetFogEnable(FALSE);
 					{
-						DXDraw::Capsule3D(start_pos, EndPos, 0.01f * laser_siz, GetColor(255, 0, 0), GetColor(255, 0, 0));
-						DXDraw::Sphere3D(EndPos, std::clamp(powf((EndPos - GetCameraPosition()).size() + 0.5f, 2) * 0.002f + 0.08f * laser_siz, 0.001f, 0.02f + 0.03f * laser_siz), GetColor(255, 0, 0), GetColor(255, 0, 0));
+						DrawCapsule_3D(start_pos, EndPos, 0.01f * laser_siz, GetColor(255, 0, 0), GetColor(255, 0, 0));
+						DrawSphere_3D(EndPos, std::clamp(powf((EndPos - GetCameraPosition()).size() + 0.5f, 2) * 0.002f + 0.08f * laser_siz, 0.001f, 0.02f + 0.03f * laser_siz), GetColor(255, 0, 0), GetColor(255, 0, 0));
 					}
 					SetUseLighting(TRUE);
 					SetFogEnable(TRUE);
@@ -383,7 +383,7 @@ namespace FPS_n2 {
 			virtual const bool Set_ref_col(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, float range) noexcept {
 				//すでに起動しているなら無視
 				if (this->nearhit) { return true; }
-				if (Segment_Point_MinLen(StartPos, EndPos, this->Get_pos()) <= range) {
+				if (GetMinLenSegmentToPoint(StartPos, EndPos, this->Get_pos()) <= range) {
 					//判定起動
 					this->nearhit = true;
 					for (int i = 0; i < this->obj_col.mesh_num(); i++) {
@@ -688,9 +688,9 @@ namespace FPS_n2 {
 			//腕アニメの指定関数
 			auto Func_Set_LEFT_pos_Anim(anime_arm* anim, anime_vector* next_ani, const VECTOR_ref& vec_gun, const VECTOR_ref& pos_gun_t, float zrad_gun) noexcept {
 				now_timeline = anim;
-				easing_set(&vec_gunani, vec_gun, 0.8f);
-				easing_set(&pos_gunani, pos_gun_t, 0.5f);
-				easing_set(&zrad_gunani, zrad_gun, 0.9f);
+				Easing(&vec_gunani, vec_gun, 0.8f, EasingType::OutExpo);
+				Easing(&pos_gunani, pos_gun_t, 0.5f, EasingType::OutExpo);
+				Easing(&zrad_gunani, zrad_gun, 0.9f, EasingType::OutExpo);
 				//更新
 				if (now_timeline->pers < now_timeline->total) {
 					next_ani_lefthand = next_ani;
@@ -812,7 +812,7 @@ namespace FPS_n2 {
 				//基準
 				auto vec_a1 = MATRIX_ref::Vtrans((this->LEFTHAND.move.pos - obj_body_t.frame(this->frame_s.LEFTarm1_f.first)).Norm(), m_inv.Inverse());//基準
 				auto vec_a1L1 = VECTOR_ref(VECTOR_ref::vget(0.f, -1.f, vec_a1.y() / -abs(vec_a1.z()))).Norm();//x=0とする
-				float cos_t = getcos_tri((obj_body_t.frame(this->frame_s.LEFThand_f.first) - obj_body_t.frame(this->frame_s.LEFTarm2_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTarm2_f.first) - obj_body_t.frame(this->frame_s.LEFTarm1_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTarm1_f.first) - this->LEFTHAND.move.pos).size());
+				float cos_t = GetCosFormula((obj_body_t.frame(this->frame_s.LEFThand_f.first) - obj_body_t.frame(this->frame_s.LEFTarm2_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTarm2_f.first) - obj_body_t.frame(this->frame_s.LEFTarm1_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTarm1_f.first) - this->LEFTHAND.move.pos).size());
 				auto vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 				//上腕
 				if ((DrawParts->use_vr && !isusewaist) || !DrawParts->use_vr) {
@@ -856,7 +856,7 @@ namespace FPS_n2 {
 				//基準
 				auto vec_a1 = MATRIX_ref::Vtrans((this->RIGHTHAND.move.pos - obj_body_t.frame(this->frame_s.RIGHTarm1_f.first)).Norm(), m_inv.Inverse());
 				auto vec_a1L1 = VECTOR_ref(VECTOR_ref::vget(-1.f * sin(deg2rad(30)), -1.f * cos(deg2rad(30)), vec_a1.y() / -abs(vec_a1.z()))).Norm();//x=0とする
-				float cos_t = getcos_tri((obj_body_t.frame(this->frame_s.RIGHThand_f.first) - obj_body_t.frame(this->frame_s.RIGHTarm2_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTarm2_f.first) - obj_body_t.frame(this->frame_s.RIGHTarm1_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTarm1_f.first) - this->RIGHTHAND.move.pos).size());
+				float cos_t = GetCosFormula((obj_body_t.frame(this->frame_s.RIGHThand_f.first) - obj_body_t.frame(this->frame_s.RIGHTarm2_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTarm2_f.first) - obj_body_t.frame(this->frame_s.RIGHTarm1_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTarm1_f.first) - this->RIGHTHAND.move.pos).size());
 				auto vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 				//上腕
 				if ((DrawParts->use_vr && !isusewaist) || !DrawParts->use_vr) {
@@ -902,7 +902,7 @@ namespace FPS_n2 {
 
 					auto vec_a1L1 = VECTOR_ref::front() * -1.f;
 
-					float cos_t = getcos_tri((obj_body_t.frame(this->frame_s.LEFTreg_f.first) - obj_body_t.frame(this->frame_s.LEFTfoot2_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTfoot2_f.first) - obj_body_t.frame(this->frame_s.LEFTfoot1_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTfoot1_f.first) - tgt_pt).size());
+					float cos_t = GetCosFormula((obj_body_t.frame(this->frame_s.LEFTreg_f.first) - obj_body_t.frame(this->frame_s.LEFTfoot2_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTfoot2_f.first) - obj_body_t.frame(this->frame_s.LEFTfoot1_f.first)).size(), (obj_body_t.frame(this->frame_s.LEFTfoot1_f.first) - tgt_pt).size());
 					auto vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 					//上腕
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.LEFTfoot1_f);
@@ -927,7 +927,7 @@ namespace FPS_n2 {
 
 					auto vec_a1L1 = VECTOR_ref::front() * -1.f;
 
-					float cos_t = getcos_tri((obj_body_t.frame(this->frame_s.RIGHTreg_f.first) - obj_body_t.frame(this->frame_s.RIGHTfoot2_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTfoot2_f.first) - obj_body_t.frame(this->frame_s.RIGHTfoot1_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTfoot1_f.first) - tgt_pt).size());
+					float cos_t = GetCosFormula((obj_body_t.frame(this->frame_s.RIGHTreg_f.first) - obj_body_t.frame(this->frame_s.RIGHTfoot2_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTfoot2_f.first) - obj_body_t.frame(this->frame_s.RIGHTfoot1_f.first)).size(), (obj_body_t.frame(this->frame_s.RIGHTfoot1_f.first) - tgt_pt).size());
 					auto vec_t = vec_a1 * cos_t + vec_a1L1 * std::sqrtf(1.f - cos_t * cos_t);
 					//上腕
 					BodyFrameSetMatrix(obj_body_t, this->frame_s.RIGHTfoot1_f);
@@ -976,19 +976,19 @@ namespace FPS_n2 {
 				}
 
 				//しゃがみ
-				easing_set(&this->anime_jump->per, ani_jump, ani_per);
+				Easing(&this->anime_jump->per, ani_jump, ani_per, EasingType::OutExpo);
 				//しゃがみ
-				easing_set(&this->anime_sit->per, ani_sit, ani_per);
+				Easing(&this->anime_sit->per, ani_sit, ani_per, EasingType::OutExpo);
 				//立ち
-				easing_set(&this->anime_wake->per, ani_wake, ani_per);
+				Easing(&this->anime_wake->per, ani_wake, ani_per, EasingType::OutExpo);
 				//走り
-				easing_set(&this->anime_run->per, ani_run, ani_per);
+				Easing(&this->anime_run->per, ani_run, ani_per, EasingType::OutExpo);
 				this->anime_run->Update(true, 1.f);
 				//歩き
-				easing_set(&this->anime_walk->per, ani_walk, ani_per);
+				Easing(&this->anime_walk->per, ani_walk, ani_per, EasingType::OutExpo);
 				this->anime_walk->Update(true, 1.f);
 				//しゃがみ歩き
-				easing_set(&this->anime_swalk->per, ani_swalk, ani_per);
+				Easing(&this->anime_swalk->per, ani_swalk, ani_per, EasingType::OutExpo);
 				this->anime_swalk->Update(true, 1.f);
 			}
 			//アニメによる指操作
@@ -999,17 +999,17 @@ namespace FPS_n2 {
 			}
 			//リセット
 			void Anim_Reset(void) noexcept {
-				easing_set(&this->anime_swalk->per, 0.f, 0.9f);
-				easing_set(&this->anime_walk->per, 0.f, 0.9f);
-				easing_set(&this->anime_run->per, 0.f, 0.9f);
+				Easing(&this->anime_swalk->per, 0.f, 0.9f, EasingType::OutExpo);
+				Easing(&this->anime_walk->per, 0.f, 0.9f, EasingType::OutExpo);
+				Easing(&this->anime_run->per, 0.f, 0.9f, EasingType::OutExpo);
 
-				easing_set(&this->anime_jump->per, 0.f, 0.9f);
-				easing_set(&this->anime_sit->per, 0.f, 0.9f);
-				easing_set(&this->anime_wake->per, 0.f, 0.9f);
+				Easing(&this->anime_jump->per, 0.f, 0.9f, EasingType::OutExpo);
+				Easing(&this->anime_sit->per, 0.f, 0.9f, EasingType::OutExpo);
+				Easing(&this->anime_wake->per, 0.f, 0.9f, EasingType::OutExpo);
 
-				easing_set(&this->anime_hand_nomal->per, 0.f, 0.9f);
-				easing_set(&this->anime_hand_trigger->per, 0.f, 0.9f);
-				easing_set(&this->anime_hand_trigger_pull->per, 0.f, 0.9f);
+				Easing(&this->anime_hand_nomal->per, 0.f, 0.9f, EasingType::OutExpo);
+				Easing(&this->anime_hand_trigger->per, 0.f, 0.9f, EasingType::OutExpo);
+				Easing(&this->anime_hand_trigger_pull->per, 0.f, 0.9f, EasingType::OutExpo);
 			}
 			void Frame_Reset(const MV1& obj_body_t) noexcept {
 				obj_body_t.frame_Reset(this->frame_s.bodyg_f.first);
@@ -1051,7 +1051,7 @@ namespace FPS_n2 {
 			void Penetration(const std::pair<int, float>& a, const std::shared_ptr<PLAYER_VEHICLE>& tgt, const  VECTOR_ref& position, const  VECTOR_ref& normal) noexcept {
 				//貫通
 				if (this->pene > a.second * (1.0f / std::abs(this->move.vec.Norm().dot(normal)))) {
-					SE.Get((int)EnumSound::Tank_Damage).Play_3D(0, position, 50.f, 64);
+					//SE.Get((int)EnumSound::Tank_Damage).Play_3D(0, position, 50.f, 64);
 					if ((*MINE_v)->Damage_Calc(a.first, this->spec->Get_damage(), tgt)) {
 						//撃破時エフェクト
 					}
@@ -1063,7 +1063,7 @@ namespace FPS_n2 {
 				//はじく
 				else {
 					//this->pene *= 0.8f;
-					SE.Get((int)EnumSound::Tank_Ricochet).Play_3D(0, position, 50.f, 64);
+					//SE.Get((int)EnumSound::Tank_Ricochet).Play_3D(0, position, 50.f, 64);
 					this->pene_cnt++;
 				}
 				//はじく処理
@@ -1244,11 +1244,11 @@ namespace FPS_n2 {
 					}
 				}
 				if (this->Hit_cnt > 0.f) {
-					easing_set(&this->Hit_alpha, 2.f, 0.95f);
+					Easing(&this->Hit_alpha, 2.f, 0.95f, EasingType::OutExpo);
 					this->Hit_cnt -= 1.f / FPS;
 				}
 				else {
-					easing_set(&this->Hit_alpha, 0.f, 0.8f);
+					Easing(&this->Hit_alpha, 0.f, 0.8f, EasingType::OutExpo);
 					this->Hit_cnt = 0.f;
 				}
 			}
@@ -1264,7 +1264,7 @@ namespace FPS_n2 {
 							this->First_Flag = false;
 						}
 					}
-					DXDraw::Capsule3D(this->move.pos, repos, ((this->spec->Get_caliber() - 0.00762f) * 0.1f + 0.00762f), GetColor(255, 255, 172), GetColor(255, 255, 255));
+					DrawCapsule_3D(this->move.pos, repos, ((this->spec->Get_caliber() - 0.00762f) * 0.1f + 0.00762f), GetColor(255, 255, 172), GetColor(255, 255, 255));
 					if (!this->Flag) {
 						this->DrawFlag = false;
 					}
@@ -1525,9 +1525,9 @@ namespace FPS_n2 {
 								VECTOR_ref map_nomal = mapcol.Normal;
 								this->move.SetPos(VECTOR_ref(mapcol.HitPosition) + (VECTOR_ref::up() * 0.008f));
 								this->move.vec += map_nomal * (map_nomal.dot(this->move.vec * -1.f) * 1.25f);
-								easing_set(&this->move.vec, VECTOR_ref::zero(), 0.95f);
+								Easing(&this->move.vec, VECTOR_ref::zero(), 0.95f, EasingType::OutExpo);
 								if (!this->se_use) {
-									SE.Get((int)EnumSound::Cate_Down).Play_3D(0, this->move.pos, 2.f);
+									//SE.Get((int)EnumSound::Cate_Down).Play_3D(0, this->move.pos, 2.f);
 									this->se_use = true;
 								}
 								this->move.mat *= MATRIX_ref::RotVec2(this->move.mat.yvec(), map_nomal);
@@ -2012,8 +2012,8 @@ namespace FPS_n2 {
 			}
 			auto& Set_mag_in(void) noexcept { return this->gun_stat_now->Get_magazine_in(); }																//刺さっているマガジンのMV1
 			auto& Set_ammoSpec(void) noexcept { return this->base.thisparts->Set_Ammo(0); }
-			void Set_gunanime_trigger(float per) noexcept { easing_set(&this->gunanime_trigger->per, per, 0.5f); }													//
-			void Set_gunanime_magcatch(float per) noexcept { easing_set(&this->gunanime_magcatch->per, per, 0.5f); }													//
+			void Set_gunanime_trigger(float per) noexcept { Easing(&this->gunanime_trigger->per, per, 0.5f, EasingType::OutExpo); }													//
+			void Set_gunanime_magcatch(float per) noexcept { Easing(&this->gunanime_magcatch->per, per, 0.5f, EasingType::OutExpo); }													//
 			void Set_gunanime_shot(float per) noexcept { this->gunanime_shot->per = per; }																			//
 			void ReSet_gunanime_Changesel(void) const noexcept { gunanime_Changesel->Reset(); }																//
 			void Set_move_gun(const moves& move_t) noexcept { this->gun_m = move_t; }																		//銃座標指定
@@ -2435,17 +2435,17 @@ namespace FPS_n2 {
 					this->gunanime_first->per = 1.f;
 					this->gun_stat_now->chamber_in();//チャンバーに装填
 				}
-				SE.Get((int)EnumSound::MAG_Set).Play_3D(Audio.use_magset, gun_m.pos, 15.f);
+				//SE.Get((int)EnumSound::MAG_Set).Play_3D(Audio.use_magset, gun_m.pos, 15.f);
 			}
 			//
 			void Calc_blur(void) noexcept {
 				//手振れ
-				easing_set(&this->blur_vec, this->blur_vec_res, 0.975f);
+				Easing(&this->blur_vec, this->blur_vec_res, 0.975f, EasingType::OutExpo);
 				//this->blur_vec = VECTOR_ref::front();
-				easing_set(&this->blur_vec_res, VECTOR_ref::front(), 0.95f);
+				Easing(&this->blur_vec_res, VECTOR_ref::front(), 0.95f, EasingType::OutExpo);
 				//複座
-				easing_set(&this->recoil_vec, this->recoil_vec_res, 0.6f);
-				easing_set(&this->recoil_vec_res, VECTOR_ref::front(), 0.95f);
+				Easing(&this->recoil_vec, this->recoil_vec_res, 0.6f, EasingType::OutExpo);
+				Easing(&this->recoil_vec_res, VECTOR_ref::front(), 0.95f, EasingType::OutExpo);
 				//リコイルアニメーション
 				if (this->Flag_gun) {
 					Set_shot_anime(1.f, this->in_chamber);
@@ -2492,11 +2492,11 @@ namespace FPS_n2 {
 						break;
 					}
 
-					easing_set(&this->blur_vec_res,
+					Easing(&this->blur_vec_res,
 						MATRIX_ref::Vtrans(this->blur_vec_res,
 							MATRIX_ref::RotY(deg2rad(float((int32_t)(xdn * 100.f) + GetRand((int32_t)((xup - xdn) * 100.f))) / (100.f * per_blur))) *
 							MATRIX_ref::RotX(deg2rad(float((int32_t)(ydn * 100.f) + GetRand((int32_t)((yup - ydn) * 100.f))) / (100.f * per_blur))))
-						, 0.8f);
+						, 0.8f, EasingType::OutExpo);
 				}
 				//
 				this->trigger.GetInput(this->gunanime_trigger->per >= 0.5f);
@@ -2543,7 +2543,7 @@ namespace FPS_n2 {
 			void Calc_Gunanime(int Slide_Audio) {
 				if (this->gunanime_first->per == 1.f) {
 					if ((this->gunanime_first->time > this->gunanime_first->alltime / 3.f) && this->slide_sound_f) {
-						SE.Get((int)EnumSound::Slide).Play_3D(Slide_Audio, this->gun_m.pos, 15.f);
+						//SE.Get((int)EnumSound::Slide).Play_3D(Slide_Audio, this->gun_m.pos, 15.f);
 						this->slide_sound_f = false;
 					}
 					this->gunanime_first->Update(false, 0.35f);
@@ -2571,7 +2571,7 @@ namespace FPS_n2 {
 					auto ColResGround = MAPPTs->map_col_line(gun_m.pos + VECTOR_ref::up(), gun_m.pos - (VECTOR_ref::up() * 0.05f));
 					if (ColResGround.HitFlag == TRUE) {
 						this->gun_m.HitGround(ColResGround, 0.05f);
-						easing_set(&this->gun_m.vec, VECTOR_ref::zero(), 0.8f);
+						Easing(&this->gun_m.vec, VECTOR_ref::zero(), 0.8f, EasingType::OutExpo);
 					}
 					Put_gun();
 				}
@@ -2830,7 +2830,7 @@ namespace FPS_n2 {
 						VECTOR_ref endpos = MAPPTs_t->Get_waypoint()[this->wayp_pre[i + 1]];
 						startpos.y(3.f);
 						endpos.y(3.f);
-						DXDraw::Capsule3D(startpos, endpos, 1.f, GetColor(0, 255, 0), GetColor(0, 255, 0));
+						DrawCapsule_3D(startpos, endpos, 1.f, GetColor(0, 255, 0), GetColor(0, 255, 0));
 					}
 				}
 			};
@@ -2890,10 +2890,10 @@ namespace FPS_n2 {
 				}
 				//
 				if ((*MINE_c)->Damage_Calc(sel, damage, tgt)) {
-					VOICE.Get((int)EnumSound::Voice_Death).Play_3D(0, tgt->Get_pos(), 10.f);
+					//VOICE.Get((int)EnumSound::Voice_Death).Play_3D(0, tgt->Get_pos(), 10.f);
 				}
 				else {
-					VOICE.Get((int)EnumSound::Voice_Damage).Play_3D(0, tgt->Get_pos(), 10.f);
+					//VOICE.Get((int)EnumSound::Voice_Damage).Play_3D(0, tgt->Get_pos(), 10.f);
 				}
 				return;
 			}
@@ -3241,7 +3241,7 @@ namespace FPS_n2 {
 			void magrelease_t(size_t test_) noexcept {
 				if (Set_Gun_().Get_gun_stat_now()->hav_mag()) {
 					//音
-					SE.Get((int)EnumSound::MAG_Down).Play_3D(Set_Gun_().Audio.use_magdown, Set_Gun_().Get_move_gun().pos, 15.f, 255);
+					//SE.Get((int)EnumSound::MAG_Down).Play_3D(Set_Gun_().Audio.use_magdown, Set_Gun_().Get_move_gun().pos, 15.f, 255);
 					//弾数
 					if (test_ == 0) {//全排出
 						while (true) {
@@ -3284,7 +3284,7 @@ namespace FPS_n2 {
 					else {
 						Pos = VECTOR_ref::vget(-0.15f, -0.07f + Head_bobbing(this->anime_walk) * 0.002f, -0.15f);
 					}
-					easing_set(&this->gunpos, Set_Gun_().Get_sightVec() + Pos, std::min(Set_Gun_().Get_Per_Sub(0.75f, 0.9f), 0.935f));
+					Easing(&this->gunpos, Set_Gun_().Get_sightVec() + Pos, std::min(Set_Gun_().Get_Per_Sub(0.75f, 0.9f), 0.935f), EasingType::OutExpo);
 				}
 				//視点を一時取得(getpos対処)
 				Set_HMDpos();
@@ -3324,7 +3324,7 @@ namespace FPS_n2 {
 							radd += 2;
 							if (radd > 60) { break; }
 						}
-						easing_set(&this->rad_gun, float(radd), 0.9f);
+						Easing(&this->rad_gun, float(radd), 0.9f, EasingType::OutExpo);
 						tmp.pos = Set_Gun_().Get_move_gun().pos;
 						tmp.mat = MATRIX_ref::RotX(deg2rad(this->rad_gun)) * mat_gun_old;
 						Set_Gun_().Set_move_gun(tmp);//ひっこめ
@@ -3350,14 +3350,14 @@ namespace FPS_n2 {
 
 							if (DrawParts->tracker_num.size() > 0) {
 								auto p = BodyFrameMatrix(this->obj_body, this->frame_s.bodyb_f);
-								easing_set(&this->add_vec_buf, (p.zvec() * -ptr_->touch.y() + p.xvec() * -ptr_->touch.x()) * this->speed_base, 0.95f);
+								Easing(&this->add_vec_buf, (p.zvec() * -ptr_->touch.y() + p.xvec() * -ptr_->touch.x()) * this->speed_base, 0.95f, EasingType::OutExpo);
 							}
 							else {
-								easing_set(&this->add_vec_buf, (this->GetHMDmat().zvec() * ptr_->touch.y() + this->GetHMDmat().xvec() * ptr_->touch.x()) * this->speed_base, 0.95f);
+								Easing(&this->add_vec_buf, (this->GetHMDmat().zvec() * ptr_->touch.y() + this->GetHMDmat().xvec() * ptr_->touch.x()) * this->speed_base, 0.95f, EasingType::OutExpo);
 							}
 						}
 						else {
-							easing_set(&this->add_vec_buf, VECTOR_ref::zero(), 0.95f);
+							Easing(&this->add_vec_buf, VECTOR_ref::zero(), 0.95f, EasingType::OutExpo);
 						}
 					}
 				}
@@ -3734,7 +3734,7 @@ namespace FPS_n2 {
 				if (cannotmove || !alive) {
 					this->key_.ReSet_();
 					//移動
-					easing_set(&this->add_vec_buf, VECTOR_ref::zero(), 0.95f);
+					Easing(&this->add_vec_buf, VECTOR_ref::zero(), 0.95f, EasingType::OutExpo);
 				}
 				if (DrawParts->use_vr) {
 					//HMD_mat+視点取得
@@ -3748,17 +3748,17 @@ namespace FPS_n2 {
 				this->key_.rule_();
 				const bool& alive = this->Damage.Get_alive();
 				if (alive) {
-					easing_set(&this->body_ztrun, -deg2rad(x_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f);
-					easing_set(&this->body_xtrun, -deg2rad(y_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f);
+					Easing(&this->body_ztrun, -deg2rad(x_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f, EasingType::OutExpo);
+					Easing(&this->body_xtrun, -deg2rad(y_m * 25 / 120) * FPS / 90.f * 1.f, 0.9f, EasingType::OutExpo);
 					//z軸回転(リーン)
 					if (this->key_.qkey) {
-						easing_set(&this->body_zrad, deg2rad(-25), 0.9f);
+						Easing(&this->body_zrad, deg2rad(-25), 0.9f, EasingType::OutExpo);
 					}
 					else if (this->key_.ekey) {
-						easing_set(&this->body_zrad, deg2rad(25), 0.9f);
+						Easing(&this->body_zrad, deg2rad(25), 0.9f, EasingType::OutExpo);
 					}
 					else {
-						easing_set(&this->body_zrad, this->body_ztrun, 0.8f);
+						Easing(&this->body_zrad, this->body_ztrun, 0.8f, EasingType::OutExpo);
 					}
 					this->HMD.mat_notlean = MATRIX_ref::RotX(-Get_xradP()) * this->HMD.mat_notlean;													//x軸回転リセット
 					this->HMD.mat_notlean *= MATRIX_ref::RotY(deg2rad(x_m) * 0.1f);																	//y軸回転(旋回)
@@ -3967,20 +3967,20 @@ namespace FPS_n2 {
 							if (this->foot_timer == 0.f) {
 								if (this->isRunning()) {
 									if (abs(Head_bobbing(this->anime_run)) >= 0.8f) {
-										SE.Get((int)EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f, 255);
+										//SE.Get((int)EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f, 255);
 										this->foot_timer = 0.2f;
 									}
 								}
 								else {
 									if (!this->isSquat()) {
 										if (abs(Head_bobbing(this->anime_walk)) >= 0.8f) {
-											SE.Get((int)EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 5.f, 128);
+											//SE.Get((int)EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 5.f, 128);
 											this->foot_timer = 0.2f;
 										}
 									}
 									else {
 										if (abs(Head_bobbing(this->anime_swalk)) >= 0.8f) {
-											SE.Get((int)EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 1.5f, 64);
+											//SE.Get((int)EnumSound::Foot_Sound).Play_3D(0, Set_Gun_().Get_move_gun().pos, 1.5f, 64);
 											this->foot_timer = 0.2f;
 										}
 									}
@@ -4032,7 +4032,7 @@ namespace FPS_n2 {
 										ratio_t = 1.f;
 									}
 								}
-								easing_set(&this->ratio_move, ratio_t, 0.95f);
+								Easing(&this->ratio_move, ratio_t, 0.95f, EasingType::OutExpo);
 							}
 							//
 							move_Leg_Anim();
@@ -4201,7 +4201,7 @@ namespace FPS_n2 {
 			const bool Set_ref_col(const VECTOR_ref& StartPos, const VECTOR_ref& EndPos, float range) noexcept override {
 				//すでに起動しているなら無視
 				if (this->nearhit) { return true; }
-				if (Segment_Point_MinLen(StartPos, EndPos, this->Get_pos()) <= range) {
+				if (GetMinLenSegmentToPoint(StartPos, EndPos, this->Get_pos()) <= range) {
 					//判定起動
 					this->nearhit = true;
 					HumanControl::Frame_Copy_Col(this->obj_body, &this->obj_col);
@@ -4269,13 +4269,13 @@ namespace FPS_n2 {
 							if (this->isRunning()) {
 								xv_t = xv_t.Norm() * 0.5f;
 							}
-							easing_set(&this->add_vec_buf,
+							Easing(&this->add_vec_buf,
 								VECTOR_ref(VECTOR_ref::zero())
 								+ (this->key_.wkey ? (zv_t * -this->speed_base) : VECTOR_ref::zero())
 								+ (this->key_.skey ? (zv_t * this->speed_base) : VECTOR_ref::zero())
 								+ (this->key_.akey ? (xv_t * this->speed_base) : VECTOR_ref::zero())
 								+ (this->key_.dkey ? (xv_t * -this->speed_base) : VECTOR_ref::zero())
-								, 0.95f);
+								, 0.95f, EasingType::OutExpo);
 							this->mat_body = this->GetHMDmat();
 						}
 						//ジャンプ
@@ -4287,7 +4287,7 @@ namespace FPS_n2 {
 								this->move.vec = this->add_vec_buf;
 							}
 							else {
-								easing_set(&this->move.vec, VECTOR_ref::zero(), 0.995f);
+								Easing(&this->move.vec, VECTOR_ref::zero(), 0.995f, EasingType::OutExpo);
 							}
 						}
 						//操作
@@ -4382,12 +4382,12 @@ namespace FPS_n2 {
 							if (!this->sort_f) {
 								this->sort_f = true;
 								this->sorting_timer = 1.f;
-								SE.Get((int)EnumSound::Sort_MAG).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f);
+								//SE.Get((int)EnumSound::Sort_MAG).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f);
 								Set_Gun_().Get_gun_stat_now()->sort_magazine();
 							}
 							else {
 								this->sorting_timer = 3.f;
-								SE.Get((int)EnumSound::Cate_Load).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f);
+								//SE.Get((int)EnumSound::Cate_Load).Play_3D(0, Set_Gun_().Get_move_gun().pos, 15.f);
 								Set_Gun_().Get_gun_stat_now()->load_magazine();
 								//マガジン輩出(空)
 								if (Set_Gun_().Get_mag_in().back().Get_Cnt() == 0) {
@@ -4438,7 +4438,7 @@ namespace FPS_n2 {
 							//エフェクト
 							calc_shot_effect();
 							//サウンド
-							SE.Get((int)EnumSound::Shot).Play_3D(Set_Gun_().Audio.use_shot, Set_Gun_().Get_move_gun().pos, 200.f, (Set_Gun_().Get_mazzuletype() == 1) ? 192 : 255);
+							//SE.Get((int)EnumSound::Shot).Play_3D(Set_Gun_().Audio.use_shot, Set_Gun_().Get_move_gun().pos, 200.f, (Set_Gun_().Get_mazzuletype() == 1) ? 192 : 255);
 						}
 						else if (Get_Gun_().Get_Trigger()) {
 							//確認
@@ -4466,11 +4466,11 @@ namespace FPS_n2 {
 						//息
 						if (this->breath_timer == 0.f) {
 							if (this->isRunning()) {
-								VOICE.Get((int)EnumSound::Voice_Breath_Run).Play_3D(0, this->Get_pos(), 15.f, 163);
+								//VOICE.Get((int)EnumSound::Voice_Breath_Run).Play_3D(0, this->Get_pos(), 15.f, 163);
 								this->breath_timer = 0.5f;
 							}
 							else {
-								VOICE.Get((int)EnumSound::Voice_Breath).Play_3D(0, this->Get_pos(), 10.f, 128);
+								//VOICE.Get((int)EnumSound::Voice_Breath).Play_3D(0, this->Get_pos(), 10.f, 128);
 								this->breath_timer = 1.2f;
 							}
 						}
@@ -4532,22 +4532,22 @@ namespace FPS_n2 {
 					camera_main.near_ = 0.1f;
 					if (this->is_ADS()) {
 						
-						easing_set(&camera_main.fov, deg2rad(25), std::min(Set_Gun_().Get_Per_Sub(0.8f, 0.9f), 0.925f));
+						Easing(&camera_main.fov, deg2rad(25), std::min(Set_Gun_().Get_Per_Sub(0.8f, 0.9f), 0.925f), EasingType::OutExpo);
 					}
 					else {
-						easing_set(&camera_main.fov, fov_base, 0.9f);
+						Easing(&camera_main.fov, fov_base, 0.9f, EasingType::OutExpo);
 					}
 				}
 				else {
 					//デスカメラ
 					if (this->scores.death_id < ALL_c->size()) {
-						easing_set(&camera_main.camvec, (*ALL_c)[this->scores.death_id]->Get_pos(), 0.9f);
+						Easing(&camera_main.camvec, (*ALL_c)[this->scores.death_id]->Get_pos(), 0.9f, EasingType::OutExpo);
 					}
 					auto rad = atan2f((camera_main.camvec - camera_main.campos).x(), (camera_main.camvec - camera_main.campos).z());
-					easing_set(&camera_main.campos, this->Get_Pos_Map() + VECTOR_ref::vget(-5.f * sin(rad), 2.f, -5.f * cos(rad)), 0.9f);
+					Easing(&camera_main.campos, this->Get_Pos_Map() + VECTOR_ref::vget(-5.f * sin(rad), 2.f, -5.f * cos(rad)), 0.9f, EasingType::OutExpo);
 					camera_main.camup = VECTOR_ref::up();
 					MAPPTs->map_col_nearest(camera_main.camvec, &camera_main.campos);
-					easing_set(&camera_main.fov, fov_base, 0.9f);
+					Easing(&camera_main.fov, fov_base, 0.9f, EasingType::OutExpo);
 				}
 			}
 			void Setcamera(cam_info& camera_main, const float fov_base) noexcept {
@@ -4623,7 +4623,7 @@ namespace FPS_n2 {
 					if (this->reload_se_f && this->loadcnt < 1.f) {
 						this->reload_se_f = false;
 						//サウンド
-						SE.Get((int)EnumSound::Tank_Reload).Play_3D((*MINE_v)->use_veh->Reload_ID, (*MINE_v)->Get_pos(), 3.f, 128);
+						//SE.Get((int)EnumSound::Tank_Reload).Play_3D((*MINE_v)->use_veh->Reload_ID, (*MINE_v)->Get_pos(), 3.f, 128);
 					}
 					this->loadcnt = std::max(this->loadcnt - 1.f / FPS, 0.f);
 					this->fired = std::max(this->fired - 1.f / FPS, 0.f);
@@ -4641,8 +4641,8 @@ namespace FPS_n2 {
 				//銃反動
 				void FireReaction(MATRIX_ref* mat_t) noexcept {
 					auto firereact_t = deg2rad(-this->firereact * this->Spec[0].Get_caliber() * 50.f);
-					easing_set(&this->xrad_shot, firereact_t * cos(this->yrad), 0.85f);
-					easing_set(&this->zrad_shot, firereact_t * sin(this->yrad), 0.85f);
+					Easing(&this->xrad_shot, firereact_t * cos(this->yrad), 0.85f, EasingType::OutExpo);
+					Easing(&this->zrad_shot, firereact_t * sin(this->yrad), 0.85f, EasingType::OutExpo);
 					(*mat_t) *= MATRIX_ref::RotAxis(mat_t->xvec(), -this->xrad_shot) * MATRIX_ref::RotAxis(mat_t->zvec(), this->zrad_shot);
 				}
 			public:
@@ -4687,7 +4687,7 @@ namespace FPS_n2 {
 						//エフェクト
 						calc_shot_effect(pos_t);
 						//サウンド
-						SE.Get((int)EnumSound::Tank_Shot).Play_3D(this->gun_info.Get_sound(), (*MINE_v)->Get_pos(), 250.f, 128);
+						//SE.Get((int)EnumSound::Tank_Shot).Play_3D(this->gun_info.Get_sound(), (*MINE_v)->Get_pos(), 250.f, 128);
 					}
 					//弾の処理
 					BulletControl_Common::Update_bullet();
@@ -4871,7 +4871,7 @@ namespace FPS_n2 {
 						auto startpos = this->obj_body.frame(f.frame.first);
 						auto ColResGround = MAPPTs->map_col_line(startpos + y_vec * ((-f.frame.second.y()) + 2.f), startpos + y_vec * ((-f.frame.second.y()) - 0.3f));
 
-						easing_set(&f.will_y, (ColResGround.HitFlag == TRUE) ? (ColResGround.HitPosition.y + y_vec.y() * f.frame.second.y() - startpos.y()) : -0.3f, 0.9f);
+						Easing(&f.will_y, (ColResGround.HitFlag == TRUE) ? (ColResGround.HitPosition.y + y_vec.y() * f.frame.second.y() - startpos.y()) : -0.3f, 0.9f, EasingType::OutExpo);
 						tmp = MATRIX_ref::Mtrans(VECTOR_ref::up() * f.will_y);
 
 						BodyFrameSetMatrix(this->obj_body, f.frame, MATRIX_ref::RotX((f.frame.second.x() >= 0) ? this->wheel_Left : this->wheel_Right) * tmp);
@@ -4880,10 +4880,10 @@ namespace FPS_n2 {
 						BodyFrameSetMatrix(this->obj_body, f, MATRIX_ref::RotX((f.second.x() >= 0) ? this->wheel_Left : this->wheel_Right));
 					}
 				}
-				easing_set(
+				Easing(
 					&wheel_normal,
 					((this->obj_body.frame(this->use_veh->Get_square(0)) - this->obj_body.frame(this->use_veh->Get_square(3))).cross(this->obj_body.frame(this->use_veh->Get_square(1)) - this->obj_body.frame(this->use_veh->Get_square(2)))).Norm(),
-					0.95f);
+					0.95f, EasingType::OutExpo);
 				//履帯
 				{
 					for (auto& g : this->b2downsideframe) {
@@ -4942,7 +4942,7 @@ namespace FPS_n2 {
 						}
 						//*/
 						if (tatch) {
-							easing_set(&yp, (hight_t / cnt_t), 0.9f);
+							Easing(&yp, (hight_t / cnt_t), 0.9f, EasingType::OutExpo);
 						}
 						move.pos.y(yp);
 						//地面or水面にいるかどうか
@@ -4975,11 +4975,11 @@ namespace FPS_n2 {
 							{
 								const auto xradold = this->xradadd;
 								this->xradadd = deg2rad(-((this->speed) / (60.f / FPS)) / (0.1f / 3.6f) * 50.f);
-								easing_set(&this->xrad, std::clamp(this->xradadd - xradold, deg2rad(-30.f), deg2rad(30.f)), 0.995f);
+								Easing(&this->xrad, std::clamp(this->xradadd - xradold, deg2rad(-30.f), deg2rad(30.f)), 0.995f, EasingType::OutExpo);
 
 								auto zradold = this->zradadd;
 								this->zradadd = deg2rad(-this->yradadd / (deg2rad(5.f) / FPS) * 30.f);
-								easing_set(&this->zrad, std::clamp(this->zradadd - zradold, deg2rad(-15.f), deg2rad(15.f)), 0.995f);
+								Easing(&this->zrad, std::clamp(this->zradadd - zradold, deg2rad(-15.f), deg2rad(15.f)), 0.995f, EasingType::OutExpo);
 
 								move.mat *= MATRIX_ref::RotAxis(move.mat.xvec(), -this->xrad) * MATRIX_ref::RotAxis(move.mat.zvec(), this->zrad);
 							}
@@ -5019,7 +5019,7 @@ namespace FPS_n2 {
 				move.mat *= MATRIX_ref::RotY(-this->b2mine.Rad() - this->body_yrad);
 				move.pos = VECTOR_ref::vget(this->b2mine.Pos().x, move.pos.y(), this->b2mine.Pos().y);
 				float spdrec = this->spd_buf;
-				easing_set(&this->spd_buf, this->b2mine.Speed() * ((this->spd_buf > 0) ? 1.f : -1.f), 0.99f);
+				Easing(&this->spd_buf, this->b2mine.Speed() * ((this->spd_buf > 0) ? 1.f : -1.f), 0.99f, EasingType::OutExpo);
 				this->speed = this->spd_buf - spdrec;
 				//move.mat *= MATRIX_ref::RotAxis(move.mat.yvec(),this->yradadd);
 
@@ -5074,7 +5074,7 @@ namespace FPS_n2 {
 				for (auto& g : this->b2downsideframe) {
 					for (auto& t : g) {
 						if (t.colres.HitFlag == TRUE) {
-							easing_set(&t.gndsmksize, 0.1f + std::abs(this->speed - this->spd_rec) / ((0.01f / 3.6f) / FPS) * 1.f, 0.95f);
+							Easing(&t.gndsmksize, 0.1f + std::abs(this->speed - this->spd_rec) / ((0.01f / 3.6f) / FPS) * 1.f, 0.95f, EasingType::OutExpo);
 						}
 						else {
 							t.gndsmksize = 0.1f;
@@ -5223,8 +5223,8 @@ namespace FPS_n2 {
 								y_m = deg2rad(-y_m) * 0.1f;
 							}
 							if (is_ADS()) {
-								easing_set(&view_yrad, x_m, 0.1f);
-								easing_set(&view_xrad, y_m, 0.1f);
+								Easing(&view_yrad, x_m, 0.1f, EasingType::OutExpo);
+								Easing(&view_xrad, y_m, 0.1f, EasingType::OutExpo);
 								float limit = this->use_veh->Get_turret_rad_limit() / FPS;
 								lookvec = MATRIX_ref::RotX(-this->Get_xradP()) * lookvec;
 								lookvec *= MATRIX_ref::RotY(std::clamp(view_yrad, -limit, limit));										//y軸回転(旋回)
@@ -5250,8 +5250,8 @@ namespace FPS_n2 {
 									view_xrad = (atan2f(-vec_z.y(), z_hyp) - atan2f(vec_a.y(), a_hyp)) / 5.f;
 								}
 								else {
-									easing_set(&view_yrad, x_m, 0.1f);
-									easing_set(&view_xrad, y_m, 0.1f);
+									Easing(&view_yrad, x_m, 0.1f, EasingType::OutExpo);
+									Easing(&view_xrad, y_m, 0.1f, EasingType::OutExpo);
 									float limit = this->use_veh->Get_turret_rad_limit() / FPS;
 									lookvec = MATRIX_ref::RotX(-this->Get_xradP()) * lookvec;
 									lookvec *= MATRIX_ref::RotY(std::clamp(view_yrad, -limit, limit));										//y軸回転(旋回)
@@ -5287,7 +5287,7 @@ namespace FPS_n2 {
 				}
 				//エンジン音
 				if (this->engine_time == 0.f) {
-					SE.Get((int)EnumSound::Tank_engine).Play_3D(0, this->Get_pos(), 50.f, 64);
+					//SE.Get((int)EnumSound::Tank_engine).Play_3D(0, this->Get_pos(), 50.f, 64);
 					this->engine_time = 1.f;
 				}
 				else {
@@ -5316,21 +5316,21 @@ namespace FPS_n2 {
 						range_r = range;
 					}
 					else {
-						easing_set(&camera_main.fov, fov_base / ratio, 0.9f);
+						Easing(&camera_main.fov, fov_base / ratio, 0.9f, EasingType::OutExpo);
 					}
 				}
 				else {
 					ratio = 2.0f;
 					range = std::clamp(range - float(GetMouseWheelRotVol()) * range_change, 0.f, 9.f);
 
-					easing_set(&range_r, range, 0.8f);
+					Easing(&range_r, range, 0.8f, EasingType::OutExpo);
 					eyepos = Get_EyePos_Base() + lookvec.zvec() * range_r;
 					eyetgt = eyepos + lookvec.zvec() * (-range_r);
 					if (MAPPTs->map_col_nearest(eyepos, &eyetgt)) {
 						eyepos = eyetgt;
 					}
 					eyetgt = eyepos + lookvec.zvec() * (-std::max(range_r, 1.f));
-					easing_set(&camera_main.fov, fov_base, 0.9f);
+					Easing(&camera_main.fov, fov_base, 0.9f, EasingType::OutExpo);
 				}
 				changeview = ((range != OLD) && (range == 0.f || OLD == 0.f));
 				camera_main.set_cam_pos(eyepos, eyetgt, this->move.mat.yvec());

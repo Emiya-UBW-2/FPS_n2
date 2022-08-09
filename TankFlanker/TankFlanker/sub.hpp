@@ -32,8 +32,8 @@ namespace FPS_n2 {
 	//フォントプール
 	FontPool Fonts;
 	//サウンドプール
-	SoundPool SE;
-	SoundPool VOICE;
+	//SoundPool SE;
+	//SoundPool VOICE;
 	//エフェクトリソース
 	class EffectControl {
 		LONGLONG Update_effect_was = 0;					//エフェクトのアップデートタイミングタイマー
@@ -533,7 +533,7 @@ namespace FPS_n2 {
 		void Draw(void) noexcept {
 			auto* DrawParts = DXDraw::Instance();
 			auto tmp_f1 = this->key_use_ID[(int)EnumKeyBind::INFO].Get_key_Auto(true);
-			easing_set(&F1_f, float(tmp_f1), 0.9f);
+			Easing(&F1_f, float(tmp_f1), 0.9f, EasingType::OutExpo);
 			noF1_f = std::max(noF1_f - 1.f / FPS, 0.f);
 			//インフォ
 			if (F1_f > 0.1f) {
@@ -598,7 +598,7 @@ namespace FPS_n2 {
 									yss = int(float(yss) * siz_t);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - xss / 2, yp_s + yss / 2, siz_t, 0.f, false);
 								}
-								Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255));
+								Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255));
 								yp_s += y_size;
 							}
 						}
@@ -616,7 +616,7 @@ namespace FPS_n2 {
 									i.use_handle->offhandle.GetSize(nullptr, &yss);
 									i.use_handle->offhandle.DrawRotaGraph(xp_s - y_size / 2, yp_s + y_size / 2, float(y_size) / yss, 0.f, true);
 								}
-								Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255)); yp_s += y_size;
+								Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_handle().DrawString(xp_s, yp_s + (y_size - Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size()) / 2, i.Get_second(info), GetColor(255, 255, 255)); yp_s += y_size;
 							}
 						}
 					}
@@ -780,8 +780,8 @@ namespace FPS_n2 {
 		void Pause_key(bool value) noexcept { On_Option = value; }
 
 		void Set() {
-			SE.SetVol(SE_vol_per);
-			VOICE.SetVol(Voice_vol_per);
+			//SE.SetVol(SE_vol_per);
+			//VOICE.SetVol(Voice_vol_per);
 		}
 		//
 		bool Update(void) noexcept {
@@ -796,11 +796,11 @@ namespace FPS_n2 {
 				right.GetInput(KeyBind->Get_key_use(EnumKeyBind::RIGHT));
 				shot.GetInput(KeyBind->Get_key_use(EnumKeyBind::JUMP));
 				if (up.trigger()) {
-					SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					select--;
 				}
 				if (down.trigger()) {
-					SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					select++;
 				}
 
@@ -817,10 +817,10 @@ namespace FPS_n2 {
 					}
 					if (left.trigger() || (SE_left_timer > SE_left_timer_border)) {
 						if (SE_vol_per > 0.f) {
-							SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
 						SE_vol_per = std::clamp(SE_vol_per - 0.01f, 0.f, 1.f);
-						SE.SetVol(SE_vol_per);
+						//SE.SetVol(SE_vol_per);
 						OptionParts->Set_SE(SE_vol_per);
 						SE_left_timer_border += 0.1f;
 					}
@@ -832,10 +832,10 @@ namespace FPS_n2 {
 					}
 					if (right.trigger() || (SE_right_timer > SE_right_timer_border)) {
 						if (SE_vol_per < 1.f) {
-							SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
 						SE_vol_per = std::clamp(SE_vol_per + 0.01f, 0.f, 1.f);
-						SE.SetVol(SE_vol_per);
+						//SE.SetVol(SE_vol_per);
 						OptionParts->Set_SE(SE_vol_per);
 						SE_right_timer_border += 0.1f;
 					}
@@ -850,10 +850,10 @@ namespace FPS_n2 {
 					}
 					if (left.trigger() || (Voice_left_timer > Voice_left_timer_border)) {
 						if (Voice_vol_per > 0 && Voice_vol_per < 1.f) {
-							SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
 						Voice_vol_per = std::clamp(Voice_vol_per - 0.01f, 0.f, 1.f);
-						VOICE.SetVol(Voice_vol_per);
+						//VOICE.SetVol(Voice_vol_per);
 						OptionParts->Set_VOICE(Voice_vol_per);
 						Voice_left_timer_border += 0.1f;
 					}
@@ -865,10 +865,10 @@ namespace FPS_n2 {
 					}
 					if (right.trigger() || (Voice_right_timer > Voice_right_timer_border)) {
 						if (Voice_vol_per > 0 && Voice_vol_per < 1.f) {
-							SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+							//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						}
 						Voice_vol_per = std::clamp(Voice_vol_per + 0.01f, 0.f, 1.f);
-						VOICE.SetVol(Voice_vol_per);
+						//VOICE.SetVol(Voice_vol_per);
 						OptionParts->Set_VOICE(Voice_vol_per);
 						Voice_right_timer_border += 0.1f;
 					}
@@ -877,7 +877,7 @@ namespace FPS_n2 {
 				if (select == 2) {
 					//戻る
 					if (shot.trigger()) {
-						SE.Get((int)EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+						//SE.Get((int)EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 						On_Option = false;
 						OptionParts->Save();
 					}
@@ -889,7 +889,7 @@ namespace FPS_n2 {
 		void Draw(void) noexcept {
 			auto* DrawParts = DXDraw::Instance();
 			auto tmp_P = On_Option;
-			easing_set(&P_f, float(tmp_P), 0.9f);
+			Easing(&P_f, float(tmp_P), 0.9f, EasingType::OutExpo);
 			//インフォ
 			if (P_f > 0.1f) {
 				//背景
@@ -906,25 +906,25 @@ namespace FPS_n2 {
 					int yp_t = y_r(100);
 					int now = 0;
 					//
-					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "SE:%03.0f%%", SE_vol_per * 100.f);
+					Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), GetColor(0, 0, 0), "SE:%03.0f%%", SE_vol_per * 100.f);
 					if (select == now) {
-						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size(), SE_vol_per);
+						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size(), SE_vol_per);
 					}
-					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
+					Easing(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
+					yp_t += Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), "VOICE:%03.0f%%", Voice_vol_per * 100.f);
+					Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_handle().DrawStringFormat_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0), GetColor(0, 0, 0), "VOICE:%03.0f%%", Voice_vol_per * 100.f);
 					if (select == now) {
-						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size(), Voice_vol_per);
+						Draw_Guage(xp_t - y_r(240 + 300), yp_t + y_r(4), xp_t - y_r(240), yp_t + y_r(4) + Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size(), Voice_vol_per);
 					}
-					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
+					Easing(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
+					yp_t += Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
-					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
+					Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Easing(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
+					yp_t += Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size() + y_r(30);
 					now++;
 					//
 				}
@@ -978,7 +978,7 @@ namespace FPS_n2 {
 			}
 
 			if (key_p != old) {
-				SE.Get((int)EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				//SE.Get((int)EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 			}
 			old = key_p;
 			return key_p;
@@ -995,11 +995,11 @@ namespace FPS_n2 {
 			right.GetInput(KeyBind->Get_key_use(EnumKeyBind::RIGHT) && !OptionMenu->Pause_key());
 			shot.GetInput(KeyBind->Get_key_use(EnumKeyBind::JUMP) && !OptionMenu->Pause_key());
 			if (up.trigger()) {
-				SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 				select--;
 			}
 			if (down.trigger()) {
-				SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+				//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 				select++;
 			}
 
@@ -1009,17 +1009,17 @@ namespace FPS_n2 {
 			if (shot.trigger()) {
 				//オプション
 				if (select == 0) {
-					SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					//SE.Get((int)EnumSound::CURSOR).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					OptionMenu->Pause_key(true);
 				}
 				//戦闘に戻る
 				if (select == 1) {
-					SE.Get((int)EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					//SE.Get((int)EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Set_key(false);
 				}
 				//強制帰還
 				if (select == 2) {
-					SE.Get((int)EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					//SE.Get((int)EnumSound::CANCEL).Play(0, DX_PLAYTYPE_BACK, TRUE);
 					KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Set_key(false);
 					selend = false;
 				}
@@ -1031,7 +1031,7 @@ namespace FPS_n2 {
 		void Draw(void) noexcept {
 			auto* DrawParts = DXDraw::Instance();
 			auto tmp_P = KeyBind->Get_key_use_ID(EnumKeyBind::PAUSE).Get_key_Auto(false);
-			easing_set(&P_f, float(tmp_P), 0.9f);
+			Easing(&P_f, float(tmp_P), 0.9f, EasingType::OutExpo);
 			//インフォ
 			if (P_f > 0.1f) {
 				//背景
@@ -1048,19 +1048,19 @@ namespace FPS_n2 {
 					int yp_t = y_r(100);
 					int now = 0;
 					//
-					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "オプション", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
-					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
+					Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "オプション", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Easing(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
+					yp_t += Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戦闘に戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
-					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
+					Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "戦闘に戻る", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Easing(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
+					yp_t += Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size() + y_r(30);
 					now++;
 					//
-					Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "強制帰還", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
-					easing_set(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f);
-					yp_t += Fonts.Get(y_r(24), DX_FONTTYPE_NORMAL).Get_size() + y_r(30);
+					Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_handle().DrawString_RIGHT(xp_t - int(Sel_X(now) * (float)y_r(32)), yp_t, "強制帰還", (select == now) ? GetColor(0, 255, 0) : GetColor(0, 164, 0));
+					Easing(&Sel_X(now), (select == now) ? 1.f : 0.f, 0.9f, EasingType::OutExpo);
+					yp_t += Fonts.Get(y_r(24), FontPool::FontType::Nomal_Edge).Get_size() + y_r(30);
 					now++;
 					//
 				}
@@ -1097,7 +1097,7 @@ namespace FPS_n2 {
 			}
 			else {
 				if (Ready <= Ready_border) {
-					SE.Get((int)EnumSound::TIMER).Play(0, DX_PLAYTYPE_BACK, TRUE, 255);
+					//SE.Get((int)EnumSound::TIMER).Play(0, DX_PLAYTYPE_BACK, TRUE, 255);
 					Ready_border--;
 				}
 				Ready -= 1.f / FPS;
@@ -1566,8 +1566,8 @@ namespace FPS_n2 {
 			this->mod.Set_([&] {
 				//共通データ
 				{
-					per.name = getparams::get_str(this->mod.mdata);		//名前
-					per.info = getparams::get_str(this->mod.mdata);		//説明
+					per.name = getparams::_str(this->mod.mdata);		//名前
+					per.info = getparams::_str(this->mod.mdata);		//説明
 				}
 				//
 				if (this->type == EnumGunParts::MAZZULE) {
@@ -1641,7 +1641,7 @@ namespace FPS_n2 {
 					{
 						can_attach.clear();
 						while (FileRead_eof(this->mod.mdata) == 0) {
-							can_attach.emplace_back(getparams::get_str(this->mod.mdata));
+							can_attach.emplace_back(getparams::_str(this->mod.mdata));
 						}
 					}
 				}
@@ -1677,7 +1677,7 @@ namespace FPS_n2 {
 		}
 		void Set_gun_select(std::vector<MV1::ani*>& gunanime_sel, EnumSELECTER selecting) {
 			for (auto& sel : this->select) {
-				easing_set(&gunanime_sel[&sel - &this->select[0]]->per, float(int(sel == this->select[(int)selecting])), 0.5f);
+				Easing(&gunanime_sel[&sel - &this->select[0]]->per, float(int(sel == this->select[(int)selecting])), 0.5f, EasingType::OutExpo);
 			}
 		}
 	};
@@ -1844,7 +1844,7 @@ namespace FPS_n2 {
 					if (ColResGround.HitFlag == TRUE) {
 						this->move.HitGround(ColResGround, 0.005f);
 						this->move.vec.clear();
-						//easing_set(&this->move.vec, VECTOR_ref::zero(), 0.8f);
+						//Easing(&this->move.vec, VECTOR_ref::zero(), 0.8f);
 					}
 				}
 				//
@@ -1935,7 +1935,7 @@ namespace FPS_n2 {
 				//effect
 				killer->Set_Effect(Effect::ef_greexp, this->move.pos, VECTOR_ref::front(), 0.1f / 0.1f);
 				//
-				SE.Get((int)EnumSound::Explosion).Play_3D(0, this->move.pos, 100.f, 255);
+				//SE.Get((int)EnumSound::Explosion).Play_3D(0, this->move.pos, 100.f, 255);
 				//グレ爆破
 				this->Detach_item();
 				for (auto& tgt : chara) {
@@ -2005,7 +2005,7 @@ namespace FPS_n2 {
 			this->Spec.resize(this->Spec.size() + 1);
 			this->Spec.back().Set_before("data/ammo/", getparams::_str(mdata));
 			while (true) {
-				auto stp = getparams::get_str(mdata);
+				auto stp = getparams::Getstr(mdata);
 				if (stp.find("useammo" + std::to_string(this->useammo.size())) == std::string::npos) {
 					break;
 				}
@@ -2296,7 +2296,7 @@ namespace FPS_n2 {
 				this->body_rad_limit = getparams::_float(mdata);
 				this->turret_rad_limit = deg2rad(getparams::_float(mdata));
 				this->HP = getparams::_int(mdata);
-				auto stt = getparams::get_str(mdata);
+				auto stt = getparams::_str(mdata);
 				for (auto& g : this->gunframe) { g.Set_Performance(mdata, stt); }
 				Reload_ID = getparams::_int(mdata);//サウンド
 				FileRead_close(mdata);
@@ -2399,12 +2399,13 @@ namespace FPS_n2 {
 			GetFileNames(path_t);
 			for (auto& d : data_t) {
 				if (std::string(d.cFileName).find(".wav") != std::string::npos) {
-					SE.Add((int)ID_t, buffersize, path_t + d.cFileName);
+					//SE.Add((int)ID_t, buffersize, path_t + d.cFileName);
 				}
 			}
 		}
 	public:
 		Audio_Control(void) noexcept {
+			/*
 			//環境音
 			SE.Add((int)EnumSound::MAP0_ENVI, 1, "data/Audio/envi.wav", false);
 			//キャラ用オーディオ
@@ -2435,6 +2436,7 @@ namespace FPS_n2 {
 			SE.Add((int)EnumSound::CANCEL, 2, "data/Audio/UI/cancel.wav", false);
 			SE.Add((int)EnumSound::CURSOR, 2, "data/Audio/UI/cursor.wav", false);
 			SE.Add((int)EnumSound::TIMER, 2, "data/Audio/UI/timer.wav", false);
+			//*/
 			//
 		}
 	};

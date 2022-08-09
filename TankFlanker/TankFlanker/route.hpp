@@ -20,8 +20,8 @@ namespace FPS_n2 {
 			OptionParts->Load();								//設定読み込み
 			DXDraw::Create("FPS_n2", Frame_Rate);			//汎用
 #ifdef DEBUG
-			DeBuG::Create(Frame_Rate);
-			auto DebugParts = DeBuG::Instance();					//デバッグ
+			DebugClass::Create(Frame_Rate);
+			auto DebugParts = DebugClass::Instance();					//デバッグ
 #endif // DEBUG
 			auto* DrawParts = DXDraw::Instance();
 			OptionParts->Set_useVR(DrawParts->use_vr);
@@ -125,7 +125,7 @@ namespace FPS_n2 {
 							//UI書き込み
 							PostPassParts->Set_UI_Draw([&] { scenes_ptr->UI_Draw(); });
 							//VRに移す
-							DrawParts->Draw_VR([&] {
+							DrawParts->Draw([&] {
 								auto tmp = GetDrawScreen();
 								cam_info tmp_cam = scenes_ptr->Get_Camera();
 								tmp_cam.campos = GetCameraPosition();

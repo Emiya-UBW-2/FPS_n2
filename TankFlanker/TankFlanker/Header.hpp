@@ -15,6 +15,8 @@
 #include "DXLib_ref/DXLib_ref.h"
 #include "Box2D/Box2D.h"
 
+using namespace DXLib_ref;
+
 #include "Enums.hpp"
 #include "sub.hpp"
 #include "map.hpp"

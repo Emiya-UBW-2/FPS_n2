@@ -362,7 +362,7 @@ namespace FPS_n2 {
 				this->sun_pos = ray.Norm() * -1500.f;
 			}
 			void Set(void) noexcept {
-				SE.Get((int)EnumSound::MAP0_ENVI).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+				//SE.Get((int)EnumSound::MAP0_ENVI).Play(0, DX_PLAYTYPE_LOOP, TRUE);
 			}
 			void Dispose(void) noexcept {
 				if (isDispose) {
@@ -442,14 +442,14 @@ namespace FPS_n2 {
 				if (kabe_.size() > 0) {
 					bool HitFlag = false;
 					for (auto& KeyBind : kabe_) {
-						if (Hit_Capsule_Tri(*NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {				// ポリゴンとプレイヤーが当たっていなかったら次のカウントへ
+						if (GetHitCapsuleToTriangle(*NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {				// ポリゴンとプレイヤーが当たっていなかったら次のカウントへ
 							HitFlag = true;// ここにきたらポリゴンとプレイヤーが当たっているということなので、ポリゴンに当たったフラグを立てる
 							if (MoveVector.size() >= 0.0001f) {	// x軸かy軸方向に 0.0001f 以上移動した場合は移動したと判定
 								// 壁に当たったら壁に遮られない移動成分分だけ移動する
 								*NowPos = VECTOR_ref(KeyBind->Normal).cross(MoveVector.cross(KeyBind->Normal)) + OldPos;
 								bool j = false;
 								for (auto& b_ : kabe_) {
-									if (Hit_Capsule_Tri(*NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {
+									if (GetHitCapsuleToTriangle(*NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_WIDTH, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {
 										j = true;
 										break;// 当たっていたらループから抜ける
 									}
@@ -471,11 +471,11 @@ namespace FPS_n2 {
 						for (int k = 0; k < PLAYER_HIT_TRYNUM; ++k) {			// 壁からの押し出し処理を試みる最大数だけ繰り返し
 							bool HitF = false;
 							for (auto& KeyBind : kabe_) {
-								if (Hit_Capsule_Tri(*NowPos + VECTOR_ref::vget(0.0f, 0.2f, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {// プレイヤーと当たっているかを判定
+								if (GetHitCapsuleToTriangle(*NowPos + VECTOR_ref::vget(0.0f, 0.2f, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, KeyBind->Position[0], KeyBind->Position[1], KeyBind->Position[2])) {// プレイヤーと当たっているかを判定
 									*NowPos += VECTOR_ref(KeyBind->Normal) * PLAYER_HIT_SLIDE_LENGTH;					// 当たっていたら規定距離分プレイヤーを壁の法線方向に移動させる
 									bool j = false;
 									for (auto& b_ : kabe_) {
-										if (Hit_Capsule_Tri(*NowPos + VECTOR_ref::vget(0.0f, 0.2f, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {// 当たっていたらループを抜ける
+										if (GetHitCapsuleToTriangle(*NowPos + VECTOR_ref::vget(0.0f, 0.2f, 0.0f), *NowPos + VECTOR_ref::vget(0.0f, PLAYER_HIT_HEIGHT, 0.0f), PLAYER_HIT_WIDTH, b_->Position[0], b_->Position[1], b_->Position[2])) {// 当たっていたらループを抜ける
 											j = true;
 											break;
 										}
@@ -542,6 +542,7 @@ namespace FPS_n2 {
 				for (int i = 0; i < 3; ++i) {
 					map.DrawMesh(i);
 				}
+				//map.DrawMesh(3);
 
 				shader.Draw_lamda(
 					[&] {
@@ -656,7 +657,7 @@ namespace FPS_n2 {
 					int xp = 0, yp = 0;
 					float radp = 0.f;
 					{
-						easing_set(&xcam, 1.f + mine->Get_pseed_per() * 0.2f, 0.9f);
+						Easing(&xcam, 1.f + mine->Get_pseed_per() * 0.2f, 0.9f, EasingType::OutExpo);
 						radp = -mine->Get_yrad();
 						int xpos = 0, ypos = 0;
 						Set_pos_chara(&xpos, &ypos, mine->Get_Pos_Map(), radp);
